@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CanvasXpress Dashboards — Phase 2 (connector binding) demo</title>
+
+  <!-- CanvasXpress (peer dependency) -->
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+
+  <!-- canvasxpress-dashboards renderer (UMD drop-in) -->
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    header { padding: 16px 24px 8px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: #6b7280; font-size: 13px; max-width: 70ch; }
+    header code { background: #e6e9ee; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+    #status { padding: 4px 24px 12px; font-size: 12px; color: #6b7280; }
+    #dashboard { padding: 8px 24px 32px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0e1013; color: #e6e8ec; }
+      header p, #status { color: #8a9099; }
+      header code { background: #23262d; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Phase 2 — authenticated connector binding (demo)</h1>
+    <p>
+      This page injects a <strong>fake connector backend</strong> via
+      <code>options.fetch</code> so you can see the full data-binding flow with no
+      real database. In production the same spec talks to
+      <code>canvasxpress-connectors</code> over a cookie-authenticated
+      <code>/api/data</code> endpoint — the only difference is you omit
+      <code>options.fetch</code> and let the browser use the real one.
+    </p>
+    <p style="margin-top:8px">
+      Watch for: a brief <strong>Loading…</strong> overlay per panel · the
+      <strong>Live sales</strong> bar &amp; pie <strong>share one request</strong> and
+      <strong>auto-refresh every 3s</strong> (values change) · an
+      <strong>empty</strong> source shows “No data” · a <strong>failing</strong> source
+      shows the connector’s error <code>detail</code>.
+    </p>
+  </header>
+  <div id="status">starting…</div>
+  <div id="dashboard"></div>
+
+  <script>
+    // ------------------------------------------------------------------
+    // A fake canvasxpress-connectors backend.
+    // Returns CanvasXpress {y:{vars,smps,data}} payloads, mimicking the real
+    // GET /api/data?source=… contract (JSON body, {detail} on error), with a
+    // short delay so the loading overlay is visible. Each poll of "sales"
+    // returns fresh numbers so the refresh poller is observable.
+    // ------------------------------------------------------------------
+    var pollCount = 0;
+
+    function jitter(base) {
+      return Math.round(base * (0.75 + Math.random() * 0.5));
+    }
+
+    function response(status, bodyObj, delay) {
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          resolve({
+            ok: status >= 200 && status < 300,
+            status: status,
+            text: function () { return Promise.resolve(JSON.stringify(bodyObj)); }
+          });
+        }, delay || 350);
+      });
+    }
+
+    function fakeConnector(url) {
+      if (url.indexOf('source=sales') !== -1) {
+        pollCount++;
+        setStatus('sales fetched ' + pollCount + '×  (shared by bar + pie; refresh every 3s)');
+        return response(200, {
+          y: {
+            vars: ['Revenue'],
+            smps: ['North', 'South', 'East', 'West', 'Central'],
+            data: [[jitter(820), jitter(640), jitter(910), jitter(730), jitter(560)]]
+          },
+          x: { Region: ['North', 'South', 'East', 'West', 'Central'] }
+        });
+      }
+      if (url.indexOf('source=empty') !== -1) {
+        // Real connectors returns 422 "Query returned no rows" for empty results.
+        return response(422, { detail: 'Query returned no rows' });
+      }
+      if (url.indexOf('source=broken') !== -1) {
+        return response(502, { detail: 'Database error: connection refused' });
+      }
+      return response(404, { detail: 'No such source' });
+    }
+
+    function setStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+
+    // ------------------------------------------------------------------
+    // The dashboard spec — three connector sources exercising every state.
+    // ------------------------------------------------------------------
+    var spec = {
+      id: 'sales-live-demo',
+      broadcastGroup: 'sales-live-demo',
+      layout: {
+        cols: 12,
+        rowHeight: 130,
+        items: [
+          { panel: 'revenue-bar', x: 0, y: 0, w: 6, h: 3 },
+          { panel: 'region-pie',  x: 6, y: 0, w: 6, h: 3 },
+          { panel: 'empty-demo',  x: 0, y: 3, w: 6, h: 2 },
+          { panel: 'error-demo',  x: 6, y: 3, w: 6, h: 2 }
+        ]
+      },
+      data: {
+        sales:  { kind: 'connector', url: '/api/data?source=sales', refresh: 3 },
+        empty:  { kind: 'connector', url: '/api/data?source=empty' },
+        broken: { kind: 'connector', url: '/api/data?source=broken' }
+      },
+      panels: {
+        'revenue-bar': { title: 'Live sales — Revenue (auto-refresh 3s)', dataRef: 'sales',
+                         config: { graphType: 'Bar', colorBy: 'Region', showLegend: false, title: false } },
+        'region-pie':  { title: 'Live sales — Share (same one request)', dataRef: 'sales',
+                         config: { graphType: 'Pie', colorBy: 'Region', title: false } },
+        'empty-demo':  { title: 'Empty source → “No data”', dataRef: 'empty',
+                         config: { graphType: 'Bar', title: false } },
+        'error-demo':  { title: 'Failing source → error detail', dataRef: 'broken',
+                         config: { graphType: 'Bar', title: false } }
+      },
+      controls: [
+        { kind: 'table', dataRef: 'sales', title: 'Live sales table' }
+      ]
+    };
+
+    CanvasXpressDashboards.renderDashboard(spec, 'dashboard', {
+      fetch: fakeConnector,
+      cache: new Map()   // isolate this demo from the process-wide cache
+    }).then(function (handle) {
+      return handle.ready.then(function () {
+        console.log('Initial render settled:', handle.instances.length, 'instances');
+      });
+    }).catch(function (err) {
+      setStatus('Failed: ' + err.message);
+      console.error(err);
+    });
+  </script>
+</body>
+</html>
