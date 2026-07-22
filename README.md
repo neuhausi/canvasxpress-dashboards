@@ -10,7 +10,7 @@ This package adds the missing layer: a **spec**, a **grid layout**, a
 **renderer**, and (in later phases) data binding, persistence, and a no-code
 builder. It does **not** re-implement chart rendering or coordination.
 
-> **Status:** Phase 2 (spec + client renderer + authenticated connector binding). See
+> **Status:** Phase 3 (spec + renderer + connector binding + persistence & sharing). See
 > [`docs/plans/dashboards`](https://github.com/neuhausi/canvasxpress) for the roadmap.
 
 ---
@@ -158,6 +158,37 @@ Standalone data resolver (inline + connector) with caching, in-flight
 de-duplication, and TTL. Also exported: `isEmptyData(data)`, `DataError`
 (carries `.status`), `clearSharedCache()`.
 
+### Persistence & sharing (Phase 3)
+
+Save/load/share is provided by an optional server
+([`server/`](server/README.md), `canvasxpress-dashboards-server`) that mirrors the
+connectors auth model: per-owner isolation, cookie sessions, and a per-dashboard
+**share link** (public or auth-gated). The store is stdlib-only SQLite (swaps for
+Postgres); dashboard specs hold no credentials, so only the share token is a
+secret. The bundled read-only viewer is served at `/shared.html?token=…`.
+
+Client helpers (in this package):
+
+```js
+import { createDashboardClient, exportSpec, importSpecFromFile } from 'canvasxpress-dashboards';
+
+const client = createDashboardClient({ baseUrl: '' });   // cookie auth
+await client.login('alice', '…');
+await client.save(spec);                 // create/update (keyed by spec.id)
+const specs   = await client.list();     // the user's dashboards
+const loaded  = await client.load('sales-overview');
+const shared  = await client.share('sales-overview', 'public'); // -> { share_token, share_url }
+const viewer  = await client.loadShared(shared.share_token);     // { spec, readOnly, owner }
+
+exportSpec(spec);                        // download spec.json
+const imported = await importSpecFromFile(file); // parse + validate a File
+```
+
+- `exportSpec` / `importSpecFromFile` / `parseAndValidate` — download and load a
+  spec as `.json` (validated on import).
+- `createDashboardClient(opts)` — thin, credentialed client for the server API
+  (`login`/`signup`/`logout`/`me`, `list`/`save`/`load`/`remove`, `share`/`loadShared`).
+
 ### `validateSpec(spec) → { valid, errors }`
 
 Structural validation; returns human-readable error strings.
@@ -185,8 +216,8 @@ zero-dependency bundler that inlines them into `dist/*.esm.js` and `dist/*.umd.j
 | Phase | Deliverable | Status |
 |---|---|---|
 | **1** | Spec + client renderer + showcase | ✅ done |
-| **2** | Authenticated data binding via [`canvasxpress-connectors`](https://github.com/neuhausi/canvasxpress-connectors) + cache | ✅ this release |
-| 3 | Persistence & sharing | planned |
+| **2** | Authenticated data binding via [`canvasxpress-connectors`](https://github.com/neuhausi/canvasxpress-connectors) + cache | ✅ done |
+| **3** | Persistence & sharing ([`server/`](server/README.md)) | ✅ this release |
 | 4 | No-code builder | planned |
 
 ## License

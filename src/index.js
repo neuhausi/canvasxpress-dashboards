@@ -9,6 +9,7 @@ export { renderDashboard } from './renderDashboard.js';
 export { validateSpec } from './validateSpec.js';
 export { dashboardCss, injectStyles } from './styles.js';
 export { createDataStore, isEmptyData, DataError, clearSharedCache } from './dataStore.js';
+export { exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient } from './persistence.js';
 
 /** @type {string} Package version. */
-export var version = '0.2.0';
+export var version = '0.3.0';

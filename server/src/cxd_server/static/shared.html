@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shared dashboard · CanvasXpress Dashboards</title>
+
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+  <script src="./canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    header { padding: 16px 24px 8px; display: flex; align-items: baseline; gap: 12px; }
+    header h1 { margin: 0; font-size: 18px; }
+    header .badge { font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+      color: #fff; background: #6b7280; padding: 2px 8px; border-radius: 10px; }
+    header .owner { color: #6b7280; font-size: 13px; }
+    #dashboard { padding: 8px 24px 32px; }
+    #message { padding: 32px 24px; color: #6b7280; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0e1013; color: #e6e8ec; }
+      header .owner, #message { color: #8a9099; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="title">Shared dashboard</h1>
+    <span class="badge">read-only</span>
+    <span class="owner" id="owner"></span>
+  </header>
+  <div id="message">Loading…</div>
+  <div id="dashboard"></div>
+
+  <script>
+    // Read-only viewer: resolve ?token=… to its spec via the persistence client,
+    // then render with the standard renderer. Data still resolves through the
+    // connectors endpoint with the *viewer's* own session/permissions.
+    var token = new URLSearchParams(location.search).get('token');
+    var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: '' });
+
+    function fail(msg) {
+      document.getElementById('message').textContent = msg;
+    }
+
+    if (!token) {
+      fail('No share token in the URL (expected ?token=…).');
+    } else {
+      client.loadShared(token).then(function (result) {
+        var spec = result.spec;
+        document.getElementById('message').style.display = 'none';
+        document.getElementById('title').textContent = spec.title || spec.id || 'Shared dashboard';
+        if (result.owner) document.getElementById('owner').textContent = 'shared by ' + result.owner;
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard');
+      }).catch(function (err) {
+        if (err.status === 401) fail('This dashboard requires you to be logged in to view it.');
+        else if (err.status === 404) fail('Share link not found or no longer shared.');
+        else fail('Could not load dashboard: ' + err.message);
+      });
+    }
+  </script>
+</body>
+</html>

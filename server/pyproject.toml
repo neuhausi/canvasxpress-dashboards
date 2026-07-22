@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "canvasxpress-dashboards-server"
+version = "0.3.0"
+description = "Persistence & sharing service for canvasxpress-dashboards specs — save/load/share dashboards behind your own origin, mirroring the canvasxpress-connectors auth model."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Isaac Neuhaus" }]
+keywords = ["canvasxpress", "dashboard", "visualization", "persistence", "sharing"]
+
+# The store is stdlib-only; the web app adds FastAPI.
+dependencies = []
+
+[project.optional-dependencies]
+web = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "itsdangerous>=2.1", "python-dotenv>=1.0"]
+dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6"]
+
+[project.urls]
+Homepage = "https://github.com/neuhausi/canvasxpress-dashboards"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cxd_server"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

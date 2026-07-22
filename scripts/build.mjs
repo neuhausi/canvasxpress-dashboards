@@ -22,7 +22,7 @@ var srcDir = join(root, 'src');
 var distDir = join(root, 'dist');
 
 // Dependency order — leaves first, entry last-ish. index.js only re-exports.
-var MODULES = ['styles.js', 'dataStore.js', 'validateSpec.js', 'renderDashboard.js'];
+var MODULES = ['styles.js', 'dataStore.js', 'validateSpec.js', 'renderDashboard.js', 'persistence.js'];
 
 // Public API exposed by both bundles.
 var EXPORTS = [
@@ -33,7 +33,11 @@ var EXPORTS = [
   'createDataStore',
   'isEmptyData',
   'DataError',
-  'clearSharedCache'
+  'clearSharedCache',
+  'exportSpec',
+  'importSpecFromFile',
+  'parseAndValidate',
+  'createDashboardClient'
 ];
 var VERSION = readVersion();
 
@@ -89,6 +93,16 @@ var umd =
   'return CanvasXpressDashboards;\n' +
   '}));\n';
 writeFileSync(join(distDir, 'canvasxpress-dashboards.umd.js'), umd);
+
+// Mirror the UMD bundle into the server's static dir so the shared viewer is
+// self-contained when served by cxd_server.
+var serverStatic = join(root, 'server', 'src', 'cxd_server', 'static');
+try {
+  mkdirSync(serverStatic, { recursive: true });
+  writeFileSync(join(serverStatic, 'canvasxpress-dashboards.umd.js'), umd);
+} catch (e) {
+  // Server package may be absent in a slim checkout — non-fatal.
+}
 
 console.log('Built dist/canvasxpress-dashboards.esm.js and .umd.js (v' + VERSION + ')');
 

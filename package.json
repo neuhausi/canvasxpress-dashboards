@@ -1,6 +1,6 @@
 {
   "name": "canvasxpress-dashboards",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Compose, coordinate, and render dashboards of linked CanvasXpress visualizations from a declarative spec.",
   "type": "module",
   "main": "dist/canvasxpress-dashboards.umd.js",
