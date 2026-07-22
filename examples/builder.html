@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CanvasXpress Dashboards — no-code builder</title>
+
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    header { padding: 16px 24px 6px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: #6b7280; font-size: 13px; max-width: 78ch; }
+    header code { background: #e6e9ee; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+    #builder { padding: 12px 24px 32px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0e1013; color: #e6e8ec; }
+      header p { color: #8a9099; }
+      header code { background: #23262d; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>No-code dashboard builder</h1>
+    <p>
+      Click <code>+ Data</code> to add an inline data source, then <code>+ Panel</code>
+      to add charts. <strong>Drag a panel’s title</strong> to move it and drag the
+      blue corner to resize (snaps to the 12-column grid). Select a panel to edit its
+      title, data source, chart type, color-by, or raw config. <code>Preview</code>
+      renders it live; <code>Export</code> downloads the spec; <code>Import</code>
+      loads one. <code>Save</code>/<code>Share</code> use the Phase-3 server if one is
+      running on this origin.
+    </p>
+  </header>
+
+  <div id="builder"></div>
+
+  <script>
+    // A persistence client is optional: if the cxd_server isn't running on this
+    // origin, Save/Share will just report an error and everything else still works.
+    var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: '' });
+
+    // ----------------------------------------------------------------
+    // Build a richer inline dataset: 20 rows (samples) x 10 numeric
+    // variables + 5 string annotations, so panels have real colorBy /
+    // grouping choices. Deterministic (seeded LCG) so it's reproducible.
+    // ----------------------------------------------------------------
+    function makeDataset() {
+      var seed = 12345;
+      function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+      var ROWS = 20, NUMS = 10;
+      var pick = function (arr) { return arr[Math.floor(rnd() * arr.length)]; };
+
+      var smps = [];
+      for (var r = 0; r < ROWS; r++) smps.push('Sample-' + (r + 1));
+
+      var vars = [], data = [];
+      for (var c = 0; c < NUMS; c++) {
+        vars.push('Metric_' + (c + 1));
+        var row = [];
+        var base = 20 + c * 15;
+        for (var i = 0; i < ROWS; i++) row.push(Math.round((base + rnd() * base) * 10) / 10);
+        data.push(row);
+      }
+
+      var cats = {
+        Region: ['North', 'South', 'East', 'West', 'Central'],
+        Category: ['Alpha', 'Beta', 'Gamma'],
+        Segment: ['Enterprise', 'SMB', 'Consumer'],
+        Status: ['Active', 'Inactive', 'Pending'],
+        Tier: ['Gold', 'Silver', 'Bronze']
+      };
+      var x = {};
+      Object.keys(cats).forEach(function (key) {
+        x[key] = [];
+        for (var i = 0; i < ROWS; i++) x[key].push(pick(cats[key]));
+      });
+
+      return { y: { vars: vars, smps: smps, data: data }, x: x };
+    }
+
+    // Seed with the dataset so you can add a panel immediately. Try graphType
+    // "Bar"/"Boxplot"/"Dotplot" with Color by = Region / Segment / Tier, etc.
+    var seed = CanvasXpressDashboards.setDataSource(
+      CanvasXpressDashboards.blankSpec('my-dashboard', 'My Dashboard'),
+      'sample',
+      { kind: 'inline', value: makeDataset() }
+    );
+
+    var builder = CanvasXpressDashboards.createBuilder('builder', {
+      spec: seed,
+      client: client,
+      onChange: function (spec) { /* hook: autosave, undo stack, etc. */ }
+    });
+
+    // Expose for tinkering in the console.
+    window.builder = builder;
+  </script>
+</body>
+</html>

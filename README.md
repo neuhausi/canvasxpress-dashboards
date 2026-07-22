@@ -10,7 +10,7 @@ This package adds the missing layer: a **spec**, a **grid layout**, a
 **renderer**, and (in later phases) data binding, persistence, and a no-code
 builder. It does **not** re-implement chart rendering or coordination.
 
-> **Status:** Phase 3 (spec + renderer + connector binding + persistence & sharing). See
+> **Status:** All 4 phases shipped — spec + renderer + connector binding + persistence & sharing + no-code builder. See
 > [`docs/plans/dashboards`](https://github.com/neuhausi/canvasxpress) for the roadmap.
 
 ---
@@ -189,6 +189,34 @@ const imported = await importSpecFromFile(file); // parse + validate a File
 - `createDashboardClient(opts)` — thin, credentialed client for the server API
   (`login`/`signup`/`logout`/`me`, `list`/`save`/`load`/`remove`, `share`/`loadShared`).
 
+### No-code builder (Phase 4)
+
+A vanilla, zero-dependency builder — drag/move/resize on the grid + a per-panel
+editor form — that reads and writes the same spec. Every gesture routes through
+pure spec operations, so the builder is *only* a spec editor. Live preview reuses
+the renderer; Save/Share/Export reuse the Phase-3 client.
+
+```js
+import { createBuilder, blankSpec, setDataSource, createDashboardClient } from 'canvasxpress-dashboards';
+
+const seed = setDataSource(blankSpec('my-dashboard', 'My Dashboard'), 'sample',
+  { kind: 'inline', value: { y: { vars: ['R'], smps: ['A', 'B'], data: [[1, 2]] } } });
+
+const builder = createBuilder(document.getElementById('builder'), {
+  spec: seed,
+  client: createDashboardClient({ baseUrl: '' }),  // optional (Save/Share)
+  onChange: (spec) => { /* autosave, undo stack, … */ }
+});
+
+builder.getSpec();                 // current spec (a copy)
+builder.addPanel({ id: 'p1', dataRef: 'sample', config: { graphType: 'Bar' } });
+```
+
+Open [`examples/builder.html`](examples/builder.html) to build a dashboard end to
+end with no code. The pure operations are also exported directly (`addPanel`,
+`removePanel`, `movePanel`, `resizePanel`, `updatePanel`, `setDataSource`,
+`blankSpec`) along with `pointerToCell` for custom drag surfaces.
+
 ### `validateSpec(spec) → { valid, errors }`
 
 Structural validation; returns human-readable error strings.
@@ -217,8 +245,8 @@ zero-dependency bundler that inlines them into `dist/*.esm.js` and `dist/*.umd.j
 |---|---|---|
 | **1** | Spec + client renderer + showcase | ✅ done |
 | **2** | Authenticated data binding via [`canvasxpress-connectors`](https://github.com/neuhausi/canvasxpress-connectors) + cache | ✅ done |
-| **3** | Persistence & sharing ([`server/`](server/README.md)) | ✅ this release |
-| 4 | No-code builder | planned |
+| **3** | Persistence & sharing ([`server/`](server/README.md)) | ✅ done |
+| **4** | No-code builder | ✅ this release |
 
 ## License
 

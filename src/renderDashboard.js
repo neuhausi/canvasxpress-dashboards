@@ -80,6 +80,7 @@ export function renderDashboard(spec, target, options) {
   var refMemo = {};        // dataRef -> Promise<data> (one resolve per render)
   var refBindings = {};    // dataRef -> [{ instance }] (for scheduled refresh)
   var timers = [];         // refresh interval handles
+  var observers = [];      // ResizeObservers keeping canvases sized to their cells
 
   /**
    * Resolve a named source once per render (shared object + single request).
@@ -130,10 +131,12 @@ export function renderDashboard(spec, target, options) {
     pending.push(resolveOwnerData(panel)
       .then(function (data) {
         if (isEmptyData(data)) { cell.setState('empty'); return null; }
+        sizeCanvasToCell(cell);
         var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
         var instance = new CX(canvasId, data, config, panel && panel.events || {});
         instances.push(instance);
         bind(panel && panel.dataRef, instance);
+        observeResize(cell, instance, observers);
         cell.setState('ready');
         return instance;
       })
@@ -156,10 +159,12 @@ export function renderDashboard(spec, target, options) {
     pending.push(resolveOwnerData(control)
       .then(function (data) {
         if (isEmptyData(data)) { cell.setState('empty'); return; }
+        sizeCanvasToCell(cell);
         var config = mergeConfig(controlConfig(control), broadcastGroup, control);
         var instance = new CX(canvasId, data, config, {});
         instances.push(instance);
         bind(control.dataRef, instance);
+        observeResize(cell, instance, observers);
         cell.setState('ready');
       })
       .catch(function (err) {
@@ -191,6 +196,8 @@ export function renderDashboard(spec, target, options) {
     destroy: function () {
       timers.forEach(function (t) { clearInterval(t); });
       timers.length = 0;
+      observers.forEach(function (o) { try { o.disconnect(); } catch (e) { /* noop */ } });
+      observers.length = 0;
       instances.forEach(function (instance) {
         try {
           if (instance && typeof instance.destroy === 'function') instance.destroy();
@@ -301,6 +308,67 @@ function defaultControlTitle(kind) {
 }
 
 /**
+ * Size a cell's `<canvas>` drawing buffer to its laid-out pixel box.
+ *
+ * CanvasXpress falls back to a fixed 500×500 buffer when the canvas has no
+ * width/height *attributes* — CSS `100%` only stretches that buffer, so graphs
+ * would not fill the panel. Setting the attributes to the measured box makes the
+ * graph render at the cell's real size. No-op in non-browser/unlaid-out contexts.
+ *
+ * @param {object} cell - A cell from {@link buildCell} (has `canvas` + `body`).
+ * @returns {void}
+ * @private
+ */
+function sizeCanvasToCell(cell) {
+  var box = measureBox(cell.body) || measureBox(cell.canvas);
+  if (!box || box.w < 5 || box.h < 5) return;
+  cell.canvas.width = box.w;
+  cell.canvas.height = box.h;
+}
+
+/**
+ * Keep an instance's canvas sized to its cell as the container reflows
+ * (window resize, grid changes). Uses ResizeObserver where available.
+ *
+ * @param {object} cell - The cell (has `body`).
+ * @param {object} instance - The CanvasXpress instance (has `setDimensions`).
+ * @param {Array} observers - Collector for created observers (for cleanup).
+ * @returns {void}
+ * @private
+ */
+function observeResize(cell, instance, observers) {
+  if (typeof ResizeObserver === 'undefined') return;
+  if (typeof instance.setDimensions !== 'function') return;
+  var last = { w: cell.canvas.width, h: cell.canvas.height };
+  var ro = new ResizeObserver(function () {
+    var box = measureBox(cell.body);
+    if (!box || box.w < 5 || box.h < 5) return;
+    if (box.w === last.w && box.h === last.h) return;
+    last = box;
+    try { instance.setDimensions(box.w, box.h); } catch (e) { /* keep observing */ }
+  });
+  ro.observe(cell.body);
+  observers.push(ro);
+}
+
+/**
+ * Measure an element's pixel box, rounding down. Returns null when measurement
+ * isn't possible (no layout / non-browser).
+ * @param {HTMLElement} el - Element to measure.
+ * @returns {{w:number, h:number}|null} The integer box, or null.
+ * @private
+ */
+function measureBox(el) {
+  if (!el) return null;
+  if (typeof el.getBoundingClientRect === 'function') {
+    var rect = el.getBoundingClientRect();
+    if (rect && rect.width) return { w: Math.floor(rect.width), h: Math.floor(rect.height) };
+  }
+  if (el.clientWidth) return { w: el.clientWidth, h: el.clientHeight };
+  return null;
+}
+
+/**
  * Position a grid cell using its layout item.
  * @param {HTMLElement} el - The cell element.
  * @param {object} item - Layout item with x/y/w/h.
@@ -346,6 +414,7 @@ function buildCell(title) {
   return {
     root: root,
     canvas: canvas,
+    body: body,
     pending: null,
     /**
      * Update the cell's visual state.
