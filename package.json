@@ -1,0 +1,46 @@
+{
+  "name": "canvasxpress-dashboards",
+  "version": "0.1.0",
+  "description": "Compose, coordinate, and render dashboards of linked CanvasXpress visualizations from a declarative spec.",
+  "type": "module",
+  "main": "dist/canvasxpress-dashboards.umd.js",
+  "module": "dist/canvasxpress-dashboards.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/canvasxpress-dashboards.esm.js",
+      "require": "./dist/canvasxpress-dashboards.umd.js"
+    },
+    "./src": "./src/index.js",
+    "./schema": "./schema/dashboard.schema.json"
+  },
+  "files": [
+    "src",
+    "dist",
+    "schema",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test \"tests/**/*.test.js\""
+  },
+  "keywords": [
+    "canvasxpress",
+    "dashboard",
+    "dataviz",
+    "visualization",
+    "bi"
+  ],
+  "author": "Isaac Neuhaus",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neuhausi/canvasxpress-dashboards.git"
+  },
+  "peerDependencies": {
+    "canvasxpress": ">=64.0.0"
+  },
+  "peerDependenciesMeta": {
+    "canvasxpress": { "optional": true }
+  }
+}

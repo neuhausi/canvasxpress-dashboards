@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CanvasXpress Dashboards — Sales Overview</title>
+
+  <!-- CanvasXpress (peer dependency): rendering + broadcast coordination -->
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+
+  <!-- canvasxpress-dashboards renderer (UMD drop-in) -->
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    header { padding: 16px 24px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: #6b7280; font-size: 13px; }
+    #dashboard { padding: 16px 24px 32px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0e1013; color: #e6e8ec; }
+      header p { color: #8a9099; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Sales Overview</h1>
+    <p>Three linked panels + a data table. Click a bar, pie slice, or table row —
+       the selection broadcasts across the dashboard.</p>
+  </header>
+
+  <div id="dashboard"></div>
+
+  <script>
+    fetch('./sales-overview.spec.json')
+      .then(function (res) { return res.json(); })
+      .then(function (spec) {
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard');
+      })
+      .then(function (handle) {
+        console.log('Dashboard rendered:', handle.instances.length, 'instances in group', handle.broadcastGroup);
+      })
+      .catch(function (err) {
+        document.getElementById('dashboard').textContent = 'Failed to render: ' + err.message;
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

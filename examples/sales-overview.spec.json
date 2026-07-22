@@ -1,0 +1,68 @@
+{
+  "id": "sales-overview",
+  "title": "Sales Overview",
+  "version": 1,
+  "broadcastGroup": "sales-overview",
+  "theme": "auto",
+  "layout": {
+    "cols": 12,
+    "rowHeight": 130,
+    "gap": 12,
+    "items": [
+      { "panel": "revenue-bar", "x": 0, "y": 0, "w": 6, "h": 3 },
+      { "panel": "region-pie",  "x": 6, "y": 0, "w": 6, "h": 3 },
+      { "panel": "trend-line",  "x": 0, "y": 3, "w": 12, "h": 3 }
+    ]
+  },
+  "data": {
+    "sales": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": ["Revenue"],
+          "smps": ["North", "South", "East", "West", "Central"],
+          "data": [[820, 640, 910, 730, 560]]
+        },
+        "x": {
+          "Region": ["North", "South", "East", "West", "Central"]
+        }
+      }
+    },
+    "trend": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": ["North", "South", "East", "West", "Central"],
+          "smps": ["Q1", "Q2", "Q3", "Q4"],
+          "data": [
+            [180, 210, 220, 210],
+            [150, 160, 170, 160],
+            [200, 230, 240, 240],
+            [160, 180, 200, 190],
+            [120, 140, 150, 150]
+          ]
+        }
+      }
+    }
+  },
+  "panels": {
+    "revenue-bar": {
+      "title": "Revenue by Region",
+      "dataRef": "sales",
+      "config": { "graphType": "Bar", "colorBy": "Region", "showLegend": false, "title": false }
+    },
+    "region-pie": {
+      "title": "Share by Region",
+      "dataRef": "sales",
+      "config": { "graphType": "Pie", "colorBy": "Region", "title": false }
+    },
+    "trend-line": {
+      "title": "Quarterly Trend",
+      "dataRef": "trend",
+      "config": { "graphType": "Line", "title": false }
+    }
+  },
+  "controls": [
+    { "kind": "table", "dataRef": "sales", "title": "Sales Table" }
+  ]
+}

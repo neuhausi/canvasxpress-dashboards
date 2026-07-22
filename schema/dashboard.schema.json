@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://canvasxpress.org/schema/dashboard.schema.json",
+  "title": "CanvasXpress Dashboard Spec",
+  "description": "Declarative spec describing panels, layout, and data bindings for a CanvasXpress dashboard.",
+  "type": "object",
+  "required": ["id", "layout", "panels"],
+  "additionalProperties": true,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable dashboard identifier. Defaults the broadcast group.",
+      "minLength": 1
+    },
+    "title": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1, "default": 1 },
+    "broadcastGroup": {
+      "type": "string",
+      "description": "Coordination domain isolating this dashboard's panels. Defaults to id."
+    },
+    "theme": {
+      "type": "string",
+      "enum": ["light", "dark", "auto"],
+      "default": "auto"
+    },
+    "layout": {
+      "type": "object",
+      "required": ["items"],
+      "additionalProperties": true,
+      "properties": {
+        "cols": { "type": "integer", "minimum": 1, "default": 12 },
+        "rowHeight": { "type": "number", "minimum": 1, "default": 120 },
+        "gap": { "type": "number", "minimum": 0, "default": 12 },
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/layoutItem" }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "description": "Named, reusable data sources referenced by panels via dataRef.",
+      "additionalProperties": { "$ref": "#/definitions/dataSource" }
+    },
+    "panels": {
+      "type": "object",
+      "description": "Panel definitions keyed by panel id.",
+      "additionalProperties": { "$ref": "#/definitions/panel" }
+    },
+    "controls": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/control" }
+    }
+  },
+  "definitions": {
+    "layoutItem": {
+      "type": "object",
+      "required": ["panel", "x", "y", "w", "h"],
+      "additionalProperties": true,
+      "properties": {
+        "panel": { "type": "string" },
+        "x": { "type": "integer", "minimum": 0 },
+        "y": { "type": "integer", "minimum": 0 },
+        "w": { "type": "integer", "minimum": 1 },
+        "h": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "dataSource": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": true,
+      "properties": {
+        "kind": { "type": "string", "enum": ["inline", "connector"] },
+        "value": { "type": "object" },
+        "url": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "inline" } } },
+          "then": { "required": ["value"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "connector" } } },
+          "then": { "required": ["url"] }
+        }
+      ]
+    },
+    "panel": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "title": { "type": "string" },
+        "dataRef": { "type": "string" },
+        "data": { "type": "object" },
+        "config": { "type": "object" },
+        "events": { "type": "object" },
+        "broadcast": { "type": "boolean" }
+      }
+    },
+    "control": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": true,
+      "properties": {
+        "kind": { "type": "string", "enum": ["filter", "table"] },
+        "dataRef": { "type": "string" },
+        "title": { "type": "string" },
+        "config": { "type": "object" }
+      }
+    }
+  }
+}
