@@ -72,7 +72,24 @@
       "properties": {
         "kind": { "type": "string", "enum": ["inline", "connector"] },
         "value": { "type": "object" },
-        "url": { "type": "string" }
+        "url": {
+          "type": "string",
+          "description": "Connector endpoint, e.g. /api/data?source=sales. Fetched with credentials (cookie auth)."
+        },
+        "ttl": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Cache lifetime in ms for this connector source (0 = no cross-render caching)."
+        },
+        "refresh": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Poll interval in seconds; refetches and live-updates bound panels."
+        },
+        "headers": {
+          "type": "object",
+          "description": "Optional extra request headers for the connector fetch."
+        }
       },
       "allOf": [
         {

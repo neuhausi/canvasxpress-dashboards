@@ -22,14 +22,18 @@ var srcDir = join(root, 'src');
 var distDir = join(root, 'dist');
 
 // Dependency order — leaves first, entry last-ish. index.js only re-exports.
-var MODULES = ['styles.js', 'validateSpec.js', 'renderDashboard.js'];
+var MODULES = ['styles.js', 'dataStore.js', 'validateSpec.js', 'renderDashboard.js'];
 
 // Public API exposed by both bundles.
 var EXPORTS = [
   'renderDashboard',
   'validateSpec',
   'dashboardCss',
-  'injectStyles'
+  'injectStyles',
+  'createDataStore',
+  'isEmptyData',
+  'DataError',
+  'clearSharedCache'
 ];
 var VERSION = readVersion();
 

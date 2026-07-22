@@ -101,3 +101,111 @@ test('honors per-panel broadcast:false opt-out', async function () {
   var bar = created.find(function (c) { return c.config.graphType === 'Bar'; });
   assert.equal(bar.config.broadcast, false);
 });
+
+// ---- Phase 2: connector data binding ----
+
+var CONNECTOR_DATA = { y: { vars: ['R'], smps: ['A', 'B'], data: [[1, 2]] } };
+
+/**
+ * Fake fetch returning the connector payload and counting calls.
+ * @param {object} [body] - Payload to return (defaults to CONNECTOR_DATA).
+ * @returns {function} fetch stub with a `.calls` array.
+ */
+function connectorFetch(body) {
+  var payload = JSON.stringify(body != null ? body : CONNECTOR_DATA);
+  var fn = function () {
+    fn.calls++;
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(payload); } });
+  };
+  fn.calls = 0;
+  return fn;
+}
+
+var CONNECTOR_SPEC = {
+  id: 'live',
+  layout: { items: [
+    { panel: 'a', x: 0, y: 0, w: 6, h: 3 },
+    { panel: 'b', x: 6, y: 0, w: 6, h: 3 }
+  ] },
+  data: { sales: { kind: 'connector', url: '/api/data?source=sales' } },
+  panels: {
+    a: { dataRef: 'sales', config: { graphType: 'Bar' } },
+    b: { dataRef: 'sales', config: { graphType: 'Pie' } }
+  }
+};
+
+test('binds panels to connector data and issues one shared request', async function () {
+  var container = document.createElement('div');
+  var fetchStub = connectorFetch();
+  var handle = await renderDashboard(CONNECTOR_SPEC, container, {
+    CanvasXpress: CanvasXpressStub, fetch: fetchStub, cache: new Map()
+  });
+  await handle.ready;
+  assert.equal(fetchStub.calls, 1, 'panels sharing a dataRef share one fetch');
+  assert.equal(created.length, 2);
+  created.forEach(function (c) { assert.deepEqual(c.data, CONNECTOR_DATA); });
+});
+
+test('shows the empty state when a connector returns no rows', async function () {
+  var container = document.createElement('div');
+  var fetchStub = connectorFetch({ y: { vars: [], smps: [], data: [] } });
+  var handle = await renderDashboard(CONNECTOR_SPEC, container, {
+    CanvasXpress: CanvasXpressStub, fetch: fetchStub, cache: new Map()
+  });
+  await handle.ready;
+  // No instances created for empty data; cells report the empty state.
+  assert.equal(created.length, 0);
+  var panels = container.querySelectorAll('.cxd-panel');
+  panels.forEach(function (p) { assert.equal(p.attributes['data-state'], 'empty'); });
+});
+
+test('shows an error overlay when a connector fetch fails', async function () {
+  var container = document.createElement('div');
+  var failing = function () {
+    return Promise.resolve({ ok: false, status: 500, text: function () {
+      return Promise.resolve(JSON.stringify({ detail: 'Database error' }));
+    } });
+  };
+  var handle = await renderDashboard(CONNECTOR_SPEC, container, {
+    CanvasXpress: CanvasXpressStub, fetch: failing, cache: new Map()
+  });
+  await handle.ready;
+  assert.equal(created.length, 0);
+  var overlay = container.querySelector('.cxd-error');
+  assert.ok(overlay);
+  assert.match(overlay.textContent, /Database error/);
+});
+
+test('scheduled refresh re-fetches and live-updates bound instances', async function () {
+  var container = document.createElement('div');
+  var fetchStub = connectorFetch();
+  var updates = [];
+  /**
+   * Instance stub recording updateData calls.
+   * @param {string} id - Canvas id.
+   * @param {object} data - Data.
+   * @returns {void}
+   */
+  function UpdatingStub(id, data) {
+    var self = this;
+    self.updateData = function (d) { updates.push(d); };
+  }
+  var spec = JSON.parse(JSON.stringify(CONNECTOR_SPEC));
+  spec.data.sales.refresh = 0.02; // 20ms
+  var handle = await renderDashboard(spec, container, {
+    CanvasXpress: UpdatingStub, fetch: fetchStub, cache: new Map()
+  });
+  await delay(70); // allow a couple of ticks
+  handle.destroy();
+  assert.ok(fetchStub.calls >= 2, 'polled the source at least once after initial load');
+  assert.ok(updates.length >= 1, 'live-updated bound instances');
+});
+
+/**
+ * Await a timeout.
+ * @param {number} ms - Milliseconds.
+ * @returns {Promise<void>} Resolves after ms.
+ */
+function delay(ms) {
+  return new Promise(function (resolve) { setTimeout(resolve, ms); });
+}
