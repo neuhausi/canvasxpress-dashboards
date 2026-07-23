@@ -146,6 +146,8 @@ export function pointerToCell(clientX, clientY, gridRect, cols, rowHeight, gap) 
  * @param {object} [options] - Builder options.
  * @param {object} [options.spec] - Initial spec (a blank one is created if omitted).
  * @param {object} [options.client] - A dashboards persistence client (for Save/Share).
+ * @param {string} [options.baseUrl] - cxd_server origin used to resolve
+ *   `kind:"dataset"` panel sources (defaults to same-origin `/api/datasets`).
  * @param {*} [options.CanvasXpress] - CanvasXpress constructor; defaults to global.
  * @param {function} [options.onChange] - Called with the new spec after every edit.
  * @returns {BuilderHandle} A handle to drive/read the builder.
@@ -158,6 +160,7 @@ export function createBuilder(target, options) {
 
   var spec = options.spec || blankSpec('dashboard-1', 'New Dashboard');
   var client = options.client || null;
+  var baseUrl = options.baseUrl || '';   // cxd_server origin for kind:"dataset" sources
   var CX = options.CanvasXpress || (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
   var selectedId = null;
   var liveHandle = null;    // the current renderDashboard handle (live instances)
@@ -303,7 +306,7 @@ export function createBuilder(target, options) {
     stage.appendChild(host);
     // Inset the canvas so the corner resize handle sits in a margin, not on the
     // graph. A spec-level canvasInset (Settings) wins; 18 is the editing default.
-    var opts = { CanvasXpress: CX, validate: false, canvasInset: 18 };
+    var opts = { CanvasXpress: CX, validate: false, canvasInset: 18, baseUrl: baseUrl };
     opts.onPanelRendered = decorate;
     lastRender = renderDashboard(rawSpec(), host, opts).then(function (handle) {
       liveHandle = handle;

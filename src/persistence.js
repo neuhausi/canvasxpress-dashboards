@@ -178,6 +178,21 @@ export function createDashboardClient(options) {
       return request('GET', '/api/datasets').then(function (r) { return r.datasets; });
     },
     /**
+     * Fetch a stored dataset's CanvasXpress data object by id (e.g. to preview
+     * it as a table or bind a panel).
+     * @param {string} id - Dataset id.
+     * @param {object} [opts] - Options.
+     * @param {string} [opts.store] - Named store the dataset lives in (defaults
+     *   to the server's default dataset store).
+     * @returns {Promise<object>} The CanvasXpress data object `{y, x?}`.
+     */
+    getDataset: function (id, opts) {
+      opts = opts || {};
+      var path = '/api/datasets/' + encodeURIComponent(id);
+      if (opts.store) path += '?store=' + encodeURIComponent(opts.store);
+      return request('GET', path);
+    },
+    /**
      * Upload a dataset (CSV/JSON), reshaped and stored server-side; bind a panel
      * to the returned id via `{kind:"dataset", id}`.
      * @param {(Blob|string|object)} source - A File/Blob, raw text, or an object.

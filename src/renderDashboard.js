@@ -65,7 +65,11 @@ export function renderDashboard(spec, target, options) {
   // (a dashboard setting) wins; otherwise the caller's option; otherwise 0.
   var canvasInset = typeof spec.canvasInset === 'number' ? spec.canvasInset
     : (options.canvasInset > 0 ? options.canvasInset : 0);
-  var store = createDataStore({ fetch: doFetch, cache: options.cache, ttl: options.ttl });
+  // `baseUrl` lets `kind:"dataset"` sources resolve against a cxd_server on a
+  // different origin than the page (else same-origin `/api/datasets/{id}`).
+  var store = createDataStore({
+    fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl
+  });
 
   // Build the grid scaffold.
   injectStyles(container.ownerDocument || document);
@@ -494,7 +498,12 @@ function observeResize(cell, instance, observers, inset) {
   if (typeof instance.setDimensions !== 'function') return;
   inset = inset || 0;
   var last = { w: cell.canvas.width, h: cell.canvas.height };
-  var ro = new ResizeObserver(function () {
+  var timer = null;
+
+  // Apply the current cell size to the graph. This triggers a full CanvasXpress
+  // redraw, so it's debounced below rather than run on every reflow tick.
+  function applySize() {
+    timer = null;
     var box = measureBox(cell.body) || measureBox(cell.canvas);
     if (!box) return;
     var w = box.w - inset;
@@ -502,10 +511,57 @@ function observeResize(cell, instance, observers, inset) {
     if (w < 5 || h < 5) return;
     if (w === last.w && h === last.h) return;
     last = { w: w, h: h };
-    try { instance.setDimensions(w, h); } catch (e) { /* keep observing */ }
+    resizeInstance(instance, w, h);
+  }
+
+  var ro = new ResizeObserver(function () {
+    // Debounce: during a builder drag-resize (or a window drag) the cell reflows
+    // continuously — wait ~180ms for it to settle, then do the one redraw. This
+    // is what makes the graph resize "after a moment" instead of thrashing.
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(applySize, RESIZE_DEBOUNCE_MS);
   });
   ro.observe(cell.body);
-  observers.push(ro);
+  // Cleanup must also drop any pending timer so it can't fire post-destroy.
+  observers.push({ disconnect: function () {
+    if (timer) { clearTimeout(timer); timer = null; }
+    ro.disconnect();
+  } });
+}
+
+/** Debounce window (ms) for reflowing a graph to its resized cell. */
+var RESIZE_DEBOUNCE_MS = 180;
+
+/**
+ * Resize a CanvasXpress instance to (w, h) WITHOUT leaving it interactively
+ * resizable.
+ *
+ * CanvasXpress gates `setDimensions()` on `this.resizable`, but that *same* flag
+ * also arms its native corner-drag resizer (checked live at mousedown), which
+ * fights the dashboard/builder's own resize handle and offsets the graph. So we
+ * enable the flag only for the synchronous `setDimensions` call and restore it
+ * immediately — the native resizer never observes `resizable === true` during
+ * user interaction, so it stays inert.
+ *
+ * @param {object} instance - The CanvasXpress instance.
+ * @param {number} w - Target width (px).
+ * @param {number} h - Target height (px).
+ * @returns {void}
+ * @private
+ */
+function resizeInstance(instance, w, h) {
+  if (!instance || typeof instance.setDimensions !== 'function') return;
+  if (w < 5 || h < 5) return;
+  var wasResizable = instance.resizable;
+  var wasResizableX = instance.resizableX;
+  var wasResizableY = instance.resizableY;
+  instance.resizable = true;
+  instance.resizableX = true;
+  instance.resizableY = true;
+  try { instance.setDimensions(w, h); } catch (e) { /* keep observing */ }
+  instance.resizable = wasResizable;
+  instance.resizableX = wasResizableX;
+  instance.resizableY = wasResizableY;
 }
 
 /**

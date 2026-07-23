@@ -101,6 +101,18 @@ test('client.listStores lists named stores (optionally by capability)', async fu
   assert.equal(fetchStub.calls[0].key, 'GET /api/stores?capability=dataset');
 });
 
+test('client.getDataset fetches the CX data object, optionally by store', async function () {
+  var CX = { y: { vars: ['R'], smps: ['A'], data: [[1]] } };
+  var fetchStub = routedFetch({
+    'GET /api/datasets/sales': { status: 200, body: CX },
+    'GET /api/datasets/sales?store=s3-prod': { status: 200, body: CX }
+  });
+  var client = createDashboardClient({ fetch: fetchStub, baseUrl: 'http://x' });
+  assert.deepEqual(await client.getDataset('sales'), CX);
+  assert.deepEqual(await client.getDataset('sales', { store: 's3-prod' }), CX);
+  assert.equal(fetchStub.calls[1].key, 'GET /api/datasets/sales?store=s3-prod');
+});
+
 test('client.uploadDataset forwards a target store; deleteDataset scopes by store', async function () {
   var fetchStub = routedFetch({
     'POST /api/datasets': { status: 200, body: { dataset: { id: 'd', store: 's3-prod' } } },
