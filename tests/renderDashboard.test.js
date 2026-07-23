@@ -61,8 +61,9 @@ test('renders one canvas per layout item and control, all in the broadcast group
     assert.equal(c.config.broadcastGroup, 'grp-sales');
   });
 
-  // Grid columns reflect the spec.
-  assert.match(container.querySelector('.cxd-grid').style.gridTemplateColumns, /repeat\(12/);
+  // Grid has 12 content columns (interleaved with gap tracks).
+  var colTpl = container.querySelector('.cxd-grid').style.gridTemplateColumns;
+  assert.equal((colTpl.match(/minmax\(0, 1fr\)/g) || []).length, 12);
 
   // One canvas element per instance exists in the DOM.
   assert.equal(container.querySelectorAll('canvas').length, 3);
@@ -100,6 +101,64 @@ test('honors per-panel broadcast:false opt-out', async function () {
   await renderDashboard(spec, container, { CanvasXpress: CanvasXpressStub });
   var bar = created.find(function (c) { return c.config.graphType === 'Bar'; });
   assert.equal(bar.config.broadcast, false);
+});
+
+test('background + image + gap padding are applied to the whole container', async function () {
+  var container = document.createElement('div');
+  var spec = {
+    id: 'bg',
+    background: '#123456',
+    backgroundImage: 'https://x/i.png',
+    layout: { gap: 16, items: [{ panel: 'p', x: 0, y: 0, w: 6, h: 3 }] },
+    data: { s: { kind: 'inline', value: { y: { vars: ['A'], smps: ['a'], data: [[1]] } } } },
+    panels: { p: { dataRef: 's', config: { graphType: 'Bar' } } }
+  };
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CanvasXpressStub });
+  await handle.ready;
+  assert.equal(container.style.backgroundColor, '#123456');
+  assert.match(container.style.backgroundImage, /url\("https:\/\/x\/i\.png"\)/);
+  assert.equal(container.style.padding, '16px', 'gap becomes an even background margin around the grid');
+});
+
+test('explicit width/height are applied (px) and enable scroll; unset fills', async function () {
+  var base = {
+    id: 'sz',
+    layout: { items: [{ panel: 'p', x: 0, y: 0, w: 6, h: 3 }] },
+    data: { s: { kind: 'inline', value: { y: { vars: ['A'], smps: ['a'], data: [[1]] } } } },
+    panels: { p: { dataRef: 's', config: { graphType: 'Bar' } } }
+  };
+  var sized = document.createElement('div');
+  var h1 = await renderDashboard(Object.assign({ width: 800, height: 600 }, base), sized, { CanvasXpress: CanvasXpressStub });
+  await h1.ready;
+  assert.equal(sized.style.width, '800px');
+  assert.equal(sized.style.height, '600px');
+  assert.equal(sized.style.overflow, 'auto');
+
+  var unsized = document.createElement('div');
+  var h2 = await renderDashboard(base, unsized, { CanvasXpress: CanvasXpressStub });
+  await h2.ready;
+  assert.equal(unsized.style.width, '');
+  assert.equal(unsized.style.height, '');
+});
+
+test('panel.measures projects the data to the selected numeric columns', async function () {
+  var container = document.createElement('div');
+  var spec = {
+    id: 'proj',
+    layout: { items: [{ panel: 'p', x: 0, y: 0, w: 6, h: 3 }] },
+    data: { s: { kind: 'inline', value: {
+      y: { vars: ['A', 'B', 'C'], smps: ['s1', 's2'], data: [[1, 2], [3, 4], [5, 6]] },
+      x: { Region: ['N', 'S'] }
+    } } },
+    panels: { p: { dataRef: 's', measures: ['C', 'A'], config: { graphType: 'Bar' } } }
+  };
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CanvasXpressStub });
+  await handle.ready;
+  assert.equal(created.length, 1);
+  // Only C and A survive, in the requested order; rows follow; x preserved.
+  assert.deepEqual(created[0].data.y.vars, ['C', 'A']);
+  assert.deepEqual(created[0].data.y.data, [[5, 6], [1, 2]]);
+  assert.deepEqual(created[0].data.x.Region, ['N', 'S']);
 });
 
 // ---- Phase 2: connector data binding ----

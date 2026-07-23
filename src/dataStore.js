@@ -37,6 +37,8 @@ var sharedCache = new Map();
  *   render refetches) while still de-duplicating concurrent in-flight requests.
  * @param {function} [options.now] - Clock returning ms; defaults to Date.now
  *   (injectable for tests).
+ * @param {string} [options.baseUrl=''] - Base URL of the cxd_server, used to
+ *   resolve `kind:"dataset"` sources via `GET /api/datasets/{id}`.
  * @returns {DataStore} The store.
  */
 export function createDataStore(options) {
@@ -45,6 +47,7 @@ export function createDataStore(options) {
   var cache = options.cache || sharedCache;
   var defaultTtl = options.ttl != null ? options.ttl : 0;
   var now = options.now || function () { return Date.now(); };
+  var baseUrl = options.baseUrl || '';
   var inflight = {}; // cacheKey -> Promise<data>
 
   /**
@@ -56,21 +59,38 @@ export function createDataStore(options) {
    */
   function keyFor(ref, sourceSpec) {
     if (sourceSpec && sourceSpec.kind === 'connector') return 'connector:' + sourceSpec.url;
+    if (sourceSpec && sourceSpec.kind === 'dataset') return 'dataset:' + datasetUrl(sourceSpec);
     return 'ref:' + ref;
   }
 
   /**
-   * Fetch a connector source, parsing the connectors error/empty contract.
-   * @param {object} sourceSpec - Connector source spec (has `url`).
+   * Build the fetch URL for a stored dataset source. A source may carry an
+   * explicit `url` (e.g. a signed `url_for` the server handed back); otherwise
+   * it resolves to the owner-scoped `GET /api/datasets/{id}` endpoint.
+   * @param {object} sourceSpec - Dataset source spec (has `id`, optional `url`).
+   * @returns {string} The URL to fetch the CanvasXpress data object from.
+   */
+  function datasetUrl(sourceSpec) {
+    if (sourceSpec.url) return sourceSpec.url;
+    var url = baseUrl + '/api/datasets/' + encodeURIComponent(sourceSpec.id);
+    if (sourceSpec.store) url += '?store=' + encodeURIComponent(sourceSpec.store);
+    return url;
+  }
+
+  /**
+   * Fetch a cookie-authenticated URL (connector or dataset), parsing the
+   * shared error/empty contract (non-2xx carries a JSON `detail`).
+   * @param {string} url - The endpoint URL.
+   * @param {object} [headers] - Optional extra request headers.
    * @returns {Promise<object>} The CanvasXpress data object.
    */
-  function fetchConnector(sourceSpec) {
+  function fetchUrl(url, headers) {
     if (typeof fetchImpl !== 'function') {
-      return Promise.reject(new Error('no fetch available for connector source'));
+      return Promise.reject(new Error('no fetch available for remote data source'));
     }
     var init = { credentials: 'include' };
-    if (sourceSpec.headers) init.headers = sourceSpec.headers;
-    return fetchImpl(sourceSpec.url, init).then(function (res) {
+    if (headers) init.headers = headers;
+    return fetchImpl(url, init).then(function (res) {
       return res.text().then(function (text) {
         var payload = parseJson(text);
         if (!res.ok) {
@@ -100,12 +120,13 @@ export function createDataStore(options) {
       if (sourceSpec.kind === 'inline') {
         return Promise.resolve(sourceSpec.value);
       }
-      if (sourceSpec.kind !== 'connector') {
+      if (sourceSpec.kind !== 'connector' && sourceSpec.kind !== 'dataset') {
         return Promise.reject(new Error('unknown data source kind "' + sourceSpec.kind + '"'));
       }
 
       var key = keyFor(ref, sourceSpec);
       var ttl = sourceSpec.ttl != null ? sourceSpec.ttl : defaultTtl;
+      var url = sourceSpec.kind === 'dataset' ? datasetUrl(sourceSpec) : sourceSpec.url;
 
       if (!opts.force) {
         var hit = cache.get(key);
@@ -113,7 +134,7 @@ export function createDataStore(options) {
         if (inflight[key]) return inflight[key];
       }
 
-      var promise = fetchConnector(sourceSpec).then(function (data) {
+      var promise = fetchUrl(url, sourceSpec.headers).then(function (data) {
         if (ttl > 0) cache.set(key, { expires: now() + ttl, data: data });
         delete inflight[key];
         return data;

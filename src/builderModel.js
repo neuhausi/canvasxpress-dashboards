@@ -98,11 +98,12 @@ export function resizePanel(spec, panelId, w, h) {
 }
 
 /**
- * Update a panel's editable fields (title, dataRef, config). Only provided keys
- * change; `config` replaces the whole config object.
+ * Update a panel's editable fields (title, dataRef, config, measures). Only
+ * provided keys change; `config` replaces the whole config object. A `measures`
+ * of `undefined` (or empty) clears the projection (plot all variables).
  * @param {object} spec - The current spec.
  * @param {string} panelId - The panel id.
- * @param {object} changes - `{ title?, dataRef?, config? }`.
+ * @param {object} changes - `{ title?, dataRef?, config?, measures? }`.
  * @returns {object} A new spec with the panel updated.
  */
 export function updatePanel(spec, panelId, changes) {
@@ -112,6 +113,10 @@ export function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'title')) panel.title = changes.title;
   if (Object.prototype.hasOwnProperty.call(changes, 'dataRef')) panel.dataRef = changes.dataRef;
   if (Object.prototype.hasOwnProperty.call(changes, 'config')) panel.config = changes.config;
+  if (Object.prototype.hasOwnProperty.call(changes, 'measures')) {
+    if (changes.measures && changes.measures.length) panel.measures = changes.measures;
+    else delete panel.measures;
+  }
   return next;
 }
 
@@ -125,6 +130,33 @@ export function updatePanel(spec, panelId, changes) {
 export function setDataSource(spec, ref, source) {
   var next = cloneSpec(spec);
   next.data[ref] = source;
+  return next;
+}
+
+/**
+ * Update dashboard-level presentation settings, purely. Recognized keys:
+ * top-level `background` (CSS color), `backgroundImage` (URL or data URI),
+ * `canvasInset` (px margin around each graph), `theme` ('light'|'dark'|'auto');
+ * and layout `cols`, `rowHeight`, `gap` (px between panels). A nullish/empty
+ * `background`/`backgroundImage` clears it.
+ *
+ * @param {object} spec - The current spec.
+ * @param {object} changes - Any subset of the recognized keys.
+ * @returns {object} A new spec with the settings applied.
+ */
+export function updateSettings(spec, changes) {
+  var next = cloneSpec(spec);
+  ['background', 'backgroundImage', 'canvasInset', 'theme', 'width', 'height'].forEach(function (key) {
+    if (!Object.prototype.hasOwnProperty.call(changes, key)) return;
+    var value = changes[key];
+    if (value == null || value === '') delete next[key];
+    else next[key] = value;
+  });
+  ['cols', 'rowHeight', 'gap'].forEach(function (key) {
+    if (Object.prototype.hasOwnProperty.call(changes, key) && changes[key] != null) {
+      next.layout[key] = changes[key];
+    }
+  });
   return next;
 }
 

@@ -23,6 +23,27 @@
       "enum": ["light", "dark", "auto"],
       "default": "auto"
     },
+    "background": {
+      "type": "string",
+      "description": "CSS color applied to the dashboard container background."
+    },
+    "backgroundImage": {
+      "type": "string",
+      "description": "Background image URL or data URI (rendered cover/centered behind the panels)."
+    },
+    "canvasInset": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Margin in px left around each panel's CanvasXpress graph."
+    },
+    "width": {
+      "type": ["number", "string"],
+      "description": "Explicit dashboard width (number = px, or any CSS length). Unset = fill parent."
+    },
+    "height": {
+      "type": ["number", "string"],
+      "description": "Explicit dashboard height (number = px, or any CSS length). Unset = content height."
+    },
     "layout": {
       "type": "object",
       "required": ["items"],
@@ -70,11 +91,19 @@
       "required": ["kind"],
       "additionalProperties": true,
       "properties": {
-        "kind": { "type": "string", "enum": ["inline", "connector"] },
+        "kind": { "type": "string", "enum": ["inline", "connector", "dataset"] },
         "value": { "type": "object" },
+        "id": {
+          "type": "string",
+          "description": "Dataset id (kind:dataset). Resolved to GET /api/datasets/{id} with credentials (cookie auth). Keeps specs path- and credential-free."
+        },
+        "store": {
+          "type": "string",
+          "description": "Optional named dataset store to resolve the id against (server-configured; Phase 5.2)."
+        },
         "url": {
           "type": "string",
-          "description": "Connector endpoint, e.g. /api/data?source=sales. Fetched with credentials (cookie auth)."
+          "description": "Connector endpoint, e.g. /api/data?source=sales, or a signed dataset URL. Fetched with credentials (cookie auth)."
         },
         "ttl": {
           "type": "number",
@@ -99,6 +128,10 @@
         {
           "if": { "properties": { "kind": { "const": "connector" } } },
           "then": { "required": ["url"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "dataset" } } },
+          "then": { "required": ["id"] }
         }
       ]
     },
@@ -110,6 +143,11 @@
         "dataRef": { "type": "string" },
         "data": { "type": "object" },
         "config": { "type": "object" },
+        "measures": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Numeric variable names to plot (projects the source to these columns). Empty/absent = all variables."
+        },
         "events": { "type": "object" },
         "broadcast": { "type": "boolean" }
       }

@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  addPanel, removePanel, movePanel, resizePanel, updatePanel, setDataSource, blankSpec
+  addPanel, removePanel, movePanel, resizePanel, updatePanel, setDataSource, updateSettings, blankSpec
 } from '../src/builderModel.js';
 
 test('blankSpec is a valid empty starter', function () {
@@ -76,4 +76,31 @@ test('updatePanel changes only provided fields', function () {
 test('setDataSource adds a named source without touching panels', function () {
   var s = setDataSource(blankSpec('d1'), 'sales', { kind: 'inline', value: { y: {} } });
   assert.equal(s.data.sales.kind, 'inline');
+});
+
+test('updateSettings sets presentation fields (top-level + layout), purely', function () {
+  var s0 = blankSpec('d1');
+  var s1 = updateSettings(s0, { background: '#123456', canvasInset: 20, theme: 'dark', gap: 20, rowHeight: 150, cols: 8 });
+  assert.equal(s0.background, undefined);
+  assert.equal(s0.layout.gap, 12);
+  assert.equal(s1.background, '#123456');
+  assert.equal(s1.canvasInset, 20);
+  assert.equal(s1.theme, 'dark');
+  assert.equal(s1.layout.gap, 20);
+  assert.equal(s1.layout.rowHeight, 150);
+  assert.equal(s1.layout.cols, 8);
+});
+
+test('updateSettings clears an emptied background and only touches provided keys', function () {
+  var s = updateSettings(blankSpec('d1'), { background: '#fff', canvasInset: 10 });
+  var cleared = updateSettings(s, { background: '' });
+  assert.equal(cleared.background, undefined);
+  assert.equal(cleared.canvasInset, 10, 'unprovided keys are left alone');
+});
+
+test('updateSettings sets and clears a background image', function () {
+  var s = updateSettings(blankSpec('d1'), { backgroundImage: 'data:image/png;base64,AAA' });
+  assert.equal(s.backgroundImage, 'data:image/png;base64,AAA');
+  var cleared = updateSettings(s, { backgroundImage: '' });
+  assert.equal(cleared.backgroundImage, undefined);
 });

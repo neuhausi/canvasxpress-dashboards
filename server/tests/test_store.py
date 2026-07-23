@@ -2,12 +2,23 @@ import sqlite3
 
 import pytest
 
+from cxd_server.sqldashboard import SqlDashboardStore
 from cxd_server.store import DashboardStore
 
 
-@pytest.fixture
-def store(tmp_path):
+def _stdlib_store(tmp_path):
     return DashboardStore(str(tmp_path / "dash.db"))
+
+
+def _sql_store(tmp_path):
+    # SQLite proves the SQL dashboard store; Postgres runs the identical code.
+    return SqlDashboardStore("sqlite:///" + str(tmp_path / "sql-dash.db"))
+
+
+# Both backends run through the same asserts → SQLite↔Postgres parity.
+@pytest.fixture(params=[_stdlib_store, _sql_store], ids=["stdlib", "sql"])
+def store(request, tmp_path):
+    return request.param(tmp_path)
 
 
 def _spec(dashboard_id="d1", title="Sales"):

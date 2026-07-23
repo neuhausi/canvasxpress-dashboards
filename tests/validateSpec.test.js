@@ -70,6 +70,15 @@ test('requires inline sources to carry a value and connectors a url', function (
   assert.equal(validateSpec(spec).valid, true);
 });
 
+test('requires dataset sources to carry an id', function () {
+  var spec = clone(VALID);
+  spec.data.sales = { kind: 'dataset' };
+  assert.equal(validateSpec(spec).valid, false);
+
+  spec.data.sales = { kind: 'dataset', id: 'sales-2026' };
+  assert.equal(validateSpec(spec).valid, true);
+});
+
 test('flags an unknown control kind', function () {
   var spec = clone(VALID);
   spec.controls = [{ kind: 'widget' }];

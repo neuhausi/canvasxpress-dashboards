@@ -101,14 +101,17 @@ export function validateSpec(spec) {
           errors.push(at + ' must be an object');
           return;
         }
-        if (src.kind !== 'inline' && src.kind !== 'connector') {
-          errors.push(at + '.kind must be "inline" or "connector"');
+        if (src.kind !== 'inline' && src.kind !== 'connector' && src.kind !== 'dataset') {
+          errors.push(at + '.kind must be "inline", "connector", or "dataset"');
         }
         if (src.kind === 'inline' && src.value == null) {
           errors.push(at + ' of kind "inline" requires a value');
         }
         if (src.kind === 'connector' && typeof src.url !== 'string') {
           errors.push(at + ' of kind "connector" requires a url string');
+        }
+        if (src.kind === 'dataset' && (typeof src.id !== 'string' || src.id.length === 0)) {
+          errors.push(at + ' of kind "dataset" requires an id string');
         }
       });
     }

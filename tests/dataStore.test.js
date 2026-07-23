@@ -49,6 +49,29 @@ test('fetches a connector source with cookie credentials', async function () {
   assert.equal(fetchStub.calls[0].init.credentials, 'include');
 });
 
+test('resolves a dataset source via the baseUrl datasets endpoint', async function () {
+  var fetchStub = fakeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map(), baseUrl: 'http://x' });
+  var data = await store.resolve('sales', { kind: 'dataset', id: 'sales 2026' });
+  assert.deepEqual(data, CX_DATA);
+  assert.equal(fetchStub.calls[0].url, 'http://x/api/datasets/sales%202026');
+  assert.equal(fetchStub.calls[0].init.credentials, 'include');
+});
+
+test('a dataset source honors an explicit url (e.g. a signed url_for)', async function () {
+  var fetchStub = fakeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map() });
+  await store.resolve('sales', { kind: 'dataset', id: 'sales', url: 'https://cdn/signed' });
+  assert.equal(fetchStub.calls[0].url, 'https://cdn/signed');
+});
+
+test('a dataset source appends its named store as a query param', async function () {
+  var fetchStub = fakeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map(), baseUrl: 'http://x' });
+  await store.resolve('sales', { kind: 'dataset', id: 'sales', store: 's3-prod' });
+  assert.equal(fetchStub.calls[0].url, 'http://x/api/datasets/sales?store=s3-prod');
+});
+
 test('de-duplicates concurrent requests for the same source (single request)', async function () {
   var fetchStub = fakeFetch();
   var store = createDataStore({ fetch: fetchStub, cache: new Map() });

@@ -7,41 +7,118 @@
 
   <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
   <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
-  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+  <!-- Cache-bust the local bundle so edits show up on a plain reload (dev convenience). -->
+  <script>document.write('<script src="../dist/canvasxpress-dashboards.umd.js?v=' + Date.now() + '"><\/script>');</script>
 
   <style>
+    :root { --rail-bg: #ffffff; --rail-border: #e6e9ee; --muted: #6b7280; --accent: #087ad1; }
+    * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
-    header { padding: 16px 24px 6px; }
-    header h1 { margin: 0 0 4px; font-size: 20px; }
-    header p { margin: 0; color: #6b7280; font-size: 13px; max-width: 78ch; }
-    header code { background: #e6e9ee; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-    #builder { padding: 12px 24px 32px; }
+
+    .app { display: flex; min-height: 100vh; }
+
+    /* Left icon nav rail (Databox-style) */
+    .rail { flex: 0 0 220px; width: 220px; background: var(--rail-bg);
+      border-right: 1px solid var(--rail-border); display: flex; flex-direction: column;
+      padding: 14px 10px; position: sticky; top: 0; height: 100vh; }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 16px; }
+    .brand img { width: 28px; height: 28px; }
+    .brand span { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
+    .rail nav { display: flex; flex-direction: column; gap: 2px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 8px;
+      color: #444; font-size: 14px; cursor: pointer; text-decoration: none; }
+    .nav-item .ic { width: 20px; text-align: center; font-size: 16px; }
+    .nav-item:hover { background: #f4f6f8; }
+    .nav-item.active { background: #eaf3fb; color: var(--accent); font-weight: 600; }
+    .rail-foot { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px 8px;
+      border-top: 1px solid var(--rail-border); color: var(--muted); font-size: 13px; }
+    .rail-foot .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--accent);
+      color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+
+    /* Main content */
+    .content { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+    .topstrip { display: flex; align-items: center; gap: 12px; padding: 10px 20px; min-height: 56px;
+      border-bottom: 1px solid var(--rail-border); background: #fff; }
+    .toolbar-host { width: 100%; }
+    .view-title { margin: 0; font-size: 16px; font-weight: 600; }
+    .view { padding: 16px 20px 32px; }
+
+    /* Home view */
+    .hero { background: linear-gradient(120deg, #eaf3fb, #f4f7fb); border-radius: 12px;
+      padding: 28px; margin-bottom: 20px; }
+    .hero h1 { margin: 0 0 6px; font-size: 22px; }
+    .hero p { margin: 0 0 16px; color: var(--muted); }
+    .cta { padding: 10px 18px; background: var(--accent); color: #fff; border: none;
+      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .cta:hover { background: #065fa3; }
+    .notices { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+    .notice { display: flex; gap: 12px; background: #fff; border: 1px solid var(--rail-border);
+      border-radius: 10px; padding: 16px; }
+    .notice .ni { font-size: 22px; line-height: 1; }
+    .notice h3 { margin: 0 0 4px; font-size: 14px; }
+    .notice p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .placeholder { padding: 60px 20px; text-align: center; color: var(--muted); }
+
+    /* Settings view */
+    .settings { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+    .settings-form { flex: 0 0 300px; background: #fff; border: 1px solid var(--rail-border);
+      border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .settings-form h3 { margin: 0 0 4px; font-size: 15px; }
+    .settings-form label { display: flex; flex-direction: column; gap: 4px; font-size: 11px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+    .settings-form input, .settings-form select { padding: 6px 8px; border: 1px solid var(--rail-border);
+      border-radius: 6px; font: inherit; font-weight: 400; text-transform: none; color: inherit; background: #fff; }
+    .settings-form input[type=color] { padding: 2px; height: 34px; }
+    .settings-preview { flex: 1 1 380px; min-width: 320px; }
+    .settings-preview #s-preview { border: 1px dashed var(--rail-border); border-radius: 10px; padding: 10px; }
     @media (prefers-color-scheme: dark) {
+      .settings-form { background: #16181d; }
+      .settings-form input, .settings-form select { background: #1d2027; }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root { --rail-bg: #16181d; --rail-border: #2c313a; --muted: #8a9099; }
       body { background: #0e1013; color: #e6e8ec; }
-      header p { color: #8a9099; }
-      header code { background: #23262d; }
+      .topstrip { background: #16181d; }
+      .nav-item { color: #c9ccd1; }
+      .nav-item:hover { background: #1d2027; }
+      .nav-item.active { background: #12283a; }
+      .hero { background: linear-gradient(120deg, #12283a, #1a1d24); }
+      .notice { background: #16181d; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>No-code dashboard builder</h1>
-    <p>
-      Click <code>+ Data</code> to add an inline data source, then <code>+ Panel</code>
-      to add charts. <strong>Drag a panel’s title</strong> to move it and drag the
-      blue corner to resize (snaps to the 12-column grid). Select a panel to edit its
-      title, data source, chart type, color-by, or raw config. <code>Preview</code>
-      renders it live; <code>Export</code> downloads the spec; <code>Import</code>
-      loads one. <code>Save</code>/<code>Share</code> use the Phase-3 server if one is
-      running on this origin.
-    </p>
-  </header>
+  <div class="app">
+    <aside class="rail">
+      <div class="brand">
+        <img src="https://www.canvasxpress.org/favicon.png" alt="CanvasXpress" />
+        <span>CanvasXpress</span>
+      </div>
+      <nav>
+        <a class="nav-item active" data-view="Home"><span class="ic">🏠</span> Home</a>
+        <a class="nav-item" data-view="Builder"><span class="ic">🧩</span> Builder</a>
+        <a class="nav-item" data-view="Dashboards"><span class="ic">📊</span> Dashboards</a>
+        <a class="nav-item" data-view="Data"><span class="ic">🗂️</span> Data</a>
+        <a class="nav-item" data-view="Settings"><span class="ic">⚙️</span> Settings</a>
+      </nav>
+      <div class="rail-foot">
+        <span class="avatar">JD</span>
+        <span>John Doe</span>
+      </div>
+    </aside>
 
-  <div id="builder"></div>
+    <main class="content">
+      <div class="topstrip">
+        <div id="toolbar" class="toolbar-host"></div>
+      </div>
+      <div id="view" class="view"></div>
+    </main>
+  </div>
 
   <script>
     // A persistence client is optional: if the cxd_server isn't running on this
-    // origin, Save/Share will just report an error and everything else still works.
+    // origin, Save will just report an error and everything else still works.
     var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: '' });
 
     // ----------------------------------------------------------------
@@ -83,22 +160,193 @@
       return { y: { vars: vars, smps: smps, data: data }, x: x };
     }
 
-    // Seed with the dataset so you can add a panel immediately. Try graphType
-    // "Bar"/"Boxplot"/"Dotplot" with Color by = Region / Segment / Tier, etc.
-    var seed = CanvasXpressDashboards.setDataSource(
-      CanvasXpressDashboards.blankSpec('my-dashboard', 'My Dashboard'),
-      'sample',
-      { kind: 'inline', value: makeDataset() }
-    );
+    var CXD = CanvasXpressDashboards;
 
-    var builder = CanvasXpressDashboards.createBuilder('builder', {
-      spec: seed,
-      client: client,
-      onChange: function (spec) { /* hook: autosave, undo stack, etc. */ }
+    // The working dashboard, shared across views (Builder edits it, Settings
+    // tweaks its presentation). Seed a couple of panels so it isn't empty.
+    function seedSpec() {
+      var s = CXD.setDataSource(CXD.blankSpec('my-dashboard', 'My Dashboard'),
+        'sample', { kind: 'inline', value: makeDataset() });
+      s = CXD.addPanel(s, { id: 'p1', title: 'Metrics (Bar)', dataRef: 'sample', w: 6, h: 4, config: { graphType: 'Bar' } });
+      s = CXD.addPanel(s, { id: 'p2', title: 'Distribution (Boxplot)', dataRef: 'sample', w: 6, h: 4, config: { graphType: 'Boxplot' } });
+      return s;
+    }
+    var currentSpec = seedSpec();
+
+    // --- app shell: left-rail views drive the toolbar + canvas ---
+    var toolbarEl = document.getElementById('toolbar');
+    var viewEl = document.getElementById('view');
+    var navItems = [].slice.call(document.querySelectorAll('.nav-item'));
+    var currentBuilder = null;
+    var currentPreview = null;
+
+    function teardown() {
+      if (currentBuilder) {
+        // Capture the builder's latest spec (folds in live ⚙-customizer edits)
+        // before destroying it, so other views see the current state.
+        try { currentSpec = currentBuilder.getSpec(); } catch (e) {}
+        try { currentBuilder.destroy(); } catch (e) {}
+        currentBuilder = null;
+      }
+      if (currentPreview) { try { currentPreview.then(function (h) { if (h && h.destroy) h.destroy(); }); } catch (e) {} currentPreview = null; }
+      toolbarEl.innerHTML = '';
+      toolbarEl.className = 'toolbar-host';   // strip any builder toolbar classes
+      viewEl.innerHTML = '';
+    }
+
+    function notice(icon, title, bodyHtml) {
+      return '<div class="notice"><div class="ni">' + icon + '</div><div><h3>' + title +
+             '</h3><p>' + bodyHtml + '</p></div></div>';
+    }
+
+    function showHome() {
+      teardown();
+      toolbarEl.innerHTML = '<h2 class="view-title">Home</h2>';
+      viewEl.innerHTML =
+        '<div class="hero">' +
+          '<h1>Welcome to CanvasXpress Dashboards</h1>' +
+          '<p>Compose, coordinate, and share live dashboards — powered by CanvasXpress.</p>' +
+          '<button class="cta" id="home-create">+ Create a dashboard</button>' +
+        '</div>' +
+        '<div class="notices">' +
+          notice('📣', 'What’s new', 'Every panel opens the native CanvasXpress customizer — click the ⚙ on a panel to change chart type, colors, grouping and more.') +
+          notice('🔌', 'Live data', 'Bind panels to databases &amp; Google Sheets through canvasxpress-connectors.') +
+          notice('🔗', 'Sharing', 'Publish read-only share links straight from the Builder.') +
+        '</div>';
+      var create = document.getElementById('home-create');
+      if (create) create.onclick = function () { activate('Builder'); };
+    }
+
+    function showBuilder() {
+      teardown();
+      // The builder renders its actions into the app toolbar and its canvas in the
+      // view; onChange keeps currentSpec in sync so Settings sees the latest.
+      currentBuilder = CXD.createBuilder(viewEl, {
+        toolbar: toolbarEl,
+        spec: currentSpec,
+        client: client,
+        onChange: function (spec) { currentSpec = spec; }
+      });
+      window.builder = currentBuilder;
+    }
+
+    // --- Settings view: edit the dashboard's presentation, with a live preview ---
+    function showSettings() {
+      teardown();
+      toolbarEl.innerHTML = '<h2 class="view-title">Settings</h2>';
+      var L = currentSpec.layout || {};
+      viewEl.innerHTML =
+        '<div class="settings">' +
+          '<div class="settings-form">' +
+            '<h3>Dashboard settings</h3>' +
+            '<label>Background color<input type="color" id="s-bg"></label>' +
+            '<label>Background (CSS override)<input type="text" id="s-bgtext" placeholder="#f2f4f7 · transparent · linear-gradient(...)"></label>' +
+            '<label>Background image' +
+              '<input type="file" id="s-bgimg-file" accept="image/*">' +
+              '<input type="text" id="s-bgimg-url" placeholder="https://…/image.jpg or paste a URL" style="margin-top:6px">' +
+              '<button type="button" id="s-bgimg-clear" style="margin-top:6px;align-self:flex-start;padding:4px 10px">Clear image</button>' +
+            '</label>' +
+            '<label>Dashboard width (px, blank = full)<input type="number" id="s-w" min="200" placeholder="auto"></label>' +
+            '<label>Dashboard height (px, blank = auto)<input type="number" id="s-h" min="200" placeholder="auto"></label>' +
+            '<label>Space between panels (px)<input type="number" id="s-gap" min="0" max="48"></label>' +
+            '<label>Row height (px)<input type="number" id="s-rh" min="40" max="400"></label>' +
+            '<label>Columns<input type="number" id="s-cols" min="1" max="24"></label>' +
+            '<label>Canvas margin (px)<input type="number" id="s-inset" min="0" max="60"></label>' +
+            '<label>Theme<select id="s-theme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>' +
+          '</div>' +
+          '<div class="settings-preview"><div id="s-preview"></div></div>' +
+        '</div>';
+
+      var bg = document.getElementById('s-bg');
+      var bgText = document.getElementById('s-bgtext');
+      var wIn = document.getElementById('s-w');
+      var hIn = document.getElementById('s-h');
+      var gap = document.getElementById('s-gap');
+      var rh = document.getElementById('s-rh');
+      var cols = document.getElementById('s-cols');
+      var inset = document.getElementById('s-inset');
+      var theme = document.getElementById('s-theme');
+
+      bg.value = hexOr(currentSpec.background, '#f2f4f7');
+      bgText.value = currentSpec.background || '';
+      wIn.value = currentSpec.width != null ? currentSpec.width : '';
+      hIn.value = currentSpec.height != null ? currentSpec.height : '';
+      gap.value = L.gap != null ? L.gap : 12;
+      rh.value = L.rowHeight != null ? L.rowHeight : 130;
+      cols.value = L.cols != null ? L.cols : 12;
+      inset.value = currentSpec.canvasInset != null ? currentSpec.canvasInset : 18;
+      theme.value = currentSpec.theme || 'auto';
+
+      function apply(changes) {
+        currentSpec = CXD.updateSettings(currentSpec, changes);
+        renderSettingsPreview();
+      }
+      bg.addEventListener('input', function () { bgText.value = bg.value; apply({ background: bg.value }); });
+      bgText.addEventListener('input', function () { if (isHex(bgText.value)) bg.value = bgText.value; apply({ background: bgText.value }); });
+
+      var bgImgFile = document.getElementById('s-bgimg-file');
+      var bgImgUrl = document.getElementById('s-bgimg-url');
+      if (currentSpec.backgroundImage && currentSpec.backgroundImage.indexOf('data:') !== 0) {
+        bgImgUrl.value = currentSpec.backgroundImage;
+      }
+      bgImgFile.addEventListener('change', function () {
+        var f = bgImgFile.files && bgImgFile.files[0];
+        if (!f) return;
+        var reader = new FileReader();
+        reader.onload = function () { apply({ backgroundImage: reader.result }); };  // data URI
+        reader.readAsDataURL(f);
+      });
+      bgImgUrl.addEventListener('input', function () { apply({ backgroundImage: bgImgUrl.value }); });
+      document.getElementById('s-bgimg-clear').addEventListener('click', function () {
+        bgImgUrl.value = ''; bgImgFile.value = ''; apply({ backgroundImage: '' });
+      });
+      wIn.addEventListener('input', function () { apply({ width: wIn.value === '' ? '' : num(wIn.value) }); });
+      hIn.addEventListener('input', function () { apply({ height: hIn.value === '' ? '' : num(hIn.value) }); });
+      gap.addEventListener('input', function () { apply({ gap: num(gap.value) }); });
+      rh.addEventListener('input', function () { apply({ rowHeight: num(rh.value) }); });
+      cols.addEventListener('input', function () { apply({ cols: num(cols.value) }); });
+      inset.addEventListener('input', function () { apply({ canvasInset: num(inset.value) }); });
+      theme.addEventListener('change', function () { apply({ theme: theme.value }); });
+
+      renderSettingsPreview();
+    }
+
+    function renderSettingsPreview() {
+      if (!document.getElementById('s-preview')) return;
+      // Chain off the previous preview so the old instances are destroyed BEFORE
+      // the new render populates the shared host (otherwise the async destroy
+      // clears the freshly-rendered grid and the graphs disappear).
+      currentPreview = Promise.resolve(currentPreview).then(function (h) {
+        if (h && h.destroy) { try { h.destroy(); } catch (e) {} }
+        var host = document.getElementById('s-preview');
+        if (!host) return null;   // user navigated away mid-chain
+        return CXD.renderDashboard(currentSpec, host, { CanvasXpress: window.CanvasXpress });
+      });
+    }
+
+    function num(v) { var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
+    function isHex(v) { return /^#[0-9a-fA-F]{3,8}$/.test(v || ''); }
+    function hexOr(v, fallback) { return isHex(v) ? v : fallback; }
+
+    function showPlaceholder(name) {
+      teardown();
+      toolbarEl.innerHTML = '<h2 class="view-title">' + name + '</h2>';
+      viewEl.innerHTML = '<div class="placeholder"><p>' + name + ' — coming soon.</p></div>';
+    }
+
+    function activate(name) {
+      navItems.forEach(function (n) { n.classList.toggle('active', n.getAttribute('data-view') === name); });
+      if (name === 'Home') showHome();
+      else if (name === 'Builder') showBuilder();
+      else if (name === 'Settings') showSettings();
+      else showPlaceholder(name);
+    }
+
+    navItems.forEach(function (n) {
+      n.addEventListener('click', function () { activate(n.getAttribute('data-view')); });
     });
 
-    // Expose for tinkering in the console.
-    window.builder = builder;
+    activate('Home');
   </script>
 </body>
 </html>

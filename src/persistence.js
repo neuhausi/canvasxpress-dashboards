@@ -161,8 +161,93 @@ export function createDashboardClient(options) {
      * @param {string} token - Share token.
      * @returns {Promise<object>} `{ spec, readOnly, owner }`.
      */
-    loadShared: function (token) { return request('GET', '/api/shared/' + encodeURIComponent(token)); }
+    loadShared: function (token) { return request('GET', '/api/shared/' + encodeURIComponent(token)); },
+
+    /**
+     * List the server-configured named stores the user may target (names only,
+     * never URIs/credentials) — the source of truth for the store picker.
+     * @param {('dataset'|'dashboard')} [capability] - Filter by capability.
+     * @returns {Promise<object[]>} `[{name, capability, default}]`.
+     */
+    listStores: function (capability) {
+      var path = '/api/stores' + (capability ? '?capability=' + encodeURIComponent(capability) : '');
+      return request('GET', path).then(function (r) { return r.stores; });
+    },
+    /** @returns {Promise<object[]>} The current user's dataset summaries (across all stores). */
+    listDatasets: function () {
+      return request('GET', '/api/datasets').then(function (r) { return r.datasets; });
+    },
+    /**
+     * Upload a dataset (CSV/JSON), reshaped and stored server-side; bind a panel
+     * to the returned id via `{kind:"dataset", id}`.
+     * @param {(Blob|string|object)} source - A File/Blob, raw text, or an object.
+     * @param {object} [opts] - Upload options.
+     * @param {('csv'|'json'|'cx')} [opts.format] - Input format; inferred from a
+     *   File's name/type when omitted (defaults to `json`).
+     * @param {string} [opts.title] - Human title (seeds the generated id).
+     * @param {string} [opts.id] - Explicit id (overwrites in place).
+     * @param {string} [opts.store] - Named target store (Phase 5.2; reserved).
+     * @returns {Promise<object>} The stored summary `{id, title, rows, cols, url}`.
+     */
+    uploadDataset: function (source, opts) {
+      opts = opts || {};
+      return readSource(source, opts.format).then(function (parsed) {
+        var body = { format: parsed.format, data: parsed.data };
+        if (opts.title) body.title = opts.title;
+        if (opts.id) body.id = opts.id;
+        if (opts.store) body.store = opts.store;
+        return request('POST', '/api/datasets', body).then(function (r) { return r.dataset; });
+      });
+    },
+    /**
+     * Delete a dataset by id.
+     * @param {string} id - Dataset id.
+     * @param {object} [opts] - Delete options.
+     * @param {string} [opts.store] - Named store the dataset lives in (defaults
+     *   to the server's default dataset store).
+     * @returns {Promise<object[]>} The remaining dataset summaries.
+     */
+    deleteDataset: function (id, opts) {
+      opts = opts || {};
+      var path = '/api/datasets/' + encodeURIComponent(id);
+      if (opts.store) path += '?store=' + encodeURIComponent(opts.store);
+      return request('DELETE', path).then(function (r) { return r.datasets; });
+    }
   };
+}
+
+/**
+ * Normalize a dataset upload source to `{format, data}` for the API.
+ * A Blob/File is read as text and its format inferred from name/type; a string
+ * is passed through as the given (or `json`) format; a plain object is sent as
+ * `cx`/`json` data directly.
+ * @param {(Blob|string|object)} source - The upload source.
+ * @param {string} [format] - Explicit format override.
+ * @returns {Promise<{format: string, data: *}>} Normalized payload.
+ * @private
+ */
+function readSource(source, format) {
+  if (source && typeof source.text === 'function') {
+    var fmt = format || inferFormat(source.name, source.type);
+    return source.text().then(function (text) { return { format: fmt, data: text }; });
+  }
+  if (typeof source === 'string') {
+    return Promise.resolve({ format: format || 'json', data: source });
+  }
+  return Promise.resolve({ format: format || 'cx', data: source });
+}
+
+/**
+ * Infer an upload format from a filename/MIME type.
+ * @param {string} [name] - Filename.
+ * @param {string} [type] - MIME type.
+ * @returns {('csv'|'json')} The inferred format.
+ * @private
+ */
+function inferFormat(name, type) {
+  var n = (name || '').toLowerCase();
+  if (n.slice(-4) === '.csv' || (type || '').indexOf('csv') !== -1) return 'csv';
+  return 'json';
 }
 
 /**

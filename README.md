@@ -191,10 +191,20 @@ const imported = await importSpecFromFile(file); // parse + validate a File
 
 ### No-code builder (Phase 4)
 
-A vanilla, zero-dependency builder — drag/move/resize on the grid + a per-panel
-editor form — that reads and writes the same spec. Every gesture routes through
-pure spec operations, so the builder is *only* a spec editor. Live preview reuses
-the renderer; Save/Share/Export reuse the Phase-3 client.
+A vanilla, zero-dependency builder that owns the *dashboard's* concerns — layout
+(drag a title to move, drag the corner to resize), add/delete panels, assign a
+data source, and Save/Share/Export/Import — and **delegates all graph editing to
+CanvasXpress's own customizer**. Panels render live; a **⚙ icon** on each panel
+title opens the native customizer (`instance.showCustomizer`), where chart type,
+colors, grouping, axes, and every other option are edited with CanvasXpress's own
+widgets. Edits are read back via `instance.getConfig()` and folded into
+`panel.config`, so the builder stays a pure spec editor. Preview hides the editing
+chrome; Save/Share/Export reuse the Phase-3 client.
+
+> Column projection is still available in the spec: `panel.measures` (an array of
+> variable names) plots just those numeric columns while the source stays shared
+> (one fetch, one broadcast domain). The renderer applies it; set it via the API
+> (`updatePanel(spec, id, { measures })`) if you want per-panel column subsets.
 
 ```js
 import { createBuilder, blankSpec, setDataSource, createDashboardClient } from 'canvasxpress-dashboards';

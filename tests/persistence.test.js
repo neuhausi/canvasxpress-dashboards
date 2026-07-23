@@ -69,6 +69,59 @@ test('client.load / list / share / loadShared unwrap the payloads', async functi
   assert.equal(viewer.owner, 'alice');
 });
 
+test('client.listDatasets / deleteDataset unwrap the payloads', async function () {
+  var fetchStub = routedFetch({
+    'GET /api/datasets': { status: 200, body: { datasets: [{ id: 'sales-abc', rows: 2, cols: 1 }] } },
+    'DELETE /api/datasets/sales-abc': { status: 200, body: { datasets: [] } }
+  });
+  var client = createDashboardClient({ fetch: fetchStub, baseUrl: 'http://x' });
+  assert.deepEqual(await client.listDatasets(), [{ id: 'sales-abc', rows: 2, cols: 1 }]);
+  assert.deepEqual(await client.deleteDataset('sales-abc'), []);
+});
+
+test('client.uploadDataset infers csv format from a File and posts text', async function () {
+  var fetchStub = routedFetch({ 'POST /api/datasets': { status: 200, body: { dataset: { id: 'sales-abc', rows: 2, cols: 1, url: null } } } });
+  var client = createDashboardClient({ fetch: fetchStub, baseUrl: 'http://x' });
+  var file = { name: 'sales.csv', type: 'text/csv', text: function () { return Promise.resolve('id,sales\nA,10\nB,20\n'); } };
+  var summary = await client.uploadDataset(file, { title: 'Sales' });
+  assert.equal(summary.id, 'sales-abc');
+  var body = JSON.parse(fetchStub.calls[0].init.body);
+  assert.equal(body.format, 'csv');
+  assert.equal(body.title, 'Sales');
+  assert.match(body.data, /id,sales/);
+});
+
+test('client.listStores lists named stores (optionally by capability)', async function () {
+  var fetchStub = routedFetch({
+    'GET /api/stores?capability=dataset': { status: 200, body: { stores: [{ name: 'local', capability: 'dataset', default: true }] } }
+  });
+  var client = createDashboardClient({ fetch: fetchStub, baseUrl: 'http://x' });
+  var stores = await client.listStores('dataset');
+  assert.equal(stores[0].name, 'local');
+  assert.equal(fetchStub.calls[0].key, 'GET /api/stores?capability=dataset');
+});
+
+test('client.uploadDataset forwards a target store; deleteDataset scopes by store', async function () {
+  var fetchStub = routedFetch({
+    'POST /api/datasets': { status: 200, body: { dataset: { id: 'd', store: 's3-prod' } } },
+    'DELETE /api/datasets/d?store=s3-prod': { status: 200, body: { datasets: [] } }
+  });
+  var client = createDashboardClient({ fetch: fetchStub, baseUrl: 'http://x' });
+  await client.uploadDataset('id,v\nA,1\n', { format: 'csv', store: 's3-prod' });
+  assert.equal(JSON.parse(fetchStub.calls[0].init.body).store, 's3-prod');
+  assert.deepEqual(await client.deleteDataset('d', { store: 's3-prod' }), []);
+});
+
+test('client.uploadDataset sends a plain object as cx data', async function () {
+  var fetchStub = routedFetch({ 'POST /api/datasets': { status: 200, body: { dataset: { id: 'd', rows: 1, cols: 1 } } } });
+  var client = createDashboardClient({ fetch: fetchStub, baseUrl: 'http://x' });
+  var cx = { y: { vars: ['v'], smps: ['s'], data: [[1]] } };
+  await client.uploadDataset(cx);
+  var body = JSON.parse(fetchStub.calls[0].init.body);
+  assert.equal(body.format, 'cx');
+  assert.deepEqual(body.data, cx);
+});
+
 test('client surfaces the server error detail + status on failure', async function () {
   var fetchStub = routedFetch({ 'GET /api/dashboards/ghost': { status: 404, body: { detail: 'No such dashboard' } } });
   var client = createDashboardClient({ fetch: fetchStub, baseUrl: 'http://x' });

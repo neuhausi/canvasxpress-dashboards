@@ -14,6 +14,7 @@
 import { validateSpec } from './validateSpec.js';
 import { injectStyles } from './styles.js';
 import { createDataStore, isEmptyData } from './dataStore.js';
+import { gridTemplate, cellArea } from './gridLayout.js';
 
 /**
  * Render a dashboard into a target element.
@@ -30,6 +31,10 @@ import { createDataStore, isEmptyData } from './dataStore.js';
  * @param {number} [options.ttl] - Default cache lifetime (ms) for connector
  *   sources without their own `ttl`.
  * @param {boolean} [options.validate=true] - Validate the spec before rendering.
+ * @param {function} [options.onPanelRendered] - Called after each panel's
+ *   instance is created, with `{ panelId, item, cell, canvas, body, instance }`.
+ *   Used by the builder to attach editing chrome (drag/resize/customize) to
+ *   live panels.
  * @returns {Promise<DashboardHandle>} A handle exposing the created instances
  *   and a `destroy()` cleanup.
  */
@@ -56,6 +61,10 @@ export function renderDashboard(spec, target, options) {
 
   var doFetch = options.fetch || (typeof globalThis !== 'undefined' ? globalThis.fetch : undefined);
   var broadcastGroup = spec.broadcastGroup || spec.id;
+  // Margin (px) left around each panel's graph. A spec-level `canvasInset`
+  // (a dashboard setting) wins; otherwise the caller's option; otherwise 0.
+  var canvasInset = typeof spec.canvasInset === 'number' ? spec.canvasInset
+    : (options.canvasInset > 0 ? options.canvasInset : 0);
   var store = createDataStore({ fetch: doFetch, cache: options.cache, ttl: options.ttl });
 
   // Build the grid scaffold.
@@ -63,16 +72,33 @@ export function renderDashboard(spec, target, options) {
   container.innerHTML = '';
   container.classList.add('cxd-dashboard');
   applyTheme(container, spec.theme);
-
-  var grid = document.createElement('div');
-  grid.className = 'cxd-grid';
   var cols = (spec.layout && spec.layout.cols) || 12;
   var rowHeight = (spec.layout && spec.layout.rowHeight) || 120;
   var gap = (spec.layout && spec.layout.gap != null) ? spec.layout.gap : 12;
+
+  // Dashboard background (colour + optional image) fills the WHOLE container,
+  // including a margin around the grid so the background shows on all sides —
+  // not just in the gutters between panels.
+  applyBackground(container, spec, gap);
+  // Optional explicit dashboard size (px or any CSS length); unset = fill width,
+  // content height.
+  applySize(container, spec);
+
+  // When a canvas margin is reserved, the graph is smaller than its cell — this
+  // class centres it (see styles) so the margin is even, not all top-left.
+  if (canvasInset > 0) container.classList.add('cxd-inset');
+  else container.classList.remove('cxd-inset');
+
+  var grid = document.createElement('div');
+  grid.className = 'cxd-grid';
+  // Gutters live only between adjacent panels (interleaved gap tracks); see
+  // gridLayout. A panel's size is always h*rowHeight, independent of the gap.
+  var items = (spec.layout && spec.layout.items) || [];
+  var tpl = gridTemplate(items, cols, rowHeight, gap);
   grid.style.display = 'grid';
-  grid.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
-  grid.style.gridAutoRows = rowHeight + 'px';
-  grid.style.gap = gap + 'px';
+  grid.style.gridTemplateColumns = tpl.columns;
+  grid.style.gridTemplateRows = tpl.rows;
+  grid.style.gap = '0';
   container.appendChild(grid);
 
   var instances = [];
@@ -118,32 +144,65 @@ export function renderDashboard(spec, target, options) {
   }
 
   // --- panels laid out in the grid ---
-  var items = (spec.layout && spec.layout.items) || [];
-  items.forEach(function (item, index) {
-    var panel = spec.panels[item.panel];
+  var renderedItems = items.slice();   // the live set of laid-out items
+  var cellByPanel = {};                // panelId -> { cell, item, instance }
+  var panelIdCounter = { n: 0 };       // monotonic id counter (survives add/remove)
+
+  /**
+   * Recompute the grid track template from the current item set (gutters only
+   * between adjacent panels).
+   * @returns {void}
+   */
+  function refreshTemplate() {
+    var t = gridTemplate(renderedItems, cols, rowHeight, gap);
+    grid.style.gridTemplateColumns = t.columns;
+    grid.style.gridTemplateRows = t.rows;
+  }
+
+  /**
+   * Render a single panel item into the grid (build cell, resolve data,
+   * instantiate CanvasXpress, wire resize + onPanelRendered).
+   * @param {object} item - Layout item.
+   * @param {object} panel - Panel definition.
+   * @returns {Promise<object|null>} The instance (or null on empty/error).
+   */
+  function renderPanelItem(item, panel) {
     var cell = buildCell(panel && panel.title);
     placeCell(cell.root, item);
     grid.appendChild(cell.root);
+    cellByPanel[item.panel] = { cell: cell, item: item, instance: null };
 
-    var canvasId = makeCanvasId(spec.id, 'panel', item.panel, index);
+    var canvasId = makeCanvasId(spec.id, 'panel', item.panel, panelIdCounter.n++);
     cell.canvas.id = canvasId;
 
-    pending.push(resolveOwnerData(panel)
+    return resolveOwnerData(panel)
       .then(function (data) {
+        data = projectMeasures(data, panel && panel.measures);
         if (isEmptyData(data)) { cell.setState('empty'); return null; }
-        sizeCanvasToCell(cell);
+        sizeCanvasToCell(cell, canvasInset);
         var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
         var instance = new CX(canvasId, data, config, panel && panel.events || {});
         instances.push(instance);
+        if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
         bind(panel && panel.dataRef, instance);
-        observeResize(cell, instance, observers);
+        observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
+        if (typeof options.onPanelRendered === 'function') {
+          options.onPanelRendered({
+            panelId: item.panel, item: item, cell: cell.root,
+            canvas: cell.canvas, body: cell.body, instance: instance
+          });
+        }
         return instance;
       })
       .catch(function (err) {
         cell.setState('error', String(err && err.message || err));
         return null;
-      }));
+      });
+  }
+
+  items.forEach(function (item) {
+    pending.push(renderPanelItem(item, spec.panels[item.panel]));
   });
 
   // --- optional dashboard-wide controls (filter / table) ---
@@ -159,12 +218,12 @@ export function renderDashboard(spec, target, options) {
     pending.push(resolveOwnerData(control)
       .then(function (data) {
         if (isEmptyData(data)) { cell.setState('empty'); return; }
-        sizeCanvasToCell(cell);
+        sizeCanvasToCell(cell, canvasInset);
         var config = mergeConfig(controlConfig(control), broadcastGroup, control);
         var instance = new CX(canvasId, data, config, {});
         instances.push(instance);
         bind(control.dataRef, instance);
-        observeResize(cell, instance, observers);
+        observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
       })
       .catch(function (err) {
@@ -188,6 +247,43 @@ export function renderDashboard(spec, target, options) {
      * @type {Promise<void>}
      */
     ready: Promise.all(pending).then(function () {}),
+    /**
+     * Add one panel to the live grid without touching the existing instances
+     * (so their state — e.g. customizer edits — is preserved). The builder uses
+     * this instead of a full re-render when a panel is added.
+     * @param {object} item - The new layout item (`{panel, x, y, w, h}`).
+     * @param {object} panel - The new panel definition.
+     * @param {object[]} [allItems] - The full current item set (for the grid
+     *   template); defaults to the previously-rendered set plus the new item.
+     * @returns {Promise<object|null>} The created instance.
+     */
+    addPanel: function (item, panel, allItems) {
+      renderedItems = allItems ? allItems.slice() : renderedItems.concat([item]);
+      refreshTemplate();
+      return renderPanelItem(item, panel);
+    },
+    /**
+     * Remove one panel from the live grid, destroying only its instance.
+     * @param {string} panelId - The panel id to remove.
+     * @param {object[]} [allItems] - The full remaining item set (for the grid
+     *   template); defaults to the rendered set minus this panel.
+     * @returns {void}
+     */
+    removePanel: function (panelId, allItems) {
+      var entry = cellByPanel[panelId];
+      if (entry) {
+        if (entry.instance) {
+          try { if (typeof entry.instance.destroy === 'function') entry.instance.destroy(); } catch (e) { /* noop */ }
+          var i = instances.indexOf(entry.instance);
+          if (i >= 0) instances.splice(i, 1);
+        }
+        if (entry.cell.root.parentNode) entry.cell.root.parentNode.removeChild(entry.cell.root);
+        delete cellByPanel[panelId];
+      }
+      renderedItems = allItems ? allItems.slice()
+        : renderedItems.filter(function (it) { return it.panel !== panelId; });
+      refreshTemplate();
+    },
     /**
      * Tear down the dashboard: stop refresh timers, destroy CanvasXpress
      * instances, and clear the DOM.
@@ -308,6 +404,55 @@ function defaultControlTitle(kind) {
 }
 
 /**
+ * Project a CanvasXpress data object down to a chosen set of numeric variables
+ * (the panel's "measures"). This implements the BI metrics/dimensions model:
+ * a panel bound to a shared source can plot just the columns it cares about,
+ * while the source stays shared (single fetch, one broadcast domain).
+ *
+ * Returns the data unchanged when no measures are specified or none match, so
+ * "no selection" means "all variables". Samples (`smps`) and annotations
+ * (`x`) are preserved; variable annotations (`z`) are sliced in step.
+ *
+ * @param {object} data - A CanvasXpress data object (`{y:{vars,smps,data}, x?, z?}`).
+ * @param {string[]} [measures] - Variable names to keep, in the given order.
+ * @returns {object} A new data object with only the selected variables, or the
+ *   original when there's nothing to project.
+ * @private
+ */
+function projectMeasures(data, measures) {
+  if (!measures || !measures.length) return data;
+  if (!data || !data.y || !Array.isArray(data.y.vars)) return data;
+
+  var indices = [];
+  var keptVars = [];
+  measures.forEach(function (name) {
+    var idx = data.y.vars.indexOf(name);
+    if (idx !== -1) { indices.push(idx); keptVars.push(name); }
+  });
+  if (!keptVars.length) return data;
+
+  var y = {};
+  for (var k in data.y) { if (Object.prototype.hasOwnProperty.call(data.y, k)) y[k] = data.y[k]; }
+  y.vars = keptVars;
+  y.data = indices.map(function (i) { return data.y.data ? data.y.data[i] : undefined; });
+
+  var out = {};
+  for (var j in data) { if (Object.prototype.hasOwnProperty.call(data, j)) out[j] = data[j]; }
+  out.y = y;
+
+  // Slice per-variable annotations (z) to match, when present.
+  if (data.z && typeof data.z === 'object') {
+    var z = {};
+    Object.keys(data.z).forEach(function (key) {
+      var col = data.z[key];
+      z[key] = Array.isArray(col) ? indices.map(function (i) { return col[i]; }) : col;
+    });
+    out.z = z;
+  }
+  return out;
+}
+
+/**
  * Size a cell's `<canvas>` drawing buffer to its laid-out pixel box.
  *
  * CanvasXpress falls back to a fixed 500×500 buffer when the canvas has no
@@ -316,14 +461,21 @@ function defaultControlTitle(kind) {
  * graph render at the cell's real size. No-op in non-browser/unlaid-out contexts.
  *
  * @param {object} cell - A cell from {@link buildCell} (has `canvas` + `body`).
+ * @param {number} [inset=0] - Px to subtract from width/height (right+bottom margin).
  * @returns {void}
  * @private
  */
-function sizeCanvasToCell(cell) {
+function sizeCanvasToCell(cell, inset) {
+  inset = inset || 0;
+  // Measure the body (the stable available area); the canvas itself becomes
+  // smaller once CanvasXpress sizes it, so measuring it would compound the inset.
   var box = measureBox(cell.body) || measureBox(cell.canvas);
-  if (!box || box.w < 5 || box.h < 5) return;
-  cell.canvas.width = box.w;
-  cell.canvas.height = box.h;
+  if (!box) return;
+  var w = box.w - inset;
+  var h = box.h - inset;
+  if (w < 5 || h < 5) return;
+  cell.canvas.width = w;
+  cell.canvas.height = h;
 }
 
 /**
@@ -333,19 +485,24 @@ function sizeCanvasToCell(cell) {
  * @param {object} cell - The cell (has `body`).
  * @param {object} instance - The CanvasXpress instance (has `setDimensions`).
  * @param {Array} observers - Collector for created observers (for cleanup).
+ * @param {number} [inset=0] - Px to subtract from width/height (right+bottom margin).
  * @returns {void}
  * @private
  */
-function observeResize(cell, instance, observers) {
+function observeResize(cell, instance, observers, inset) {
   if (typeof ResizeObserver === 'undefined') return;
   if (typeof instance.setDimensions !== 'function') return;
+  inset = inset || 0;
   var last = { w: cell.canvas.width, h: cell.canvas.height };
   var ro = new ResizeObserver(function () {
-    var box = measureBox(cell.body);
-    if (!box || box.w < 5 || box.h < 5) return;
-    if (box.w === last.w && box.h === last.h) return;
-    last = box;
-    try { instance.setDimensions(box.w, box.h); } catch (e) { /* keep observing */ }
+    var box = measureBox(cell.body) || measureBox(cell.canvas);
+    if (!box) return;
+    var w = box.w - inset;
+    var h = box.h - inset;
+    if (w < 5 || h < 5) return;
+    if (w === last.w && h === last.h) return;
+    last = { w: w, h: h };
+    try { instance.setDimensions(w, h); } catch (e) { /* keep observing */ }
   });
   ro.observe(cell.body);
   observers.push(ro);
@@ -376,8 +533,9 @@ function measureBox(el) {
  * @private
  */
 function placeCell(el, item) {
-  el.style.gridColumn = (item.x + 1) + ' / span ' + item.w;
-  el.style.gridRow = (item.y + 1) + ' / span ' + item.h;
+  var area = cellArea(item);
+  el.style.gridColumn = area.column;
+  el.style.gridRow = area.row;
 }
 
 /**
@@ -452,6 +610,58 @@ function buildCell(title) {
 function applyTheme(container, theme) {
   container.classList.remove('cxd-theme-light', 'cxd-theme-dark', 'cxd-theme-auto');
   container.classList.add('cxd-theme-' + (theme || 'auto'));
+}
+
+/**
+ * Apply the dashboard background (colour and/or image) to the container so it
+ * fills the entire area, and inset the grid by `gap` so the background is
+ * visible as a margin around the panels (top/right/bottom/left) — matching the
+ * gutters between them.
+ * @param {HTMLElement} container - Dashboard container.
+ * @param {object} spec - The dashboard spec (`background`, `backgroundImage`).
+ * @param {number} gap - The inter-panel gap (px), reused as the outer margin.
+ * @returns {void}
+ * @private
+ */
+function applyBackground(container, spec, gap) {
+  var s = container.style;
+  s.boxSizing = 'border-box';
+  s.padding = (gap > 0 ? gap : 0) + 'px';
+  s.backgroundColor = spec.background ? spec.background : '';
+  if (spec.backgroundImage) {
+    s.backgroundImage = 'url("' + String(spec.backgroundImage).replace(/"/g, '\\"') + '")';
+    s.backgroundSize = 'cover';
+    s.backgroundPosition = 'center';
+    s.backgroundRepeat = 'no-repeat';
+  } else {
+    s.backgroundImage = '';
+  }
+}
+
+/**
+ * Apply an explicit dashboard size when the spec sets `width`/`height`. A number
+ * is treated as px; a string is used verbatim (e.g. "100%", "40rem"). When set,
+ * the container scrolls if its content overflows. Unset = fill width, auto height.
+ * @param {HTMLElement} container - Dashboard container.
+ * @param {object} spec - The dashboard spec (`width`, `height`).
+ * @returns {void}
+ * @private
+ */
+function applySize(container, spec) {
+  container.style.width = sizeValue(spec.width);
+  container.style.height = sizeValue(spec.height);
+  container.style.overflow = (sizeValue(spec.width) || sizeValue(spec.height)) ? 'auto' : '';
+}
+
+/**
+ * Coerce a size setting to a CSS length string ('' when unset).
+ * @param {(number|string)} value - Size value.
+ * @returns {string} A CSS length, or '' when unset.
+ * @private
+ */
+function sizeValue(value) {
+  if (value == null || value === '') return '';
+  return typeof value === 'number' ? value + 'px' : String(value);
 }
 
 /**
