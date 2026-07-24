@@ -1,0 +1,5 @@
+# Local config & generated runtime state — never commit these.
+.env
+.session_secret
+*.db
+cxd-datasets/

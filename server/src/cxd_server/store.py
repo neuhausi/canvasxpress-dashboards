@@ -52,7 +52,8 @@ class DashboardStore:
             CREATE TABLE IF NOT EXISTS users (
                 username  TEXT PRIMARY KEY,
                 salt      BLOB NOT NULL,
-                pw_hash   BLOB NOT NULL
+                pw_hash   BLOB NOT NULL,
+                is_admin  INTEGER NOT NULL DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS dashboards (
                 owner       TEXT NOT NULL,
@@ -66,22 +67,39 @@ class DashboardStore:
             );
             """
         )
+        # Migrate DBs created before is_admin existed (no-op if already present).
+        try:
+            self._conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
         self._conn.commit()
 
     # ---- users ----
-    def create_user(self, username: str, password: str) -> bool:
-        """Create a user; returns False if the username is already taken."""
+    def create_user(self, username: str, password: str, is_admin: bool = False) -> bool:
+        """Create a user; returns False if the username is already taken.
+
+        :param is_admin: Persist the user as an admin (used for first-user
+            bootstrap; on top of any ``CXD_ADMINS`` config).
+        """
         salt, digest = hash_password(password)
         try:
             with self._lock:
                 self._conn.execute(
-                    "INSERT INTO users (username, salt, pw_hash) VALUES (?, ?, ?)",
-                    (username, salt, digest),
+                    "INSERT INTO users (username, salt, pw_hash, is_admin) VALUES (?, ?, ?, ?)",
+                    (username, salt, digest, 1 if is_admin else 0),
                 )
                 self._conn.commit()
             return True
         except sqlite3.IntegrityError:
             return False
+
+    def is_admin(self, username: str) -> bool:
+        """Return True if the user is persisted as an admin (the is_admin flag)."""
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT is_admin FROM users WHERE username = ?", (username,)
+            ).fetchone()
+        return bool(row) and bool(row[0])
 
     def check_user(self, username: str, password: str) -> bool:
         """Return True when the username/password pair is valid."""
@@ -90,6 +108,45 @@ class DashboardStore:
                 "SELECT salt, pw_hash FROM users WHERE username = ?", (username,)
             ).fetchone()
         return bool(row) and verify_password(password, row[0], row[1])
+
+    def list_users(self) -> List[str]:
+        """Return all usernames (sorted). Admin use — no secrets are exposed."""
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT username FROM users ORDER BY username"
+            ).fetchall()
+        return [r[0] for r in rows]
+
+    def set_password(self, username: str, password: str) -> bool:
+        """Reset a user's password. Returns False if the user doesn't exist."""
+        salt, digest = hash_password(password)
+        with self._lock:
+            cur = self._conn.execute(
+                "UPDATE users SET salt = ?, pw_hash = ? WHERE username = ?",
+                (salt, digest, username),
+            )
+            self._conn.commit()
+            return cur.rowcount > 0
+
+    def set_admin(self, username: str, is_admin: bool) -> bool:
+        """Grant or revoke a user's admin flag. False if the user doesn't exist."""
+        with self._lock:
+            cur = self._conn.execute(
+                "UPDATE users SET is_admin = ? WHERE username = ?",
+                (1 if is_admin else 0, username),
+            )
+            self._conn.commit()
+            return cur.rowcount > 0
+
+    def delete_user(self, username: str) -> bool:
+        """Delete a user and all of their dashboards. False if user is absent."""
+        with self._lock:
+            cur = self._conn.execute(
+                "DELETE FROM users WHERE username = ?", (username,)
+            )
+            self._conn.execute("DELETE FROM dashboards WHERE owner = ?", (username,))
+            self._conn.commit()
+            return cur.rowcount > 0
 
     # ---- dashboards ----
     def save_dashboard(self, owner: str, spec: dict, updated_at: str) -> dict:

@@ -5,15 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CanvasXpress Dashboards — no-code builder</title>
 
-  <!--CX-LIB-START · scripts/build.mjs swaps this whole block for the served app
-       shell (CDN CanvasXpress + same-origin bundle). During development you can
-       point these URLs at a local CanvasXpress build; keep the START/END markers
-       so the build transform still finds the block. -->
+  <!-- Generated from examples/builder.html by scripts/build.mjs. Do not edit. -->
+  <!--CXD_HEAD_START-->
   <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
   <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
-  <!-- Cache-bust the local bundle so edits show up on a plain reload (dev convenience). -->
-  <script>document.write('<script src="../dist/canvasxpress-dashboards.umd.js?v=' + Date.now() + '"><\/script>');</script>
-  <!--CX-LIB-END-->
+  <!--CXD_HEAD_END-->
+  <script src="canvasxpress-dashboards.umd.js"></script>
 
   <style>
     :root { --rail-bg: #ffffff; --rail-border: #e6e9ee; --muted: #6b7280; --accent: #087ad1; }

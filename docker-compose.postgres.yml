@@ -1,0 +1,39 @@
+# Postgres override for the dashboards stack. Layer it on the base file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up
+#
+# This adds a Postgres service and repoints BOTH stores at it:
+#   - the dashboard store (users + saved specs + share tokens) via SQLAlchemy
+#   - the dataset object store (uploaded datasets) via the SqlObjectStore
+# The image is rebuilt with the `postgres` extra so the psycopg driver is present.
+
+services:
+  dashboards:
+    build:
+      args:
+        CXD_EXTRAS: "web,postgres"
+    environment:
+      CXD_DASHBOARD_STORE: "postgresql://cxd:cxd@db:5432/cxd"
+      # `?table=` namespaces the object store's rows away from the dashboard tables.
+      CXD_DATASET_STORE: "postgresql://cxd:cxd@db:5432/cxd?table=cxd_objects"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: cxd
+      POSTGRES_PASSWORD: cxd
+      POSTGRES_DB: cxd
+    volumes:
+      - cxd-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cxd -d cxd"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  cxd-pgdata:

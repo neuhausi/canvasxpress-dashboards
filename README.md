@@ -7,11 +7,8 @@ declarative JSON spec.
 CanvasXpress already ships the hard part: cross-chart coordination (a selection
 or filter in one chart propagates to the others via its `broadcast` mechanism).
 This package adds the missing layer: a **spec**, a **grid layout**, a
-**renderer**, and (in later phases) data binding, persistence, and a no-code
-builder. It does **not** re-implement chart rendering or coordination.
-
-> **Status:** All 4 phases shipped — spec + renderer + connector binding + persistence & sharing + no-code builder. See
-> [`docs/plans/dashboards`](https://github.com/neuhausi/canvasxpress) for the roadmap.
+**renderer**, data binding, persistence, and a no-code builder. It does **not**
+re-implement chart rendering or coordination.
 
 ---
 
@@ -51,6 +48,49 @@ await renderDashboard(spec, document.getElementById('dashboard'));
 Open [`examples/sales-overview.html`](examples/sales-overview.html) for a complete,
 backend-free showcase: three linked panels (Bar, Pie, Line) plus a broadcast-aware
 data table. Click a bar, slice, or row — the selection coordinates across the board.
+
+---
+
+## Run the full app on your premises
+
+The library above is embeddable. If you want the **complete, self-hostable
+application** — a sign-in screen, the no-code Builder, saved dashboards, dataset
+uploads, and share links — run the bundled server. It serves the whole app at
+`/`, so users just open a browser.
+
+**Docker (recommended):**
+
+```bash
+docker compose up            # → http://localhost:8000/
+```
+
+**Or directly with Python:**
+
+```bash
+cd server && pip install -e '.[web]'
+python -m cxd_server         # → http://localhost:8000/
+```
+
+Then open the app, create an account (or click **Use demo account**), and start
+building. On first run the server generates and persists its own session secret —
+no key management required.
+
+**Point it at your own resources.** The entire deployment is environment-driven:
+copy [`server/.env.example`](server/.env.example) and change values to swap the
+dashboard store (SQLite → Postgres), the dataset store (local files → S3 /
+Google Drive / SQL), sharing base URL, HTTPS, and signup policy. Nothing in the
+app code changes — you reconfigure, not fork.
+
+For example, run the whole stack on **Postgres** (both the dashboard store and
+the dataset store) with the bundled override file:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml up
+```
+
+(The host port is overridable — `CXD_HOST_PORT=8080 docker compose up`.)
+
+See [`server/README.md`](server/README.md) for the full env-var reference and API.
 
 ---
 
@@ -158,7 +198,7 @@ Standalone data resolver (inline + connector) with caching, in-flight
 de-duplication, and TTL. Also exported: `isEmptyData(data)`, `DataError`
 (carries `.status`), `clearSharedCache()`.
 
-### Persistence & sharing (Phase 3)
+### Persistence & sharing
 
 Save/load/share is provided by an optional server
 ([`server/`](server/README.md), `canvasxpress-dashboards-server`) that mirrors the
@@ -189,7 +229,7 @@ const imported = await importSpecFromFile(file); // parse + validate a File
 - `createDashboardClient(opts)` — thin, credentialed client for the server API
   (`login`/`signup`/`logout`/`me`, `list`/`save`/`load`/`remove`, `share`/`loadShared`).
 
-### No-code builder (Phase 4)
+### No-code builder
 
 A vanilla, zero-dependency builder that owns the *dashboard's* concerns — layout
 (drag a title to move, drag the corner to resize), add/delete panels, assign a
@@ -199,7 +239,7 @@ title opens the native customizer (`instance.showCustomizer`), where chart type,
 colors, grouping, axes, and every other option are edited with CanvasXpress's own
 widgets. Edits are read back via `instance.getConfig()` and folded into
 `panel.config`, so the builder stays a pure spec editor. Preview hides the editing
-chrome; Save/Share/Export reuse the Phase-3 client.
+chrome; Save/Share/Export reuse the persistence client.
 
 > Column projection is still available in the spec: `panel.measures` (an array of
 > variable names) plots just those numeric columns while the source stays shared
@@ -248,15 +288,6 @@ The source is authored as small ES modules under `src/`; `scripts/build.mjs` is 
 zero-dependency bundler that inlines them into `dist/*.esm.js` and `dist/*.umd.js`.
 
 ---
-
-## Roadmap
-
-| Phase | Deliverable | Status |
-|---|---|---|
-| **1** | Spec + client renderer + showcase | ✅ done |
-| **2** | Authenticated data binding via [`canvasxpress-connectors`](https://github.com/neuhausi/canvasxpress-connectors) + cache | ✅ done |
-| **3** | Persistence & sharing ([`server/`](server/README.md)) | ✅ done |
-| **4** | No-code builder | ✅ this release |
 
 ## License
 

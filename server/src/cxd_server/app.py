@@ -17,11 +17,16 @@ permissions — this service only stores and serves the spec.
 from __future__ import annotations
 
 import datetime
+import html
+import json
 import os
+import re
+import secrets
+import warnings
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -43,7 +48,8 @@ def create_dashboards_app(
     session_secret: Optional[str] = None,
     db_path: Optional[str] = None,
     allow_signup: Optional[bool] = None,
-    https_only: bool = False,
+    https_only: Optional[bool] = None,
+    admins: Optional[set] = None,
     serve_static: bool = True,
     dataset_store: Optional[DatasetStore] = None,
     dataset_store_uri: Optional[str] = None,
@@ -51,6 +57,10 @@ def create_dashboards_app(
     publish_base_url: Optional[str] = None,
     s3_client=None,
     drive_client_factory=None,
+    canvasxpress_url: Optional[str] = None,
+    canvasxpress_license: Optional[str] = None,
+    llm_api_key: Optional[str] = None,
+    llm_model: Optional[str] = None,
 ) -> FastAPI:
     """Build the dashboards FastAPI app.
 
@@ -58,7 +68,10 @@ def create_dashboards_app(
     :param session_secret: Cookie-signing secret; falls back to ``SESSION_SECRET``.
     :param db_path: SQLite path; falls back to ``APP_DB_PATH`` or ``dashboards.db``.
     :param allow_signup: Enable ``/auth/signup``; falls back to ``ALLOW_SIGNUP`` (default on).
-    :param https_only: Restrict the session cookie to HTTPS.
+    :param https_only: Restrict the session cookie to HTTPS; falls back to
+        ``CXD_HTTPS_ONLY`` (default off).
+    :param admins: Usernames granted the user-management API; falls back to the
+        comma-separated ``CXD_ADMINS`` env var (default none).
     :param serve_static: Mount the bundled viewer at ``/``.
     :param dataset_store: A single default DatasetStore (overrides the registry's
         default dataset store; kept for back-compat / tests).
@@ -71,12 +84,43 @@ def create_dashboards_app(
     :param s3_client: Optional injected S3 client passed through to the registry.
     :param drive_client_factory: Optional ``owner -> DriveClient`` factory for
         ``gdrive://`` stores, passed through to the registry.
+    :param canvasxpress_url: Base URL of the CanvasXpress library (loads
+        ``<base>/canvasXpress.css`` + ``<base>/canvasXpress.min.js`` into the
+        served app); falls back to ``CXD_CANVASXPRESS_URL`` (default the CDN).
+    :param canvasxpress_license: CanvasXpress license key injected as
+        ``window.cX`` before the library loads (hides the watermark); falls back
+        to ``CXD_CANVASXPRESS_LICENSE``.
+    :param llm_api_key: Secret API key for the (future) natural-language dashboard
+        builder; falls back to ``CXD_LLM_API_KEY``. Kept server-side — never sent
+        to the browser (the client only learns whether an LLM is configured).
+    :param llm_model: LLM model id; falls back to ``CXD_LLM_MODEL``.
     :returns: The configured FastAPI application.
     """
-    session_secret = session_secret or os.environ["SESSION_SECRET"]
+    session_secret = session_secret or os.getenv("SESSION_SECRET")
+    if not session_secret:
+        # Never hard-crash on first run: fall back to an ephemeral secret so the
+        # app boots, but warn loudly — sessions won't survive a restart until a
+        # stable SESSION_SECRET is provided (the `python -m cxd_server` launcher
+        # generates and persists one for you).
+        session_secret = secrets.token_urlsafe(32)
+        warnings.warn(
+            "SESSION_SECRET is not set — using a random ephemeral secret. Logins "
+            "will be lost on restart. Set SESSION_SECRET (or start via "
+            "`python -m cxd_server`, which persists one).",
+            RuntimeWarning,
+            stacklevel=2,
+        )
     db_path = db_path or os.getenv("APP_DB_PATH", "dashboards.db")
     if allow_signup is None:
         allow_signup = os.getenv("ALLOW_SIGNUP", "1") == "1"
+    if https_only is None:
+        https_only = os.getenv("CXD_HTTPS_ONLY", "0") == "1"
+    # Admins (comma-separated usernames) get the user-management API. Config-only
+    # so it needs no schema change and is identical across store backends.
+    if admins is None:
+        admins = {u.strip() for u in os.getenv("CXD_ADMINS", "").split(",") if u.strip()}
+    else:
+        admins = set(admins)
     # Dashboards: stdlib SQLite by default (zero-dep), or Postgres/SQLite via
     # SQLAlchemy when CXD_DASHBOARD_STORE names a postgres:// URL.
     store = store or open_dashboard_store(os.getenv("CXD_DASHBOARD_STORE"), db_path=db_path)
@@ -86,6 +130,13 @@ def create_dashboards_app(
             drive_client_factory=drive_client_factory,
         )
     publish_base_url = publish_base_url or os.getenv("CXD_PUBLISH_BASE_URL")
+    # Served-app runtime config (injected into index.html at serve time).
+    canvasxpress_url = (canvasxpress_url or os.getenv("CXD_CANVASXPRESS_URL")
+                        or "https://www.canvasxpress.org/dist")
+    canvasxpress_license = canvasxpress_license or os.getenv("CXD_CANVASXPRESS_LICENSE")
+    # LLM config stays server-side (secret). The client only learns it's enabled.
+    llm_api_key = llm_api_key or os.getenv("CXD_LLM_API_KEY")
+    llm_model = llm_model or os.getenv("CXD_LLM_MODEL")
 
     def dataset_store_for(name: Optional[str]) -> DatasetStore:
         """Resolve the DatasetStore for a named dataset store (default when None)."""
@@ -102,11 +153,25 @@ def create_dashboards_app(
     app.add_middleware(
         SessionMiddleware, secret_key=session_secret, same_site="lax", https_only=https_only
     )
+    # LLM config lives on app.state for the (future) NL builder; the key never
+    # leaves the server.
+    app.state.llm = {"api_key": llm_api_key, "model": llm_model}
 
     def require_user(request: Request) -> str:
         user = request.session.get("user")
         if not user:
             raise HTTPException(status_code=401, detail="Not logged in")
+        return user
+
+    def user_is_admin(username: Optional[str]) -> bool:
+        """Effective admin check: the ``CXD_ADMINS`` config OR the persisted flag
+        (set for the first user to sign up)."""
+        return bool(username) and (username in admins or store.is_admin(username))
+
+    def require_admin(request: Request) -> str:
+        user = require_user(request)
+        if not user_is_admin(user):
+            raise HTTPException(status_code=403, detail="Admin access required")
         return user
 
     # ---- auth (mirrors canvasxpress-connectors) ----
@@ -118,7 +183,10 @@ def create_dashboards_app(
         username, password = body.get("username", ""), body.get("password", "")
         if len(username) < 3 or len(password) < 6:
             raise HTTPException(status_code=400, detail="Username ≥3 and password ≥6 chars")
-        if not store.create_user(username, password):
+        # First user to sign up bootstraps as admin, so a fresh deployment has an
+        # administrator without needing CXD_ADMINS preset.
+        first_user = not store.list_users()
+        if not store.create_user(username, password, is_admin=first_user):
             raise HTTPException(status_code=409, detail="Username already taken")
         request.session["user"] = username
         return {"user": username}
@@ -139,7 +207,66 @@ def create_dashboards_app(
 
     @app.get("/auth/me")
     def me(request: Request):
-        return {"user": request.session.get("user")}
+        user = request.session.get("user")
+        return {"user": user, "is_admin": user_is_admin(user)}
+
+    # ---- admin: user management (gated by CXD_ADMINS) ----
+    @app.get("/api/admin/users")
+    def admin_list_users(request: Request):
+        require_admin(request)
+        return {"users": [
+            {"username": name, "is_admin": user_is_admin(name),
+             "via_config": name in admins,
+             "dashboards": len(store.list_dashboards(name))}
+            for name in store.list_users()
+        ]}
+
+    @app.post("/api/admin/users")
+    async def admin_create_user(request: Request):
+        require_admin(request)
+        body = await request.json()
+        username, password = body.get("username", ""), body.get("password", "")
+        if len(username) < 3 or len(password) < 6:
+            raise HTTPException(status_code=400, detail="Username ≥3 and password ≥6 chars")
+        if not store.create_user(username, password):
+            raise HTTPException(status_code=409, detail="Username already taken")
+        return {"user": username}
+
+    @app.post("/api/admin/users/{username}/password")
+    async def admin_set_password(request: Request, username: str):
+        require_admin(request)
+        body = await request.json()
+        password = body.get("password", "")
+        if len(password) < 6:
+            raise HTTPException(status_code=400, detail="Password ≥6 chars")
+        if not store.set_password(username, password):
+            raise HTTPException(status_code=404, detail="No such user")
+        return {"user": username}
+
+    @app.post("/api/admin/users/{username}/admin")
+    async def admin_set_admin(request: Request, username: str):
+        admin = require_admin(request)
+        body = await request.json()
+        grant = bool(body.get("is_admin"))
+        if username in admins:
+            raise HTTPException(status_code=400,
+                                detail="This user is an admin via CXD_ADMINS — change the config instead")
+        if username == admin and not grant:
+            raise HTTPException(status_code=400, detail="You cannot revoke your own admin rights")
+        if not store.set_admin(username, grant):
+            raise HTTPException(status_code=404, detail="No such user")
+        return {"user": username, "is_admin": user_is_admin(username)}
+
+    @app.delete("/api/admin/users/{username}")
+    def admin_delete_user(request: Request, username: str):
+        admin = require_admin(request)
+        if username == admin:
+            raise HTTPException(status_code=400, detail="You cannot delete your own account")
+        if user_is_admin(username):
+            raise HTTPException(status_code=400, detail="Cannot delete another admin (revoke their admin rights first)")
+        if not store.delete_user(username):
+            raise HTTPException(status_code=404, detail="No such user")
+        return {"users": store.list_users()}
 
     # ---- dashboard CRUD (owner-isolated) ----
     @app.get("/api/dashboards")
@@ -258,10 +385,77 @@ def create_dashboards_app(
             datasets.extend(dataset_store_for(name).list(user))
         return {"datasets": datasets}
 
+    @app.get("/api/llm/status")
+    def llm_status(request: Request):
+        """Whether the NL dashboard builder is configured (no secret exposed)."""
+        require_user(request)
+        return {"enabled": bool(llm_api_key), "model": llm_model}
+
     if serve_static and os.path.isdir(_STATIC_DIR):
+        # Inject runtime config (CanvasXpress license + library URL + client
+        # flags) into the served app shell's head, replacing the generated
+        # CXD_HEAD placeholder. The license MUST precede canvasXpress.min.js, so
+        # this is done server-side rather than fetched by the page.
+        index_html = _render_index(
+            canvasxpress_url=canvasxpress_url,
+            canvasxpress_license=canvasxpress_license,
+            client_config={"llmEnabled": bool(llm_api_key)},
+        )
+        if index_html is not None:
+            @app.get("/", response_class=HTMLResponse)
+            def index():
+                return HTMLResponse(index_html)
+
+            @app.get("/index.html", response_class=HTMLResponse)
+            def index_page():
+                return HTMLResponse(index_html)
+
+        # Everything else (bundle, shared.html, assets) stays plain static.
         app.mount("/", StaticFiles(directory=_STATIC_DIR, html=True), name="static")
 
     return app
+
+
+def _render_index(canvasxpress_url: str, canvasxpress_license: Optional[str],
+                  client_config: dict) -> Optional[str]:
+    """Read the served app shell and inject runtime config into its head.
+
+    Replaces the ``<!--CXD_HEAD_START-->…<!--CXD_HEAD_END-->`` block with the
+    CanvasXpress license (``window.cX``, before the library), the configured
+    library ``<link>``/``<script>``, and a ``window.__CXD_CONFIG__`` object for
+    the client. Returns None if the shell isn't present (falls back to static).
+
+    :param canvasxpress_url: Base URL for the CanvasXpress library assets.
+    :param canvasxpress_license: License key, or None to keep the watermark.
+    :param client_config: Non-secret config exposed to the browser.
+    :returns: The HTML string, or None when there is no index.html to render.
+    """
+    index_path = os.path.join(_STATIC_DIR, "index.html")
+    if not os.path.isfile(index_path):
+        return None
+    with open(index_path, encoding="utf-8") as handle:
+        template = handle.read()
+
+    base = canvasxpress_url.rstrip("/")
+    css_url = html.escape(base + "/canvasXpress.css", quote=True)
+    js_url = html.escape(base + "/canvasXpress.min.js", quote=True)
+    parts = []
+    if canvasxpress_license:
+        # window.cX must be set before canvasXpress.min.js loads.
+        parts.append("<script>window.cX=%s;</script>" % json.dumps(canvasxpress_license))
+    parts.append('<link href="%s" rel="stylesheet" />' % css_url)
+    parts.append('<script src="%s"></script>' % js_url)
+    parts.append("<script>window.__CXD_CONFIG__=%s;</script>" % json.dumps(client_config))
+    injected = "\n  ".join(parts)
+
+    # Use a function replacement so backslashes in the config aren't treated as
+    # regex backreferences.
+    return re.sub(
+        r"<!--CXD_HEAD_START-->.*?<!--CXD_HEAD_END-->",
+        lambda _match: injected,
+        template,
+        flags=re.S,
+    )
 
 
 def _has_body(request: Request) -> bool:

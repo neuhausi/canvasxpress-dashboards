@@ -12,19 +12,56 @@ isolation); the web app adds FastAPI.
 
 ```bash
 pip install -e '.[web]'
+cp .env.example .env          # optional — edit to point at your resources
+python -m cxd_server          # or: cxd-server   (installed console script)
+```
+
+That's the turnkey path: it loads `.env` (when present), **generates and persists
+a `SESSION_SECRET`** on first run (so logins survive restarts — no key management
+needed), then serves the **full no-code app** (sign-in, Builder, saved dashboards,
+dataset uploads, share links) at `http://127.0.0.1:8000/`. Flags: `--host`,
+`--port`, `--reload` (dev auto-reload), `--no-signup`.
+
+**Docker:** from the repo root, `docker compose up` (→ `http://localhost:8000/`).
+Persistent state lives in the `cxd-data` volume; see the commented blocks in
+[`docker-compose.yml`](../docker-compose.yml) to swap in Postgres / S3.
+
+Config is entirely environment-driven — copy [`.env.example`](.env.example) and
+change values to your resources (Postgres, S3, Google Drive, HTTPS, …). Common
+vars: `SESSION_SECRET` (auto-generated if unset), `CXD_HOST`/`CXD_PORT`,
+`APP_DB_PATH`, `CXD_DASHBOARD_STORE`, `CXD_DATASET_STORE`, `ALLOW_SIGNUP`,
+`CXD_HTTPS_ONLY`, `CXD_ADMINS`, `CXD_PUBLISH_BASE_URL`, `CXD_CANVASXPRESS_URL`,
+`CXD_CANVASXPRESS_LICENSE`, `CXD_LLM_API_KEY`, `CXD_LLM_MODEL`.
+
+`CXD_CANVASXPRESS_URL` points the served app at a (self-hosted) CanvasXpress
+build; `CXD_CANVASXPRESS_LICENSE` is injected as `window.cX` before the library
+loads to remove the watermark. `CXD_LLM_API_KEY` (for the future
+natural-language builder) stays server-side — it is never sent to the browser;
+the page only learns whether an LLM is configured (`GET /api/llm/status`).
+
+The **first user to sign up is made an admin automatically**, so a fresh
+deployment always has an administrator. Set `CXD_ADMINS` (comma-separated
+usernames) to grant additional admins the built-in **user-management screen**
+(create/list/delete users, reset passwords) at `/` and the `/api/admin/users`
+API. Admin status is the persisted first-user flag OR the `CXD_ADMINS` config.
+
+Advanced / embedding — build the app yourself and run under any ASGI server:
+
+```bash
 export SESSION_SECRET=$(python -c "import secrets;print(secrets.token_urlsafe(32))")
 uvicorn cxd_server.app:create_dashboards_app --factory --reload
 ```
-
-Environment: `SESSION_SECRET` (required), `APP_DB_PATH` (default `dashboards.db`),
-`ALLOW_SIGNUP` (default `1`).
 
 ## API
 
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/auth/signup` · `/auth/login` · `/auth/logout` | Session auth (cookie) |
-| `GET` | `/auth/me` | Current user |
+| `GET` | `/auth/me` | Current user (`{user, is_admin}`) |
+| `GET` | `/api/llm/status` | Whether the NL builder is configured (`{enabled, model}`; no key) |
+| `GET`·`POST` | `/api/admin/users` | Admin: list / create users (needs `CXD_ADMINS`) |
+| `POST` | `/api/admin/users/{u}/password` | Admin: reset a user's password |
+| `DELETE` | `/api/admin/users/{u}` | Admin: delete a user + their dashboards |
 | `GET` | `/api/dashboards` | List the user's dashboards (summaries) |
 | `POST` | `/api/dashboards` | Create/update a spec (keyed by `spec.id`) |
 | `GET` | `/api/dashboards/{id}` | Load one of the user's specs |
@@ -39,7 +76,7 @@ Environment: `SESSION_SECRET` (required), `APP_DB_PATH` (default `dashboards.db`
 
 The bundled read-only viewer is served at `/shared.html?token=…`.
 
-**Datasets & pluggable storage (Phase 5.1–5.3).** Uploaded datasets are reshaped
+**Datasets & pluggable storage.** Uploaded datasets are reshaped
 once into a CanvasXpress data object and persisted in a pluggable `ObjectStore`,
 selected by URI scheme. Backends: **`file://`** (local, default, zero-dep),
 **`s3://`** (S3 / S3-compatible MinIO·R2·GCS-interop; `[s3]` extra; `url_for`
@@ -54,14 +91,14 @@ its `TokenStore`). Panels bind by id —
 `{"kind":"dataset","id":"sales-2026","store?":"s3-prod"}` — so specs stay path-
 and credential-free and resolve with the viewer's own permissions.
 
-**Dashboards on Postgres (Phase 5.3).** The dashboard store (users + specs +
+**Dashboards on Postgres.** The dashboard store (users + specs +
 share tokens) is relational, so it upgrades SQLite→Postgres via the *same*
 SQLAlchemy code path: set `CXD_DASHBOARD_STORE=postgres://…` (or `sqlite://…`) to
 run dashboards on Postgres; unset (or a bare path / `file://`) keeps the
 zero-dependency stdlib SQLite store. A parametrized suite runs both backends
 through identical asserts, proving parity.
 
-**Config & the store picker (Phase 5.2).** The browser only ever names a
+**Config & the store picker.** The browser only ever names a
 **configured** store; raw paths/credentials stay server-side.
 
 ```

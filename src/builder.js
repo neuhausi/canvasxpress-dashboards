@@ -13,7 +13,7 @@
  */
 
 import { injectStyles } from './styles.js';
-import { renderDashboard } from './renderDashboard.js';
+import { renderDashboard, resizeInstance } from './renderDashboard.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
 import { addPanel, removePanel, movePanel, resizePanel, updatePanel, setDataSource, blankSpec, DEFAULT_COLS }
   from './builderModel.js';
@@ -468,19 +468,20 @@ export function createBuilder(target, options) {
   }
 
   /**
-   * Fit a panel's graph to its (just-resized) cell once the drag ends.
-   *
-   * CanvasXpress's `setDimensions` currently redraws the graph offset (down/right)
-   * on resize, whereas a fresh render places it correctly — the same clean result
-   * you get by switching panels. So we re-render just this panel at its new size
-   * (customizer edits are folded back into the spec first, so they survive).
+   * Fit a panel's graph to its (just-resized) cell once the drag ends, by
+   * calling CanvasXpress `setDimensions` (via resizeInstance) at the cell size.
    * @param {string} panelId - Panel to fit.
    * @returns {void}
    * @private
    */
   function resizePanelGraph(panelId) {
-    syncLiveConfigs();
-    rerenderPanel(panelId);
+    var inst = instByPanel[panelId];
+    var cell = cellEls[panelId];
+    if (!inst || !cell) return;
+    var body = cell.querySelector('.cxd-panel-body') || cell;
+    var box = body.getBoundingClientRect();
+    var inset = typeof spec.canvasInset === 'number' ? spec.canvasInset : 18;
+    resizeInstance(inst, Math.floor(box.width) - inset, Math.floor(box.height) - inset);
   }
 
   /**

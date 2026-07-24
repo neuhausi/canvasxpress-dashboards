@@ -1,0 +1,16 @@
+# The image only needs the server package (which bundles the static app shell).
+node_modules/
+dist/
+examples/
+tests/
+schema/
+scripts/
+src/
+docs/
+**/__pycache__/
+**/*.pyc
+**/.session_secret
+**/*.db
+server/.env
+examples/.cxd-demo/
+.git/

@@ -94,3 +94,43 @@ def test_delete(store):
     store.save_dashboard("alice", _spec(), "t1")
     store.delete_dashboard("alice", "d1")
     assert store.get_dashboard("alice", "d1") is None
+
+
+# ---- user management (admin) — parity across both dashboard stores ----
+def test_list_users_sorted(store):
+    store.create_user("bob", "secret1")
+    store.create_user("alice", "secret1")
+    assert store.list_users() == ["alice", "bob"]
+
+
+def test_set_password(store):
+    store.create_user("alice", "secret1")
+    assert store.set_password("alice", "newpass1")
+    assert store.check_user("alice", "newpass1")
+    assert not store.check_user("alice", "secret1")
+    assert not store.set_password("ghost", "whatever")
+
+
+def test_delete_user_removes_dashboards(store):
+    store.create_user("alice", "secret1")
+    store.save_dashboard("alice", _spec(), "t1")
+    assert store.delete_user("alice")
+    assert store.list_users() == []
+    assert store.list_dashboards("alice") == []
+    assert not store.delete_user("alice")
+
+
+def test_is_admin_flag(store):
+    store.create_user("root", "secret1", is_admin=True)
+    store.create_user("alice", "secret1")
+    assert store.is_admin("root")
+    assert not store.is_admin("alice")
+    assert not store.is_admin("ghost")
+
+
+def test_set_admin_grant_revoke(store):
+    store.create_user("alice", "secret1")
+    assert not store.is_admin("alice")
+    assert store.set_admin("alice", True) and store.is_admin("alice")
+    assert store.set_admin("alice", False) and not store.is_admin("alice")
+    assert not store.set_admin("ghost", True)

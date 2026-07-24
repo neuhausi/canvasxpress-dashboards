@@ -108,16 +108,55 @@ var umd =
 writeFileSync(join(distDir, 'canvasxpress-dashboards.umd.js'), umd);
 
 // Mirror the UMD bundle into the server's static dir so the shared viewer is
-// self-contained when served by cxd_server.
+// self-contained when served by cxd_server, and generate the first-class app
+// shell (index.html) from the single-source dev page (examples/builder.html),
+// swapping its dev asset URLs for production ones so cxd_server serves the full
+// no-code app at `/`.
 var serverStatic = join(root, 'server', 'src', 'cxd_server', 'static');
 try {
   mkdirSync(serverStatic, { recursive: true });
   writeFileSync(join(serverStatic, 'canvasxpress-dashboards.umd.js'), umd);
+  writeFileSync(join(serverStatic, 'index.html'), buildAppShell());
 } catch (e) {
   // Server package may be absent in a slim checkout — non-fatal.
 }
 
 console.log('Built dist/canvasxpress-dashboards.esm.js and .umd.js (v' + VERSION + ')');
+
+/**
+ * Build the production app shell (served at `/` by cxd_server) from the
+ * single-source dev page. The dev page (examples/builder.html) loads the
+ * dashboards bundle from `../dist` with a cache-buster inside a CX-LIB-START…END
+ * block; the served app loads the bundle from the same origin (so `/api/*` needs
+ * no CORS) and gets its CanvasXpress tags from the CXD_HEAD block that cxd_server
+ * fills at serve time. Only the `<head>` asset block changes; the body + app
+ * logic stay identical, so there is one source of truth.
+ * @returns {string} The generated index.html.
+ */
+function buildAppShell() {
+  var devPage = readFileSync(join(root, 'examples', 'builder.html'), 'utf8');
+  // cxd_server replaces the CXD_HEAD_START…END block at serve time to inject the
+  // CanvasXpress license (window.cX), the configured library URL, and client
+  // config. The CDN defaults inside keep the page working on a plain static host
+  // (no license / default library) when it is NOT served by cxd_server.
+  var prodHead =
+    '  <!-- Generated from examples/builder.html by scripts/build.mjs. Do not edit. -->\n' +
+    '  <!--CXD_HEAD_START-->\n' +
+    '  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />\n' +
+    '  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>\n' +
+    '  <!--CXD_HEAD_END-->\n' +
+    '  <script src="canvasxpress-dashboards.umd.js"></script>';
+  // Replace the dev asset block (the CX-LIB-START…END markers wrap the
+  // CanvasXpress tags + the cache-busting document.write bundle loader).
+  var shell = devPage.replace(
+    /  <!--CX-LIB-START[\s\S]*?<!--CX-LIB-END-->/,
+    prodHead
+  );
+  if (shell === devPage) {
+    throw new Error('buildAppShell: dev asset block not found in examples/builder.html');
+  }
+  return shell;
+}
 
 /**
  * Read the package version from package.json.

@@ -123,8 +123,47 @@ export function createDashboardClient(options) {
     },
     /** @returns {Promise<object>} `{ user }`. */
     logout: function () { return request('POST', '/auth/logout'); },
-    /** @returns {Promise<object>} `{ user }` (null when logged out). */
+    /** @returns {Promise<object>} `{ user, is_admin }` (user null when logged out). */
     me: function () { return request('GET', '/auth/me'); },
+
+    // ---- admin: user management (requires the caller to be an admin) ----
+    /** @returns {Promise<object[]>} `[{ username, is_admin, dashboards }]`. */
+    listUsers: function () { return request('GET', '/api/admin/users').then(function (r) { return r.users; }); },
+    /**
+     * Create a user (admin — works even when public signup is disabled).
+     * @param {string} username - New username (≥3 chars).
+     * @param {string} password - New password (≥6 chars).
+     * @returns {Promise<object>} `{ user }`.
+     */
+    createUser: function (username, password) {
+      return request('POST', '/api/admin/users', { username: username, password: password });
+    },
+    /**
+     * Reset a user's password.
+     * @param {string} username - Target user.
+     * @param {string} password - New password (≥6 chars).
+     * @returns {Promise<object>} `{ user }`.
+     */
+    setUserPassword: function (username, password) {
+      return request('POST', '/api/admin/users/' + encodeURIComponent(username) + '/password', { password: password });
+    },
+    /**
+     * Grant or revoke a user's admin rights.
+     * @param {string} username - Target user.
+     * @param {boolean} isAdmin - True to grant, false to revoke.
+     * @returns {Promise<object>} `{ user, is_admin }`.
+     */
+    setUserAdmin: function (username, isAdmin) {
+      return request('POST', '/api/admin/users/' + encodeURIComponent(username) + '/admin', { is_admin: !!isAdmin });
+    },
+    /**
+     * Delete a user and all of their dashboards.
+     * @param {string} username - Target user.
+     * @returns {Promise<string[]>} The remaining usernames.
+     */
+    deleteUser: function (username) {
+      return request('DELETE', '/api/admin/users/' + encodeURIComponent(username)).then(function (r) { return r.users; });
+    },
 
     /** @returns {Promise<object[]>} The current user's dashboard summaries. */
     list: function () { return request('GET', '/api/dashboards').then(function (r) { return r.dashboards; }); },

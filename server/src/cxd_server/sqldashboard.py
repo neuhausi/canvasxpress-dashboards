@@ -36,6 +36,7 @@ class SqlDashboardStore:
             sa.Column("username", sa.Text, primary_key=True),
             sa.Column("salt", sa.LargeBinary, nullable=False),
             sa.Column("pw_hash", sa.LargeBinary, nullable=False),
+            sa.Column("is_admin", sa.Integer, nullable=False, server_default=sa.text("0")),
         )
         self._dash = sa.Table(
             "cxd_dashboards",
@@ -49,17 +50,37 @@ class SqlDashboardStore:
             sa.Column("updated_at", sa.Text, nullable=False),
         )
         metadata.create_all(self._engine)
+        # Migrate tables created before is_admin existed (no-op if present).
+        try:
+            with self._engine.begin() as conn:
+                conn.execute(sa.text(
+                    "ALTER TABLE cxd_users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"
+                ))
+        except sa.exc.SQLAlchemyError:
+            pass
 
     # ---- users ----
-    def create_user(self, username: str, password: str) -> bool:
+    def create_user(self, username: str, password: str, is_admin: bool = False) -> bool:
+        """Create a user; False if taken. ``is_admin`` persists the admin flag."""
         salt, digest = hash_password(password)
         users = self._users
         try:
             with self._engine.begin() as conn:
-                conn.execute(users.insert().values(username=username, salt=salt, pw_hash=digest))
+                conn.execute(users.insert().values(
+                    username=username, salt=salt, pw_hash=digest, is_admin=1 if is_admin else 0,
+                ))
             return True
         except self._sa.exc.IntegrityError:
             return False
+
+    def is_admin(self, username: str) -> bool:
+        """Return True if the user is persisted as an admin (the is_admin flag)."""
+        users = self._users
+        with self._engine.connect() as conn:
+            row = conn.execute(
+                self._sa.select(users.c.is_admin).where(users.c.username == username)
+            ).first()
+        return bool(row) and bool(row[0])
 
     def check_user(self, username: str, password: str) -> bool:
         users = self._users
@@ -68,6 +89,42 @@ class SqlDashboardStore:
                 self._sa.select(users.c.salt, users.c.pw_hash).where(users.c.username == username)
             ).first()
         return bool(row) and verify_password(password, _b(row[0]), _b(row[1]))
+
+    def list_users(self) -> List[str]:
+        """Return all usernames (sorted). Admin use — no secrets are exposed."""
+        users = self._users
+        with self._engine.connect() as conn:
+            rows = conn.execute(
+                self._sa.select(users.c.username).order_by(users.c.username)
+            ).all()
+        return [r[0] for r in rows]
+
+    def set_password(self, username: str, password: str) -> bool:
+        """Reset a user's password. Returns False if the user doesn't exist."""
+        salt, digest = hash_password(password)
+        users = self._users
+        with self._engine.begin() as conn:
+            result = conn.execute(
+                users.update().where(users.c.username == username).values(salt=salt, pw_hash=digest)
+            )
+        return result.rowcount > 0
+
+    def set_admin(self, username: str, is_admin: bool) -> bool:
+        """Grant or revoke a user's admin flag. False if the user doesn't exist."""
+        users = self._users
+        with self._engine.begin() as conn:
+            result = conn.execute(
+                users.update().where(users.c.username == username).values(is_admin=1 if is_admin else 0)
+            )
+        return result.rowcount > 0
+
+    def delete_user(self, username: str) -> bool:
+        """Delete a user and all of their dashboards. False if user is absent."""
+        users, dash = self._users, self._dash
+        with self._engine.begin() as conn:
+            result = conn.execute(users.delete().where(users.c.username == username))
+            conn.execute(dash.delete().where(dash.c.owner == username))
+        return result.rowcount > 0
 
     # ---- dashboards ----
     def save_dashboard(self, owner: str, spec: dict, updated_at: str) -> dict:

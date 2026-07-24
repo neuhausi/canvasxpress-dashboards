@@ -1,0 +1,44 @@
+# CanvasXpress Dashboards — self-hosted stack.
+#
+#   docker compose up            # → http://localhost:8000/
+#
+# Out of the box this runs the app with zero-dependency local storage (SQLite +
+# a file-backed dataset store) persisted in the `cxd-data` volume.
+#
+# To run on Postgres instead, layer the override file (adds a `db` service and
+# repoints the stores) — this is the "point it at your own resources" swap:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up
+#
+# For S3 datasets, build with CXD_EXTRAS="web,s3" and set CXD_DATASET_STORE=
+# s3://bucket/prefix (+ AWS_* creds). See server/.env.example for every var.
+
+services:
+  dashboards:
+    build:
+      context: .
+      args:
+        CXD_EXTRAS: "web"
+    ports:
+      # Host port is overridable: CXD_HOST_PORT=8080 docker compose up
+      - "${CXD_HOST_PORT:-8000}:8000"
+    volumes:
+      - cxd-data:/data
+    environment:
+      # A stable secret keeps logins valid across restarts/replicas. If unset, a
+      # per-instance secret is generated and persisted to the volume instead.
+      # SESSION_SECRET: "change-me-to-a-long-random-string"
+      ALLOW_SIGNUP: "1"
+      # Grant the admin user-management screen to these usernames (comma-separated).
+      # CXD_ADMINS: "root"
+      # CXD_PUBLISH_BASE_URL: "https://dashboards.example.com"
+      # CanvasXpress: self-host the library and/or drop the watermark with a license.
+      # CXD_CANVASXPRESS_URL: "https://www.canvasxpress.org/dist"
+      # CXD_CANVASXPRESS_LICENSE: "012A94618113866875DE9D49636735D1F8"
+      # LLM (future NL builder) — stays server-side, never sent to the browser.
+      # CXD_LLM_API_KEY: "sk-..."
+      # CXD_LLM_MODEL: "claude-opus-4-8"
+    restart: unless-stopped
+
+volumes:
+  cxd-data:
