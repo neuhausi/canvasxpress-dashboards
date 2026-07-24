@@ -46,11 +46,19 @@ var dashboardCss = [
   '.cxb-props { padding-left: 8px; border-left: 1px solid var(--cxd-border,#e2e5ea); }',
   '.cxb-props:empty { border-left: none; padding-left: 0; }',
   '.cxb-props select { padding: 5px 7px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px; font: inherit; }',
-  '.cxb-btn { padding: 5px 11px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px;',
-  '  background: var(--cxd-title-bg,#f7f8fa); color: inherit; font: 500 13px system-ui; cursor: pointer; }',
+  /* Toolbar controls set explicit colours (they render into the host app shell,
+     which may be dark) — `color: inherit` here would pick up light shell text on
+     the light button and vanish. Dark-scheme overrides are below. */
+  '.cxb-btn { padding: 5px 11px; border: 1px solid #d0d4da; border-radius: 6px;',
+  '  background: #f7f8fa; color: #2a2f36; font: 500 13px system-ui; cursor: pointer; }',
   '.cxb-btn:hover { background: #eceef1; }',
   '.cxb-btn-primary { background: #2f6feb; border-color: #2f6feb; color: #fff; }',
   '.cxb-btn-primary:hover { background: #295fd0; }',
+  '@media (prefers-color-scheme: dark) {',
+  '  .cxb-btn { background: #1d2027; color: #e6e8ec; border-color: #2c313a; }',
+  '  .cxb-btn:hover { background: #2c313a; }',
+  '  .cxb-title-input, .cxb-tinput, .cxb-props select { background: #16181d; color: #e6e8ec; border-color: #2c313a; }',
+  '  .cxb-props { border-left-color: #2c313a; } }',
   '.cxb-stage { width: 100%; min-width: 0; }',
   /* live editable cells */
   '.cxb-cell { position: relative; }',
@@ -633,6 +641,10 @@ function renderDashboard(spec, target, options) {
   var store = createDataStore({
     fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl
   });
+  // Auto-resize each graph to its cell (via setDimensions) when the container
+  // reflows. The builder disables this and re-renders panels itself on resize,
+  // which places the graph correctly where setDimensions currently offsets it.
+  var autoResize = options.observeResize !== false;
 
   // Build the grid scaffold.
   injectStyles(container.ownerDocument || document);
@@ -752,7 +764,7 @@ function renderDashboard(spec, target, options) {
         instances.push(instance);
         if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
         bind(panel && panel.dataRef, instance);
-        observeResize(cell, instance, observers, canvasInset);
+        if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
         if (typeof options.onPanelRendered === 'function') {
           options.onPanelRendered({
@@ -790,7 +802,7 @@ function renderDashboard(spec, target, options) {
         var instance = new CX(canvasId, data, config, {});
         instances.push(instance);
         bind(control.dataRef, instance);
-        observeResize(cell, instance, observers, canvasInset);
+        if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
       })
       .catch(function (err) {
@@ -939,6 +951,13 @@ function mergeConfig(config, broadcastGroup, owner) {
   // Per-panel opt-out: `broadcast: false` on the panel disables coordination.
   if (owner && owner.broadcast === false && !Object.prototype.hasOwnProperty.call(merged, 'broadcast')) {
     merged.broadcast = false;
+  }
+  // Every dashboard graph is sized by its cell, never by CanvasXpress's own
+  // interactive resizer — that native corner-drag handle conflicts with the
+  // builder's resize handle. Panels resize via an explicit setDimensions() call
+  // when their cell changes (see resizeInstance). A panel may still override.
+  if (!Object.prototype.hasOwnProperty.call(merged, 'resizable')) {
+    merged.resizable = false;
   }
   return merged;
 }
@@ -1096,25 +1115,27 @@ function observeResize(cell, instance, observers, inset) {
 var RESIZE_DEBOUNCE_MS = 180;
 
 /**
- * Resize a CanvasXpress instance to (w, h) WITHOUT leaving it interactively
- * resizable.
+ * Resize a CanvasXpress instance to (w, h) by calling `setDimensions`.
  *
- * CanvasXpress gates `setDimensions()` on `this.resizable`, but that *same* flag
- * also arms its native corner-drag resizer (checked live at mousedown), which
- * fights the dashboard/builder's own resize handle and offsets the graph. So we
- * enable the flag only for the synchronous `setDimensions` call and restore it
- * immediately — the native resizer never observes `resizable === true` during
- * user interaction, so it stays inert.
+ * Instances are built with `resizable: false` (mergeConfig), so CanvasXpress's
+ * native corner-drag resizer stays off and never fights the builder's handle;
+ * the graph follows its cell purely through this explicit call.
  *
  * @param {object} instance - The CanvasXpress instance.
  * @param {number} w - Target width (px).
  * @param {number} h - Target height (px).
  * @returns {void}
- * @private
  */
 function resizeInstance(instance, w, h) {
   if (!instance || typeof instance.setDimensions !== 'function') return;
   if (w < 5 || h < 5) return;
+  // Instances are built with `resizable: false` so CanvasXpress's native
+  // corner-drag resizer never arms (it checks the flag live at mousedown). But
+  // the published `setDimensions` also gates on that same flag (`if
+  // (!this.resizable) return`), so we enable it only for this synchronous call
+  // and restore it immediately — the native resizer never sees it true during
+  // user interaction. (Once the library's setDimensions no longer gates on
+  // `resizable`, this toggle can be removed.)
   var wasResizable = instance.resizable;
   var wasResizableX = instance.resizableX;
   var wasResizableY = instance.resizableY;
@@ -2057,6 +2078,7 @@ function createBuilder(target, options) {
   function buildToolbar() {
     toolbarHost.innerHTML = '';
     toolbarHost.classList.add('cxb-topbar');
+    // "Create" actions (dashboard title + add panel/data) — one group.
     var left = el('div', 'cxb-tgroup');
     append(left, [
       titleInput,
@@ -2065,7 +2087,10 @@ function createBuilder(target, options) {
     ]);
     var right = el('div', 'cxb-tgroup');
     append(right, [button('Save', function () { doSave(); }, 'cxb-btn-primary')]);
-    append(toolbarHost, [left, propsGroup, el('div', 'cxb-spacer'), right]);
+    // A spacer separates the create-actions group from the selected-panel
+    // properties group (propsGroup: panel title + data source), so the two —
+    // which both mention "panel"/"data" — read as distinct.
+    append(toolbarHost, [left, el('div', 'cxb-spacer'), propsGroup, el('div', 'cxb-spacer'), right]);
   }
   buildToolbar();
 
@@ -2161,7 +2186,7 @@ function createBuilder(target, options) {
     stage.appendChild(host);
     // Inset the canvas so the corner resize handle sits in a margin, not on the
     // graph. A spec-level canvasInset (Settings) wins; 18 is the editing default.
-    var opts = { CanvasXpress: CX, validate: false, canvasInset: 18, baseUrl: baseUrl };
+    var opts = { CanvasXpress: CX, validate: false, canvasInset: 18, baseUrl: baseUrl, observeResize: false };
     opts.onPanelRendered = decorate;
     lastRender = renderDashboard(rawSpec(), host, opts).then(function (handle) {
       liveHandle = handle;
@@ -2315,7 +2340,23 @@ function createBuilder(target, options) {
         commit(resizePanel(spec, panelId, w, h), false);
         applyCellRect(panelId);
       }
-    });
+    }, function () { resizePanelGraph(panelId); });   // fit the graph once the drag ends
+  }
+
+  /**
+   * Fit a panel's graph to its (just-resized) cell once the drag ends.
+   *
+   * CanvasXpress's `setDimensions` currently redraws the graph offset (down/right)
+   * on resize, whereas a fresh render places it correctly — the same clean result
+   * you get by switching panels. So we re-render just this panel at its new size
+   * (customizer edits are folded back into the spec first, so they survive).
+   * @param {string} panelId - Panel to fit.
+   * @returns {void}
+   * @private
+   */
+  function resizePanelGraph(panelId) {
+    syncLiveConfigs();
+    rerenderPanel(panelId);
   }
 
   /**
@@ -2349,15 +2390,17 @@ function createBuilder(target, options) {
    * Attach transient pointermove/up listeners for a drag gesture.
    * @param {object} startEv - The initiating pointerdown event.
    * @param {function(object): void} onMove - Called on each pointermove.
+   * @param {function(): void} [onEnd] - Called once on pointerup (gesture end).
    * @returns {void}
    * @private
    */
-  function dragLoop(startEv, onMove) {
+  function dragLoop(startEv, onMove, onEnd) {
     var doc = container.ownerDocument || document;
     function move(e) { onMove(e); }
     function up() {
       doc.removeEventListener('pointermove', move);
       doc.removeEventListener('pointerup', up);
+      if (typeof onEnd === 'function') onEnd();
     }
     doc.addEventListener('pointermove', move);
     doc.addEventListener('pointerup', up);

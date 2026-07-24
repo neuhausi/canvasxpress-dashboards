@@ -70,6 +70,10 @@ export function renderDashboard(spec, target, options) {
   var store = createDataStore({
     fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl
   });
+  // Auto-resize each graph to its cell (via setDimensions) when the container
+  // reflows. The builder disables this and re-renders panels itself on resize,
+  // which places the graph correctly where setDimensions currently offsets it.
+  var autoResize = options.observeResize !== false;
 
   // Build the grid scaffold.
   injectStyles(container.ownerDocument || document);
@@ -189,7 +193,7 @@ export function renderDashboard(spec, target, options) {
         instances.push(instance);
         if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
         bind(panel && panel.dataRef, instance);
-        observeResize(cell, instance, observers, canvasInset);
+        if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
         if (typeof options.onPanelRendered === 'function') {
           options.onPanelRendered({
@@ -227,7 +231,7 @@ export function renderDashboard(spec, target, options) {
         var instance = new CX(canvasId, data, config, {});
         instances.push(instance);
         bind(control.dataRef, instance);
-        observeResize(cell, instance, observers, canvasInset);
+        if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
       })
       .catch(function (err) {
@@ -376,6 +380,13 @@ function mergeConfig(config, broadcastGroup, owner) {
   // Per-panel opt-out: `broadcast: false` on the panel disables coordination.
   if (owner && owner.broadcast === false && !Object.prototype.hasOwnProperty.call(merged, 'broadcast')) {
     merged.broadcast = false;
+  }
+  // Every dashboard graph is sized by its cell, never by CanvasXpress's own
+  // interactive resizer — that native corner-drag handle conflicts with the
+  // builder's resize handle. Panels resize via an explicit setDimensions() call
+  // when their cell changes (see resizeInstance). A panel may still override.
+  if (!Object.prototype.hasOwnProperty.call(merged, 'resizable')) {
+    merged.resizable = false;
   }
   return merged;
 }
@@ -533,25 +544,27 @@ function observeResize(cell, instance, observers, inset) {
 var RESIZE_DEBOUNCE_MS = 180;
 
 /**
- * Resize a CanvasXpress instance to (w, h) WITHOUT leaving it interactively
- * resizable.
+ * Resize a CanvasXpress instance to (w, h) by calling `setDimensions`.
  *
- * CanvasXpress gates `setDimensions()` on `this.resizable`, but that *same* flag
- * also arms its native corner-drag resizer (checked live at mousedown), which
- * fights the dashboard/builder's own resize handle and offsets the graph. So we
- * enable the flag only for the synchronous `setDimensions` call and restore it
- * immediately — the native resizer never observes `resizable === true` during
- * user interaction, so it stays inert.
+ * Instances are built with `resizable: false` (mergeConfig), so CanvasXpress's
+ * native corner-drag resizer stays off and never fights the builder's handle;
+ * the graph follows its cell purely through this explicit call.
  *
  * @param {object} instance - The CanvasXpress instance.
  * @param {number} w - Target width (px).
  * @param {number} h - Target height (px).
  * @returns {void}
- * @private
  */
-function resizeInstance(instance, w, h) {
+export function resizeInstance(instance, w, h) {
   if (!instance || typeof instance.setDimensions !== 'function') return;
   if (w < 5 || h < 5) return;
+  // Instances are built with `resizable: false` so CanvasXpress's native
+  // corner-drag resizer never arms (it checks the flag live at mousedown). But
+  // the published `setDimensions` also gates on that same flag (`if
+  // (!this.resizable) return`), so we enable it only for this synchronous call
+  // and restore it immediately — the native resizer never sees it true during
+  // user interaction. (Once the library's setDimensions no longer gates on
+  // `resizable`, this toggle can be removed.)
   var wasResizable = instance.resizable;
   var wasResizableX = instance.resizableX;
   var wasResizableY = instance.resizableY;

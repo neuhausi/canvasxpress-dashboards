@@ -202,6 +202,7 @@ export function createBuilder(target, options) {
   function buildToolbar() {
     toolbarHost.innerHTML = '';
     toolbarHost.classList.add('cxb-topbar');
+    // "Create" actions (dashboard title + add panel/data) — one group.
     var left = el('div', 'cxb-tgroup');
     append(left, [
       titleInput,
@@ -210,7 +211,10 @@ export function createBuilder(target, options) {
     ]);
     var right = el('div', 'cxb-tgroup');
     append(right, [button('Save', function () { doSave(); }, 'cxb-btn-primary')]);
-    append(toolbarHost, [left, propsGroup, el('div', 'cxb-spacer'), right]);
+    // A spacer separates the create-actions group from the selected-panel
+    // properties group (propsGroup: panel title + data source), so the two —
+    // which both mention "panel"/"data" — read as distinct.
+    append(toolbarHost, [left, el('div', 'cxb-spacer'), propsGroup, el('div', 'cxb-spacer'), right]);
   }
   buildToolbar();
 
@@ -306,7 +310,7 @@ export function createBuilder(target, options) {
     stage.appendChild(host);
     // Inset the canvas so the corner resize handle sits in a margin, not on the
     // graph. A spec-level canvasInset (Settings) wins; 18 is the editing default.
-    var opts = { CanvasXpress: CX, validate: false, canvasInset: 18, baseUrl: baseUrl };
+    var opts = { CanvasXpress: CX, validate: false, canvasInset: 18, baseUrl: baseUrl, observeResize: false };
     opts.onPanelRendered = decorate;
     lastRender = renderDashboard(rawSpec(), host, opts).then(function (handle) {
       liveHandle = handle;
@@ -460,7 +464,23 @@ export function createBuilder(target, options) {
         commit(resizePanel(spec, panelId, w, h), false);
         applyCellRect(panelId);
       }
-    });
+    }, function () { resizePanelGraph(panelId); });   // fit the graph once the drag ends
+  }
+
+  /**
+   * Fit a panel's graph to its (just-resized) cell once the drag ends.
+   *
+   * CanvasXpress's `setDimensions` currently redraws the graph offset (down/right)
+   * on resize, whereas a fresh render places it correctly — the same clean result
+   * you get by switching panels. So we re-render just this panel at its new size
+   * (customizer edits are folded back into the spec first, so they survive).
+   * @param {string} panelId - Panel to fit.
+   * @returns {void}
+   * @private
+   */
+  function resizePanelGraph(panelId) {
+    syncLiveConfigs();
+    rerenderPanel(panelId);
   }
 
   /**
@@ -494,15 +514,17 @@ export function createBuilder(target, options) {
    * Attach transient pointermove/up listeners for a drag gesture.
    * @param {object} startEv - The initiating pointerdown event.
    * @param {function(object): void} onMove - Called on each pointermove.
+   * @param {function(): void} [onEnd] - Called once on pointerup (gesture end).
    * @returns {void}
    * @private
    */
-  function dragLoop(startEv, onMove) {
+  function dragLoop(startEv, onMove, onEnd) {
     var doc = container.ownerDocument || document;
     function move(e) { onMove(e); }
     function up() {
       doc.removeEventListener('pointermove', move);
       doc.removeEventListener('pointerup', up);
+      if (typeof onEnd === 'function') onEnd();
     }
     doc.addEventListener('pointermove', move);
     doc.addEventListener('pointerup', up);

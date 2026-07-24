@@ -44,11 +44,19 @@ export var dashboardCss = [
   '.cxb-props { padding-left: 8px; border-left: 1px solid var(--cxd-border,#e2e5ea); }',
   '.cxb-props:empty { border-left: none; padding-left: 0; }',
   '.cxb-props select { padding: 5px 7px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px; font: inherit; }',
-  '.cxb-btn { padding: 5px 11px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px;',
-  '  background: var(--cxd-title-bg,#f7f8fa); color: inherit; font: 500 13px system-ui; cursor: pointer; }',
+  /* Toolbar controls set explicit colours (they render into the host app shell,
+     which may be dark) — `color: inherit` here would pick up light shell text on
+     the light button and vanish. Dark-scheme overrides are below. */
+  '.cxb-btn { padding: 5px 11px; border: 1px solid #d0d4da; border-radius: 6px;',
+  '  background: #f7f8fa; color: #2a2f36; font: 500 13px system-ui; cursor: pointer; }',
   '.cxb-btn:hover { background: #eceef1; }',
   '.cxb-btn-primary { background: #2f6feb; border-color: #2f6feb; color: #fff; }',
   '.cxb-btn-primary:hover { background: #295fd0; }',
+  '@media (prefers-color-scheme: dark) {',
+  '  .cxb-btn { background: #1d2027; color: #e6e8ec; border-color: #2c313a; }',
+  '  .cxb-btn:hover { background: #2c313a; }',
+  '  .cxb-title-input, .cxb-tinput, .cxb-props select { background: #16181d; color: #e6e8ec; border-color: #2c313a; }',
+  '  .cxb-props { border-left-color: #2c313a; } }',
   '.cxb-stage { width: 100%; min-width: 0; }',
   /* live editable cells */
   '.cxb-cell { position: relative; }',
