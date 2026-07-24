@@ -1,4 +1,4 @@
-"""Dataset ingestion + storage for the dashboards service (Phase 5.1).
+"""Dataset ingestion + storage for the dashboards service.
 
 A *dataset* is uploaded tabular data (CSV or JSON) reshaped once into a
 CanvasXpress data object ``{y:{vars,smps,data}, x?}`` and stored by id in a
@@ -7,9 +7,10 @@ pluggable :class:`~cxd_server.objectstore.ObjectStore`. Panels bind to it by id
 viewer's own permissions — the spec stays path- and credential-free.
 
 The CSV reshape mirrors the client ``csvToCx`` (and ``canvasxpress-connectors``):
-the first column becomes sample ids (``y.smps``), fully-numeric columns become
-variables (``y.vars`` + ``y.data``), and the rest become per-sample string
-annotations (``x``).
+the first column becomes sample ids (``y.smps``); a column whose non-blank cells
+are all numeric becomes a variable (``y.vars`` + ``y.data``), with any missing
+cells emitted as ``null``; every other column becomes a per-sample string
+annotation (``x``).
 """
 
 from __future__ import annotations
@@ -38,7 +39,7 @@ class DatasetStore:
         self._store_name = store_name
 
     def create(self, owner: str, data: dict, updated_at: str, title: Optional[str] = None,
-               dataset_id: Optional[str] = None) -> dict:
+               dataset_id: Optional[str] = None, config: Optional[dict] = None) -> dict:
         """Store a reshaped CanvasXpress data object; return its summary.
 
         :param owner: The owning user.
@@ -47,12 +48,17 @@ class DatasetStore:
         :param title: Optional human title (seeds the generated id).
         :param dataset_id: Optional explicit id (overwrites in place); generated
             when absent.
-        :returns: The stored summary ``{id, title, rows, cols, updated_at}``.
+        :param config: Optional CanvasXpress graph config associated with the
+            dataset (e.g. from a dropped CanvasXpress JSON), carried in the
+            summary so panels can adopt it as their initial state.
+        :returns: The stored summary ``{id, title, rows, cols, updated_at, config?}``.
         """
         dataset_id = dataset_id or _new_id(title)
         meta = _summary_meta(dataset_id, title, data, updated_at)
         if self._store_name:
             meta["store"] = self._store_name
+        if config:
+            meta["config"] = config
         blob = json.dumps(data).encode("utf-8")
         self._store.put(owner, dataset_id, blob, meta)
         return dict(meta)
@@ -107,16 +113,32 @@ def csv_to_cx(text: str) -> dict:
     if not body:
         raise ValueError("CSV has no data rows")
     ncols = len(header)
-    numeric = [all(_is_numeric(_cell(r, c)) for r in body) for c in range(ncols)]
+
+    # A column is a numeric measure if every NON-BLANK cell is numeric and at
+    # least one is — blanks are missing values, emitted as null (CanvasXpress
+    # renders those as gaps). A single non-numeric value makes it a string
+    # annotation instead. This keeps real-world columns with the odd missing
+    # value plottable rather than demoting the whole column to text.
+    def _is_measure(col):
+        saw_number = False
+        for row in body:
+            cell = _cell(row, col)
+            if _is_blank(cell):
+                continue
+            if _is_numeric(cell):
+                saw_number = True
+            else:
+                return False
+        return saw_number
 
     smps = [str(_cell(r, 0)) for r in body]
     vars_: List[str] = []
-    data: List[List[float]] = []
+    data: List[List[Optional[float]]] = []
     x: Dict[str, List[str]] = {}
     for col in range(1, ncols):
-        if numeric[col]:
+        if _is_measure(col):
             vars_.append(header[col])
-            data.append([float(_cell(r, col)) for r in body])
+            data.append([None if _is_blank(_cell(r, col)) else float(_cell(r, col)) for r in body])
         else:
             x[header[col]] = [_cell(r, col) for r in body]
     out: Dict = {"y": {"vars": vars_, "smps": smps, "data": data}}
@@ -129,7 +151,8 @@ def rows_to_cx(obj) -> dict:
     """Reshape a JSON array of row objects into a CanvasXpress data object.
 
     Column order follows the first row's keys; the first column becomes sample
-    ids, fully-numeric columns become variables, the rest annotations.
+    ids, columns whose non-blank values are all numeric become variables (with
+    missing cells as null), and the rest become annotations.
     """
     if not isinstance(obj, list) or not obj or not isinstance(obj[0], dict):
         raise ValueError("JSON dataset must be a non-empty array of row objects")
@@ -183,6 +206,11 @@ def _looks_like_cx(obj) -> bool:
 
 def _cell(row, col):
     return row[col] if col < len(row) else ""
+
+
+def _is_blank(value) -> bool:
+    """True for a missing cell (None or empty/whitespace-only string)."""
+    return value is None or str(value).strip() == ""
 
 
 def _is_numeric(value) -> bool:

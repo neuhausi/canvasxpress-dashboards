@@ -81,7 +81,7 @@ export function renderDashboard(spec, target, options) {
   container.classList.add('cxd-dashboard');
   applyTheme(container, spec.theme);
   var cols = (spec.layout && spec.layout.cols) || 12;
-  var rowHeight = (spec.layout && spec.layout.rowHeight) || 120;
+  var rowHeight = (spec.layout && spec.layout.rowHeight) || 30;
   var gap = (spec.layout && spec.layout.gap != null) ? spec.layout.gap : 12;
 
   // Dashboard background (colour + optional image) fills the WHOLE container,
@@ -175,10 +175,18 @@ export function renderDashboard(spec, target, options) {
    * @returns {Promise<object|null>} The instance (or null on empty/error).
    */
   function renderPanelItem(item, panel) {
-    var cell = buildCell(panel && panel.title);
+    // Text elements never show a title bar; graph panels can opt out via hideTitle.
+    var showTitle = panel && panel.type !== 'text' && !panel.hideTitle && panel.title;
+    var cell = buildCell(showTitle ? panel.title : null);
     placeCell(cell.root, item);
     grid.appendChild(cell.root);
     cellByPanel[item.panel] = { cell: cell, item: item, instance: null };
+
+    // Text elements carry free-form text instead of a graph — no data or canvas.
+    if (panel && panel.type === 'text') {
+      renderTextPanel(cell, item, panel);
+      return Promise.resolve(null);
+    }
 
     var canvasId = makeCanvasId(spec.id, 'panel', item.panel, panelIdCounter.n++);
     cell.canvas.id = canvasId;
@@ -207,6 +215,36 @@ export function renderDashboard(spec, target, options) {
         cell.setState('error', String(err && err.message || err));
         return null;
       });
+  }
+
+  /**
+   * Render a text element into a cell (no data / canvas).
+   * @param {object} cell - A cell from {@link buildCell}.
+   * @param {object} item - The layout item.
+   * @param {object} panel - The text panel (`{type:'text', text}`).
+   * @returns {void}
+   * @private
+   */
+  function renderTextPanel(cell, item, panel) {
+    cell.canvas.style.display = 'none';
+    // Chrome-free by default (transparent → shows the dashboard background); an
+    // explicit panel.bg fills the cell.
+    cell.root.classList.add('cxd-text-cell');
+    if (panel && panel.bg) cell.root.style.background = panel.bg;
+    var textEl = document.createElement('div');
+    textEl.className = 'cxd-text';
+    // Prefer rich HTML (sanitized — text renders via innerHTML and shared
+    // dashboards are viewed by others); fall back to plain text.
+    if (panel && panel.html != null) textEl.innerHTML = sanitizeHtml(panel.html);
+    else textEl.textContent = (panel && panel.text) || '';
+    cell.body.appendChild(textEl);
+    cell.setState('ready');
+    if (typeof options.onPanelRendered === 'function') {
+      options.onPanelRendered({
+        panelId: item.panel, item: item, cell: cell.root,
+        canvas: cell.canvas, body: cell.body, instance: null, type: 'text'
+      });
+    }
   }
 
   items.forEach(function (item) {
@@ -759,4 +797,101 @@ function shallowClone(obj) {
     if (Object.prototype.hasOwnProperty.call(obj, k)) out[k] = obj[k];
   }
   return out;
+}
+
+// ------------------------------------------------------------------ sanitizer
+
+var CXD_ALLOWED_TAGS = {
+  b: 1, strong: 1, i: 1, em: 1, u: 1, s: 1, strike: 1, span: 1, br: 1, p: 1,
+  div: 1, ul: 1, ol: 1, li: 1, a: 1, font: 1, sub: 1, sup: 1, blockquote: 1,
+  h1: 1, h2: 1, h3: 1, h4: 1, h5: 1, h6: 1
+};
+var CXD_ALLOWED_ATTRS = { style: 1, href: 1, color: 1, size: 1, face: 1, title: 1, target: 1 };
+var CXD_ALLOWED_STYLE = {
+  color: 1, 'background-color': 1, 'font-size': 1, 'font-weight': 1,
+  'font-style': 1, 'text-decoration': 1, 'text-align': 1, 'font-family': 1
+};
+
+/**
+ * Sanitize user HTML for safe rendering via innerHTML. Allowlist-based: keeps a
+ * small set of formatting tags and safe attributes/styles, drops everything else
+ * (scripts, event handlers, javascript: URLs, unknown tags/attrs). Text content
+ * inside dropped tags is preserved.
+ *
+ * This is a pragmatic regex sanitizer for a simple rich-text editor — not a
+ * full HTML parser. Inputs come from our own contenteditable and pasted content.
+ * @param {string} html - Untrusted HTML.
+ * @returns {string} Sanitized HTML.
+ */
+export function sanitizeHtml(html) {
+  if (html == null) return '';
+  var s = String(html);
+  s = s.replace(/<!--[\s\S]*?-->/g, '');
+  // Remove dangerous elements together with their content.
+  s = s.replace(/<(script|style|iframe|object|embed|link|meta|svg|math)\b[\s\S]*?(<\/\1\s*>|$)/gi, '');
+  // Process the remaining tags: keep allowed ones (with filtered attributes),
+  // drop the rest (their inner text stays).
+  return s.replace(/<\s*(\/?)\s*([a-zA-Z0-9]+)((?:[^>"']|"[^"]*"|'[^']*')*)\/?\s*>/g,
+    function (match, close, tag, attrs) {
+      tag = tag.toLowerCase();
+      if (!CXD_ALLOWED_TAGS[tag]) return '';
+      if (close) return '</' + tag + '>';
+      if (tag === 'br') return '<br>';
+      return '<' + tag + sanitizeAttrs(tag, attrs) + '>';
+    });
+}
+
+/**
+ * Keep only allowlisted attributes on a tag (filtering style + href).
+ * @param {string} tag - Lowercased tag name.
+ * @param {string} attrs - Raw attribute text.
+ * @returns {string} A safe leading-space attribute string.
+ * @private
+ */
+function sanitizeAttrs(tag, attrs) {
+  var out = '';
+  var re = /([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'>]+))/g;
+  var m;
+  while ((m = re.exec(attrs))) {
+    var name = m[1].toLowerCase();
+    var value = m[3] != null ? m[3] : (m[4] != null ? m[4] : (m[5] || ''));
+    if (name.indexOf('on') === 0) continue;              // event handlers
+    if (!CXD_ALLOWED_ATTRS[name]) continue;
+    if (name === 'href' && !/^\s*(https?:|mailto:|#|\/)/i.test(value)) continue;
+    if (name === 'style') { value = sanitizeStyle(value); if (!value) continue; }
+    if (name === 'target' && tag === 'a') value = '_blank';
+    out += ' ' + name + '="' + escapeAttr(value) + '"';
+  }
+  return out;
+}
+
+/**
+ * Keep only safe CSS declarations from a style attribute.
+ * @param {string} style - Raw style value.
+ * @returns {string} A filtered `prop: val; …` string.
+ * @private
+ */
+function sanitizeStyle(style) {
+  var out = [];
+  String(style).split(';').forEach(function (decl) {
+    var idx = decl.indexOf(':');
+    if (idx < 0) return;
+    var prop = decl.slice(0, idx).trim().toLowerCase();
+    var val = decl.slice(idx + 1).trim();
+    if (!CXD_ALLOWED_STYLE[prop]) return;
+    if (/url\s*\(|expression\s*\(|javascript:/i.test(val)) return;
+    out.push(prop + ': ' + val);
+  });
+  return out.join('; ');
+}
+
+/**
+ * Escape a value for a double-quoted HTML attribute.
+ * @param {string} v - Raw value.
+ * @returns {string} Escaped value.
+ * @private
+ */
+function escapeAttr(v) {
+  return String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

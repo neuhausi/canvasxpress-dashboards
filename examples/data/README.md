@@ -13,10 +13,11 @@ store on startup, so they appear in the **Data** view and can be bound in the
 | `superstore.csv` | 9,994 | Sales, Quantity, Discount, Profit | Region, Segment, Category, Sub-Category, Ship Mode, State, dates | BI-dashboard classic — great for coordinated panels. Orders only (People/Returns sheets removed). |
 | `diamonds.csv` | 53,940 | depth, table, price, x, y, z | cut, color, clarity | Larger set for scale / perf checks. |
 
-The reshape treats a column as a numeric **measure** only when *every* cell is
-numeric (see `server/src/cxd_server/datasets.py`), so these files are cleaned of
-blank/`NA` cells in their numeric columns — otherwise those columns would fall
-back to string annotations.
+The reshape (`server/src/cxd_server/datasets.py`) treats a column as a numeric
+**measure** when its non-blank cells are all numeric, emitting any missing cells
+as `null` (CanvasXpress renders those as gaps). The Superstore file here is still
+trimmed to real order rows (the mirror had the workbook's People/Returns sheets
+concatenated in); penguins keeps its canonical complete-case rows.
 
 ## Sources
 

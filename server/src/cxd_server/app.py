@@ -362,8 +362,12 @@ def create_dashboards_app(
             data = reshape_to_cx(fmt, content)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
+        config = body.get("config")
+        if config is not None and not isinstance(config, dict):
+            raise HTTPException(status_code=400, detail="'config' must be an object")
         summary = target.create(
-            user, data, _now_iso(), title=body.get("title"), dataset_id=body.get("id")
+            user, data, _now_iso(), title=body.get("title"), dataset_id=body.get("id"),
+            config=config,
         )
         summary["url"] = target.url_for(user, summary["id"])
         return {"dataset": summary}

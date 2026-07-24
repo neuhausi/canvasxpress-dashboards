@@ -13,16 +13,27 @@
  */
 
 import { injectStyles } from './styles.js';
-import { renderDashboard, resizeInstance } from './renderDashboard.js';
+import { renderDashboard, resizeInstance, sanitizeHtml } from './renderDashboard.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
 import { addPanel, removePanel, movePanel, resizePanel, updatePanel, setDataSource, blankSpec, DEFAULT_COLS }
   from './builderModel.js';
 
+// MS-Word-style colour-control icons (the coloured bar is rendered separately).
+var FONT_COLOR_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">' +
+  '<path fill="currentColor" d="M11 3L5.5 17h2.25l1.12-3h6.25l1.12 3h2.25L13 3h-2zm-1.38 9L12 5.67 14.38 12H9.62z"/></svg>';
+var HIGHLIGHT_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">' +
+  '<path fill="currentColor" d="M17.75 7L14 3.25l-10 10V17h3.75l10-10zm2.96-2.96c.39-.39.39-1.02 0-1.41L18.37.29a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+var CHEVRON_UP = '<svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">' +
+  '<path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var CHEVRON_DOWN = '<svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">' +
+  '<path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
 /**
- * Parse CSV text into a CanvasXpress data object, mirroring the
- * `canvasxpress-connectors` reshape: the first column becomes sample ids
- * (`y.smps`), fully-numeric columns become variables (`y.vars` + `y.data`), and
- * the remaining columns become per-sample string annotations (`x`).
+ * Parse CSV text into a CanvasXpress data object, mirroring the server reshape
+ * (and `canvasxpress-connectors`): the first column becomes sample ids
+ * (`y.smps`); a column whose non-blank cells are all numeric becomes a variable
+ * (`y.vars` + `y.data`), with any missing cells emitted as `null` (CanvasXpress
+ * renders those as gaps); every other column becomes a string annotation (`x`).
  *
  * @param {string} text - Raw CSV text (comma-separated; quotes supported).
  * @returns {object} A CanvasXpress data object `{ y: { vars, smps, data }, x? }`.
@@ -36,9 +47,12 @@ export function csvToCx(text) {
   if (!bodyRows.length) throw new Error('CSV has no data rows');
 
   var ncols = header.length;
+  // A column is a numeric measure when every non-blank cell is numeric and at
+  // least one is; blanks are missing values (emitted as null below). A single
+  // non-blank non-numeric value makes it a string annotation instead.
   var numeric = [];
   for (var c = 0; c < ncols; c++) {
-    numeric[c] = bodyRows.every(function (r) { return isNumeric(r[c]); });
+    numeric[c] = isMeasureColumn(bodyRows, c);
   }
 
   var smps = bodyRows.map(function (r) { return String(r[0]); });
@@ -48,7 +62,9 @@ export function csvToCx(text) {
   for (var col = 1; col < ncols; col++) {
     if (numeric[col]) {
       vars.push(header[col]);
-      data.push(bodyRows.map(function (r) { return parseFloat(r[col]); }));
+      data.push(bodyRows.map(function (r) {
+        return isBlank(r[col]) ? null : parseFloat(r[col]);
+      }));
     } else {
       x[header[col]] = bodyRows.map(function (r) { return r[col]; });
     }
@@ -56,6 +72,23 @@ export function csvToCx(text) {
   var out = { y: { vars: vars, smps: smps, data: data } };
   if (Object.keys(x).length) out.x = x;
   return out;
+}
+
+/**
+ * Whether a body column is a numeric measure: every non-blank cell numeric and
+ * at least one numeric value present.
+ * @param {Array<Array<string>>} bodyRows - Parsed CSV data rows.
+ * @param {number} col - Column index.
+ * @returns {boolean} True if the column should be a numeric variable.
+ */
+function isMeasureColumn(bodyRows, col) {
+  var sawNumber = false;
+  for (var i = 0; i < bodyRows.length; i++) {
+    var cell = bodyRows[i][col];
+    if (isBlank(cell)) continue;
+    if (isNumeric(cell)) { sawNumber = true; } else { return false; }
+  }
+  return sawNumber;
 }
 
 /**
@@ -124,6 +157,15 @@ function isNumeric(value) {
 }
 
 /**
+ * Whether a cell is a missing value (null/undefined or empty/whitespace text).
+ * @param {*} value - Cell value.
+ * @returns {boolean} True when the cell is blank.
+ */
+function isBlank(value) {
+  return value == null || String(value).trim() === '';
+}
+
+/**
  * Convert a pointer position to a grid cell coordinate.
  * @param {number} clientX - Pointer X (viewport).
  * @param {number} clientY - Pointer Y (viewport).
@@ -160,6 +202,10 @@ export function createBuilder(target, options) {
 
   var spec = options.spec || blankSpec('dashboard-1', 'New Dashboard');
   var client = options.client || null;
+  // Whether the toolbar shows the "+ Data" (add data source) button. Apps that
+  // manage datasets elsewhere (e.g. a dedicated Data page) can hide it and bind
+  // panels via the per-panel Data dropdown instead.
+  var showAddData = options.showAddData !== false;
   var baseUrl = options.baseUrl || '';   // cxd_server origin for kind:"dataset" sources
   var CX = options.CanvasXpress || (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
   var selectedId = null;
@@ -168,6 +214,9 @@ export function createBuilder(target, options) {
   var gridEl = null;        // the live grid element (stable during a drag)
   var cellEls = {};         // panelId -> panel cell element
   var instByPanel = {};     // panelId -> CanvasXpress instance
+  var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
+  var liveRefs = {};        // data-source names the current liveHandle was built with
+  var savedTextRange = null; // last selection inside a text editor (for format buttons)
 
   container.innerHTML = '';
   var root = el('div', 'cxb');
@@ -204,11 +253,10 @@ export function createBuilder(target, options) {
     toolbarHost.classList.add('cxb-topbar');
     // "Create" actions (dashboard title + add panel/data) — one group.
     var left = el('div', 'cxb-tgroup');
-    append(left, [
-      titleInput,
-      button('+ Panel', function () { doAddPanel(); }),
-      button('+ Data', function () { doAddDataSource(); })
-    ]);
+    var createActions = [titleInput, button('+ Panel', function () { doAddPanel(); }),
+      button('+ Text', function () { doAddText(); })];
+    if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
+    append(left, createActions);
     var right = el('div', 'cxb-tgroup');
     append(right, [button('Save', function () { doSave(); }, 'cxb-btn-primary')]);
     // A spacer separates the create-actions group from the selected-panel
@@ -223,10 +271,41 @@ export function createBuilder(target, options) {
 
   var stage = el('div', 'cxb-stage');
   root.appendChild(stage);
+  // Clicking empty space (not a panel) stops the edit state — deselects the
+  // current panel and clears its properties from the toolbar.
+  on(stage, 'click', function (ev) {
+    if (ev.target && ev.target.closest && !ev.target.closest('.cxb-cell')) deselect();
+  });
+  // Track the selection inside text editors so the format toolbar (which blurs
+  // the editor when clicked) can restore it before applying a command.
+  if (typeof document !== 'undefined' && document.addEventListener && typeof window !== 'undefined') {
+    document.addEventListener('selectionchange', function () {
+      var sel = window.getSelection && window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      var node = sel.anchorNode;
+      var elm = node && (node.nodeType === 1 ? node : node.parentNode);
+      if (elm && elm.closest && elm.closest('.cxb-editable')) savedTextRange = sel.getRangeAt(0);
+    });
+  }
 
   rebuild();
+  loadDatasets();
 
   // ---------------------------------------------------------------- actions
+  /**
+   * Fetch the stored datasets (once) so the panel Data dropdown can offer them
+   * for one-click binding. Refreshes the props panel if one is open. No-op when
+   * the client can't list datasets (front-end-only / not signed in).
+   * @returns {void}
+   */
+  function loadDatasets() {
+    if (!client || typeof client.listDatasets !== 'function') return;
+    client.listDatasets().then(function (list) {
+      availableDatasets = list || [];
+      if (selectedId) renderProps();
+    }, function () { /* leave availableDatasets as-is on failure */ });
+  }
+
   /**
    * Add a panel bound to the first data source, then re-render live.
    * @returns {void}
@@ -234,10 +313,26 @@ export function createBuilder(target, options) {
   function doAddPanel() {
     var id = uniquePanelId(spec);
     var firstRef = Object.keys(spec.data || {})[0];
-    commit(addPanel(spec, { id: id, title: 'Panel ' + id.replace(/\D/g, ''), dataRef: firstRef, w: 6, h: 4, config: { graphType: 'Bar' } }), false);
+    commit(addPanel(spec, { id: id, title: 'Panel ' + id.replace(/\D/g, ''), dataRef: firstRef, w: 6, h: 12, config: { graphType: 'Bar' } }), false);
     selectedId = id;
     // Add incrementally so existing panels (and their live customizer state) are
     // never destroyed — a full re-render would reset them.
+    if (liveHandle && liveHandle.addPanel && gridEl) {
+      lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
+    } else {
+      rebuild();
+    }
+  }
+
+  /**
+   * Add a text element and select it. Text elements carry free-form text instead
+   * of a graph (edited in the panel properties).
+   * @returns {void}
+   */
+  function doAddText() {
+    var id = uniquePanelId(spec);
+    commit(addPanel(spec, { id: id, type: 'text', text: 'Click to edit text…', w: 4, h: 1 }), false);
+    selectedId = id;
     if (liveHandle && liveHandle.addPanel && gridEl) {
       lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
     } else {
@@ -252,15 +347,21 @@ export function createBuilder(target, options) {
    */
   function doAddDataSource() {
     var doc = container.ownerDocument || document;
-    // Offer the "upload to a store" path only when a client can list stores.
+    // Offer the "upload to a store" path only when a client can list stores, and
+    // the "use an existing dataset" path when it can list datasets.
     var storesPromise = (client && typeof client.listStores === 'function')
       ? client.listStores('dataset').then(function (s) { return s; }, function () { return []; })
       : Promise.resolve([]);
-    storesPromise.then(function (stores) {
-      openDataDialog(doc, Object.keys(spec.data || {}), { client: client, stores: stores }).then(function (result) {
+    var datasetsPromise = (client && typeof client.listDatasets === 'function')
+      ? client.listDatasets().then(function (d) { return d; }, function () { return []; })
+      : Promise.resolve([]);
+    Promise.all([storesPromise, datasetsPromise]).then(function (res) {
+      openDataDialog(doc, Object.keys(spec.data || {}),
+        { client: client, stores: res[0], datasets: res[1] }).then(function (result) {
         if (!result) return;
         commit(setDataSource(spec, result.name, result.source), false);
         renderProps();
+        loadDatasets();   // a store upload may have created a new dataset
       });
     });
   }
@@ -312,6 +413,11 @@ export function createBuilder(target, options) {
     // graph. A spec-level canvasInset (Settings) wins; 18 is the editing default.
     var opts = { CanvasXpress: CX, validate: false, canvasInset: 18, baseUrl: baseUrl, observeResize: false };
     opts.onPanelRendered = decorate;
+    // Record the sources this render resolves against; the live handle closes
+    // over this spec snapshot, so a later fast per-panel re-render can only bind
+    // to these refs. Binding a source added afterwards needs a full rebuild.
+    liveRefs = {};
+    Object.keys(spec.data || {}).forEach(function (ref) { liveRefs[ref] = true; });
     lastRender = renderDashboard(rawSpec(), host, opts).then(function (handle) {
       liveHandle = handle;
       gridEl = host.querySelector('.cxd-grid');
@@ -329,37 +435,344 @@ export function createBuilder(target, options) {
    */
   function decorate(info) {
     var cell = info.cell;
+    var isText = info.type === 'text' ||
+      (spec.panels[info.panelId] && spec.panels[info.panelId].type === 'text');
     cell.classList.add('cxb-cell');
     if (info.panelId === selectedId) cell.classList.add('cxb-selected');
     cellEls[info.panelId] = cell;
     instByPanel[info.panelId] = info.instance;
 
     var cols = gridCols(spec);
-    var rowHeight = (spec.layout && spec.layout.rowHeight) || 130;
+    var rowHeight = (spec.layout && spec.layout.rowHeight) || 30;
     var gap = (spec.layout && spec.layout.gap != null) ? spec.layout.gap : 12;
 
-    var title = cell.querySelector('.cxd-panel-title');
-    if (title) {
-      on(title, 'pointerdown', function (ev) { startDrag(ev, info.panelId, cols, rowHeight, gap); });
-      on(title, 'click', function () { selectPanel(info.panelId); });
-
-      var tools = el('span', 'cxb-tools');
+    // Floating chrome (drag grip + tools), shown on hover/selection. It works
+    // with or without a title bar — text elements and hidden-title panels have
+    // no bar, so the chrome is what makes them movable/deletable.
+    var chrome = el('div', 'cxb-chrome');
+    var grip = el('span', 'cxb-grip');
+    grip.textContent = '⠿';
+    grip.setAttribute('title', 'Drag to move');
+    on(grip, 'pointerdown', function (ev) { startDrag(ev, info.panelId, cols, rowHeight, gap); });
+    on(grip, 'click', function (ev) { stop(ev); selectPanel(info.panelId); });
+    var tools = el('span', 'cxb-tools');
+    if (!isText) {
       var gear = iconBtn('⚙', 'Customize graph', function (ev) {
         stop(ev);
         var inst = instByPanel[info.panelId];
         if (inst && typeof inst.showCustomizer === 'function') inst.showCustomizer(ev);
       });
-      var del = iconBtn('×', 'Delete panel', function (ev) { stop(ev); removePanelById(info.panelId); });
       on(gear, 'pointerdown', stop);
-      on(del, 'pointerdown', stop);
-      append(tools, [gear, del]);
-      title.appendChild(tools);
+      append(tools, [gear]);
+    }
+    var del = iconBtn('×', 'Delete', function (ev) { stop(ev); removePanelById(info.panelId); });
+    on(del, 'pointerdown', stop);
+    append(tools, [del]);
+    append(chrome, [grip, tools]);
+    cell.appendChild(chrome);
+
+    // A title bar (when shown) is also a drag handle + click-to-select.
+    var title = cell.querySelector('.cxd-panel-title');
+    if (title) {
+      on(title, 'pointerdown', function (ev) { startDrag(ev, info.panelId, cols, rowHeight, gap); });
+      on(title, 'click', function () { selectPanel(info.panelId); });
     }
 
     var resize = el('div', 'cxb-resize');
     resize.setAttribute('title', 'Resize');
     on(resize, 'pointerdown', function (ev) { startResize(ev, info.panelId, cols, rowHeight, gap); });
     cell.appendChild(resize);
+
+    // Text elements are edited inline (contenteditable + format toolbar);
+    // graphs are data drop targets.
+    if (isText) {
+      var textEl = cell.querySelector('.cxd-text');
+      if (textEl) setupTextEditing(textEl, info.panelId);
+    } else {
+      setupPanelDrop(cell, info.panelId);
+    }
+  }
+
+  /**
+   * Make a text element editable in place: contenteditable + persist edits as
+   * sanitized HTML; pasted content is sanitized too.
+   * @param {HTMLElement} textEl - The `.cxd-text` element.
+   * @param {string} panelId - The text panel id.
+   * @returns {void}
+   * @private
+   */
+  function setupTextEditing(textEl, panelId) {
+    textEl.setAttribute('contenteditable', 'true');
+    textEl.classList.add('cxb-editable');
+    on(textEl, 'focus', function () { selectPanel(panelId); });
+    on(textEl, 'click', function () { if (selectedId !== panelId) selectPanel(panelId); });
+    // Remember the selection inside the editor so toolbar clicks (which blur it)
+    // can restore it before applying a format command.
+    on(textEl, 'keyup', saveTextSelection);
+    on(textEl, 'mouseup', saveTextSelection);
+    on(textEl, 'input', function () {
+      saveTextSelection();
+      // Persist without re-rendering (keeps the caret in place).
+      commit(updatePanel(spec, panelId, { html: sanitizeHtml(textEl.innerHTML) }), false);
+    });
+    on(textEl, 'paste', function (ev) {
+      ev.preventDefault();
+      var cd = ev.clipboardData || (typeof window !== 'undefined' && window.clipboardData);
+      var html = cd && (cd.getData('text/html') || '');
+      var clean = html ? sanitizeHtml(html) : escapeTextHtml(cd ? cd.getData('text/plain') : '');
+      if (document.execCommand) document.execCommand('insertHTML', false, clean);
+    });
+  }
+
+  /** Save the current selection range if it's inside a text editor. @private */
+  function saveTextSelection() {
+    if (typeof window === 'undefined' || !window.getSelection) return;
+    var sel = window.getSelection();
+    if (sel && sel.rangeCount) savedTextRange = sel.getRangeAt(0);
+  }
+
+  /**
+   * Build the text formatting toolbar (bold / italic / underline / colour /
+   * size). Commands apply to the selected text element via execCommand.
+   * @returns {HTMLElement} The toolbar.
+   * @private
+   */
+  function buildTextFormatBar(panel) {
+    var bar = el('span', 'cxb-fmt');
+    function cmdBtn(label, cmd, styleCss) {
+      var b = el('span', 'cxb-fmtbtn');
+      b.textContent = label;
+      if (styleCss) b.setAttribute('style', styleCss);
+      b.setAttribute('title', cmd);
+      // mousedown+preventDefault keeps the editor focused (selection intact).
+      on(b, 'mousedown', function (ev) { ev.preventDefault(); execFormat(cmd); });
+      return b;
+    }
+    // Text colour: the Word "A" icon over a bar showing the current colour.
+    var color = colorControl(FONT_COLOR_ICON, 'Text colour', '#000000', function (value) {
+      execFormat('foreColor', value);
+    });
+
+    // Grow / shrink font size (MS Word style): chevron up / down.
+    var sizeUp = sizeBtn(CHEVRON_UP, +1, 'Increase font size');
+    var sizeDown = sizeBtn(CHEVRON_DOWN, -1, 'Decrease font size');
+
+    // Background (fill) for the whole text element — the Word highlighter icon;
+    // defaults to the dashboard background so a new text element blends in.
+    var bg = colorControl(HIGHLIGHT_ICON, 'Background colour', (panel && panel.bg) || dashboardColor(), function (value) {
+      commit(updatePanel(spec, selectedId, { bg: value }), false);
+      var cell = cellEls[selectedId];
+      if (cell) { cell.classList.add('cxd-text-cell'); cell.style.background = value; }
+    });
+
+    var sup = cmdBtn('x²', 'superscript', 'font-size:11px');
+    var sub = cmdBtn('x₂', 'subscript', 'font-size:11px');
+
+    // Styles, grow/shrink size, super/subscript, then the two colour controls.
+    append(bar, [cmdBtn('B', 'bold', 'font-weight:700'), cmdBtn('I', 'italic', 'font-style:italic'),
+      cmdBtn('U', 'underline', 'text-decoration:underline'), sizeUp, sizeDown, sup, sub, color, bg]);
+    return bar;
+  }
+
+  /**
+   * A font grow/shrink button. Steps the selection's HTML font size (1–7).
+   * @param {string} iconSvg - Inline SVG chevron (trusted constant).
+   * @param {number} delta - +1 to grow, -1 to shrink.
+   * @param {string} title - Tooltip.
+   * @returns {HTMLElement} The button.
+   * @private
+   */
+  function sizeBtn(iconSvg, delta, title) {
+    var b = el('span', 'cxb-fmtbtn cxb-fmtsizebtn');
+    var a = el('span', 'cxb-fmtsizeA');
+    a.textContent = 'A';
+    var chev = el('span', 'cxb-fmtsizechev');
+    chev.innerHTML = iconSvg;   // trusted constant SVG
+    append(b, [a, chev]);
+    b.setAttribute('title', title);
+    on(b, 'mousedown', function (ev) { ev.preventDefault(); stepFontSize(delta); });
+    return b;
+  }
+
+  /**
+   * Grow/shrink the selected text's font size within the HTML 1–7 scale.
+   * @param {number} delta - +1 or -1.
+   * @returns {void}
+   * @private
+   */
+  function stepFontSize(delta) {
+    var cell = cellEls[selectedId];
+    var textEl = cell && cell.querySelector('.cxd-text');
+    if (!textEl || !document.execCommand) return;
+    textEl.focus();
+    if (savedTextRange && typeof window !== 'undefined' && window.getSelection) {
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedTextRange);
+    }
+    var cur = parseInt(document.queryCommandValue && document.queryCommandValue('fontSize'), 10);
+    if (!cur || isNaN(cur)) cur = 3;
+    var next = Math.max(1, Math.min(7, cur + delta));
+    document.execCommand('fontSize', false, String(next));
+    saveTextSelection();
+    commit(updatePanel(spec, selectedId, { html: sanitizeHtml(textEl.innerHTML) }), false);
+  }
+
+  /**
+   * A labelled colour control: an icon glyph over a bar showing the current
+   * colour, with the native colour picker overlaid transparently.
+   * @param {string} iconSvg - Inline SVG icon markup (trusted constant).
+   * @param {string} title - Tooltip.
+   * @param {string} initial - Initial `#rrggbb` value.
+   * @param {function(string): void} onColor - Called with the chosen colour.
+   * @returns {HTMLElement} The control.
+   * @private
+   */
+  function colorControl(iconSvg, title, initial, onColor) {
+    var wrap = el('span', 'cxb-colorctl');
+    wrap.setAttribute('title', title);
+    var icon = el('span', 'cxb-colorctl-ic');
+    icon.innerHTML = iconSvg;   // trusted constant SVG
+    var barEl = el('span', 'cxb-colorctl-bar');
+    barEl.style.background = initial;
+    var input = el('input');
+    input.type = 'color';
+    input.className = 'cxb-colorctl-input';
+    input.value = initial;
+    on(input, 'change', function () { barEl.style.background = input.value; onColor(input.value); });
+    append(wrap, [icon, barEl, input]);
+    return wrap;
+  }
+
+  /**
+   * The dashboard's background as a hex colour for a color input, or white.
+   * @returns {string} A `#rrggbb` colour.
+   * @private
+   */
+  function dashboardColor() {
+    var b = spec.background;
+    return (typeof b === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(b)) ? b : '#ffffff';
+  }
+
+  /**
+   * Apply a formatting command to the selected text element, restoring the saved
+   * selection first (a toolbar click may have blurred the editor).
+   * @param {string} cmd - execCommand name.
+   * @param {string} [value] - Command value.
+   * @returns {void}
+   * @private
+   */
+  function execFormat(cmd, value) {
+    var cell = cellEls[selectedId];
+    var textEl = cell && cell.querySelector('.cxd-text');
+    if (!textEl || !document.execCommand) return;
+    textEl.focus();
+    if (savedTextRange && typeof window !== 'undefined' && window.getSelection) {
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedTextRange);
+    }
+    document.execCommand(cmd, false, value == null ? undefined : value);
+    saveTextSelection();
+    commit(updatePanel(spec, selectedId, { html: sanitizeHtml(textEl.innerHTML) }), false);
+  }
+
+  /**
+   * Make a panel cell a drop target: dropping a valid CanvasXpress file (CSV /
+   * TSV / CanvasXpress JSON / PNG / …) loads it, stores it, and binds the panel
+   * to it. No-op without a client (nowhere to persist).
+   * @param {HTMLElement} cell - The panel cell element.
+   * @param {string} panelId - The panel this cell belongs to.
+   * @returns {void}
+   * @private
+   */
+  function setupPanelDrop(cell, panelId) {
+    if (!client || typeof client.uploadDataset !== 'function') return;
+    function stopEv(ev) { ev.preventDefault(); ev.stopPropagation(); }
+    // Capture phase so we intercept before CanvasXpress's own canvas drop.
+    cell.addEventListener('dragenter', function (ev) { stopEv(ev); cell.classList.add('cxb-drop'); }, true);
+    cell.addEventListener('dragover', function (ev) {
+      stopEv(ev); if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'copy'; cell.classList.add('cxb-drop');
+    }, true);
+    cell.addEventListener('dragleave', function (ev) {
+      stopEv(ev); if (!cell.contains(ev.relatedTarget)) cell.classList.remove('cxb-drop');
+    }, true);
+    cell.addEventListener('drop', function (ev) {
+      stopEv(ev); cell.classList.remove('cxb-drop');
+      var file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+      if (file) handlePanelDrop(panelId, ev, file);
+    }, true);
+  }
+
+  /**
+   * Read a dropped CanvasXpress JSON's own `config` (a CX export is
+   * `{data, config}`). Non-JSON files resolve to null (their config, if any,
+   * comes from the parsed instance instead).
+   * @param {File} file - The dropped file.
+   * @param {function(object|null): void} done - Receives the file's config or null.
+   * @returns {void}
+   * @private
+   */
+  function readFileConfig(file, done) {
+    var name = (file.name || '').toLowerCase();
+    var looksJson = /\.(json|cx)$/.test(name) || (file.type || '').indexOf('json') >= 0;
+    if (!looksJson || typeof FileReader === 'undefined') { done(null); return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var cfg = null;
+      try {
+        var obj = JSON.parse(reader.result);
+        if (obj && obj.config && typeof obj.config === 'object') cfg = stripDerived(obj.config);
+      } catch (e) { cfg = null; }
+      done(cfg);
+    };
+    reader.onerror = function () { done(null); };
+    reader.readAsText(file);
+  }
+
+  /**
+   * Handle a file dropped on a panel: let CanvasXpress parse it (via the panel's
+   * own instance), persist the loaded data to the store, and bind this panel to
+   * the new dataset.
+   * @param {string} panelId - The panel the file was dropped on.
+   * @param {DataTransfer} dataTransfer - The drop's data transfer.
+   * @param {File} file - The dropped file.
+   * @returns {void}
+   * @private
+   */
+  function handlePanelDrop(panelId, event, file) {
+    var inst = instByPanel[panelId];
+    if (!inst || typeof inst.loadFile !== 'function') return;
+    var title = (file.name || 'dataset').replace(/\.[^.]+$/, '');
+    setMsg('Loading “' + (file.name || 'file') + '” …');
+    // Read the file's own config first (CanvasXpress JSON = {data, config}); a
+    // File stays valid across this async read, so we pass it to loadFile below.
+    readFileConfig(file, function (fileConfig) {
+      // loadFile(event, isFlag, callback, providedFile, asTable): CanvasXpress
+      // parses the file (via providedFile) and hands the new instance back.
+      inst.loadFile(event, false, function (newInstance) {
+        var data = newInstance && newInstance.data;
+        if (!data || !data.y) { showError('That file isn’t a dataset CanvasXpress can load.'); return; }
+        // Prefer the file's explicit config; else fall back to the parsed
+        // instance's non-default config. Associated so panels bound to this
+        // dataset adopt it as their initial state.
+        var config = fileConfig;
+        if (!config) {
+          try {
+            if (typeof newInstance.getConfig === 'function') config = stripDerived(newInstance.getConfig() || {});
+          } catch (e) { config = null; }
+        }
+        var opts = { format: 'cx', title: title };
+        if (config && Object.keys(config).length) opts.config = config;
+        client.uploadDataset({ y: data.y, x: data.x }, opts).then(function (summary) {
+          availableDatasets.push(summary);   // selectable immediately (carries config)
+          selectedId = panelId;              // bind + select the dropped panel
+          useDataset(summary);               // create/reuse source, adopt config, re-render
+          loadDatasets();                    // refresh the cached dataset list
+          setMsg('Loaded “' + (summary.title || summary.id) + '”.');
+        }, showError);
+      }, file, false);
+    });
   }
 
   /**
@@ -388,16 +801,173 @@ export function createBuilder(target, options) {
       updateCellTitle(selectedId, titleField.value);
     });
 
+    // Text elements: edit inline (contenteditable); the toolbar hosts the
+    // formatting controls (bold/italic/underline, colour, size).
+    if (panel.type === 'text') {
+      var textLabel = el('span', 'cxb-tlabel');
+      textLabel.textContent = 'Text';
+      append(propsGroup, [textLabel, buildTextFormatBar(panel)]);
+      return;
+    }
+
     var dataLabel = el('span', 'cxb-tlabel');
     dataLabel.textContent = 'Data';
 
-    var dsField = selectField([''].concat(refs), panel.dataRef || '',
-      // Changing the source re-instantiates this panel's graph.
-      function (v) { commit(updatePanel(spec, selectedId, { dataRef: v || undefined }), false); rerenderPanel(selectedId); });
+    var dsField = buildDataSelect(panel, refs);
     dsField.setAttribute('title', 'Data source');
 
+    // A checkbox to show/hide this panel's title bar.
+    var titleToggle = el('label', 'cxb-check');
+    var checkbox = el('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = !panel.hideTitle;
+    on(checkbox, 'change', function () {
+      commit(updatePanel(spec, selectedId, { hideTitle: !checkbox.checked }), false);
+      rerenderPanel(selectedId);   // adding/removing the title bar changes the DOM
+    });
+    var toggleText = el('span');
+    toggleText.textContent = 'Title';
+    titleToggle.appendChild(checkbox);
+    titleToggle.appendChild(toggleText);
+
     // No Delete here — the panel frame already carries a × delete control.
-    append(propsGroup, [titleLabel, titleField, dataLabel, dsField]);
+    append(propsGroup, [titleLabel, titleField, dataLabel, dsField, titleToggle]);
+  }
+
+
+  // Sentinel prefix marking a "use a stored dataset" option (vs a spec ref).
+  var STORE_OPT = ' ds:';
+
+  /**
+   * Build the panel Data dropdown. Every dataset from the store is directly
+   * usable (no "add" step): picking one binds the panel to it, transparently
+   * reusing or creating the underlying spec source. Inline/connector sources the
+   * dashboard already defines stay listed as their own options.
+   * @param {object} panel - The selected panel.
+   * @param {string[]} refs - Current spec data-source names.
+   * @returns {HTMLSelectElement} The configured <select>.
+   * @private
+   */
+  function buildDataSelect(panel, refs) {
+    var doc = container.ownerDocument || document;
+    var select = el('select');
+
+    function addOption(value, label) {
+      var o = doc.createElement('option');
+      o.value = value;
+      o.textContent = label;
+      select.appendChild(o);
+      return o;
+    }
+
+    addOption('', '(none)');
+
+    // Non-dataset sources (inline JSON / connector) remain named options.
+    refs.forEach(function (ref) {
+      var src = (spec.data || {})[ref];
+      if (!src || src.kind !== 'dataset') addOption(ref, ref);
+    });
+
+    // Every stored dataset, directly usable.
+    availableDatasets.forEach(function (d, i) {
+      var bits = [];
+      if (d.rows != null) bits.push(d.rows + 'x' + (d.cols != null ? d.cols : '?'));
+      if (d.store) bits.push(d.store);
+      addOption(STORE_OPT + i, (d.title || d.id) + (bits.length ? '  (' + bits.join(' · ') + ')' : ''));
+    });
+
+    // Reflect the panel's current binding as the selected option.
+    var current = '';
+    var curSrc = panel.dataRef ? (spec.data || {})[panel.dataRef] : null;
+    if (curSrc && curSrc.kind === 'dataset' && curSrc.id) {
+      var idx = indexOfDataset(curSrc.id);
+      if (idx >= 0) {
+        current = STORE_OPT + idx;
+      } else {
+        addOption(panel.dataRef, curSrc.id);   // dataset not loaded yet
+        current = panel.dataRef;
+      }
+    } else if (curSrc) {
+      current = panel.dataRef;   // inline / connector
+    }
+    select.value = current;
+
+    on(select, 'change', function () {
+      var v = select.value;
+      if (v.indexOf(STORE_OPT) === 0) {
+        var d = availableDatasets[parseInt(v.slice(STORE_OPT.length), 10)];
+        if (d) useDataset(d); else renderProps();
+        return;
+      }
+      // Changing the source re-instantiates this panel's graph.
+      commit(updatePanel(spec, selectedId, { dataRef: v || undefined }), false);
+      rerenderPanel(selectedId);
+    });
+    return select;
+  }
+
+  /**
+   * Index of a dataset by id in the loaded list, or -1.
+   * @param {string} id - Dataset id.
+   * @returns {number} Index or -1.
+   * @private
+   */
+  function indexOfDataset(id) {
+    for (var i = 0; i < availableDatasets.length; i++) {
+      if (availableDatasets[i].id === id) return i;
+    }
+    return -1;
+  }
+
+  /**
+   * Bind the selected panel to a stored dataset, reusing a source that already
+   * points at it or creating one transparently.
+   * @param {object} dataset - A dataset summary ({id, title, store}).
+   * @returns {void}
+   * @private
+   */
+  function useDataset(dataset) {
+    var existing = spec.data || {};
+    var name = null;
+    Object.keys(existing).forEach(function (ref) {
+      var srcx = existing[ref];
+      if (!name && srcx && srcx.kind === 'dataset' && srcx.id === dataset.id) name = ref;
+    });
+    var next = spec;
+    if (!name) {
+      name = uniqueSourceName(dataset.id);
+      var source = { kind: 'dataset', id: dataset.id };
+      if (dataset.store) source.store = dataset.store;
+      next = setDataSource(spec, name, source);
+    }
+    next = updatePanel(next, selectedId, { dataRef: name });
+    // If the dataset carries an associated config, adopt it as the panel's
+    // initial state (a deep copy so the shared dataset config isn't mutated).
+    var adoptedConfig = dataset.config && Object.keys(dataset.config).length;
+    if (adoptedConfig) {
+      next = updatePanel(next, selectedId, { config: JSON.parse(JSON.stringify(dataset.config)) });
+    }
+    commit(next, false);
+    // The rebuild path folds each live instance's config back into the spec
+    // (syncLiveConfigs). Drop this panel's stale instance so that fold doesn't
+    // clobber the config we just adopted from the dataset.
+    if (adoptedConfig) delete instByPanel[selectedId];
+    rerenderPanel(selectedId);
+    renderProps();
+  }
+
+  /**
+   * A data-source name based on `base`, de-duplicated against existing sources.
+   * @param {string} base - Preferred name (usually the dataset id).
+   * @returns {string} A name not already present in spec.data.
+   * @private
+   */
+  function uniqueSourceName(base) {
+    var existing = spec.data || {};
+    if (!existing[base]) return base;
+    for (var n = 2; ; n++) {
+      if (!existing[base + '-' + n]) return base + '-' + n;
+    }
   }
 
   /**
@@ -427,16 +997,48 @@ export function createBuilder(target, options) {
   function startDrag(ev, panelId, cols, rowHeight, gap) {
     stop(ev);
     selectPanel(panelId);
+    var rect0 = gridEl && gridEl.getBoundingClientRect();
+    var item0 = itemFor(panelId);
+    if (!rect0 || !item0) return;
+    // Preserve where within the panel (relative to its top-left cell) the drag
+    // started — otherwise the panel snaps its top-left to the pointer, which is
+    // jumpy when the drag handle sits away from the top-left (e.g. the grip that
+    // floats above the panel).
+    var start = rawCell(ev.clientX, ev.clientY, rect0, cols, rowHeight, gap);
+    var offX = item0.x - start.x;
+    var offY = item0.y - start.y;
     dragLoop(ev, function (moveEv) {
       if (!gridEl) return;
       var rect = gridEl.getBoundingClientRect();
-      var cell = pointerToCell(moveEv.clientX, moveEv.clientY, rect, cols, rowHeight, gap);
+      var c = rawCell(moveEv.clientX, moveEv.clientY, rect, cols, rowHeight, gap);
+      var nx = c.x + offX;
+      var ny = c.y + offY;
       var current = itemFor(panelId);
-      if (current && (current.x !== cell.x || current.y !== cell.y)) {
-        commit(movePanel(spec, panelId, cell.x, cell.y), false);
+      if (current && (current.x !== nx || current.y !== ny)) {
+        commit(movePanel(spec, panelId, nx, ny), false);   // movePanel clamps to the grid
         applyCellRect(panelId);
       }
     });
+  }
+
+  /**
+   * Pointer position → grid cell, WITHOUT clamping (may be negative/out of
+   * range), so grab-offset maths stays correct above/left of the grid.
+   * @param {number} clientX - Pointer X.
+   * @param {number} clientY - Pointer Y.
+   * @param {DOMRect} rect - Grid bounding rect.
+   * @param {number} cols - Columns.
+   * @param {number} rowHeight - Row height px.
+   * @param {number} gap - Gap px.
+   * @returns {{x:number, y:number}} Raw (unclamped) cell.
+   * @private
+   */
+  function rawCell(clientX, clientY, rect, cols, rowHeight, gap) {
+    var colWidth = (rect.width + gap) / cols;
+    return {
+      x: Math.floor((clientX - rect.left) / Math.max(1, colWidth)),
+      y: Math.floor((clientY - rect.top) / Math.max(1, rowHeight + gap))
+    };
   }
 
   /**
@@ -452,14 +1054,24 @@ export function createBuilder(target, options) {
   function startResize(ev, panelId, cols, rowHeight, gap) {
     stop(ev);
     selectPanel(panelId);
+    var cell = cellEls[panelId];
+    var item0 = itemFor(panelId);
+    if (!cell || !item0) return;
+    // Measure the panel's own cell as the ruler: a panel spans exactly its
+    // columns/rows with NO internal gap tracks, so cell.width/w and cell.height/h
+    // are the true per-unit sizes. (pointerToCell divides by rowHeight+gap
+    // uniformly, which drifts across gutters and makes resize jumpy.) The panel's
+    // top-left is fixed while dragging the bottom-right handle.
+    var r0 = cell.getBoundingClientRect();
+    var leftPx = r0.left, topPx = r0.top;
+    var colUnit = r0.width / Math.max(1, item0.w);
+    var rowUnit = r0.height / Math.max(1, item0.h);
     dragLoop(ev, function (moveEv) {
       if (!gridEl) return;
-      var rect = gridEl.getBoundingClientRect();
       var item = itemFor(panelId);
       if (!item) return;
-      var far = pointerToCell(moveEv.clientX, moveEv.clientY, rect, cols, rowHeight, gap);
-      var w = far.x - item.x + 1;
-      var h = far.y - item.y + 1;
+      var w = Math.max(1, Math.round((moveEv.clientX - leftPx) / colUnit));
+      var h = Math.max(1, Math.round((moveEv.clientY - topPx) / rowUnit));
       if (w !== item.w || h !== item.h) {
         commit(resizePanel(spec, panelId, w, h), false);
         applyCellRect(panelId);
@@ -503,7 +1115,7 @@ export function createBuilder(target, options) {
     // restyle the grid tracks in place (placement lines are unaffected).
     if (gridEl) {
       var cols = gridCols(spec);
-      var rowHeight = (spec.layout && spec.layout.rowHeight) || 130;
+      var rowHeight = (spec.layout && spec.layout.rowHeight) || 30;
       var gap = (spec.layout && spec.layout.gap != null) ? spec.layout.gap : 12;
       var tpl = gridTemplate(spec.layout.items || [], cols, rowHeight, gap);
       gridEl.style.gridTemplateColumns = tpl.columns;
@@ -550,6 +1162,20 @@ export function createBuilder(target, options) {
   }
 
   /**
+   * Stop the edit state: deselect the current panel and clear its properties.
+   * @returns {void}
+   * @private
+   */
+  function deselect() {
+    if (selectedId == null) return;
+    selectedId = null;
+    Object.keys(cellEls).forEach(function (id) {
+      if (cellEls[id]) cellEls[id].classList.remove('cxb-selected');
+    });
+    renderProps();
+  }
+
+  /**
    * Delete a panel (capturing any customizer edits on the others first).
    * @param {string} panelId - Panel id.
    * @returns {void}
@@ -577,12 +1203,19 @@ export function createBuilder(target, options) {
    * @private
    */
   function rerenderPanel(panelId) {
-    if (liveHandle && liveHandle.removePanel && liveHandle.addPanel && gridEl) {
+    var panel = spec.panels[panelId];
+    var ref = panel && panel.dataRef;
+    // The fast incremental path binds against sources the live handle already
+    // knows; if this panel now points at a source added since the last render,
+    // fall back to a full rebuild (folding live edits first so none are lost).
+    var handleKnowsRef = !ref || liveRefs[ref];
+    if (handleKnowsRef && liveHandle && liveHandle.removePanel && liveHandle.addPanel && gridEl) {
       liveHandle.removePanel(panelId, spec.layout.items);
       delete cellEls[panelId];
       delete instByPanel[panelId];
       lastRender = liveHandle.addPanel(itemFor(panelId), spec.panels[panelId], spec.layout.items).then(renderProps);
     } else {
+      syncLiveConfigs();
       rebuild();
     }
   }
@@ -757,6 +1390,18 @@ function hasFactorSentinel(value) {
 }
 
 /**
+ * Escape plain text to HTML (for pasting plain text into a rich editor).
+ * @param {string} text - Raw text.
+ * @returns {string} HTML-escaped text with newlines as <br>.
+ * @private
+ */
+function escapeTextHtml(text) {
+  return String(text == null ? '' : text)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+}
+
+/**
  * Return a new spec with the dashboard title set.
  * @param {object} spec - Current spec.
  * @param {string} title - New title.
@@ -919,7 +1564,9 @@ function openDataDialog(doc, existingNames, opts) {
   opts = opts || {};
   var client = opts.client;
   var stores = opts.stores || [];
+  var datasets = opts.datasets || [];
   var canUseStore = !!(client && typeof client.uploadDataset === 'function' && stores.length);
+  var canPickDataset = datasets.length > 0;
 
   return new Promise(function (resolve) {
     var overlay = el('div', 'cxb-modal-overlay');
@@ -933,7 +1580,11 @@ function openDataDialog(doc, existingNames, opts) {
     nameInput.value = 'data' + (existingNames.length + 1);
     nameInput.setAttribute('placeholder', 'Name (e.g. sales)');
 
-    var modes = [['json', 'Paste CanvasXpress JSON'], ['csv', 'Upload CSV / JSON file (inline)']];
+    // Existing stored datasets come first so binding to seeded/uploaded data is
+    // the default, one-click path.
+    var modes = [];
+    if (canPickDataset) modes.push(['dataset', 'Use an existing dataset']);
+    modes.push(['json', 'Paste CanvasXpress JSON'], ['csv', 'Upload CSV / JSON file (inline)']);
     if (canUseStore) modes.push(['store', 'Upload CSV / JSON to a store']);
     modes.push(['connector', 'Connector URL']);
     var typeSel = el('select');
@@ -966,11 +1617,26 @@ function openDataDialog(doc, existingNames, opts) {
     var storeWrap = el('div');
     append(storeWrap, [storeFileInput, field('Store', storeSel)]);
 
+    // Existing-dataset picker: choose one of the datasets already in a store.
+    var datasetSel = el('select');
+    datasets.forEach(function (d, i) {
+      var o = doc.createElement('option');
+      o.value = String(i);
+      var label = (d.title || d.id);
+      var bits = [];
+      if (d.rows != null) bits.push(d.rows + '×' + (d.cols != null ? d.cols : '?'));
+      if (d.store) bits.push(d.store);
+      o.textContent = label + (bits.length ? '  (' + bits.join(' · ') + ')' : '');
+      datasetSel.appendChild(o);
+    });
+    var datasetWrap = el('div');
+    append(datasetWrap, [field('Dataset', datasetSel)]);
+
     var urlInput = el('input');
     urlInput.type = 'text';
     urlInput.setAttribute('placeholder', '/api/data?source=sales');
 
-    var bodies = { json: jsonArea, csv: fileInput, store: storeWrap, connector: urlInput };
+    var bodies = { dataset: datasetWrap, json: jsonArea, csv: fileInput, store: storeWrap, connector: urlInput };
     var bodyWrap = el('div', 'cxb-modal-body');
     Object.keys(bodies).forEach(function (k) { if (bodies[k]) bodyWrap.appendChild(bodies[k]); });
     function showBody() {
@@ -980,6 +1646,19 @@ function openDataDialog(doc, existingNames, opts) {
     }
     on(typeSel, 'change', showBody);
     showBody();
+
+    // Suggest the dataset's id as the source name until the user types their own.
+    var nameEdited = false;
+    on(nameInput, 'input', function () { nameEdited = true; });
+    function syncDatasetName() {
+      if (typeSel.value === 'dataset' && !nameEdited) {
+        var picked = datasets[parseInt(datasetSel.value, 10)];
+        if (picked) nameInput.value = picked.id;
+      }
+    }
+    on(typeSel, 'change', syncDatasetName);
+    on(datasetSel, 'change', syncDatasetName);
+    syncDatasetName();
 
     var errEl = el('div', 'cxb-modal-err');
 
@@ -1003,6 +1682,14 @@ function openDataDialog(doc, existingNames, opts) {
       if (!name) return fail('Name is required');
       if (existingNames.indexOf(name) !== -1) return fail('A source named "' + name + '" already exists');
       var mode = typeSel.value;
+
+      if (mode === 'dataset') {
+        var picked = datasets[parseInt(datasetSel.value, 10)];
+        if (!picked) return fail('Choose a dataset');
+        var dsrc = { kind: 'dataset', id: picked.id };
+        if (picked.store) dsrc.store = picked.store;
+        return close({ name: name, source: dsrc });
+      }
 
       if (mode === 'store') {
         var sf = storeFileInput.files && storeFileInput.files[0];

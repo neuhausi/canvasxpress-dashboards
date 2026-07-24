@@ -78,7 +78,7 @@ export function validateSpec(spec) {
         errors.push(at + ' must be an object');
         return;
       }
-      if (panel.dataRef == null && panel.data == null) {
+      if (panel.type !== 'text' && panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
       if (panel.dataRef != null) {

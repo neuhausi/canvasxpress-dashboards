@@ -17,6 +17,11 @@ export var dashboardCss = [
   '  color: var(--cxd-title, #2a2f36); border-bottom: 1px solid var(--cxd-border, #e2e5ea);',
   '  background: var(--cxd-title-bg, #f7f8fa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
   '.cxd-panel-body { position: relative; flex: 1 1 auto; min-height: 0; }',
+  '.cxd-text { width: 100%; height: 100%; padding: 5px 12px; overflow: auto;',
+  '  font: 14px/1.35 system-ui, sans-serif; color: var(--cxd-title, #2a2f36); white-space: pre-wrap; word-break: break-word; }',
+  // Text elements are chrome-free by default (no border/background) so they sit
+  // on the dashboard background; an explicit panel.bg fills the cell instead.
+  '.cxd-text-cell { border: none; background: transparent; }',
   /* when panels reserve a canvas margin, centre the (smaller) graph in the cell */
   '.cxd-inset .cxd-panel-body { display: flex; align-items: center; justify-content: center; }',
   '.cxd-canvas { display: block; width: 100%; height: 100%; }',
@@ -57,12 +62,25 @@ export var dashboardCss = [
   '  .cxb-btn:hover { background: #2c313a; }',
   '  .cxb-title-input, .cxb-tinput, .cxb-props select { background: #16181d; color: #e6e8ec; border-color: #2c313a; }',
   '  .cxb-props { border-left-color: #2c313a; } }',
-  '.cxb-stage { width: 100%; min-width: 0; }',
+  '.cxb-stage { width: 100%; min-width: 0; padding-top: 34px; }',
   /* live editable cells */
-  '.cxb-cell { position: relative; }',
+  '.cxb-cell { position: relative; overflow: visible; }',
   '.cxb-cell.cxb-selected { outline: 2px solid #2f6feb; outline-offset: -1px; z-index: 1; }',
+  '.cxb-cell.cxb-drop { outline: 2px dashed #2f6feb; outline-offset: -3px; background: rgba(47,111,235,0.06); z-index: 2; }',
   '.cxb-cell .cxd-panel-title { cursor: grab; user-select: none; display: flex; align-items: center; gap: 6px; }',
   '.cxb-tools { margin-left: auto; display: inline-flex; gap: 2px; }',
+  /* floating chrome (drag grip + tools) for panels without a title bar */
+  // Editing controls float ABOVE the panel (a hovering toolbar), so they never
+  // overlap the graph canvas or the text content.
+  '.cxb-chrome { position: absolute; top: -30px; right: 0; z-index: 5; display: inline-flex;',
+  '  align-items: center; gap: 1px; padding: 2px 4px; pointer-events: none; opacity: 0;',
+  '  transition: opacity .12s ease; background: var(--cxd-panel-bg,#fff);',
+  '  border: 1px solid var(--cxd-border,#e2e5ea); border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.18); }',
+  '.cxb-cell:hover .cxb-chrome, .cxb-cell.cxb-selected .cxb-chrome { opacity: 1; pointer-events: auto; }',
+  '.cxb-grip { cursor: grab; user-select: none; width: 22px; height: 22px; line-height: 22px;',
+  '  text-align: center; color: var(--cxd-muted,#6b7280); }',
+  '.cxb-grip:hover { color: inherit; }',
+  '.cxb-chrome .cxb-tools { margin: 0; background: none; box-shadow: none; }',
   '.cxb-tool { width: 26px; height: 26px; line-height: 24px; text-align: center; border-radius: 5px;',
   '  cursor: pointer; font-size: 17px; color: var(--cxd-muted,#6b7280); }',
   '.cxb-tool:hover { background: rgba(0,0,0,.08); color: inherit; }',
@@ -71,6 +89,33 @@ export var dashboardCss = [
   '  opacity: 0; transition: opacity .12s ease; }',
   '.cxb-cell:hover .cxb-resize, .cxb-cell.cxb-selected .cxb-resize { opacity: 1; }',
   '.cxb-msg { font-size: 12px; color: var(--cxd-muted,#8a9099); min-height: 16px; }',
+  '.cxb-check { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--cxd-muted,#6b7280); cursor: pointer; white-space: nowrap; }',
+  '.cxb-editable { outline: none; cursor: text; }',
+  '.cxb-editable:focus { box-shadow: inset 0 0 0 2px rgba(47,111,235,.35); border-radius: 4px; }',
+  // Text format controls: a segmented-control pill of equal-height items.
+  '.cxb-fmt { display: inline-flex; align-items: center; gap: 2px; padding: 3px;',
+  '  background: var(--cxd-title-bg,#f4f6f8); border: 1px solid var(--cxd-border,#e2e5ea); border-radius: 8px; }',
+  '.cxb-fmt > * { height: 30px; box-sizing: border-box; vertical-align: middle; margin: 0;',
+  '  border: 1px solid transparent; border-radius: 5px; font: inherit; background: transparent;',
+  '  color: var(--cxd-title,#2a2f36); transition: background .1s ease, border-color .1s ease; }',
+  '.cxb-fmtbtn { width: 28px; line-height: 28px; text-align: center; cursor: pointer; user-select: none; }',
+  '.cxb-fmtbtn:hover { background: rgba(0,0,0,.06); }',
+  '.cxb-fmtbtn:active { background: rgba(47,111,235,.16); border-color: rgba(47,111,235,.35); }',
+  // Font grow/shrink: an "A" with a chevron (MS Word style).
+  '.cxb-fmtsizebtn { width: auto; padding: 0 5px; display: inline-flex; align-items: center; gap: 1px; }',
+  '.cxb-fmtsizeA { font-weight: 700; font-size: 14px; line-height: 1; }',
+  '.cxb-fmtsizechev { display: inline-flex; line-height: 0; color: var(--cxd-muted,#6b7280); }',
+  // Labelled colour controls: an icon (A = text, ■ = fill) over a bar showing
+  // the current colour, with the native picker overlaid transparently.
+  '.cxb-colorctl { position: relative; width: 28px; display: inline-flex; flex-direction: column;',
+  '  align-items: center; justify-content: center; cursor: pointer; }',
+  '.cxb-colorctl:hover { background: rgba(0,0,0,.06); }',
+  '.cxb-colorctl-ic { display: flex; align-items: center; justify-content: center; line-height: 0;',
+  '  color: var(--cxd-title,#2a2f36); }',
+  '.cxb-colorctl-bar { width: 16px; height: 3px; border-radius: 1px; margin-top: 1px;',
+  '  box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }',
+  '.cxb-colorctl-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0;',
+  '  cursor: pointer; border: none; padding: 0; }',
   /* Add-data modal */
   '.cxb-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 10000;',
   '  display: flex; align-items: center; justify-content: center; padding: 20px; }',

@@ -91,7 +91,9 @@
     .data-preview { flex: 1 1 auto; min-width: 320px; background: #fff;
       border: 1px solid var(--rail-border); border-radius: 10px; padding: 12px; }
     .data-preview-title { font-weight: 600; margin-bottom: 10px; color: #333; }
-    #data-canvas-host { min-height: 460px; }
+    #data-canvas-host { height: 460px; overflow: hidden; }
+    .data-preview.drop-active { outline: 2px dashed var(--accent); outline-offset: -6px;
+      background: rgba(8,122,209,0.05); }
     @media (prefers-color-scheme: dark) {
       .data-list, .data-preview { background: #16181d; }
       .data-item:hover { background: #1d2027; }
@@ -225,6 +227,9 @@
         spec: currentSpec,
         client: client,
         baseUrl: API_BASE,
+        // Datasets are added/managed in the Data view; panels bind to them via
+        // the per-panel Data dropdown — so hide the toolbar's "+ Data" button.
+        showAddData: false,
         onChange: function (spec) { currentSpec = spec; }
       });
       window.builder = currentBuilder;
@@ -232,25 +237,267 @@
 
     // --- Data view: browse stored datasets, preview one as a CanvasXpress table ---
     var dataPreviewInstance = null;
+    var previewWidth = 0;   // measured once, reused so every dataset table is the same size
+    var selectedDatasetId = null;   // keeps the selected dataset across list refreshes
+    // The demo's seeded datasets (examples/serve.py) are read-only — not deletable.
+    var SAMPLE_IDS = { 'regional-sales': 1, 'weather-sample': 1, penguins: 1,
+      gapminder: 1, superstore: 1, diamonds: 1 };
     function destroyDataPreview() {
       if (dataPreviewInstance) { try { dataPreviewInstance.destroy(); } catch (e) {} dataPreviewInstance = null; }
     }
 
     function showData() {
       teardown();
-      toolbarEl.innerHTML = '<h2 class="view-title">Data</h2>' +
-        '<button class="cta" id="data-refresh" style="margin-left:auto;padding:6px 14px;font-size:13px">Refresh</button>';
+      toolbarEl.innerHTML =
+        '<div style="display:flex;align-items:center;gap:8px;width:100%">' +
+          '<h2 class="view-title">Data</h2>' +
+          '<button class="cta" id="data-add" style="margin-left:auto;padding:6px 14px;font-size:13px">+ Data</button>' +
+          '<button class="cta" id="data-refresh" style="padding:6px 14px;font-size:13px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
+        '</div>';
       viewEl.innerHTML =
         '<div class="data-view">' +
           '<div class="data-list" id="data-list"><div class="placeholder">Loading…</div></div>' +
-          '<div class="data-preview">' +
-            '<div class="data-preview-title" id="data-title">Select a dataset to preview it as a table</div>' +
+          '<div class="data-preview" id="data-preview">' +
+            '<div class="data-preview-title" id="data-title">Select a dataset to preview it — or drop a CSV / TSV / CanvasXpress JSON file here to import.</div>' +
             '<div id="data-canvas-host"></div>' +
           '</div>' +
         '</div>';
+      setupDropZone(document.getElementById('data-preview'));
       var refresh = document.getElementById('data-refresh');
       if (refresh) refresh.onclick = loadDataList;
+      // "+ Data" now lives here (moved out of the Builder toolbar). It opens the
+      // full "add data" dialog — upload a file, paste CSV/JSON, or import from an
+      // external URL / connector — importing the result into the store, where it
+      // shows up in the list and is usable from the Builder's Data dropdown.
+      var addBtn = document.getElementById('data-add');
+      if (addBtn) addBtn.onclick = openAddDataDialog;
       loadDataList();
+    }
+
+    // Dialog to import a dataset into the store from a file, pasted text, or an
+    // external URL / connector (restores the old "+ Data" dialog capabilities).
+    function openAddDataDialog() {
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;' +
+        'align-items:center;justify-content:center;z-index:1000';
+      var modal = document.createElement('div');
+      modal.style.cssText = 'background:var(--rail-bg,#fff);color:inherit;border-radius:12px;' +
+        'padding:20px;width:520px;max-width:92vw;box-shadow:0 12px 48px rgba(0,0,0,.3)';
+      modal.innerHTML =
+        '<h3 style="margin:0 0 12px">Add data</h3>' +
+        '<div id="ad-err" style="color:#d64545;min-height:16px;font-size:13px;margin-bottom:4px"></div>' +
+        '<label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:4px 0 2px">Name</label>' +
+        '<input id="ad-name" style="width:100%;padding:8px;box-sizing:border-box" placeholder="e.g. my-data"/>' +
+        '<label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:12px 0 2px">Source</label>' +
+        '<select id="ad-type" style="width:100%;padding:8px;box-sizing:border-box">' +
+          '<option value="file">Upload CSV / JSON file</option>' +
+          '<option value="csv">Paste CSV</option>' +
+          '<option value="url">External URL / connector</option>' +
+        '</select>' +
+        '<div id="ad-body" style="margin-top:10px"></div>' +
+        '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">' +
+          '<button class="cta" id="ad-cancel" style="background:transparent;border:1px solid var(--rail-border);color:inherit">Cancel</button>' +
+          '<button class="cta" id="ad-add">Add</button>' +
+        '</div>';
+      document.body.appendChild(overlay);
+      overlay.appendChild(modal);
+
+      var nameEl = modal.querySelector('#ad-name');
+      var typeEl = modal.querySelector('#ad-type');
+      var bodyEl = modal.querySelector('#ad-body');
+      var errEl = modal.querySelector('#ad-err');
+      var addEl = modal.querySelector('#ad-add');
+      function fail(m) { errEl.textContent = m; addEl.disabled = false; addEl.textContent = 'Add'; }
+      function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+
+      var INPUT = 'width:100%;padding:8px;box-sizing:border-box';
+      var AREA = INPUT + ';min-height:120px;font-family:monospace;font-size:12px';
+      var bodies = {
+        file: '<input id="ad-file" type="file" accept=".csv,.json,application/json,text/csv" style="' + INPUT + '">',
+        csv:  '<textarea id="ad-text" placeholder="Region,Q1\nNorth,10\nSouth,20" style="' + AREA + '"></textarea>',
+        url:  '<input id="ad-url" type="text" placeholder="https://host/api/data?source=… (sent with your session cookie)" style="' + INPUT + '">'
+      };
+      function showBody() { bodyEl.innerHTML = bodies[typeEl.value]; }
+      typeEl.onchange = showBody; showBody();
+
+      modal.querySelector('#ad-cancel').onclick = close;
+      overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+
+      addEl.onclick = function () {
+        var name = (nameEl.value || '').trim();
+        var type = typeEl.value;
+        errEl.textContent = ''; addEl.disabled = true; addEl.textContent = 'Adding…';
+        var done = function (summary) {
+          close(); loadDataList();
+          if (summary && summary.id) previewDataset(summary);
+        };
+        if (type === 'file') {
+          var f = modal.querySelector('#ad-file').files[0];
+          if (!f) return fail('Choose a file');
+          client.uploadDataset(f, { title: name || f.name.replace(/\.[^.]+$/, '') }).then(done, function (e) { fail('Upload failed: ' + (e && e.message || e)); });
+        } else if (type === 'csv' || type === 'json') {
+          var text = modal.querySelector('#ad-text').value;
+          if (!text.trim()) return fail('Paste some data');
+          client.uploadDataset(text, { format: type, title: name || 'dataset' }).then(done, function (e) { fail('Import failed: ' + (e && e.message || e)); });
+        } else {
+          var url = (modal.querySelector('#ad-url').value || '').trim();
+          if (!url) return fail('Enter a URL');
+          // Fetch the external/connector source (credentialed) and snapshot it
+          // into the store as a dataset.
+          fetch(url, { credentials: 'include' }).then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          }).then(function (data) {
+            return client.uploadDataset(data, { format: 'json', title: name || 'imported' });
+          }).then(done, function (e) { fail('Couldn’t import from URL: ' + (e && e.message || e)); });
+        }
+      };
+      if (typeof nameEl.focus === 'function') nameEl.focus();
+    }
+
+    // Make a container a drop target: dropping a valid CanvasXpress input
+    // (CSV / TSV / CanvasXpress JSON) imports it into the store and previews it.
+    function setupDropZone(pane) {
+      if (!pane) return;
+      function stop(e) { e.preventDefault(); e.stopPropagation(); }
+      // Capture phase so we intercept before any CanvasXpress canvas handler.
+      pane.addEventListener('dragenter', function (e) { stop(e); pane.classList.add('drop-active'); }, true);
+      pane.addEventListener('dragover', function (e) {
+        stop(e); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; pane.classList.add('drop-active');
+      }, true);
+      pane.addEventListener('dragleave', function (e) {
+        stop(e); if (!pane.contains(e.relatedTarget)) pane.classList.remove('drop-active');
+      }, true);
+      pane.addEventListener('drop', function (e) {
+        stop(e); pane.classList.remove('drop-active');
+        var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (!f) return;
+        // Prefer CanvasXpress's own loader (it reads CSV/TSV/JSON/PNG/… and
+        // updates the live table); fall back to a direct upload only when there's
+        // no table instance yet (empty store).
+        if (dataPreviewInstance && typeof dataPreviewInstance.loadFile === 'function') {
+          loadDroppedFileViaCanvasXpress(e.dataTransfer, f);
+        } else {
+          importDataFile(f);
+        }
+      }, true);
+    }
+
+    // Hand a dropped file to CanvasXpress: it parses + updates the visible table,
+    // then its callback gives us the loaded data, which we persist to the store
+    // and re-preview cleanly from there.
+    function loadDroppedFileViaCanvasXpress(dataTransfer, file) {
+      var titleEl = document.getElementById('data-title');
+      if (titleEl) titleEl.textContent = 'Reading “' + (file.name || 'file') + '” …';
+      var title = (file.name || 'dataset').replace(/\.[^.]+$/, '');
+      // Read the file's own config first (a CanvasXpress JSON is {data, config});
+      // a File stays valid across the async read, so it's passed to loadFile below.
+      readFileConfig(file, function (fileConfig) {
+        // loadFile(event, isFlag, callback, providedFile, asTable): asTable forces
+        // a table view; the callback receives the new instance.
+        dataPreviewInstance.loadFile(dataTransfer, false, function (newInstance) {
+          dataPreviewInstance = newInstance;   // track for cleanup on the next preview
+          var data = newInstance && newInstance.data;
+          if (!data || !data.y) {
+            if (titleEl) titleEl.textContent = 'That file isn’t a dataset CanvasXpress can load.';
+            return;
+          }
+          // Associate any graph config the file carried (a CanvasXpress JSON's
+          // graphType/etc.) so panels bound to this dataset adopt it as their
+          // first state. Prefer the file's config; else the parsed instance's.
+          var config = fileConfig ||
+            cleanConfig(typeof newInstance.getConfig === 'function' ? newInstance.getConfig() : null);
+          var opts = { format: 'cx', title: title };
+          if (config && Object.keys(config).length) opts.config = config;
+          client.uploadDataset({ y: data.y, x: data.x }, opts).then(function (summary) {
+            loadDataList(summary && summary.id);   // list + select + clean re-render
+          }, function (err) {
+            window.alert('Loaded into the table but couldn’t store it: ' + (err && err.message || err));
+          });
+        }, file, true);
+      });
+    }
+
+    // Read a dropped CanvasXpress JSON's own `config` ({data, config}); non-JSON
+    // files resolve to null (their config, if any, comes from the parsed instance).
+    function readFileConfig(file, doneCb) {
+      var name = (file.name || '').toLowerCase();
+      var looksJson = /\.(json|cx)$/.test(name) || (file.type || '').indexOf('json') >= 0;
+      if (!looksJson || typeof FileReader === 'undefined') { doneCb(null); return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        var cfg = null;
+        try {
+          var obj = JSON.parse(reader.result);
+          if (obj && obj.config && typeof obj.config === 'object') cfg = cleanConfig(obj.config);
+        } catch (e) { cfg = null; }
+        doneCb(cfg);
+      };
+      reader.onerror = function () { doneCb(null); };
+      reader.readAsText(file);
+    }
+
+    // Drop config values carrying CanvasXpress's internal "__FACTOR__" sentinel
+    // (derived grouping state that breaks a re-render with fresh data).
+    function cleanConfig(config) {
+      if (!config || typeof config !== 'object') return null;
+      var out = {};
+      Object.keys(config).forEach(function (k) {
+        try {
+          if (JSON.stringify(config[k]).indexOf('__FACTOR__') < 0) out[k] = config[k];
+        } catch (e) { /* skip unserializable */ }
+      });
+      return out;
+    }
+
+    // Convert tab-delimited text to CSV (quoting cells with commas/quotes).
+    function tsvToCsv(text) {
+      return text.split(/\r?\n/).map(function (line) {
+        return line.split('\t').map(function (c) {
+          return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c;
+        }).join(',');
+      }).join('\n');
+    }
+
+    // Import a dropped file into the store, detecting the format from its
+    // extension (falling back to content sniffing), then refresh + preview it.
+    function importDataFile(file) {
+      var name = (file.name || '').toLowerCase();
+      var title = (file.name || 'dataset').replace(/\.[^.]+$/, '');
+      var titleEl = document.getElementById('data-title');
+      if (titleEl) titleEl.textContent = 'Importing “' + (file.name || 'dataset') + '” …';
+      function done(summary) { loadDataList(); if (summary && summary.id) previewDataset(summary); }
+      function failMsg(e) {
+        window.alert('Import failed: ' + (e && e.message || e));
+        if (titleEl) titleEl.textContent = 'Select a dataset to preview it — or drop a file here to import.';
+      }
+
+      if (/\.png$/.test(name)) {
+        return failMsg(new Error('PNG import isn’t supported here yet — use CSV, TSV, or CanvasXpress JSON.'));
+      }
+      if (/\.csv$/.test(name)) {
+        return client.uploadDataset(file, { format: 'csv', title: title }).then(done, failMsg);
+      }
+      if (/\.(tsv|tab)$/.test(name)) {
+        return file.text().then(function (t) {
+          return client.uploadDataset(tsvToCsv(t), { format: 'csv', title: title });
+        }).then(done, failMsg);
+      }
+      if (/\.(json|cx)$/.test(name)) {
+        return client.uploadDataset(file, { format: 'json', title: title }).then(done, failMsg);
+      }
+      // Unknown/no extension → sniff the content.
+      file.text().then(function (t) {
+        var s = t.replace(/^\uFEFF/, '').trim();
+        if (s.charAt(0) === '{' || s.charAt(0) === '[') {
+          return client.uploadDataset(t, { format: 'json', title: title });
+        }
+        var firstLine = s.split(/\r?\n/)[0] || '';
+        if (firstLine.indexOf('\t') >= 0 && firstLine.indexOf(',') < 0) {
+          return client.uploadDataset(tsvToCsv(t), { format: 'csv', title: title });
+        }
+        return client.uploadDataset(t, { format: 'csv', title: title });
+      }).then(done, failMsg);
     }
 
     // ---- authentication -------------------------------------------------------
@@ -459,7 +706,9 @@
       load();
     }
 
-    function loadDataList() {
+    // List the datasets and auto-select one so a table is always visible: the
+    // requested `selectId`, else the previously-selected dataset, else the first.
+    function loadDataList(selectId) {
       var listEl = document.getElementById('data-list');
       if (!listEl) return;
       listEl.innerHTML = '<div class="placeholder">Loading…</div>';
@@ -468,10 +717,18 @@
       client.listDatasets().then(function (datasets) {
         if (!datasets || !datasets.length) {
           listEl.innerHTML = '<div class="placeholder">No datasets yet.<br>' +
-            'Upload one from the Builder’s “+ Data” dialog (“Upload to a store”).</div>';
+            'Click “+ Data”, or drop a CSV / TSV / CanvasXpress JSON file on the panel.</div>';
           return;
         }
         listEl.innerHTML = '';
+        function selectItem(item, d) {
+          var active = listEl.querySelector('.data-item.active');
+          if (active) active.classList.remove('active');
+          item.classList.add('active');
+          selectedDatasetId = d.id;
+          previewDataset(d);
+        }
+        var built = [];
         datasets.forEach(function (d) {
           var meta = [];
           if (d.rows != null) meta.push(d.rows + '×' + (d.cols != null ? d.cols : '?'));
@@ -479,16 +736,42 @@
           if (d.updated_at) meta.push(String(d.updated_at).slice(0, 10));
           var item = document.createElement('div');
           item.className = 'data-item';
-          item.innerHTML = '<div class="data-item-title">' + esc(d.title || d.id) + '</div>' +
-            '<div class="data-item-meta">' + esc(meta.join(' · ')) + '</div>';
-          item.addEventListener('click', function () {
-            var active = listEl.querySelector('.data-item.active');
-            if (active) active.classList.remove('active');
-            item.classList.add('active');
-            previewDataset(d);
-          });
+          item.style.display = 'flex';
+          item.style.alignItems = 'center';
+          item.style.gap = '8px';
+          item.innerHTML = '<div style="flex:1;min-width:0">' +
+            '<div class="data-item-title">' + esc(d.title || d.id) + '</div>' +
+            '<div class="data-item-meta">' + esc(meta.join(' · ')) + '</div></div>';
+          item.addEventListener('click', function () { selectItem(item, d); });
+          // Uploaded datasets can be deleted; the seeded sample ones are protected.
+          if (!SAMPLE_IDS[d.id]) {
+            var del = document.createElement('button');
+            del.textContent = '×';
+            del.title = 'Delete dataset';
+            del.style.cssText = 'border:none;background:transparent;color:var(--muted);' +
+              'font-size:20px;line-height:1;cursor:pointer;padding:0 4px';
+            del.addEventListener('click', function (ev) {
+              ev.stopPropagation();
+              if (!window.confirm('Delete “' + (d.title || d.id) + '”? This cannot be undone.')) return;
+              del.disabled = true;
+              client.deleteDataset(d.id, { store: d.store }).then(function () {
+                if (selectedDatasetId === d.id) selectedDatasetId = null;  // re-select another
+                loadDataList();
+              }, function (err) {
+                del.disabled = false;
+                window.alert('Delete failed: ' + (err && err.message || err));
+              });
+            });
+            item.appendChild(del);
+          }
           listEl.appendChild(item);
+          built.push({ item: item, d: d });
         });
+        var want = selectId || selectedDatasetId;
+        var target = null;
+        if (want) { for (var i = 0; i < built.length; i++) { if (built[i].d.id === want) { target = built[i]; break; } } }
+        if (!target) target = built[0];   // default to the first dataset
+        if (target) selectItem(target.item, target.d);
       }, function (err) {
         listEl.innerHTML = '<div class="placeholder">' + esc(datasetErrorHint(err)) +
           '<br><small>' + esc(err && err.message || err) + '</small></div>';
@@ -520,17 +803,29 @@
       host.innerHTML = '<div class="placeholder">Loading…</div>';
       client.getDataset(d.id, { store: d.store }).then(function (data) {
         host.innerHTML = '';
-        var canvas = document.createElement('canvas');
-        canvas.id = 'data-preview-' + String(d.id).replace(/[^A-Za-z0-9_-]/g, '_');
-        // CanvasXpress renders into the canvas buffer; size it to the host so the
-        // table fills the pane (buffer defaults to 500×500 otherwise).
-        canvas.setAttribute('width', Math.max(320, host.clientWidth || 640));
-        canvas.setAttribute('height', 460);
-        host.appendChild(canvas);
-        // view:'table' renders the data as a scrollable grid — same as the
-        // dashboard's "table" control (renderDashboard controlConfig).
-        dataPreviewInstance = new window.CanvasXpress(canvas.id, data,
-          { view: 'table', title: d.title || d.id }, {});
+        requestAnimationFrame(function () {
+          if (document.getElementById('data-title') == null) return;  // navigated away
+          // Per-render measurement was returning different values (so each table
+          // rendered at a different size). Measure the pane ONCE and reuse that
+          // width for every dataset, so all previews are identically sized.
+          var measured = host.clientWidth || 0;
+          if (measured > 320) previewWidth = measured;   // cache the first good width
+          var width = Math.max(320, previewWidth || measured || 640);
+          var height = 460;
+          var canvas = document.createElement('canvas');
+          canvas.id = 'data-preview-' + String(d.id).replace(/[^A-Za-z0-9_-]/g, '_');
+          // Buffer + display box both pinned to the shared width (buffer defaults
+          // to 500×500 otherwise).
+          canvas.setAttribute('width', width);
+          canvas.setAttribute('height', height);
+          canvas.style.width = width + 'px';
+          canvas.style.height = height + 'px';
+          host.appendChild(canvas);
+          // view:'table' renders the data as a scrollable grid — same as the
+          // dashboard's "table" control; resizable:false pins it to the canvas.
+          dataPreviewInstance = new window.CanvasXpress(canvas.id, data,
+            { view: 'table', title: d.title || d.id, resizable: false }, {});
+        });
       }, function (err) {
         host.innerHTML = '<div class="placeholder">Couldn’t load “' + esc(d.id) + '”.' +
           '<br><small>' + esc(err && err.message || err) + '</small></div>';
@@ -585,7 +880,7 @@
       wIn.value = currentSpec.width != null ? currentSpec.width : '';
       hIn.value = currentSpec.height != null ? currentSpec.height : '';
       gap.value = L.gap != null ? L.gap : 12;
-      rh.value = L.rowHeight != null ? L.rowHeight : 130;
+      rh.value = L.rowHeight != null ? L.rowHeight : 30;
       cols.value = L.cols != null ? L.cols : 12;
       inset.value = currentSpec.canvasInset != null ? currentSpec.canvasInset : 18;
       theme.value = currentSpec.theme || 'auto';

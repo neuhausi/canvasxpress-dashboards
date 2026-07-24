@@ -43,11 +43,20 @@ export function addPanel(spec, panel) {
   var x = clampInt(panel.x, 0, cols - w, 0);
   var y = panel.y != null ? clampInt(panel.y, 0, 100000, 0) : nextFreeRow(spec);
 
-  next.panels[panel.id] = {
-    title: panel.title || panel.id,
-    dataRef: panel.dataRef,
-    config: panel.config || { graphType: 'Bar' }
-  };
+  if (panel.type === 'text') {
+    // A text element: free-form text, no data source or graph config.
+    next.panels[panel.id] = {
+      type: 'text',
+      title: panel.title || '',
+      text: panel.text || ''
+    };
+  } else {
+    next.panels[panel.id] = {
+      title: panel.title || panel.id,
+      dataRef: panel.dataRef,
+      config: panel.config || { graphType: 'Bar' }
+    };
+  }
   next.layout.items.push({ panel: panel.id, x: x, y: y, w: w, h: h });
   return next;
 }
@@ -113,6 +122,19 @@ export function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'title')) panel.title = changes.title;
   if (Object.prototype.hasOwnProperty.call(changes, 'dataRef')) panel.dataRef = changes.dataRef;
   if (Object.prototype.hasOwnProperty.call(changes, 'config')) panel.config = changes.config;
+  if (Object.prototype.hasOwnProperty.call(changes, 'text')) panel.text = changes.text;
+  if (Object.prototype.hasOwnProperty.call(changes, 'html')) {
+    panel.html = changes.html;
+    delete panel.text;   // rich html supersedes the plain-text fallback
+  }
+  if (Object.prototype.hasOwnProperty.call(changes, 'bg')) {
+    if (changes.bg) panel.bg = changes.bg;
+    else delete panel.bg;
+  }
+  if (Object.prototype.hasOwnProperty.call(changes, 'hideTitle')) {
+    if (changes.hideTitle) panel.hideTitle = true;
+    else delete panel.hideTitle;
+  }
   if (Object.prototype.hasOwnProperty.call(changes, 'measures')) {
     if (changes.measures && changes.measures.length) panel.measures = changes.measures;
     else delete panel.measures;
@@ -173,7 +195,7 @@ export function blankSpec(id, title, cols) {
     title: title || id,
     version: 1,
     broadcastGroup: id,
-    layout: { cols: cols || DEFAULT_COLS, rowHeight: 130, gap: 12, items: [] },
+    layout: { cols: cols || DEFAULT_COLS, rowHeight: 30, gap: 12, items: [] },
     data: {},
     panels: {}
   };

@@ -57,6 +57,22 @@ test('csvToCx handles quoted fields and rejects empty input', function () {
   assert.throws(function () { return csvToCx('id,val'); }, /no data rows/);
 });
 
+test('csvToCx is null-tolerant: blanks in a numeric column become null, column stays a measure', function () {
+  var cx = csvToCx('id,score,note\nA,10,ok\nB,,missing\nC,30,ok');
+  assert.deepEqual(cx.y.vars, ['score']);
+  assert.deepEqual(cx.y.data, [[10, null, 30]]);
+  assert.deepEqual(cx.x.note, ['ok', 'missing', 'ok']);
+});
+
+test('csvToCx: one non-numeric value makes the column an annotation; all-blank column too', function () {
+  var mixed = csvToCx('id,val\nA,10\nB,oops\nC,30');
+  assert.deepEqual(mixed.y.vars, []);
+  assert.deepEqual(mixed.x.val, ['10', 'oops', '30']);
+  var blank = csvToCx('id,empty\nA,\nB,');
+  assert.deepEqual(blank.y.vars, []);
+  assert.deepEqual(blank.x.empty, ['', '']);
+});
+
 test('buildDataSource makes inline/connector sources and reports bad JSON', function () {
   assert.deepEqual(buildDataSource('json', '{"y":{"vars":[],"smps":[],"data":[]}}'),
     { kind: 'inline', value: { y: { vars: [], smps: [], data: [] } } });

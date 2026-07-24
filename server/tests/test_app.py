@@ -337,3 +337,20 @@ def test_index_defaults_without_config(tmp_path):
     assert "window.cX" not in body                            # watermark stays
     assert "www.canvasxpress.org/dist/canvasXpress.min.js" in body
     assert '"llmEnabled": false' in body
+
+
+def test_dataset_config_round_trips(app):
+    client = _client(app)
+    _signup(client)
+    r = client.post("/api/datasets", json={
+        "format": "csv", "data": "id,sales\nA,10\n", "title": "S",
+        "config": {"graphType": "Line"},
+    })
+    assert r.status_code == 200, r.text
+    assert r.json()["dataset"]["config"] == {"graphType": "Line"}
+    # listed summary carries the config too
+    got = client.get("/api/datasets").json()["datasets"]
+    assert got[0]["config"] == {"graphType": "Line"}
+    # a bad config type is rejected
+    bad = client.post("/api/datasets", json={"format": "csv", "data": "id,v\nA,1\n", "config": 5})
+    assert bad.status_code == 400

@@ -95,3 +95,14 @@ test('flags an unknown control kind', function () {
 function clone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
+
+test('a text panel needs no dataRef or inline data', function () {
+  var spec = {
+    id: 'd1', title: 'D',
+    layout: { cols: 12, items: [{ panel: 't1', x: 0, y: 0, w: 4, h: 2 }] },
+    panels: { t1: { type: 'text', text: 'Hi' } },
+    data: {}
+  };
+  var res = validateSpec(spec);
+  assert.equal(res.valid, true, JSON.stringify(res.errors));
+});

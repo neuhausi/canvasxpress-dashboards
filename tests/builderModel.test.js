@@ -104,3 +104,35 @@ test('updateSettings sets and clears a background image', function () {
   var cleared = updateSettings(s, { backgroundImage: '' });
   assert.equal(cleared.backgroundImage, undefined);
 });
+
+test('addPanel supports text elements (no dataRef/config)', function () {
+  var s = addPanel(blankSpec('d1'), { id: 't1', type: 'text', title: 'Note', text: 'Hello', w: 4, h: 2 });
+  var p = s.panels.t1;
+  assert.equal(p.type, 'text');
+  assert.equal(p.text, 'Hello');
+  assert.equal(p.title, 'Note');
+  assert.equal(p.dataRef, undefined);
+  assert.equal(p.config, undefined);
+  assert.ok(s.layout.items.some(function (i) { return i.panel === 't1'; }));
+});
+
+test('updatePanel edits text content', function () {
+  var s = addPanel(blankSpec('d1'), { id: 't1', type: 'text', text: 'a' });
+  s = updatePanel(s, 't1', { text: 'b' });
+  assert.equal(s.panels.t1.text, 'b');
+});
+
+test('updatePanel html replaces the plain-text fallback', function () {
+  var s = addPanel(blankSpec('d1'), { id: 't1', type: 'text', text: 'plain' });
+  s = updatePanel(s, 't1', { html: '<b>rich</b>' });
+  assert.equal(s.panels.t1.html, '<b>rich</b>');
+  assert.equal('text' in s.panels.t1, false, 'plain text cleared');
+});
+
+test('updatePanel sets and clears a text background colour', function () {
+  var s = addPanel(blankSpec('d1'), { id: 't1', type: 'text', text: 'hi' });
+  s = updatePanel(s, 't1', { bg: '#ff0000' });
+  assert.equal(s.panels.t1.bg, '#ff0000');
+  s = updatePanel(s, 't1', { bg: '' });
+  assert.equal('bg' in s.panels.t1, false);
+});

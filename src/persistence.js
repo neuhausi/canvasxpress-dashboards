@@ -240,8 +240,10 @@ export function createDashboardClient(options) {
      *   File's name/type when omitted (defaults to `json`).
      * @param {string} [opts.title] - Human title (seeds the generated id).
      * @param {string} [opts.id] - Explicit id (overwrites in place).
-     * @param {string} [opts.store] - Named target store (Phase 5.2; reserved).
-     * @returns {Promise<object>} The stored summary `{id, title, rows, cols, url}`.
+     * @param {string} [opts.store] - Named target store.
+     * @param {object} [opts.config] - CanvasXpress graph config to associate with
+     *   the dataset (returned in its summary; panels adopt it as initial state).
+     * @returns {Promise<object>} The stored summary `{id, title, rows, cols, url, config?}`.
      */
     uploadDataset: function (source, opts) {
       opts = opts || {};
@@ -250,6 +252,7 @@ export function createDashboardClient(options) {
         if (opts.title) body.title = opts.title;
         if (opts.id) body.id = opts.id;
         if (opts.store) body.store = opts.store;
+        if (opts.config) body.config = opts.config;   // graph config to associate
         return request('POST', '/api/datasets', body).then(function (r) { return r.dataset; });
       });
     },
