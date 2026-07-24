@@ -35,7 +35,8 @@ from cxd_server.store import DashboardStore               # noqa: E402
 from fastapi.staticfiles import StaticFiles               # noqa: E402
 
 DEMO_USER, DEMO_PW = "demo", "demo1234"
-HOST, PORT = "127.0.0.1", 8000
+HOST = os.environ.get("CXD_HOST", "127.0.0.1")
+PORT = int(os.environ.get("CXD_PORT", "8000"))
 
 _SALES_CSV = (
     "Region,Q1,Q2,Q3,Q4,Segment\n"
@@ -55,19 +56,44 @@ _WEATHER_CSV = (
 )
 
 
+# Larger, real-world CSVs (in examples/data/) for developing against realistic
+# data. Each is a well-known public dataset with a mix of categorical columns
+# (grouping/color/facet + cross-panel broadcast) and numeric measures.
+DATA_DIR_CSV = os.path.join(HERE, "data")
+_CSV_DATASETS = [
+    ("penguins",   "Palmer Penguins",   "penguins.csv"),    # 342 rows
+    ("gapminder",  "Gapminder",         "gapminder.csv"),   # 3,313 rows (has year)
+    ("superstore", "Sample Superstore", "superstore.csv"),  # 9,994 rows (BI classic)
+    ("diamonds",   "Diamonds",          "diamonds.csv"),    # 53,940 rows (scale)
+]
+
+
 def _seed():
-    """Create the demo user + a couple of datasets (idempotent)."""
+    """Create the demo user + the demo datasets (idempotent per dataset)."""
     DashboardStore(DB_PATH).create_user(DEMO_USER, DEMO_PW)  # no-op if it exists
     datasets = DatasetStore(open_store(DATASET_URI), store_name="local")
-    if datasets.list(DEMO_USER):
-        return
+    have = {d["id"] for d in datasets.list(DEMO_USER)}
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    # Stable ids so the Builder's starting panels can bind to these same datasets
+
+    def add(dataset_id, title, csv_text):
+        if dataset_id in have:
+            return
+        datasets.create(DEMO_USER, reshape_to_cx("csv", csv_text), now,
+                        title=title, dataset_id=dataset_id)
+
+    # Small inline sets. Stable ids so the Builder's starting panels can bind
     # ({kind:"dataset", id:"regional-sales"}), keeping Builder + Data consistent.
-    datasets.create(DEMO_USER, reshape_to_cx("csv", _SALES_CSV), now,
-                    title="Regional Sales", dataset_id="regional-sales")
-    datasets.create(DEMO_USER, reshape_to_cx("csv", _WEATHER_CSV), now,
-                    title="Weather Sample", dataset_id="weather-sample")
+    add("regional-sales", "Regional Sales", _SALES_CSV)
+    add("weather-sample", "Weather Sample", _WEATHER_CSV)
+
+    # Larger CSVs from examples/data/ (skipped gracefully if a file is absent).
+    for dataset_id, title, filename in _CSV_DATASETS:
+        path = os.path.join(DATA_DIR_CSV, filename)
+        if os.path.isfile(path):
+            with open(path, encoding="utf-8") as handle:
+                add(dataset_id, title, handle.read())
+        else:
+            print("  [seed] NOTE: %s not found — skipping %s." % (path, dataset_id))
 
 
 _seed()

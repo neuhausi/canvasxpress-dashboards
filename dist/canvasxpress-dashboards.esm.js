@@ -43,7 +43,7 @@ var dashboardCss = [
   '  border-radius: 6px; font: 600 14px system-ui; min-width: 150px; }',
   '.cxb-tinput { padding: 5px 8px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px;',
   '  font: inherit; width: 130px; }',
-  '.cxb-props { padding-left: 8px; border-left: 1px solid var(--cxd-border,#e2e5ea); }',
+  '.cxb-props { padding-left: 8px; }',
   '.cxb-props:empty { border-left: none; padding-left: 0; }',
   '.cxb-props select { padding: 5px 7px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px; font: inherit; }',
   /* Toolbar controls set explicit colours (they render into the host app shell,

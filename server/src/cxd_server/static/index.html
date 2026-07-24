@@ -704,10 +704,25 @@
       if (currentUser) doLogout(); else showLogin(pendingView || 'Home');
     });
 
+    // Dev convenience: the real served app injects window.__CXD_CONFIG__, so its
+    // absence means we're the raw dev example (examples/serve.py), which seeds a
+    // `demo` user. There, sign in automatically so the example opens straight
+    // into the builder like before. The served app always shows the login screen.
+    var IS_SERVED_APP = typeof window.__CXD_CONFIG__ !== 'undefined';
+
     // Boot: ask the server who we are. If a session cookie is already valid we
-    // land on Home signed-in; otherwise the user indicator reads "Signed out"
-    // and protected views (Builder/Data/Dashboards/Settings) bounce to Login.
-    refreshUser().catch(function () {}).then(function () { activate('Home'); });
+    // land on Home signed-in; otherwise the served app reads "Signed out" and
+    // protected views bounce to Login — while the dev example auto-signs-in demo.
+    refreshUser().catch(function () {}).then(function () {
+      if (currentUser || IS_SERVED_APP) return activate('Home');
+      // dev example, not logged in → sign in as the seeded demo user (create on
+      // first run), then continue. Falls through to Home if no server is present.
+      return client.login(DEMO_USER, DEMO_PASS)
+        .catch(function () { return client.signup(DEMO_USER, DEMO_PASS); })
+        .then(function () { return refreshUser(); })
+        .catch(function () {})
+        .then(function () { activate('Home'); });
+    });
   </script>
 </body>
 </html>
