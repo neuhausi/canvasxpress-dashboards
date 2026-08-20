@@ -12,7 +12,7 @@ export { createDataStore, isEmptyData, DataError, clearSharedCache } from './dat
 export { exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient } from './persistence.js';
 export { createBuilder, pointerToCell, csvToCx, buildDataSource } from './builder.js';
 export {
-  addPanel, removePanel, movePanel, resizePanel, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS
+  addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS
 } from './builderModel.js';
 
 /** @type {string} Package version. */

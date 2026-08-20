@@ -30,6 +30,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
+from . import mcp_bridge
 from .datasets import DatasetStore, reshape_to_cx
 from .sqldashboard import open_dashboard_store
 from .store import DashboardStore
@@ -369,7 +370,22 @@ def create_dashboards_app(
         # auth-gated shares require *any* logged-in viewer; public shares are open.
         if shared["visibility"] == "auth" and not request.session.get("user"):
             raise HTTPException(status_code=401, detail="Login required to view this dashboard")
-        return {"spec": shared["spec"], "readOnly": True, "owner": shared["owner"]}
+        # Resolve kind:"dataset" sources into inline data using the OWNER's
+        # datasets: the viewer has no session that could fetch /api/datasets/*,
+        # and sharing means sharing the (read-only) data the spec binds to. The
+        # snapshot is taken per request, so re-opening the link shows current data.
+        spec = shared["spec"]
+        for ref, source in list((spec.get("data") or {}).items()):
+            if not (isinstance(source, dict) and source.get("kind") == "dataset"):
+                continue
+            try:
+                data = dataset_store_for(source.get("store")).get(
+                    shared["owner"], source.get("id"))
+            except KeyError:
+                data = None
+            if data is not None:
+                spec["data"][ref] = {"kind": "inline", "value": data}
+        return {"spec": spec, "readOnly": True, "owner": shared["owner"]}
 
     def resolve_dataset_store(name: Optional[str]) -> DatasetStore:
         """Resolve a (validated) named dataset store, 400/404 on a bad name."""
@@ -444,7 +460,8 @@ def create_dashboards_app(
     def llm_status(request: Request):
         """Whether the NL dashboard builder is configured (no secret exposed)."""
         require_user(request)
-        return {"enabled": bool(llm_api_key), "model": llm_model}
+        return {"enabled": bool(llm_api_key) or mcp_bridge.enabled(), "model": llm_model,
+                "mcp": {"enabled": mcp_bridge.enabled(), "url": mcp_bridge.base_url()}}
 
     @app.post("/api/llm/dashboard")
     async def llm_dashboard(request: Request):
@@ -457,16 +474,6 @@ def create_dashboards_app(
         the data (mirrors the "recipe" model: NL in, auditable JSON out).
         """
         user = require_user(request)
-        if not llm_api_key:
-            raise HTTPException(status_code=503, detail=(
-                "Natural-language builder is not configured. Set CXD_LLM_API_KEY "
-                "(and optionally CXD_LLM_MODEL) on the server."))
-        try:
-            import anthropic
-        except ImportError:
-            raise HTTPException(status_code=503, detail=(
-                "The 'anthropic' package is not installed on the server "
-                "(pip install anthropic)."))
         body = await request.json()
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="Body must be a JSON object")
@@ -475,16 +482,24 @@ def create_dashboards_app(
             raise HTTPException(status_code=400, detail="Body must include 'message'")
         current_spec = body.get("spec") if isinstance(body.get("spec"), dict) else None
         history = body.get("history") if isinstance(body.get("history"), list) else []
+        # Optional client-side scoping: only these dataset ids are cataloged
+        # (empty/absent = all of the user's datasets).
+        wanted = body.get("datasets")
+        wanted = set(wanted) if isinstance(wanted, list) and wanted else None
 
         # Catalog the user's datasets — id/store plus a schema sketch so the
         # model binds panels to real columns without ever seeing full data.
         catalog = []
+        data_by_id = {}
         for name in dataset_store_names():
             ds = dataset_store_for(name)
             for meta in ds.list(user):
+                if wanted is not None and meta.get("id") not in wanted:
+                    continue
                 entry = {"id": meta.get("id"), "title": meta.get("title"),
                          "store": meta.get("store")}
                 data = ds.get(user, meta.get("id")) or {}
+                data_by_id[meta.get("id")] = data
                 y = data.get("y") or {}
                 entry["vars"] = (y.get("vars") or [])[:40]
                 entry["n_vars"] = len(y.get("vars") or [])
@@ -495,6 +510,49 @@ def create_dashboards_app(
                     if keys:
                         entry[annot + "_annotations"] = keys[:20]
                 catalog.append(entry)
+
+        # ---- Phase 1 fast path: single-chart creation via canvasxpress-mcp ----
+        # Exactly one dataset in scope and no panels on the canvas yet: the MCP
+        # server authors the (validated) graph config deterministically and we
+        # wrap it in a one-panel spec — no LLM planner, no LLM key needed.
+        fresh = not ((current_spec or {}).get("panels"))
+        if mcp_bridge.enabled() and fresh and len(catalog) == 1:
+            entry = catalog[0]
+            headers, column_types = mcp_bridge.dataset_columns(data_by_id[entry["id"]])
+            mcp = mcp_bridge.generate_config(message, headers, column_types)
+            if mcp:
+                config = mcp["config"]
+                config.setdefault("title", False)
+                graph = config.get("graphType") or "chart"
+                spec_id = re.sub(r"[^a-z0-9]+", "-", (entry["title"] or entry["id"]).lower()).strip("-") or "dashboard"
+                fast_spec = {
+                    "id": spec_id, "title": entry["title"] or entry["id"], "version": 1,
+                    "layout": {"cols": 12, "rowHeight": 130, "gap": 12,
+                               "items": [{"panel": "p1", "x": 0, "y": 0, "w": 12, "h": 3}]},
+                    "data": {entry["id"]: {"kind": "dataset", "id": entry["id"],
+                                           "store": entry.get("store")}},
+                    "panels": {"p1": {"title": "%s — %s" % (entry["title"] or entry["id"], graph),
+                                      "dataRef": entry["id"], "config": config}},
+                    "controls": [],
+                }
+                reply = "Built a %s from “%s” with the CanvasXpress engine (validated config)." \
+                    % (graph, entry["title"] or entry["id"])
+                warns = [w for w in (mcp.get("warnings") or []) if w]
+                if warns:
+                    reply += " Notes: " + "; ".join(str(w) for w in warns[:3])
+                return {"reply": reply, "spec": fast_spec, "model": "canvasxpress-mcp"}
+
+        # ---- LLM planner path (multi-panel dashboards, revisions) ----
+        if not llm_api_key:
+            raise HTTPException(status_code=503, detail=(
+                "Natural-language builder is not configured. Set CXD_LLM_API_KEY "
+                "(and optionally CXD_LLM_MODEL) on the server."))
+        try:
+            import anthropic
+        except ImportError:
+            raise HTTPException(status_code=503, detail=(
+                "The 'anthropic' package is not installed on the server "
+                "(pip install anthropic)."))
 
         system = _LLM_SYSTEM + "\n\n## The user's datasets\n" + json.dumps(catalog)
         messages = []

@@ -15,12 +15,12 @@ var dashboardCss = [
   '.cxd-panel { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0;',
   '  border: 1px solid var(--cxd-border, #e2e5ea); border-radius: 8px; overflow: hidden;',
   '  background: var(--cxd-panel-bg, #ffffff); }',
-  '.cxd-panel-title { flex: 0 0 auto; padding: 6px 10px; font: 600 13px/1.3 system-ui, sans-serif;',
+  '.cxd-panel-title { flex: 0 0 auto; padding: 6px 10px; font: 600 16px/1.3 system-ui, sans-serif;',
   '  color: var(--cxd-title, #2a2f36); border-bottom: 1px solid var(--cxd-border, #e2e5ea);',
   '  background: var(--cxd-title-bg, #f7f8fa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
   '.cxd-panel-body { position: relative; flex: 1 1 auto; min-height: 0; }',
   '.cxd-text { width: 100%; height: 100%; padding: 5px 12px; overflow: auto;',
-  '  font: 14px/1.35 system-ui, sans-serif; color: var(--cxd-title, #2a2f36); white-space: pre-wrap; word-break: break-word; }',
+  '  font: 16px/1.35 system-ui, sans-serif; color: var(--cxd-title, #2a2f36); white-space: pre-wrap; word-break: break-word; }',
   // Text elements are chrome-free by default (no border/background) so they sit
   // on the dashboard background; an explicit panel.bg fills the cell instead.
   '.cxd-text-cell { border: none; background: transparent; }',
@@ -28,7 +28,7 @@ var dashboardCss = [
   '.cxd-inset .cxd-panel-body { display: flex; align-items: center; justify-content: center; }',
   '.cxd-canvas { display: block; width: 100%; height: 100%; }',
   '.cxd-panel-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;',
-  '  font: 500 13px system-ui, sans-serif; color: var(--cxd-muted, #8a9099);',
+  '  font: 500 16px system-ui, sans-serif; color: var(--cxd-muted, #8a9099);',
   '  background: var(--cxd-panel-bg, #ffffff); }',
   '.cxd-panel-overlay.cxd-error { color: var(--cxd-error, #c0392b); padding: 8px; text-align: center; }',
   '.cxd-theme-dark { --cxd-border: #2c313a; --cxd-panel-bg: #16181d; --cxd-title: #e6e8ec;',
@@ -42,10 +42,10 @@ var dashboardCss = [
   '.cxb-topbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: 100%; }',
   '.cxb-tgroup { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }',
   '.cxb-spacer { flex: 1 1 auto; }',
-  '.cxb-tlabel { font: 600 11px system-ui; text-transform: uppercase; letter-spacing: .03em;',
+  '.cxb-tlabel { font: 600 14px system-ui; text-transform: uppercase; letter-spacing: .03em;',
   '  color: var(--cxd-muted,#8a9099); }',
   '.cxb-title-input { padding: 5px 8px; border: 1px solid var(--cxd-border,#e2e5ea);',
-  '  border-radius: 6px; font: 600 14px system-ui; min-width: 150px; }',
+  '  border-radius: 6px; font: 600 16px system-ui; min-width: 150px; }',
   '.cxb-tinput { padding: 5px 8px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px;',
   '  font: inherit; width: 130px; }',
   '.cxb-props { padding-left: 8px; }',
@@ -54,9 +54,11 @@ var dashboardCss = [
   /* Toolbar controls set explicit colours (they render into the host app shell,
      which may be dark) — `color: inherit` here would pick up light shell text on
      the light button and vanish. Dark-scheme overrides are below. */
-  '.cxb-btn { padding: 5px 11px; border: 1px solid #d0d4da; border-radius: 6px;',
-  '  background: #f7f8fa; color: #2a2f36; font: 500 13px system-ui; cursor: pointer; }',
+  '.cxb-btn { padding: 6px 13px; border: 1px solid #d0d4da; border-radius: 6px;',
+  '  background: #f7f8fa; color: #2a2f36; font: 500 16px system-ui; cursor: pointer; }',
   '.cxb-btn:hover { background: #eceef1; }',
+  '.cxb-btn:disabled { opacity: 0.45; cursor: not-allowed; }',
+  '.cxb-btn:disabled:hover { background: inherit; }',
   '.cxb-btn-primary { background: #2f6feb; border-color: #2f6feb; color: #fff; }',
   '.cxb-btn-primary:hover { background: #295fd0; }',
   '@media (prefers-color-scheme: dark) {',
@@ -84,14 +86,19 @@ var dashboardCss = [
   '.cxb-grip:hover { color: inherit; }',
   '.cxb-chrome .cxb-tools { margin: 0; background: none; box-shadow: none; }',
   '.cxb-tool { width: 26px; height: 26px; line-height: 24px; text-align: center; border-radius: 5px;',
-  '  cursor: pointer; font-size: 17px; color: var(--cxd-muted,#6b7280); }',
+  '  cursor: pointer; font-size: 19px; color: var(--cxd-muted,#6b7280); }',
   '.cxb-tool:hover { background: rgba(0,0,0,.08); color: inherit; }',
   '.cxb-resize { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize;',
   '  background: linear-gradient(135deg, transparent 50%, #2f6feb 50%); border-bottom-right-radius: 8px; z-index: 2;',
   '  opacity: 0; transition: opacity .12s ease; }',
   '.cxb-cell:hover .cxb-resize, .cxb-cell.cxb-selected .cxb-resize { opacity: 1; }',
-  '.cxb-msg { font-size: 12px; color: var(--cxd-muted,#8a9099); min-height: 16px; }',
-  '.cxb-check { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--cxd-muted,#6b7280); cursor: pointer; white-space: nowrap; }',
+  /* control (table/filter) height-resize: a grabbable bottom edge */
+  '.cxb-ctl-resize { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; cursor: ns-resize;',
+  '  z-index: 2; opacity: 0; transition: opacity .12s ease;',
+  '  background: linear-gradient(to bottom, transparent, rgba(47,111,235,.55)); }',
+  '.cxb-cell:hover .cxb-ctl-resize { opacity: 1; }',
+  '.cxb-msg { font-size:16px; color: var(--cxd-muted,#8a9099); min-height: 18px; }',
+  '.cxb-check { display: inline-flex; align-items: center; gap: 4px; font-size:16px; color: var(--cxd-muted,#6b7280); cursor: pointer; white-space: nowrap; }',
   '.cxb-editable { outline: none; cursor: text; }',
   '.cxb-editable:focus { box-shadow: inset 0 0 0 2px rgba(47,111,235,.35); border-radius: 4px; }',
   // Text format controls: a segmented-control pill of equal-height items.
@@ -100,12 +107,14 @@ var dashboardCss = [
   '.cxb-fmt > * { height: 30px; box-sizing: border-box; vertical-align: middle; margin: 0;',
   '  border: 1px solid transparent; border-radius: 5px; font: inherit; background: transparent;',
   '  color: var(--cxd-title,#2a2f36); transition: background .1s ease, border-color .1s ease; }',
-  '.cxb-fmtbtn { width: 28px; line-height: 28px; text-align: center; cursor: pointer; user-select: none; }',
+  '.cxb-fmtbtn { width: 28px; display: inline-flex; align-items: flex-end; justify-content: center;',
+  '  padding-bottom: 5px; line-height: 1; cursor: pointer; user-select: none; }',
   '.cxb-fmtbtn:hover { background: rgba(0,0,0,.06); }',
   '.cxb-fmtbtn:active { background: rgba(47,111,235,.16); border-color: rgba(47,111,235,.35); }',
   // Font grow/shrink: an "A" with a chevron (MS Word style).
-  '.cxb-fmtsizebtn { width: auto; padding: 0 5px; display: inline-flex; align-items: center; gap: 1px; }',
-  '.cxb-fmtsizeA { font-weight: 700; font-size: 14px; line-height: 1; }',
+  '.cxb-fmtsizebtn { width: auto; padding: 0 5px 5px; align-items: flex-end; gap: 1px; }',
+  '.cxb-fmtsizeA { font-weight: 700; font-size: 16px; line-height: 1; }',
+  '.cxb-fmtsizeA-small { font-size: 11px; }',
   '.cxb-fmtsizechev { display: inline-flex; line-height: 0; color: var(--cxd-muted,#6b7280); }',
   // Labelled colour controls: an icon (A = text, ■ = fill) over a bar showing
   // the current colour, with the native picker overlaid transparently.
@@ -124,15 +133,15 @@ var dashboardCss = [
   '.cxb-modal { width: 100%; max-width: 460px; background: var(--cxd-panel-bg,#fff); color: inherit;',
   '  border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.25); padding: 18px 18px 14px;',
   '  display: flex; flex-direction: column; gap: 12px; font-family: system-ui, sans-serif; }',
-  '.cxb-modal-title { margin: 0; font-size: 16px; }',
+  '.cxb-modal-title { margin: 0; font-size: 17px; }',
   '.cxb-modal-field { display: flex; flex-direction: column; gap: 4px; }',
-  '.cxb-modal-field label { font: 600 11px system-ui; text-transform: uppercase; letter-spacing: .03em;',
+  '.cxb-modal-field label { font: 600 14px system-ui; text-transform: uppercase; letter-spacing: .03em;',
   '  color: var(--cxd-muted,#8a9099); }',
   '.cxb-modal input, .cxb-modal select, .cxb-modal textarea { width: 100%; box-sizing: border-box;',
   '  padding: 7px 9px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px; font: inherit;',
   '  background: var(--cxd-panel-bg,#fff); color: inherit; }',
-  '.cxb-modal-json { font-family: ui-monospace, Menlo, monospace; font-size: 12px; min-height: 130px; resize: vertical; }',
-  '.cxb-modal-err { color: var(--cxd-error,#c0392b); font-size: 12px; min-height: 15px; }',
+  '.cxb-modal-json { font-family: ui-monospace, Menlo, monospace; font-size:14px; min-height: 130px; resize: vertical; }',
+  '.cxb-modal-err { color: var(--cxd-error,#c0392b); font-size:14px; min-height: 17px; }',
   '.cxb-modal-footer { display: flex; justify-content: flex-end; gap: 8px; }'
 ].join('\n');
 
@@ -807,28 +816,39 @@ function renderDashboard(spec, target, options) {
     var canvasId = makeCanvasId(spec.id, 'panel', item.panel, panelIdCounter.n++);
     cell.canvas.id = canvasId;
 
+    // The host (e.g. the builder) must hear about EVERY settled panel — empty
+    // and errored ones included — or it cannot decorate them (select/move/
+    // delete chrome). `instance` is null and `state` says why.
+    function notify(instance, state) {
+      if (typeof options.onPanelRendered === 'function') {
+        options.onPanelRendered({
+          panelId: item.panel, item: item, cell: cell.root,
+          canvas: cell.canvas, body: cell.body, instance: instance, state: state
+        });
+      }
+    }
+
     return resolveOwnerData(panel)
       .then(function (data) {
         data = projectMeasures(data, panel && panel.measures);
-        if (isEmptyData(data)) { cell.setState('empty'); return null; }
+        if (isEmptyData(data)) { cell.setState('empty'); notify(null, 'empty'); return null; }
         sizeCanvasToCell(cell, canvasInset);
         var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
+        if (spec.fontName && !Object.prototype.hasOwnProperty.call(config, 'fontName')) {
+          config.fontName = spec.fontName;   // dashboard-wide font (Settings)
+        }
         var instance = new CX(canvasId, data, config, panel && panel.events || {});
         instances.push(instance);
         if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
         bind(panel && panel.dataRef, instance);
         if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
-        if (typeof options.onPanelRendered === 'function') {
-          options.onPanelRendered({
-            panelId: item.panel, item: item, cell: cell.root,
-            canvas: cell.canvas, body: cell.body, instance: instance
-          });
-        }
+        notify(instance, 'ready');
         return instance;
       })
       .catch(function (err) {
         cell.setState('error', String(err && err.message || err));
+        notify(null, 'error');
         return null;
       });
   }
@@ -869,27 +889,63 @@ function renderDashboard(spec, target, options) {
 
   // --- optional dashboard-wide controls (filter / table) ---
   var controls = spec.controls || [];
+  // Controls live OUTSIDE the grid: panels are placed explicitly in the
+  // interleaved tracks, and CSS auto-placement cannot be trusted to slot an
+  // un-placed item around them (it can land in a gap track or overlap a
+  // panel's row, rendering as a sliver). A plain full-width strip below the
+  // grid sidesteps the grid math entirely.
+  var controlsHost = null;
+  if (controls.length) {
+    controlsHost = document.createElement('div');
+    controlsHost.className = 'cxd-controls';
+    container.appendChild(controlsHost);
+  }
   controls.forEach(function (control, index) {
     var cell = buildCell(control.title || defaultControlTitle(control.kind));
     cell.root.classList.add('cxd-control');
-    grid.appendChild(cell.root);
+    // A control's height comes from its own spec entry when set (the builder's
+    // resize handle persists it there); otherwise it scales with the grid's
+    // row height, floored at 400px — table chrome plus at least six data rows,
+    // even when the dataset itself has fewer.
+    var ctlHeight = (typeof control.height === 'number' && control.height >= 80)
+      ? control.height
+      : Math.max(rowHeight * 2, 400);
+    cell.root.style.height = ctlHeight + 'px';
+    cell.root.style.marginTop = gap + 'px';
+    controlsHost.appendChild(cell.root);
 
     var canvasId = makeCanvasId(spec.id, 'control', control.kind, index);
     cell.canvas.id = canvasId;
 
+    // Hosts (e.g. the builder) hear about every settled control so they can
+    // decorate it (delete/resize chrome), mirroring onPanelRendered.
+    function notifyControl(instance, state) {
+      if (typeof options.onControlRendered === 'function') {
+        options.onControlRendered({
+          control: control, index: index, cell: cell.root,
+          canvas: cell.canvas, body: cell.body, instance: instance, state: state
+        });
+      }
+    }
+
     pending.push(resolveOwnerData(control)
       .then(function (data) {
-        if (isEmptyData(data)) { cell.setState('empty'); return; }
+        if (isEmptyData(data)) { cell.setState('empty'); notifyControl(null, 'empty'); return; }
         sizeCanvasToCell(cell, canvasInset);
         var config = mergeConfig(controlConfig(control), broadcastGroup, control);
+        if (spec.fontName && !Object.prototype.hasOwnProperty.call(config, 'fontName')) {
+          config.fontName = spec.fontName;   // dashboard-wide font (Settings)
+        }
         var instance = new CX(canvasId, data, config, {});
         instances.push(instance);
         bind(control.dataRef, instance);
         if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
+        notifyControl(instance, 'ready');
       })
       .catch(function (err) {
         cell.setState('error', String(err && err.message || err));
+        notifyControl(null, 'error');
       }));
   });
 
@@ -1042,6 +1098,12 @@ function mergeConfig(config, broadcastGroup, owner) {
   if (!Object.prototype.hasOwnProperty.call(merged, 'resizable')) {
     merged.resizable = false;
   }
+  // Dashboard panels are viewed at a distance — scale CanvasXpress's canvas
+  // text (axes, legends, ticks) up from its compact default. A panel/control
+  // config may override or reset with its own fontScaleFontFactor.
+  if (!Object.prototype.hasOwnProperty.call(merged, 'fontScaleFontFactor')) {
+    merged.fontScaleFontFactor = 1.3;
+  }
   return merged;
 }
 
@@ -1055,9 +1117,11 @@ function controlConfig(control) {
   var base = control.config ? shallowClone(control.config) : {};
   if (control.kind === 'table') {
     if (base.view == null) base.view = 'table';
+    if (base.dataTableToolbarShow == null) base.dataTableToolbarShow = false;
   } else if (control.kind === 'filter') {
     if (base.view == null) base.view = 'table';
     if (base.showFilter == null) base.showFilter = true;
+    if (base.dataTableToolbarShow == null) base.dataTableToolbarShow = false;
   }
   return base;
 }
@@ -1940,6 +2004,75 @@ function resizePanel(spec, panelId, w, h) {
 }
 
 /**
+ * Do two layout items overlap?
+ * @param {object} a - Item `{x,y,w,h}`.
+ * @param {object} b - Item `{x,y,w,h}`.
+ * @returns {boolean} True when the rectangles intersect.
+ * @private
+ */
+function itemsCollide(a, b) {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+/**
+ * Resolve panel collisions after a move/resize, react-grid-layout style:
+ * the active panel keeps its place, colliding panels are pushed DOWN, and
+ * everything is then compacted upward into the gaps (so shrinking a panel
+ * pulls the ones below it back up). Text panels are free-floating — they
+ * neither push nor get pushed, and may overlap anything.
+ *
+ * @param {object} spec - The current spec.
+ * @param {string} [activeId] - The panel the user just moved/resized (placed
+ *   first so it wins its spot; others yield).
+ * @returns {object} A new spec with a collision-free solid-panel layout.
+ */
+function resolveCollisions(spec, activeId) {
+  var next = cloneSpec(spec);
+  var items = next.layout.items || [];
+  var solids = items.filter(function (it) {
+    var p = next.panels[it.panel];
+    return !(p && p.type === 'text');
+  });
+  if (solids.length < 2) return next;
+
+  // Placement order: the active panel first (it owns its position), then the
+  // rest top-to-bottom, left-to-right — a stable order keeps pushes predictable.
+  var ordered = solids.slice().sort(function (a, b) {
+    if (a.panel === activeId) return -1;
+    if (b.panel === activeId) return 1;
+    return (a.y - b.y) || (a.x - b.x);
+  });
+
+  // Push phase: place each item; while it overlaps anything already placed,
+  // move it down one row.
+  var placed = [];
+  ordered.forEach(function (it) {
+    var guard = 0;
+    var overlaps = function (p) { return itemsCollide(it, p); };
+    while (placed.some(overlaps) && guard++ < 1000) it.y += 1;
+    placed.push(it);
+  });
+
+  // Compact phase: top-to-bottom, pull every item (active included) as far up
+  // as it can go without colliding — closing the gap a shrink/move left behind.
+  var byRow = placed.slice().sort(function (a, b) { return (a.y - b.y) || (a.x - b.x); });
+  var settled = [];
+  byRow.forEach(function (it) {
+    var canRise = function () {
+      if (it.y <= 0) return false;
+      it.y -= 1;
+      var hit = settled.some(function (p) { return itemsCollide(it, p); });
+      if (hit) { it.y += 1; return false; }
+      return true;
+    };
+    var guard = 0;
+    while (canRise() && guard++ < 1000) { /* keep rising */ }
+    settled.push(it);
+  });
+  return next;
+}
+
+/**
  * Update a panel's editable fields (title, dataRef, config, measures). Only
  * provided keys change; `config` replaces the whole config object. A `measures`
  * of `undefined` (or empty) clears the projection (plot all variables).
@@ -2001,7 +2134,7 @@ function setDataSource(spec, ref, source) {
  */
 function updateSettings(spec, changes) {
   var next = cloneSpec(spec);
-  ['background', 'backgroundImage', 'canvasInset', 'theme', 'width', 'height'].forEach(function (key) {
+  ['background', 'backgroundImage', 'canvasInset', 'theme', 'width', 'height', 'fontName'].forEach(function (key) {
     if (!Object.prototype.hasOwnProperty.call(changes, key)) return;
     var value = changes[key];
     if (value == null || value === '') delete next[key];
@@ -2326,6 +2459,11 @@ function createBuilder(target, options) {
   // manage datasets elsewhere (e.g. a dedicated Data page) can hide it and bind
   // panels via the per-panel Data dropdown instead.
   var showAddData = options.showAddData !== false;
+  // When true, the per-panel Data dropdown offers only datasets the spec
+  // already declares as sources (spec.data), instead of every stored dataset —
+  // lets a host UI (e.g. a dataset checklist) own which datasets are in play.
+  var limitDatasetsToSpec = !!options.limitDatasetsToSpec;
+  var addPanelBtn = null;   // disabled while no data source is declared (see updateAddPanelState)
   var baseUrl = options.baseUrl || '';   // cxd_server origin for kind:"dataset" sources
   var CX = options.CanvasXpress || (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
   var selectedId = null;
@@ -2337,6 +2475,10 @@ function createBuilder(target, options) {
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
   var liveRefs = {};        // data-source names the current liveHandle was built with
   var savedTextRange = null; // last selection inside a text editor (for format buttons)
+
+  /** The CanvasXpress web-safe font families (default: Arial). */
+  var CX_FONTS = ['American Typewriter', 'Andale Mono', 'Arial', 'Bradley Hand',
+    'Comic Sans MS', 'Courier', 'Monaco', 'Optima', 'Times New Roman', 'Trebuchet MS'];
 
   container.innerHTML = '';
   var root = el('div', 'cxb');
@@ -2373,7 +2515,8 @@ function createBuilder(target, options) {
     toolbarHost.classList.add('cxb-topbar');
     // "Create" actions (dashboard title + add panel/data) — one group.
     var left = el('div', 'cxb-tgroup');
-    var createActions = [titleInput, button('+ Panel', function () { doAddPanel(); }),
+    addPanelBtn = button('+ Panel', function () { doAddPanel(); });
+    var createActions = [titleInput, addPanelBtn,
       button('+ Text', function () { doAddText(); })];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     append(left, createActions);
@@ -2385,6 +2528,7 @@ function createBuilder(target, options) {
     append(toolbarHost, [left, el('div', 'cxb-spacer'), propsGroup, el('div', 'cxb-spacer'), right]);
   }
   buildToolbar();
+  updateAddPanelState();
 
   var msg = el('div', 'cxb-msg');
   root.appendChild(msg);
@@ -2492,6 +2636,20 @@ function createBuilder(target, options) {
    */
   function doSave() {
     if (!client) return showError('No persistence client configured.');
+    // The store keys dashboards by spec.id — re-derive it from the (possibly
+    // renamed) title so "save under a new name" creates a NEW dashboard
+    // instead of silently overwriting the last one. An unchanged name keeps
+    // the id, so re-saving still updates in place.
+    var slug = String(spec.title || '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (slug && slug !== spec.id) {
+      var next = Object.assign({}, spec, { id: slug });
+      // A broadcastGroup that just mirrored the old id follows the rename, so
+      // separately-saved dashboards don't share a coordination domain.
+      if (spec.broadcastGroup === spec.id) next.broadcastGroup = slug;
+      spec = next;
+      if (options.onChange) { try { options.onChange(getSpec()); } catch (e) { /* noop */ } }
+    }
     setMsg('Saving…');
     client.save(getSpec()).then(function () { setMsg('Saved “' + spec.id + '”.'); }, showError);
   }
@@ -2520,9 +2678,15 @@ function createBuilder(target, options) {
     gridEl = null;
 
     if (!(spec.layout.items || []).length) {
-      var hint = el('div', 'cxb-msg');
-      hint.textContent = 'Empty dashboard — click “+ Data” then “+ Panel” to begin.';
-      stage.appendChild(hint);
+      // options.emptyHint: false hides the empty-state hint (the host shows its
+      // own guidance), a string replaces it, undefined keeps the default.
+      if (options.emptyHint !== false) {
+        var hint = el('div', 'cxb-msg');
+        hint.textContent = typeof options.emptyHint === 'string'
+          ? options.emptyHint
+          : 'Empty dashboard — click “+ Data” then “+ Panel” to begin.';
+        stage.appendChild(hint);
+      }
       lastRender = Promise.resolve();
       return;
     }
@@ -2533,6 +2697,7 @@ function createBuilder(target, options) {
     // graph. A spec-level canvasInset (Settings) wins; 18 is the editing default.
     var opts = { CanvasXpress: CX, validate: false, canvasInset: 18, baseUrl: baseUrl, observeResize: false };
     opts.onPanelRendered = decorate;
+    opts.onControlRendered = decorateControl;
     // Record the sources this render resolves against; the live handle closes
     // over this spec snapshot, so a later fast per-panel re-render can only bind
     // to these refs. Binding a source added afterwards needs a full rebuild.
@@ -2543,6 +2708,58 @@ function createBuilder(target, options) {
       gridEl = host.querySelector('.cxd-grid');
       return handle.ready;
     }).catch(showError);
+  }
+
+  /**
+   * Attach editing chrome to a dashboard-wide control (table/filter strip):
+   * a delete icon and a bottom edge that drags to resize its height. The
+   * chosen height persists as `control.height` in the spec.
+   * @param {object} info - `{ control, index, cell, instance, state }`.
+   * @returns {void}
+   * @private
+   */
+  function decorateControl(info) {
+    var cell = info.cell;
+    cell.classList.add('cxb-cell');
+
+    var chrome = el('div', 'cxb-chrome');
+    var del = iconBtn('×', 'Delete', function (ev) {
+      stop(ev);
+      var next = rawSpec();
+      next.controls.splice(info.index, 1);
+      commit(next, false);
+      rebuild();
+    });
+    on(del, 'pointerdown', stop);
+    var tools = el('span', 'cxb-tools');
+    append(tools, [del]);
+    append(chrome, [tools]);
+    cell.appendChild(chrome);
+
+    // Bottom-edge height resize: live-drag the cell, persist on release.
+    var handleEl = el('div', 'cxb-ctl-resize');
+    handleEl.setAttribute('title', 'Drag to resize');
+    on(handleEl, 'pointerdown', function (ev) {
+      stop(ev);
+      var startY = ev.clientY;
+      var startH = cell.getBoundingClientRect().height;
+      function move(e) {
+        cell.style.height = Math.max(120, startH + (e.clientY - startY)) + 'px';
+      }
+      function up() {
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+        var next = rawSpec();
+        if (next.controls && next.controls[info.index]) {
+          next.controls[info.index].height = Math.round(cell.getBoundingClientRect().height);
+          commit(next, false);
+          rebuild();   // re-render so the canvas resizes to the new cell height
+        }
+      }
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    });
+    cell.appendChild(handleEl);
   }
 
   /**
@@ -2685,12 +2902,28 @@ function createBuilder(target, options) {
       if (cell) { cell.classList.add('cxd-text-cell'); cell.style.background = value; }
     });
 
-    var sup = cmdBtn('x²', 'superscript', 'font-size:11px');
-    var sub = cmdBtn('x₂', 'subscript', 'font-size:11px');
+    var sup = cmdBtn('x²', 'superscript', 'font-size:15px');
+    var sub = cmdBtn('x₂', 'subscript', 'font-size:15px');
 
-    // Styles, grow/shrink size, super/subscript, then the two colour controls.
+    // Font family — the CanvasXpress web-safe set, applied to the selection.
+    var fontSel = el('select', 'cxb-fmtfont');
+    fontSel.setAttribute('title', 'Font family');
+    CX_FONTS.forEach(function (f) {
+      var o = document.createElement('option');
+      o.value = f;
+      o.textContent = f;
+      o.style.fontFamily = f;
+      fontSel.appendChild(o);
+    });
+    fontSel.value = 'Arial';
+    on(fontSel, 'mousedown', function (ev) { ev.stopPropagation(); });
+    on(fontSel, 'change', function () { execFormat('fontName', fontSel.value); });
+
+    // Styles, grow/shrink size, super/subscript, font, then the colour controls.
     append(bar, [cmdBtn('B', 'bold', 'font-weight:700'), cmdBtn('I', 'italic', 'font-style:italic'),
-      cmdBtn('U', 'underline', 'text-decoration:underline'), sizeUp, sizeDown, sup, sub, color, bg]);
+      cmdBtn('U', 'underline', 'text-decoration:underline'),
+      cmdBtn('S', 'strikeThrough', 'text-decoration:line-through'),
+      sizeUp, sizeDown, sup, sub, fontSel, color, bg]);
     return bar;
   }
 
@@ -2704,7 +2937,7 @@ function createBuilder(target, options) {
    */
   function sizeBtn(iconSvg, delta, title) {
     var b = el('span', 'cxb-fmtbtn cxb-fmtsizebtn');
-    var a = el('span', 'cxb-fmtsizeA');
+    var a = el('span', 'cxb-fmtsizeA' + (delta < 0 ? ' cxb-fmtsizeA-small' : ''));
     a.textContent = 'A';
     var chev = el('span', 'cxb-fmtsizechev');
     chev.innerHTML = iconSvg;   // trusted constant SVG
@@ -2730,10 +2963,47 @@ function createBuilder(target, options) {
       sel.removeAllRanges();
       sel.addRange(savedTextRange);
     }
-    var cur = parseInt(document.queryCommandValue && document.queryCommandValue('fontSize'), 10);
-    if (!cur || isNaN(cur)) cur = 3;
-    var next = Math.max(1, Math.min(7, cur + delta));
-    document.execCommand('fontSize', false, String(next));
+    // Step in pixels (x1.2 per click) with no legacy 1-7 ceiling: read the
+    // selection's computed size, mark the selection via the legacy fontSize
+    // command, then convert the generated <font size="7"> wrappers into
+    // px-styled spans at the stepped size.
+    var sel = typeof window !== 'undefined' && window.getSelection && window.getSelection();
+    var node = sel && sel.anchorNode;
+    var anchorEl = node && (node.nodeType === 1 ? node : node.parentNode);
+    // When the selection wraps an element from outside (anchor = parent,
+    // offset = child index — the shape our own re-selection produces), probe
+    // the wrapped child, not the parent, or every step re-reads the base size.
+    if (node && node.nodeType === 1 && sel.anchorOffset != null) {
+      var wrapped = node.childNodes[sel.anchorOffset];
+      if (wrapped && wrapped.nodeType === 1) anchorEl = wrapped;
+    }
+    var curPx = 16;
+    if (anchorEl && anchorEl.ownerDocument && anchorEl.ownerDocument.defaultView) {
+      curPx = parseFloat(anchorEl.ownerDocument.defaultView.getComputedStyle(anchorEl).fontSize) || 16;
+    }
+    var nextPx = Math.round(delta > 0 ? curPx * 1.2 : curPx / 1.2);
+    nextPx = Math.max(8, Math.min(400, nextPx));
+    document.execCommand('fontSize', false, '7');
+    var wrappers = textEl.querySelectorAll('font[size="7"]');
+    var spans = [];
+    for (var i = 0; i < wrappers.length; i++) {
+      var f = wrappers[i];
+      var span = textEl.ownerDocument.createElement('span');
+      span.style.fontSize = nextPx + 'px';
+      while (f.firstChild) span.appendChild(f.firstChild);
+      f.parentNode.replaceChild(span, f);
+      spans.push(span);
+    }
+    // Re-select the converted spans — the old range pointed at the replaced
+    // <font> nodes, and without this the next step would lose the selection.
+    if (spans.length && sel) {
+      var range = textEl.ownerDocument.createRange();
+      range.setStartBefore(spans[0]);
+      range.setEndAfter(spans[spans.length - 1]);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      savedTextRange = range;
+    }
     saveTextSelection();
     commit(updatePanel(spec, selectedId, { html: sanitizeHtml(textEl.innerHTML) }), false);
   }
@@ -2988,8 +3258,19 @@ function createBuilder(target, options) {
       if (!src || src.kind !== 'dataset') addOption(ref, ref);
     });
 
-    // Every stored dataset, directly usable.
+    // Every stored dataset, directly usable — unless the host UI owns the
+    // dataset roster (limitDatasetsToSpec), in which case only datasets the
+    // spec declares as sources are offered.
+    var declared = null;
+    if (limitDatasetsToSpec) {
+      declared = {};
+      refs.forEach(function (ref) {
+        var src = (spec.data || {})[ref];
+        if (src && src.kind === 'dataset' && src.id) declared[src.id] = true;
+      });
+    }
     availableDatasets.forEach(function (d, i) {
+      if (declared && !declared[d.id]) return;
       var bits = [];
       if (d.rows != null) bits.push(d.rows + 'x' + (d.cols != null ? d.cols : '?'));
       if (d.store) bits.push(d.store);
@@ -3135,8 +3416,10 @@ function createBuilder(target, options) {
       var ny = c.y + offY;
       var current = itemFor(panelId);
       if (current && (current.x !== nx || current.y !== ny)) {
-        commit(movePanel(spec, panelId, nx, ny), false);   // movePanel clamps to the grid
-        applyCellRect(panelId);
+        // movePanel clamps to the grid; resolveCollisions pushes overlapped
+        // solid panels down and compacts the gaps (text panels float free).
+        commit(resolveCollisions(movePanel(spec, panelId, nx, ny), panelId), false);
+        applyAllCellRects();
       }
     });
   }
@@ -3193,8 +3476,8 @@ function createBuilder(target, options) {
       var w = Math.max(1, Math.round((moveEv.clientX - leftPx) / colUnit));
       var h = Math.max(1, Math.round((moveEv.clientY - topPx) / rowUnit));
       if (w !== item.w || h !== item.h) {
-        commit(resizePanel(spec, panelId, w, h), false);
-        applyCellRect(panelId);
+        commit(resolveCollisions(resizePanel(spec, panelId, w, h), panelId), false);
+        applyAllCellRects();
       }
     }, function () { resizePanelGraph(panelId); });   // fit the graph once the drag ends
   }
@@ -3224,6 +3507,16 @@ function createBuilder(target, options) {
    * @returns {void}
    * @private
    */
+  /**
+   * Re-place EVERY panel cell after a layout change that may have moved
+   * neighbours (collision push / compaction), then restyle the grid tracks.
+   * @returns {void}
+   * @private
+   */
+  function applyAllCellRects() {
+    (spec.layout.items || []).forEach(function (it) { applyCellRect(it.panel); });
+  }
+
   function applyCellRect(panelId) {
     var cell = cellEls[panelId];
     var item = itemFor(panelId);
@@ -3381,8 +3674,21 @@ function createBuilder(target, options) {
    */
   function commit(nextSpec, rerenderEditor) {
     spec = nextSpec;
+    updateAddPanelState();
     if (options.onChange) { try { options.onChange(getSpec()); } catch (e) { /* noop */ } }
     if (rerenderEditor) renderProps();
+  }
+
+  /**
+   * With limitDatasetsToSpec, a panel can only bind to a declared source — so
+   * "+ Panel" is disabled until the spec has at least one data source.
+   * @returns {void}
+   */
+  function updateAddPanelState() {
+    if (!addPanelBtn || !limitDatasetsToSpec) return;
+    var hasData = Object.keys(spec.data || {}).length > 0;
+    addPanelBtn.disabled = !hasData;
+    addPanelBtn.title = hasData ? '' : 'Select a dataset first';
   }
 
   /** @returns {object} A deep copy of the current spec (raw, no live sync). */
@@ -3399,6 +3705,7 @@ function createBuilder(target, options) {
   function setSpec(nextSpec) {
     spec = nextSpec;
     selectedId = null;
+    updateAddPanelState();
     if (options.onChange) { try { options.onChange(rawSpec()); } catch (e) { /* noop */ } }
     rebuild();
   }
@@ -3888,5 +4195,5 @@ function field(labelText, control) {
 }
 
 var version = "0.8.0";
-export { renderDashboard, validateSpec, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, version };
-export default { renderDashboard, validateSpec, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, version };
+export { renderDashboard, validateSpec, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, version };
+export default { renderDashboard, validateSpec, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, version };

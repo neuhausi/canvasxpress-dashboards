@@ -46,6 +46,7 @@ var EXPORTS = [
   'removePanel',
   'movePanel',
   'resizePanel',
+  'resolveCollisions',
   'updatePanel',
   'setDataSource',
   'updateSettings',

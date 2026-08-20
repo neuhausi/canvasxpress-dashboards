@@ -155,6 +155,25 @@ def _root():
     return FileResponse(os.path.join(HERE, "builder.html"), media_type="text/html")
 
 
+# The read-only share viewer ships inside the cxd_server package; serve it (and
+# the bundle it references relatively) so share links work under the dev server.
+_PKG_STATIC = os.path.join(ROOT, "server", "src", "cxd_server", "static")
+
+
+@app.get("/shared.html", include_in_schema=False)
+def _shared():
+    from fastapi.responses import FileResponse
+    return FileResponse(os.path.join(_PKG_STATIC, "shared.html"), media_type="text/html")
+
+
+@app.get("/canvasxpress-dashboards.umd.js", include_in_schema=False)
+def _shared_bundle():
+    from fastapi.responses import FileResponse
+    # Prefer the freshly built repo bundle over the packaged copy.
+    return FileResponse(os.path.join(ROOT, "dist", "canvasxpress-dashboards.umd.js"),
+                        media_type="text/javascript")
+
+
 app.mount("/", StaticFiles(directory=ROOT, html=True), name="repo")
 
 

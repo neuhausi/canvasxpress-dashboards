@@ -191,28 +191,39 @@ export function renderDashboard(spec, target, options) {
     var canvasId = makeCanvasId(spec.id, 'panel', item.panel, panelIdCounter.n++);
     cell.canvas.id = canvasId;
 
+    // The host (e.g. the builder) must hear about EVERY settled panel — empty
+    // and errored ones included — or it cannot decorate them (select/move/
+    // delete chrome). `instance` is null and `state` says why.
+    function notify(instance, state) {
+      if (typeof options.onPanelRendered === 'function') {
+        options.onPanelRendered({
+          panelId: item.panel, item: item, cell: cell.root,
+          canvas: cell.canvas, body: cell.body, instance: instance, state: state
+        });
+      }
+    }
+
     return resolveOwnerData(panel)
       .then(function (data) {
         data = projectMeasures(data, panel && panel.measures);
-        if (isEmptyData(data)) { cell.setState('empty'); return null; }
+        if (isEmptyData(data)) { cell.setState('empty'); notify(null, 'empty'); return null; }
         sizeCanvasToCell(cell, canvasInset);
         var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
+        if (spec.fontName && !Object.prototype.hasOwnProperty.call(config, 'fontName')) {
+          config.fontName = spec.fontName;   // dashboard-wide font (Settings)
+        }
         var instance = new CX(canvasId, data, config, panel && panel.events || {});
         instances.push(instance);
         if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
         bind(panel && panel.dataRef, instance);
         if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
-        if (typeof options.onPanelRendered === 'function') {
-          options.onPanelRendered({
-            panelId: item.panel, item: item, cell: cell.root,
-            canvas: cell.canvas, body: cell.body, instance: instance
-          });
-        }
+        notify(instance, 'ready');
         return instance;
       })
       .catch(function (err) {
         cell.setState('error', String(err && err.message || err));
+        notify(null, 'error');
         return null;
       });
   }
@@ -253,27 +264,63 @@ export function renderDashboard(spec, target, options) {
 
   // --- optional dashboard-wide controls (filter / table) ---
   var controls = spec.controls || [];
+  // Controls live OUTSIDE the grid: panels are placed explicitly in the
+  // interleaved tracks, and CSS auto-placement cannot be trusted to slot an
+  // un-placed item around them (it can land in a gap track or overlap a
+  // panel's row, rendering as a sliver). A plain full-width strip below the
+  // grid sidesteps the grid math entirely.
+  var controlsHost = null;
+  if (controls.length) {
+    controlsHost = document.createElement('div');
+    controlsHost.className = 'cxd-controls';
+    container.appendChild(controlsHost);
+  }
   controls.forEach(function (control, index) {
     var cell = buildCell(control.title || defaultControlTitle(control.kind));
     cell.root.classList.add('cxd-control');
-    grid.appendChild(cell.root);
+    // A control's height comes from its own spec entry when set (the builder's
+    // resize handle persists it there); otherwise it scales with the grid's
+    // row height, floored at 400px — table chrome plus at least six data rows,
+    // even when the dataset itself has fewer.
+    var ctlHeight = (typeof control.height === 'number' && control.height >= 80)
+      ? control.height
+      : Math.max(rowHeight * 2, 400);
+    cell.root.style.height = ctlHeight + 'px';
+    cell.root.style.marginTop = gap + 'px';
+    controlsHost.appendChild(cell.root);
 
     var canvasId = makeCanvasId(spec.id, 'control', control.kind, index);
     cell.canvas.id = canvasId;
 
+    // Hosts (e.g. the builder) hear about every settled control so they can
+    // decorate it (delete/resize chrome), mirroring onPanelRendered.
+    function notifyControl(instance, state) {
+      if (typeof options.onControlRendered === 'function') {
+        options.onControlRendered({
+          control: control, index: index, cell: cell.root,
+          canvas: cell.canvas, body: cell.body, instance: instance, state: state
+        });
+      }
+    }
+
     pending.push(resolveOwnerData(control)
       .then(function (data) {
-        if (isEmptyData(data)) { cell.setState('empty'); return; }
+        if (isEmptyData(data)) { cell.setState('empty'); notifyControl(null, 'empty'); return; }
         sizeCanvasToCell(cell, canvasInset);
         var config = mergeConfig(controlConfig(control), broadcastGroup, control);
+        if (spec.fontName && !Object.prototype.hasOwnProperty.call(config, 'fontName')) {
+          config.fontName = spec.fontName;   // dashboard-wide font (Settings)
+        }
         var instance = new CX(canvasId, data, config, {});
         instances.push(instance);
         bind(control.dataRef, instance);
         if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
+        notifyControl(instance, 'ready');
       })
       .catch(function (err) {
         cell.setState('error', String(err && err.message || err));
+        notifyControl(null, 'error');
       }));
   });
 
@@ -426,6 +473,12 @@ function mergeConfig(config, broadcastGroup, owner) {
   if (!Object.prototype.hasOwnProperty.call(merged, 'resizable')) {
     merged.resizable = false;
   }
+  // Dashboard panels are viewed at a distance — scale CanvasXpress's canvas
+  // text (axes, legends, ticks) up from its compact default. A panel/control
+  // config may override or reset with its own fontScaleFontFactor.
+  if (!Object.prototype.hasOwnProperty.call(merged, 'fontScaleFontFactor')) {
+    merged.fontScaleFontFactor = 1.3;
+  }
   return merged;
 }
 
@@ -439,9 +492,11 @@ function controlConfig(control) {
   var base = control.config ? shallowClone(control.config) : {};
   if (control.kind === 'table') {
     if (base.view == null) base.view = 'table';
+    if (base.dataTableToolbarShow == null) base.dataTableToolbarShow = false;
   } else if (control.kind === 'filter') {
     if (base.view == null) base.view = 'table';
     if (base.showFilter == null) base.showFilter = true;
+    if (base.dataTableToolbarShow == null) base.dataTableToolbarShow = false;
   }
   return base;
 }

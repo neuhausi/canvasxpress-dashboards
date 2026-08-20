@@ -107,6 +107,75 @@ export function resizePanel(spec, panelId, w, h) {
 }
 
 /**
+ * Do two layout items overlap?
+ * @param {object} a - Item `{x,y,w,h}`.
+ * @param {object} b - Item `{x,y,w,h}`.
+ * @returns {boolean} True when the rectangles intersect.
+ * @private
+ */
+function itemsCollide(a, b) {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+/**
+ * Resolve panel collisions after a move/resize, react-grid-layout style:
+ * the active panel keeps its place, colliding panels are pushed DOWN, and
+ * everything is then compacted upward into the gaps (so shrinking a panel
+ * pulls the ones below it back up). Text panels are free-floating — they
+ * neither push nor get pushed, and may overlap anything.
+ *
+ * @param {object} spec - The current spec.
+ * @param {string} [activeId] - The panel the user just moved/resized (placed
+ *   first so it wins its spot; others yield).
+ * @returns {object} A new spec with a collision-free solid-panel layout.
+ */
+export function resolveCollisions(spec, activeId) {
+  var next = cloneSpec(spec);
+  var items = next.layout.items || [];
+  var solids = items.filter(function (it) {
+    var p = next.panels[it.panel];
+    return !(p && p.type === 'text');
+  });
+  if (solids.length < 2) return next;
+
+  // Placement order: the active panel first (it owns its position), then the
+  // rest top-to-bottom, left-to-right — a stable order keeps pushes predictable.
+  var ordered = solids.slice().sort(function (a, b) {
+    if (a.panel === activeId) return -1;
+    if (b.panel === activeId) return 1;
+    return (a.y - b.y) || (a.x - b.x);
+  });
+
+  // Push phase: place each item; while it overlaps anything already placed,
+  // move it down one row.
+  var placed = [];
+  ordered.forEach(function (it) {
+    var guard = 0;
+    var overlaps = function (p) { return itemsCollide(it, p); };
+    while (placed.some(overlaps) && guard++ < 1000) it.y += 1;
+    placed.push(it);
+  });
+
+  // Compact phase: top-to-bottom, pull every item (active included) as far up
+  // as it can go without colliding — closing the gap a shrink/move left behind.
+  var byRow = placed.slice().sort(function (a, b) { return (a.y - b.y) || (a.x - b.x); });
+  var settled = [];
+  byRow.forEach(function (it) {
+    var canRise = function () {
+      if (it.y <= 0) return false;
+      it.y -= 1;
+      var hit = settled.some(function (p) { return itemsCollide(it, p); });
+      if (hit) { it.y += 1; return false; }
+      return true;
+    };
+    var guard = 0;
+    while (canRise() && guard++ < 1000) { /* keep rising */ }
+    settled.push(it);
+  });
+  return next;
+}
+
+/**
  * Update a panel's editable fields (title, dataRef, config, measures). Only
  * provided keys change; `config` replaces the whole config object. A `measures`
  * of `undefined` (or empty) clears the projection (plot all variables).
@@ -168,7 +237,7 @@ export function setDataSource(spec, ref, source) {
  */
 export function updateSettings(spec, changes) {
   var next = cloneSpec(spec);
-  ['background', 'backgroundImage', 'canvasInset', 'theme', 'width', 'height'].forEach(function (key) {
+  ['background', 'backgroundImage', 'canvasInset', 'theme', 'width', 'height', 'fontName'].forEach(function (key) {
     if (!Object.prototype.hasOwnProperty.call(changes, key)) return;
     var value = changes[key];
     if (value == null || value === '') delete next[key];

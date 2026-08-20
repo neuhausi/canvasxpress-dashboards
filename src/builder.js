@@ -15,7 +15,7 @@
 import { injectStyles } from './styles.js';
 import { renderDashboard, resizeInstance, sanitizeHtml } from './renderDashboard.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
-import { addPanel, removePanel, movePanel, resizePanel, updatePanel, setDataSource, blankSpec, DEFAULT_COLS }
+import { addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, blankSpec, DEFAULT_COLS }
   from './builderModel.js';
 
 // MS-Word-style colour-control icons (the coloured bar is rendered separately).
@@ -206,6 +206,11 @@ export function createBuilder(target, options) {
   // manage datasets elsewhere (e.g. a dedicated Data page) can hide it and bind
   // panels via the per-panel Data dropdown instead.
   var showAddData = options.showAddData !== false;
+  // When true, the per-panel Data dropdown offers only datasets the spec
+  // already declares as sources (spec.data), instead of every stored dataset —
+  // lets a host UI (e.g. a dataset checklist) own which datasets are in play.
+  var limitDatasetsToSpec = !!options.limitDatasetsToSpec;
+  var addPanelBtn = null;   // disabled while no data source is declared (see updateAddPanelState)
   var baseUrl = options.baseUrl || '';   // cxd_server origin for kind:"dataset" sources
   var CX = options.CanvasXpress || (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
   var selectedId = null;
@@ -217,6 +222,10 @@ export function createBuilder(target, options) {
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
   var liveRefs = {};        // data-source names the current liveHandle was built with
   var savedTextRange = null; // last selection inside a text editor (for format buttons)
+
+  /** The CanvasXpress web-safe font families (default: Arial). */
+  var CX_FONTS = ['American Typewriter', 'Andale Mono', 'Arial', 'Bradley Hand',
+    'Comic Sans MS', 'Courier', 'Monaco', 'Optima', 'Times New Roman', 'Trebuchet MS'];
 
   container.innerHTML = '';
   var root = el('div', 'cxb');
@@ -253,7 +262,8 @@ export function createBuilder(target, options) {
     toolbarHost.classList.add('cxb-topbar');
     // "Create" actions (dashboard title + add panel/data) — one group.
     var left = el('div', 'cxb-tgroup');
-    var createActions = [titleInput, button('+ Panel', function () { doAddPanel(); }),
+    addPanelBtn = button('+ Panel', function () { doAddPanel(); });
+    var createActions = [titleInput, addPanelBtn,
       button('+ Text', function () { doAddText(); })];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     append(left, createActions);
@@ -265,6 +275,7 @@ export function createBuilder(target, options) {
     append(toolbarHost, [left, el('div', 'cxb-spacer'), propsGroup, el('div', 'cxb-spacer'), right]);
   }
   buildToolbar();
+  updateAddPanelState();
 
   var msg = el('div', 'cxb-msg');
   root.appendChild(msg);
@@ -372,6 +383,20 @@ export function createBuilder(target, options) {
    */
   function doSave() {
     if (!client) return showError('No persistence client configured.');
+    // The store keys dashboards by spec.id — re-derive it from the (possibly
+    // renamed) title so "save under a new name" creates a NEW dashboard
+    // instead of silently overwriting the last one. An unchanged name keeps
+    // the id, so re-saving still updates in place.
+    var slug = String(spec.title || '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (slug && slug !== spec.id) {
+      var next = Object.assign({}, spec, { id: slug });
+      // A broadcastGroup that just mirrored the old id follows the rename, so
+      // separately-saved dashboards don't share a coordination domain.
+      if (spec.broadcastGroup === spec.id) next.broadcastGroup = slug;
+      spec = next;
+      if (options.onChange) { try { options.onChange(getSpec()); } catch (e) { /* noop */ } }
+    }
     setMsg('Saving…');
     client.save(getSpec()).then(function () { setMsg('Saved “' + spec.id + '”.'); }, showError);
   }
@@ -400,9 +425,15 @@ export function createBuilder(target, options) {
     gridEl = null;
 
     if (!(spec.layout.items || []).length) {
-      var hint = el('div', 'cxb-msg');
-      hint.textContent = 'Empty dashboard — click “+ Data” then “+ Panel” to begin.';
-      stage.appendChild(hint);
+      // options.emptyHint: false hides the empty-state hint (the host shows its
+      // own guidance), a string replaces it, undefined keeps the default.
+      if (options.emptyHint !== false) {
+        var hint = el('div', 'cxb-msg');
+        hint.textContent = typeof options.emptyHint === 'string'
+          ? options.emptyHint
+          : 'Empty dashboard — click “+ Data” then “+ Panel” to begin.';
+        stage.appendChild(hint);
+      }
       lastRender = Promise.resolve();
       return;
     }
@@ -413,6 +444,7 @@ export function createBuilder(target, options) {
     // graph. A spec-level canvasInset (Settings) wins; 18 is the editing default.
     var opts = { CanvasXpress: CX, validate: false, canvasInset: 18, baseUrl: baseUrl, observeResize: false };
     opts.onPanelRendered = decorate;
+    opts.onControlRendered = decorateControl;
     // Record the sources this render resolves against; the live handle closes
     // over this spec snapshot, so a later fast per-panel re-render can only bind
     // to these refs. Binding a source added afterwards needs a full rebuild.
@@ -423,6 +455,58 @@ export function createBuilder(target, options) {
       gridEl = host.querySelector('.cxd-grid');
       return handle.ready;
     }).catch(showError);
+  }
+
+  /**
+   * Attach editing chrome to a dashboard-wide control (table/filter strip):
+   * a delete icon and a bottom edge that drags to resize its height. The
+   * chosen height persists as `control.height` in the spec.
+   * @param {object} info - `{ control, index, cell, instance, state }`.
+   * @returns {void}
+   * @private
+   */
+  function decorateControl(info) {
+    var cell = info.cell;
+    cell.classList.add('cxb-cell');
+
+    var chrome = el('div', 'cxb-chrome');
+    var del = iconBtn('×', 'Delete', function (ev) {
+      stop(ev);
+      var next = rawSpec();
+      next.controls.splice(info.index, 1);
+      commit(next, false);
+      rebuild();
+    });
+    on(del, 'pointerdown', stop);
+    var tools = el('span', 'cxb-tools');
+    append(tools, [del]);
+    append(chrome, [tools]);
+    cell.appendChild(chrome);
+
+    // Bottom-edge height resize: live-drag the cell, persist on release.
+    var handleEl = el('div', 'cxb-ctl-resize');
+    handleEl.setAttribute('title', 'Drag to resize');
+    on(handleEl, 'pointerdown', function (ev) {
+      stop(ev);
+      var startY = ev.clientY;
+      var startH = cell.getBoundingClientRect().height;
+      function move(e) {
+        cell.style.height = Math.max(120, startH + (e.clientY - startY)) + 'px';
+      }
+      function up() {
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+        var next = rawSpec();
+        if (next.controls && next.controls[info.index]) {
+          next.controls[info.index].height = Math.round(cell.getBoundingClientRect().height);
+          commit(next, false);
+          rebuild();   // re-render so the canvas resizes to the new cell height
+        }
+      }
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    });
+    cell.appendChild(handleEl);
   }
 
   /**
@@ -565,12 +649,28 @@ export function createBuilder(target, options) {
       if (cell) { cell.classList.add('cxd-text-cell'); cell.style.background = value; }
     });
 
-    var sup = cmdBtn('x²', 'superscript', 'font-size:11px');
-    var sub = cmdBtn('x₂', 'subscript', 'font-size:11px');
+    var sup = cmdBtn('x²', 'superscript', 'font-size:15px');
+    var sub = cmdBtn('x₂', 'subscript', 'font-size:15px');
 
-    // Styles, grow/shrink size, super/subscript, then the two colour controls.
+    // Font family — the CanvasXpress web-safe set, applied to the selection.
+    var fontSel = el('select', 'cxb-fmtfont');
+    fontSel.setAttribute('title', 'Font family');
+    CX_FONTS.forEach(function (f) {
+      var o = document.createElement('option');
+      o.value = f;
+      o.textContent = f;
+      o.style.fontFamily = f;
+      fontSel.appendChild(o);
+    });
+    fontSel.value = 'Arial';
+    on(fontSel, 'mousedown', function (ev) { ev.stopPropagation(); });
+    on(fontSel, 'change', function () { execFormat('fontName', fontSel.value); });
+
+    // Styles, grow/shrink size, super/subscript, font, then the colour controls.
     append(bar, [cmdBtn('B', 'bold', 'font-weight:700'), cmdBtn('I', 'italic', 'font-style:italic'),
-      cmdBtn('U', 'underline', 'text-decoration:underline'), sizeUp, sizeDown, sup, sub, color, bg]);
+      cmdBtn('U', 'underline', 'text-decoration:underline'),
+      cmdBtn('S', 'strikeThrough', 'text-decoration:line-through'),
+      sizeUp, sizeDown, sup, sub, fontSel, color, bg]);
     return bar;
   }
 
@@ -584,7 +684,7 @@ export function createBuilder(target, options) {
    */
   function sizeBtn(iconSvg, delta, title) {
     var b = el('span', 'cxb-fmtbtn cxb-fmtsizebtn');
-    var a = el('span', 'cxb-fmtsizeA');
+    var a = el('span', 'cxb-fmtsizeA' + (delta < 0 ? ' cxb-fmtsizeA-small' : ''));
     a.textContent = 'A';
     var chev = el('span', 'cxb-fmtsizechev');
     chev.innerHTML = iconSvg;   // trusted constant SVG
@@ -610,10 +710,47 @@ export function createBuilder(target, options) {
       sel.removeAllRanges();
       sel.addRange(savedTextRange);
     }
-    var cur = parseInt(document.queryCommandValue && document.queryCommandValue('fontSize'), 10);
-    if (!cur || isNaN(cur)) cur = 3;
-    var next = Math.max(1, Math.min(7, cur + delta));
-    document.execCommand('fontSize', false, String(next));
+    // Step in pixels (x1.2 per click) with no legacy 1-7 ceiling: read the
+    // selection's computed size, mark the selection via the legacy fontSize
+    // command, then convert the generated <font size="7"> wrappers into
+    // px-styled spans at the stepped size.
+    var sel = typeof window !== 'undefined' && window.getSelection && window.getSelection();
+    var node = sel && sel.anchorNode;
+    var anchorEl = node && (node.nodeType === 1 ? node : node.parentNode);
+    // When the selection wraps an element from outside (anchor = parent,
+    // offset = child index — the shape our own re-selection produces), probe
+    // the wrapped child, not the parent, or every step re-reads the base size.
+    if (node && node.nodeType === 1 && sel.anchorOffset != null) {
+      var wrapped = node.childNodes[sel.anchorOffset];
+      if (wrapped && wrapped.nodeType === 1) anchorEl = wrapped;
+    }
+    var curPx = 16;
+    if (anchorEl && anchorEl.ownerDocument && anchorEl.ownerDocument.defaultView) {
+      curPx = parseFloat(anchorEl.ownerDocument.defaultView.getComputedStyle(anchorEl).fontSize) || 16;
+    }
+    var nextPx = Math.round(delta > 0 ? curPx * 1.2 : curPx / 1.2);
+    nextPx = Math.max(8, Math.min(400, nextPx));
+    document.execCommand('fontSize', false, '7');
+    var wrappers = textEl.querySelectorAll('font[size="7"]');
+    var spans = [];
+    for (var i = 0; i < wrappers.length; i++) {
+      var f = wrappers[i];
+      var span = textEl.ownerDocument.createElement('span');
+      span.style.fontSize = nextPx + 'px';
+      while (f.firstChild) span.appendChild(f.firstChild);
+      f.parentNode.replaceChild(span, f);
+      spans.push(span);
+    }
+    // Re-select the converted spans — the old range pointed at the replaced
+    // <font> nodes, and without this the next step would lose the selection.
+    if (spans.length && sel) {
+      var range = textEl.ownerDocument.createRange();
+      range.setStartBefore(spans[0]);
+      range.setEndAfter(spans[spans.length - 1]);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      savedTextRange = range;
+    }
     saveTextSelection();
     commit(updatePanel(spec, selectedId, { html: sanitizeHtml(textEl.innerHTML) }), false);
   }
@@ -868,8 +1005,19 @@ export function createBuilder(target, options) {
       if (!src || src.kind !== 'dataset') addOption(ref, ref);
     });
 
-    // Every stored dataset, directly usable.
+    // Every stored dataset, directly usable — unless the host UI owns the
+    // dataset roster (limitDatasetsToSpec), in which case only datasets the
+    // spec declares as sources are offered.
+    var declared = null;
+    if (limitDatasetsToSpec) {
+      declared = {};
+      refs.forEach(function (ref) {
+        var src = (spec.data || {})[ref];
+        if (src && src.kind === 'dataset' && src.id) declared[src.id] = true;
+      });
+    }
     availableDatasets.forEach(function (d, i) {
+      if (declared && !declared[d.id]) return;
       var bits = [];
       if (d.rows != null) bits.push(d.rows + 'x' + (d.cols != null ? d.cols : '?'));
       if (d.store) bits.push(d.store);
@@ -1015,8 +1163,10 @@ export function createBuilder(target, options) {
       var ny = c.y + offY;
       var current = itemFor(panelId);
       if (current && (current.x !== nx || current.y !== ny)) {
-        commit(movePanel(spec, panelId, nx, ny), false);   // movePanel clamps to the grid
-        applyCellRect(panelId);
+        // movePanel clamps to the grid; resolveCollisions pushes overlapped
+        // solid panels down and compacts the gaps (text panels float free).
+        commit(resolveCollisions(movePanel(spec, panelId, nx, ny), panelId), false);
+        applyAllCellRects();
       }
     });
   }
@@ -1073,8 +1223,8 @@ export function createBuilder(target, options) {
       var w = Math.max(1, Math.round((moveEv.clientX - leftPx) / colUnit));
       var h = Math.max(1, Math.round((moveEv.clientY - topPx) / rowUnit));
       if (w !== item.w || h !== item.h) {
-        commit(resizePanel(spec, panelId, w, h), false);
-        applyCellRect(panelId);
+        commit(resolveCollisions(resizePanel(spec, panelId, w, h), panelId), false);
+        applyAllCellRects();
       }
     }, function () { resizePanelGraph(panelId); });   // fit the graph once the drag ends
   }
@@ -1104,6 +1254,16 @@ export function createBuilder(target, options) {
    * @returns {void}
    * @private
    */
+  /**
+   * Re-place EVERY panel cell after a layout change that may have moved
+   * neighbours (collision push / compaction), then restyle the grid tracks.
+   * @returns {void}
+   * @private
+   */
+  function applyAllCellRects() {
+    (spec.layout.items || []).forEach(function (it) { applyCellRect(it.panel); });
+  }
+
   function applyCellRect(panelId) {
     var cell = cellEls[panelId];
     var item = itemFor(panelId);
@@ -1261,8 +1421,21 @@ export function createBuilder(target, options) {
    */
   function commit(nextSpec, rerenderEditor) {
     spec = nextSpec;
+    updateAddPanelState();
     if (options.onChange) { try { options.onChange(getSpec()); } catch (e) { /* noop */ } }
     if (rerenderEditor) renderProps();
+  }
+
+  /**
+   * With limitDatasetsToSpec, a panel can only bind to a declared source — so
+   * "+ Panel" is disabled until the spec has at least one data source.
+   * @returns {void}
+   */
+  function updateAddPanelState() {
+    if (!addPanelBtn || !limitDatasetsToSpec) return;
+    var hasData = Object.keys(spec.data || {}).length > 0;
+    addPanelBtn.disabled = !hasData;
+    addPanelBtn.title = hasData ? '' : 'Select a dataset first';
   }
 
   /** @returns {object} A deep copy of the current spec (raw, no live sync). */
@@ -1279,6 +1452,7 @@ export function createBuilder(target, options) {
   function setSpec(nextSpec) {
     spec = nextSpec;
     selectedId = null;
+    updateAddPanelState();
     if (options.onChange) { try { options.onChange(rawSpec()); } catch (e) { /* noop */ } }
     rebuild();
   }

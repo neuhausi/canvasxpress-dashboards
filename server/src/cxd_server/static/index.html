@@ -24,49 +24,62 @@
       border-right: 1px solid var(--rail-border); display: flex; flex-direction: column;
       padding: 14px 10px; position: sticky; top: 0; height: 100vh; }
     .brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 16px; }
-    .brand img { width: 28px; height: 28px; }
-    .brand span { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
+    .brand img { width: 32px; height: 32px; }
+    .brand span { font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
     .rail nav { display: flex; flex-direction: column; gap: 2px; }
-    .nav-item { display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 8px;
-      color: #444; font-size: 14px; cursor: pointer; text-decoration: none; }
-    .nav-item .ic { width: 20px; text-align: center; font-size: 16px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 10px; border-radius: 8px;
+      color: #444; font-size:16px; cursor: pointer; text-decoration: none; }
+    .nav-item .ic { width: 24px; text-align: center; font-size: 21px; }
     .nav-item:hover { background: #f4f6f8; }
     .nav-item.active { background: #eaf3fb; color: var(--accent); font-weight: 600; }
     .rail-foot { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px 8px;
-      border-top: 1px solid var(--rail-border); color: var(--muted); font-size: 13px; }
+      border-top: 1px solid var(--rail-border); color: var(--muted); font-size:16px; }
     .rail-foot .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--accent);
-      color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+      color: #fff; display: flex; align-items: center; justify-content: center; font-size:14px; font-weight: 700; }
 
     /* Main content */
     .content { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
     .topstrip { display: flex; align-items: center; gap: 12px; padding: 10px 20px; min-height: 56px;
       border-bottom: 1px solid var(--rail-border); background: #fff; }
     .toolbar-host { width: 100%; }
-    .view-title { margin: 0; font-size: 16px; font-weight: 600; }
+    .view-title { margin: 0; font-size:16px; font-weight: 600; }
     .view { padding: 16px 20px 32px; }
 
     /* Home view */
     .hero { background: linear-gradient(120deg, #eaf3fb, #f4f7fb); border-radius: 12px;
       padding: 28px; margin-bottom: 20px; }
-    .hero h1 { margin: 0 0 6px; font-size: 22px; }
-    .hero p { margin: 0 0 16px; color: var(--muted); }
+    .hero h1 { margin: 0 0 6px; font-size: 26px; }
+    .hero p { margin: 0 0 16px; color: var(--muted); font-size:16px; }
     .cta { padding: 10px 18px; background: var(--accent); color: #fff; border: none;
-      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+      border-radius: 8px; font-size:16px; font-weight: 600; cursor: pointer; }
     .cta:hover { background: #065fa3; }
     .notices { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+    .howto { display: flex; gap: 8px; align-items: stretch; margin: 0 0 22px; }
+    .howto-step { flex: 1; min-width: 0; background: var(--rail-bg); border: 1px solid var(--rail-border);
+      border-radius: 12px; padding: 14px; cursor: pointer; transition: box-shadow .15s, transform .15s; }
+    .howto-step:hover { box-shadow: 0 6px 20px rgba(16,40,70,.10); transform: translateY(-1px); }
+    .howto-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .howto-n { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff;
+      font-size:16px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
+    .howto-step h4 { margin: 0; font-size:16px; }
+    .howto-step img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: top;
+      border: 1px solid var(--rail-border); border-radius: 8px; background: #fff; }
+    .howto-step p { margin: 10px 0 0; font-size:16px; color: var(--muted); line-height: 1.5; }
+    .howto-arrow { align-self: center; font-size: 20px; color: var(--muted); flex: none; }
+    @media (max-width: 1000px) { .howto { flex-direction: column; } .howto-arrow { transform: rotate(90deg); align-self: flex-start; margin-left: 24px; } }
     .notice { display: flex; gap: 12px; background: #fff; border: 1px solid var(--rail-border);
       border-radius: 10px; padding: 16px; }
     .notice .ni { font-size: 22px; line-height: 1; }
-    .notice h3 { margin: 0 0 4px; font-size: 14px; }
-    .notice p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .notice h3 { margin: 0 0 4px; font-size:16px; }
+    .notice p { margin: 0; color: var(--muted); font-size:16px; line-height: 1.5; }
     .placeholder { padding: 60px 20px; text-align: center; color: var(--muted); }
 
     /* Settings view */
     .settings { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
     .settings-form { flex: 0 0 300px; background: #fff; border: 1px solid var(--rail-border);
       border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-    .settings-form h3 { margin: 0 0 4px; font-size: 15px; }
-    .settings-form label { display: flex; flex-direction: column; gap: 4px; font-size: 11px;
+    .settings-form h3 { margin: 0 0 4px; font-size:16px; }
+    .settings-form label { display: flex; flex-direction: column; gap: 4px; font-size:14px;
       font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
     .settings-form input, .settings-form select { padding: 6px 8px; border: 1px solid var(--rail-border);
       border-radius: 6px; font: inherit; font-weight: 400; text-transform: none; color: inherit; background: #fff; }
@@ -86,14 +99,21 @@
     .data-item:last-child { border-bottom: none; }
     .data-item:hover { background: #f4f6f8; }
     .data-item.active { background: #eaf3fb; box-shadow: inset 3px 0 0 var(--accent); }
-    .data-item-title { font-weight: 600; font-size: 14px; }
-    .data-item-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .data-item-title { font-weight: 600; font-size:16px; }
+    .data-item-meta { color: var(--muted); font-size:14px; margin-top: 2px; }
     .data-preview { flex: 1 1 auto; min-width: 320px; background: #fff;
       border: 1px solid var(--rail-border); border-radius: 10px; padding: 12px; }
     .data-preview-title { font-weight: 600; margin-bottom: 10px; color: #333; }
-    #data-canvas-host { height: 460px; overflow: hidden; }
+    #data-canvas-host { height: calc(100vh - 220px); min-height: 460px; overflow: hidden; }
     .data-preview.drop-active { outline: 2px dashed var(--accent); outline-offset: -6px;
       background: rgba(8,122,209,0.05); }
+    .data-dropzone { border: 2px dashed var(--rail-border); border-radius: 10px;
+      padding: 18px 14px; margin-top: 12px; text-align: center; color: var(--muted);
+      font-size:16px; line-height: 1.5; background: transparent; }
+    .data-dropzone .dz-icon { font-size: 22px; display: block; margin-bottom: 6px; }
+    .data-dropzone strong { color: inherit; }
+    .data-dropzone.drop-active { border-color: var(--accent); color: var(--accent);
+      background: rgba(8,122,209,0.06); }
     @media (prefers-color-scheme: dark) {
       .data-list, .data-preview { background: #16181d; }
       .data-item:hover { background: #1d2027; }
@@ -127,11 +147,12 @@
         <a class="nav-item" data-view="Data"><span class="ic">🗂️</span> Data</a>
         <a class="nav-item" data-view="Settings"><span class="ic">⚙️</span> Settings</a>
         <a class="nav-item" data-view="Admin" id="nav-admin" style="display:none"><span class="ic">🛡️</span> Admin</a>
+        <a class="nav-item" href="/examples/index.html"><span class="ic">🧭</span> Examples</a>
       </nav>
       <div class="rail-foot" id="rail-foot">
         <span class="avatar" id="rail-avatar">?</span>
         <span id="rail-user" style="flex:1">Signed out</span>
-        <a id="rail-auth" href="#" style="font-size:12px;color:var(--muted);text-decoration:none">Sign in</a>
+        <a id="rail-auth" href="#" style="font-size:14px;color:var(--muted);text-decoration:none">Sign in</a>
       </div>
     </aside>
 
@@ -158,18 +179,11 @@
     var CXD = CanvasXpressDashboards;
 
     // The working dashboard, shared across views (Builder edits it, Settings
-    // tweaks its presentation). It starts EMPTY — no panels — so the Builder
-    // opens as a blank canvas. The server-side datasets the Data view lists
-    // (seeded by examples/serve.py) are pre-declared as data sources so that
-    // clicking "+ Panel" immediately binds to a real dataset; nothing is drawn
-    // until the user adds a panel.
-    function seedSpec() {
-      var s = CXD.blankSpec('my-dashboard', 'My Dashboard');
-      s = CXD.setDataSource(s, 'sales', { kind: 'dataset', id: 'regional-sales', store: 'local' });
-      s = CXD.setDataSource(s, 'weather', { kind: 'dataset', id: 'weather-sample', store: 'local' });
-      return s;
-    }
-    var currentSpec = seedSpec();
+    // tweaks its presentation). It starts EMPTY — no panels and no data
+    // sources: the Assistant's "Datasets to use" checklist is the single
+    // roster, and ticking a dataset there (or binding one via the Data view)
+    // declares it as a spec source for panels to bind to.
+    var currentSpec = CXD.blankSpec('my-dashboard', 'My Dashboard');
 
     // --- app shell: left-rail views drive the toolbar + canvas ---
     var toolbarEl = document.getElementById('toolbar');
@@ -201,28 +215,71 @@
     function showHome() {
       teardown();
       toolbarEl.innerHTML = '<h2 class="view-title">Home</h2>';
+      function step(n, img, title, body) {
+        return '<div class="howto-step" data-goto="Builder">' +
+          '<div class="howto-head"><span class="howto-n">' + n + '</span><h4>' + title + '</h4></div>' +
+          '<img src="/examples/assets/' + img + '?v=4" alt="' + title + '"/>' +
+          '<p>' + body + '</p></div>';
+      }
       viewEl.innerHTML =
         '<div class="hero">' +
           '<h1>Welcome to CanvasXpress Dashboards</h1>' +
-          '<p>Compose, coordinate, and share live dashboards — powered by CanvasXpress.</p>' +
+          '<p>Pick your data, say what you want, get a live dashboard — then refine it by hand or by chat, and share it.</p>' +
           '<button class="cta" id="home-create">+ Create a dashboard</button>' +
+        '</div>' +
+        '<div class="howto">' +
+          step(1, 'home-step1-datasets.png', 'Pick your datasets',
+               'Search and tick the data to use — here, the bench cohort’s survival table.') +
+          '<div class="howto-arrow">➜</div>' +
+          step(2, 'home-step2-chat.png', 'Describe what you want',
+               '“Make a Kaplan–Meier plot — time and event, split by cluster.” It knows your columns.') +
+          '<div class="howto-arrow">➜</div>' +
+          step(3, 'home-step3-dashboard.png', 'Get a live dashboard',
+               'The KM curves land on the canvas — coordinated, editable (⚙), saveable, shareable.') +
         '</div>' +
         '<div class="notices">' +
           notice('📣', 'What’s new', 'Every panel opens the native CanvasXpress customizer — click the ⚙ on a panel to change chart type, colors, grouping and more.') +
           notice('🔌', 'Live data', 'Bind panels to databases &amp; Google Sheets through canvasxpress-connectors.') +
-          notice('🔗', 'Sharing', 'Publish read-only share links straight from the Builder.') +
+          notice('🔗', 'Sharing', 'Share read-only links from the Dashboards view — straight into an email.') +
+          notice('📖', 'The product story', 'Why recipes beat screenshots: <a href="/examples/reproducible-bench/narrative.html">read the Reproducible Bench narrative</a> — illustrated with the live dashboards it describes.') +
         '</div>';
       var create = document.getElementById('home-create');
       if (create) create.onclick = function () { activate('Builder'); };
+      [].slice.call(viewEl.querySelectorAll('.howto-step')).forEach(function (s) {
+        s.onclick = function () { activate('Builder'); };
+      });
     }
 
     function showBuilder() {
       teardown();
       // Reaching here means activate() already ensured a session (Builder is a
       // PROTECTED view), so Save/Share have a valid cookie — no 401.
-      // The builder renders its actions into the app toolbar and its canvas in the
-      // view; onChange keeps currentSpec in sync so Settings sees the latest.
-      currentBuilder = CXD.createBuilder(viewEl, {
+      // Layout: the chat assistant docks on the left; the builder canvas fills
+      // the rest. Chat authors/revises the spec, the builder shows it live —
+      // both edit the SAME working spec.
+      viewEl.innerHTML =
+        '<div style="display:flex;gap:12px;align-items:stretch;min-height:70vh">' +
+          '<div id="chat-panel" style="flex:0 0 320px;display:flex;flex-direction:column;border:1px solid var(--rail-border);border-radius:12px;background:var(--rail-bg);overflow:hidden">' +
+            '<div style="padding:10px 14px;border-bottom:1px solid var(--rail-border);font-weight:600;font-size:16px">💬 Assistant</div>' +
+            '<div class="data-dropzone" style="margin:10px 12px 0;padding:12px 12px;text-align:left;border-style:solid">' +
+              '<strong>How it works:</strong> tick the datasets to use, then describe the ' +
+              'dashboard you want — it appears on the canvas, where you keep refining by hand ' +
+              'or by chat. Prefer manual? Tick a dataset and click <strong>+ Panel</strong>.' +
+            '</div>' +
+            '<div id="chat-datasets" style="padding:8px 14px;border-bottom:1px solid var(--rail-border);font-size:16px">' +
+              '<div style="font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:4px">Datasets to use</div>' +
+              '<input id="chat-dataset-search" type="search" placeholder="Search datasets…" style="width:100%;box-sizing:border-box;padding:5px 8px;margin-bottom:6px;font:inherit;font-size:14px;border:1px solid var(--rail-border);border-radius:6px"/>' +
+              '<div id="chat-dataset-list" style="display:flex;flex-direction:column;gap:7px;max-height:170px;overflow-y:auto;padding:2px 0">Loading…</div>' +
+            '</div>' +
+            '<div id="chat-log" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:300px"></div>' +
+            '<div style="display:flex;gap:6px;padding:8px;border-top:1px solid var(--rail-border)">' +
+              '<textarea id="chat-input" rows="4" placeholder="Describe the dashboard you want…" style="flex:1;resize:none;padding:7px;font:inherit;font-size:16px"></textarea>' +
+              '<button class="cta" id="chat-send" style="padding:6px 12px">Send</button>' +
+            '</div>' +
+          '</div>' +
+          '<div id="builder-host" style="flex:1;min-width:0;border:1px solid var(--rail-border);border-radius:12px;padding:0 12px 12px;background:var(--rail-bg)"></div>' +
+        '</div>';
+      currentBuilder = CXD.createBuilder(document.getElementById('builder-host'), {
         toolbar: toolbarEl,
         spec: currentSpec,
         client: client,
@@ -230,9 +287,14 @@
         // Datasets are added/managed in the Data view; panels bind to them via
         // the per-panel Data dropdown — so hide the toolbar's "+ Data" button.
         showAddData: false,
-        onChange: function (spec) { currentSpec = spec; }
+        // The Assistant's checklist owns which datasets are in play; the
+        // per-panel Data dropdown offers exactly that set (spec.data).
+        limitDatasetsToSpec: true,
+        emptyHint: false,   // the Assistant's help box covers the empty state
+        onChange: function (spec) { currentSpec = spec; syncChatChecks(spec); }
       });
       window.builder = currentBuilder;
+      initChatPanel();
     }
 
     // --- Data view: browse stored datasets, preview one as a CanvasXpress table ---
@@ -251,18 +313,27 @@
       toolbarEl.innerHTML =
         '<div style="display:flex;align-items:center;gap:8px;width:100%">' +
           '<h2 class="view-title">Data</h2>' +
-          '<button class="cta" id="data-add" style="margin-left:auto;padding:6px 14px;font-size:13px">+ Data</button>' +
-          '<button class="cta" id="data-refresh" style="padding:6px 14px;font-size:13px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
+          '<button class="cta" id="data-add" style="margin-left:auto;padding:6px 14px;font-size:16px">+ Data</button>' +
+          '<button class="cta" id="data-refresh" style="padding:6px 14px;font-size:16px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
         '</div>';
       viewEl.innerHTML =
         '<div class="data-view">' +
-          '<div class="data-list" id="data-list"><div class="placeholder">Loading…</div></div>' +
+          '<div style="flex:0 0 300px;display:flex;flex-direction:column">' +
+            '<div class="data-dropzone" id="data-dropzone" style="margin:0 0 12px">' +
+              '<span class="dz-icon">📥</span>' +
+              '<strong>Drop files here</strong> to upload a dataset:<br>' +
+              'delimited text (CSV / TSV / TXT),<br>' +
+              'CanvasXpress JSON, or a CanvasXpress PNG.' +
+            '</div>' +
+            '<div class="data-list" id="data-list" style="flex:none;width:auto;align-self:stretch"><div class="placeholder">Loading…</div></div>' +
+          '</div>' +
           '<div class="data-preview" id="data-preview">' +
-            '<div class="data-preview-title" id="data-title">Select a dataset to preview it — or drop a CSV / TSV / CanvasXpress JSON file here to import.</div>' +
+            '<div class="data-preview-title" id="data-title">Select a dataset to preview it — or drop a file here to import it.</div>' +
             '<div id="data-canvas-host"></div>' +
           '</div>' +
         '</div>';
       setupDropZone(document.getElementById('data-preview'));
+      setupDropZone(document.getElementById('data-dropzone'));
       var refresh = document.getElementById('data-refresh');
       if (refresh) refresh.onclick = loadDataList;
       // "+ Data" now lives here (moved out of the Builder toolbar). It opens the
@@ -285,10 +356,10 @@
         'padding:20px;width:520px;max-width:92vw;box-shadow:0 12px 48px rgba(0,0,0,.3)';
       modal.innerHTML =
         '<h3 style="margin:0 0 12px">Add data</h3>' +
-        '<div id="ad-err" style="color:#d64545;min-height:16px;font-size:13px;margin-bottom:4px"></div>' +
-        '<label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:4px 0 2px">Name</label>' +
+        '<div id="ad-err" style="color:#d64545;min-height:16px;font-size:16px;margin-bottom:4px"></div>' +
+        '<label style="display:block;font-size:14px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:4px 0 2px">Name</label>' +
         '<input id="ad-name" style="width:100%;padding:8px;box-sizing:border-box" placeholder="e.g. my-data"/>' +
-        '<label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:12px 0 2px">Source</label>' +
+        '<label style="display:block;font-size:14px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:12px 0 2px">Source</label>' +
         '<select id="ad-type" style="width:100%;padding:8px;box-sizing:border-box">' +
           '<option value="file">Upload CSV / JSON file</option>' +
           '<option value="csv">Paste CSV</option>' +
@@ -311,7 +382,7 @@
       function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
 
       var INPUT = 'width:100%;padding:8px;box-sizing:border-box';
-      var AREA = INPUT + ';min-height:120px;font-family:monospace;font-size:12px';
+      var AREA = INPUT + ';min-height:120px;font-family:monospace;font-size:14px';
       var bodies = {
         file: '<input id="ad-file" type="file" accept=".csv,.json,application/json,text/csv" style="' + INPUT + '">',
         csv:  '<textarea id="ad-text" placeholder="Region,Q1\nNorth,10\nSouth,20" style="' + AREA + '"></textarea>',
@@ -373,14 +444,40 @@
         var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
         if (!f) return;
         // Prefer CanvasXpress's own loader (it reads CSV/TSV/JSON/PNG/… and
-        // updates the live table); fall back to a direct upload only when there's
-        // no table instance yet (empty store).
+        // updates the live table). Without a table instance yet, PNGs need one
+        // bootstrapped (only CanvasXpress can decode its own PNGs); plain
+        // text/JSON files upload directly.
         if (dataPreviewInstance && typeof dataPreviewInstance.loadFile === 'function') {
           loadDroppedFileViaCanvasXpress(e.dataTransfer, f);
+        } else if (/\.png$/i.test(f.name || '')) {
+          bootstrapPreviewInstance(function () {
+            loadDroppedFileViaCanvasXpress(e.dataTransfer, f);
+          });
         } else {
           importDataFile(f);
         }
       }, true);
+    }
+
+    // Create a minimal hidden table instance so CanvasXpress's loadFile can
+    // decode a dropped file (needed for CanvasXpress PNGs, which embed their
+    // data/config in metadata only CanvasXpress can read).
+    function bootstrapPreviewInstance(cb) {
+      var host = document.getElementById('data-canvas-host');
+      if (!host || !window.CanvasXpress) return;
+      host.innerHTML = '';
+      var canvas = document.createElement('canvas');
+      canvas.id = 'data-preview-bootstrap-' + Date.now();
+      var width = Math.max(320, host.clientWidth || 640);
+      canvas.setAttribute('width', width);
+      canvas.setAttribute('height', 460);
+      canvas.style.width = width + 'px';
+      canvas.style.height = '460px';
+      host.appendChild(canvas);
+      dataPreviewInstance = new window.CanvasXpress(canvas.id,
+        { y: { vars: ['-'], smps: ['-'], data: [[0]] } },
+        { view: 'table', resizable: false }, {});
+      cb();
     }
 
     // Hand a dropped file to CanvasXpress: it parses + updates the visible table,
@@ -553,7 +650,7 @@
         '<div class="hero" style="max-width:420px;margin:40px auto">' +
           '<h1 style="font-size:22px">Sign in to CanvasXpress Dashboards</h1>' +
           '<p style="color:var(--muted)">Save, load, and share dashboards on this server.</p>' +
-          '<div id="login-err" style="color:#d64545;min-height:18px;font-size:13px;margin:6px 0"></div>' +
+          '<div id="login-err" style="color:#d64545;min-height:18px;font-size:16px;margin:6px 0"></div>' +
           '<input id="login-user" placeholder="Username" autocomplete="username" ' +
             'style="width:100%;padding:9px;margin:4px 0;box-sizing:border-box"/>' +
           '<input id="login-pass" type="password" placeholder="Password" autocomplete="current-password" ' +
@@ -608,7 +705,7 @@
         '<div class="settings">' +
           '<div class="settings-form" style="flex:0 0 280px">' +
             '<h3>Create user</h3>' +
-            '<div id="admin-err" style="color:#d64545;min-height:16px;font-size:13px"></div>' +
+            '<div id="admin-err" style="color:#d64545;min-height:16px;font-size:16px"></div>' +
             '<label>Username<input id="admin-new-user" autocomplete="off"/></label>' +
             '<label>Password<input id="admin-new-pass" type="text" autocomplete="off"/></label>' +
             '<button class="cta" id="admin-create">Create user</button>' +
@@ -634,7 +731,7 @@
           row.style.display = 'flex';
           row.style.alignItems = 'center';
           row.style.gap = '10px';
-          var badge = u.is_admin ? ' <span style="color:var(--accent);font-size:11px;font-weight:700">ADMIN</span>' : '';
+          var badge = u.is_admin ? ' <span style="color:var(--accent);font-size:14px;font-weight:700">ADMIN</span>' : '';
           row.innerHTML =
             '<div style="flex:1">' +
               '<div class="data-item-title">' + esc(u.username) + badge + '</div>' +
@@ -645,7 +742,7 @@
           if (!u.via_config && u.username !== currentUser) {
             var toggle = document.createElement('button');
             toggle.textContent = u.is_admin ? 'Revoke admin' : 'Make admin';
-            toggle.style.cssText = 'font-size:12px;padding:4px 8px;cursor:pointer';
+            toggle.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer';
             toggle.onclick = function () {
               errEl.textContent = '';
               client.setUserAdmin(u.username, !u.is_admin).then(load, fail);
@@ -654,12 +751,12 @@
           } else if (u.via_config) {
             var tag = document.createElement('span');
             tag.textContent = 'via config';
-            tag.style.cssText = 'font-size:11px;color:var(--muted)';
+            tag.style.cssText = 'font-size:14px;color:var(--muted)';
             row.appendChild(tag);
           }
           var reset = document.createElement('button');
           reset.textContent = 'Reset password';
-          reset.style.cssText = 'font-size:12px;padding:4px 8px;cursor:pointer';
+          reset.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer';
           reset.onclick = function () {
             var pw = window.prompt('New password for "' + u.username + '" (≥6 chars):');
             if (!pw) return;
@@ -672,7 +769,7 @@
           if (!u.is_admin && u.username !== currentUser) {
             var del = document.createElement('button');
             del.textContent = 'Delete';
-            del.style.cssText = 'font-size:12px;padding:4px 8px;cursor:pointer;color:#d64545';
+            del.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer;color:#d64545';
             del.onclick = function () {
               if (!window.confirm('Delete "' + u.username + '" and all their dashboards?')) return;
               errEl.textContent = '';
@@ -731,7 +828,8 @@
         var built = [];
         datasets.forEach(function (d) {
           var meta = [];
-          if (d.rows != null) meta.push(d.rows + '×' + (d.cols != null ? d.cols : '?'));
+          if (d.rows != null && d.cols != null) meta.push(Math.max(d.rows, d.cols) + '×' + Math.min(d.rows, d.cols));
+          else if (d.rows != null) meta.push(d.rows + '×?');
           if (d.store) meta.push(d.store);
           if (d.updated_at) meta.push(String(d.updated_at).slice(0, 10));
           var item = document.createElement('div');
@@ -811,7 +909,7 @@
           var measured = host.clientWidth || 0;
           if (measured > 320) previewWidth = measured;   // cache the first good width
           var width = Math.max(320, previewWidth || measured || 640);
-          var height = 460;
+          var height = Math.max(460, host.clientHeight || 0);
           var canvas = document.createElement('canvas');
           canvas.id = 'data-preview-' + String(d.id).replace(/[^A-Za-z0-9_-]/g, '_');
           // Buffer + display box both pinned to the shared width (buffer defaults
@@ -823,8 +921,13 @@
           host.appendChild(canvas);
           // view:'table' renders the data as a scrollable grid — same as the
           // dashboard's "table" control; resizable:false pins it to the canvas.
+          // When a dataset is stored wider than tall, transpose the table so
+          // the larger dimension always runs down the rows (tall beats wide).
+          var y = data && data.y ? data.y : {};
+          var wideways = (y.vars || []).length > (y.smps || []).length;
           dataPreviewInstance = new window.CanvasXpress(canvas.id, data,
-            { view: 'table', title: d.title || d.id, resizable: false }, {});
+            { view: 'table', title: d.title || d.id, resizable: false,
+              transposeData: wideways }, {});
         });
       }, function (err) {
         host.innerHTML = '<div class="placeholder">Couldn’t load “' + esc(d.id) + '”.' +
@@ -861,6 +964,7 @@
             '<label>Columns<input type="number" id="s-cols" min="1" max="24"></label>' +
             '<label>Canvas margin (px)<input type="number" id="s-inset" min="0" max="60"></label>' +
             '<label>Theme<select id="s-theme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>' +
+            '<label>Font family<select id="s-font"></select></label>' +
           '</div>' +
           '<div class="settings-preview"><div id="s-preview"></div></div>' +
         '</div>';
@@ -874,6 +978,14 @@
       var cols = document.getElementById('s-cols');
       var inset = document.getElementById('s-inset');
       var theme = document.getElementById('s-theme');
+      var fontSel = document.getElementById('s-font');
+      var CX_FONTS = ['American Typewriter', 'Andale Mono', 'Arial', 'Bradley Hand',
+        'Comic Sans MS', 'Courier', 'Monaco', 'Optima', 'Times New Roman', 'Trebuchet MS'];
+      CX_FONTS.forEach(function (f) {
+        var o = document.createElement('option');
+        o.value = f; o.textContent = f; o.style.fontFamily = f;
+        fontSel.appendChild(o);
+      });
 
       bg.value = hexOr(currentSpec.background, '#f2f4f7');
       bgText.value = currentSpec.background || '';
@@ -884,6 +996,7 @@
       cols.value = L.cols != null ? L.cols : 12;
       inset.value = currentSpec.canvasInset != null ? currentSpec.canvasInset : 18;
       theme.value = currentSpec.theme || 'auto';
+      fontSel.value = currentSpec.fontName || 'Arial';
 
       var previewTimer = null;
       function apply(changes) {
@@ -945,6 +1058,18 @@
       cols.addEventListener('input', function () { apply({ cols: num(cols.value) }); });
       inset.addEventListener('input', function () { apply({ canvasInset: num(inset.value) }); });
       theme.addEventListener('change', function () { apply({ theme: theme.value }); });
+      fontSel.addEventListener('change', function () {
+        apply({ fontName: fontSel.value });
+        // Live-apply to every existing CanvasXpress instance on the page (the
+        // preview re-render covers new ones; this covers whatever is drawn now).
+        var list = window.CanvasXpress && window.CanvasXpress.instances || [];
+        for (var i = 0; i < list.length; i++) {
+          try {
+            list[i].fontName = fontSel.value;
+            if (typeof list[i].draw === 'function') list[i].draw();
+          } catch (e) { /* best-effort */ }
+        }
+      });
 
       renderSettingsPreview();
     }
@@ -966,6 +1091,318 @@
     function isHex(v) { return /^#[0-9a-fA-F]{3,8}$/.test(v || ''); }
     function hexOr(v, fallback) { return isHex(v) ? v : fallback; }
 
+    // --- Dashboards view: the user's saved dashboards (the shipped examples
+    // are seeded here by examples/serve.py) — open in Builder, preview, delete.
+    function showDashboards() {
+      teardown();
+      toolbarEl.innerHTML =
+        '<div style="display:flex;align-items:center;gap:8px;width:100%">' +
+          '<h2 class="view-title">Dashboards</h2>' +
+          '<button class="cta" id="dash-refresh" style="margin-left:auto;padding:6px 14px;font-size:16px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
+        '</div>';
+      viewEl.innerHTML =
+        '<div class="data-view">' +
+          '<div class="data-list" id="dash-list" style="flex:0 0 490px;width:490px"><div class="placeholder">Loading…</div></div>' +
+          '<div class="data-preview" id="dash-preview">' +
+            '<div class="data-preview-title" id="dash-title">Click “View” on a dashboard to preview it here.</div>' +
+            '<div id="dash-host"></div>' +
+          '</div>' +
+        '</div>';
+      document.getElementById('dash-refresh').onclick = loadDashList;
+      loadDashList();
+    }
+
+    function loadDashList() {
+      var listEl = document.getElementById('dash-list');
+      if (!listEl) return;
+      client.list().then(function (rows) {
+        rows = (rows && rows.dashboards) || rows || [];
+        if (!rows.length) {
+          listEl.innerHTML = '<div class="placeholder">No dashboards yet — build one in the Builder (or describe one in Chat) and Save.</div>';
+          return;
+        }
+        listEl.innerHTML = '';
+        rows.forEach(function (d) {
+          var item = document.createElement('div');
+          item.className = 'data-item';
+          item.style.cssText = 'padding:10px 12px;border:1px solid var(--rail-border);border-radius:10px;margin-bottom:8px;cursor:pointer';
+          var when = (d.updated_at || '').replace('T', ' ').slice(0, 16);
+          var isShared = d.visibility === 'public' || d.visibility === 'auth';
+          var sharedBadge = isShared
+            ? ' <span style="font-size:13px;font-weight:600;color:var(--accent);background:#eaf3fb;border-radius:99px;padding:1px 8px;vertical-align:middle">🔗 shared' +
+              (d.visibility === 'auth' ? ' (sign-in)' : '') + '</span>'
+            : '';
+          item.innerHTML =
+            '<div style="font-weight:600">' + (d.title || d.id) + sharedBadge + '</div>' +
+            '<div style="font-size:14px;color:var(--muted)">' + d.id + (when ? ' · ' + when : '') + '</div>' +
+            '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">' +
+              '<button class="cta" data-act="view" style="padding:4px 10px;font-size:14px">View</button>' +
+              '<button class="cta" data-act="open" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:var(--accent)">Open in Builder</button>' +
+              '<button class="cta" data-act="share" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Share</button>' +
+              (isShared
+                ? '<button class="cta" data-act="unshare" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Unshare</button>'
+                : '') +
+              '<button class="cta" data-act="del" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Delete</button>' +
+            '</div>' +
+            '<div class="dash-share" style="display:none;margin-top:8px;font-size:14px"></div>';
+          item.onclick = function (e) {
+            var act = e.target.getAttribute && e.target.getAttribute('data-act');
+            if (act === 'view') {
+              previewDashboard(d);
+            } else if (act === 'open') {
+              client.load(d.id).then(function (spec) { currentSpec = spec; activate('Builder'); });
+            } else if (act === 'share') {
+              shareDashboard(d, item.querySelector('.dash-share'));
+            } else if (act === 'unshare') {
+              client.share(d.id, 'private').then(loadDashList);
+            } else if (act === 'del') {
+              if (!confirm('Delete "' + (d.title || d.id) + '"?')) return;
+              client.remove(d.id).then(loadDashList);
+            } else if (!e.target.closest('.dash-share')) {
+              previewDashboard(d);
+            }
+          };
+          listEl.appendChild(item);
+        });
+      }).catch(function (err) {
+        listEl.innerHTML = '<div class="placeholder">Could not list dashboards: ' + err.message + '</div>';
+      });
+    }
+
+    // Publish a read-only share link for a dashboard and surface it inline
+    // (with copy). 'public' = anyone with the link; the server also supports
+    // 'auth' (signed-in users only) and 'private' (revoke).
+    function shareDashboard(d, box) {
+      if (!box) return;
+      box.style.display = 'block';
+      box.textContent = 'Publishing share link…';
+      client.share(d.id, 'public').then(function (summary) {
+        var url = summary.share_url ||
+          (location.origin + '/shared.html?token=' + summary.share_token);
+        // Open the default email client with the link pre-filled; the inline
+        // box below stays as the copy/revoke fallback.
+        var title = d.title || d.id;
+        location.href = 'mailto:?subject=' +
+          encodeURIComponent('Dashboard shared with you: ' + title) +
+          '&body=' + encodeURIComponent(
+            'I’ve shared the dashboard “' + title + '” with you (read-only, no account needed):\n\n' +
+            url + '\n');
+        box.innerHTML = '';
+        var input = document.createElement('input');
+        input.value = url; input.readOnly = true;
+        input.style.cssText = 'width:100%;box-sizing:border-box;padding:4px 6px;font-size:14px;border:1px solid var(--rail-border);border-radius:6px';
+        input.onclick = function (e) { e.stopPropagation(); input.select(); };
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:6px;margin-top:4px';
+        var copy = document.createElement('button');
+        copy.className = 'cta'; copy.textContent = 'Copy link';
+        copy.style.cssText = 'padding:3px 10px;font-size:14px';
+        copy.onclick = function (e) {
+          e.stopPropagation();
+          (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject())
+            .then(function () { copy.textContent = 'Copied ✓'; },
+                  function () { input.select(); document.execCommand('copy'); copy.textContent = 'Copied ✓'; });
+        };
+        var revoke = document.createElement('button');
+        revoke.className = 'cta'; revoke.textContent = 'Unshare';
+        revoke.style.cssText = 'padding:3px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit';
+        revoke.onclick = function (e) {
+          e.stopPropagation();
+          client.share(d.id, 'private').then(function () {
+            box.textContent = 'Link revoked.'; setTimeout(function () { box.style.display = 'none'; }, 1500);
+          });
+        };
+        row.appendChild(copy); row.appendChild(revoke);
+        box.appendChild(input); box.appendChild(row);
+      }, function (err) {
+        box.textContent = 'Share failed: ' + err.message;
+      });
+    }
+
+    function previewDashboard(summary) {
+      var titleEl = document.getElementById('dash-title');
+      if (titleEl) titleEl.textContent = summary.title || summary.id;
+      client.load(summary.id).then(function (spec) {
+        currentPreview = Promise.resolve(currentPreview).then(function (h) {
+          if (h && h.destroy) { try { h.destroy(); } catch (e) {} }
+          var host = document.getElementById('dash-host');
+          if (!host) return null;
+          host.innerHTML = '';
+          return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE });
+        });
+      });
+    }
+
+    // --- Builder chat assistant: describe a dashboard in plain language; the
+    // server's LLM authors the declarative spec (it never touches the data),
+    // the client validates it and loads it straight into the live builder.
+    // The checkbox list scopes which datasets the assistant may bind to.
+    var chatHistory = [];      // [{role, content}] — survives view switches
+
+    function initChatPanel() {
+      var input = document.getElementById('chat-input');
+      var send = document.getElementById('chat-send');
+      send.onclick = sendChat;
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+      });
+      chatHistory.forEach(function (m) { appendChatBubble(m.role, m.content); });
+      loadChatDatasets();
+      fetch(API_BASE + '/api/llm/status', { credentials: 'include' })
+        .then(function (r) { return r.json(); })
+        .then(function (s) {
+          if (!s.enabled) {
+            input.disabled = true; send.disabled = true;
+            appendChatBubble('assistant',
+              'The assistant is not configured on this server. Set CXD_LLM_API_KEY ' +
+              '(an Anthropic API key) in .env and restart — meanwhile, compose dashboards manually on the canvas.');
+          }
+        }).catch(function () {});
+    }
+
+    function loadChatDatasets() {
+      var listEl = document.getElementById('chat-dataset-list');
+      var searchEl = document.getElementById('chat-dataset-search');
+      if (!listEl) return;
+      fetch(API_BASE + '/api/datasets', { credentials: 'include' })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          var rows = res.datasets || [];
+          if (!rows.length) { listEl.textContent = 'No datasets yet — add some in the Data view.'; return; }
+          listEl.innerHTML = '';
+          rows.forEach(function (d) {
+            var label = document.createElement('label');
+            label.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer';
+            label.className = 'chat-ds-row';
+            var text = (d.title || d.id) + ' (' + Math.max(d.rows || 0, d.cols || 0) + '×' + Math.min(d.rows || 0, d.cols || 0) + ')';
+            label.setAttribute('data-search', (d.id + ' ' + text).toLowerCase());
+            var cb = document.createElement('input');
+            cb.type = 'checkbox'; cb.value = d.id; cb.className = 'chat-ds';
+            cb.setAttribute('data-store', d.store || '');
+            cb.onchange = function () { toggleSpecDataset(d, cb.checked); };
+            label.appendChild(cb);
+            var span = document.createElement('span');
+            span.textContent = text;
+            label.appendChild(span);
+            listEl.appendChild(label);
+          });
+          if (searchEl) searchEl.oninput = function () {
+            var q = searchEl.value.trim().toLowerCase();
+            [].slice.call(listEl.querySelectorAll('.chat-ds-row')).forEach(function (row) {
+              row.style.display = (!q || row.getAttribute('data-search').indexOf(q) !== -1) ? 'flex' : 'none';
+            });
+          };
+          syncChatChecks(currentSpec);
+        })
+        .catch(function () { listEl.textContent = 'Could not load datasets.'; });
+    }
+
+    function selectedChatDatasets() {
+      return [].slice.call(document.querySelectorAll('.chat-ds:checked'))
+        .map(function (cb) { return cb.value; });
+    }
+
+    // --- keep the checklist and the working spec's data sources in sync ---
+    // Checked = declared as a spec data source (so "+ Panel" and the per-panel
+    // Data dropdown see the same set); binding a dataset on the canvas checks
+    // its box here, and vice versa.
+    function specDatasetIds(spec) {
+      var ids = {};
+      var data = (spec && spec.data) || {};
+      Object.keys(data).forEach(function (ref) {
+        if (data[ref] && data[ref].kind === 'dataset' && data[ref].id) ids[data[ref].id] = ref;
+      });
+      return ids;
+    }
+
+    function syncChatChecks(spec) {
+      var ids = specDatasetIds(spec);
+      [].slice.call(document.querySelectorAll('.chat-ds')).forEach(function (cb) {
+        cb.checked = !!ids[cb.value];
+      });
+    }
+
+    function toggleSpecDataset(d, checked) {
+      var working = currentBuilder ? currentBuilder.getSpec() : currentSpec;
+      var ids = specDatasetIds(working);
+      if (checked) {
+        if (ids[d.id]) return;   // already declared
+        working = CXD.setDataSource(working, d.id,
+          { kind: 'dataset', id: d.id, store: d.store || undefined });
+      } else {
+        var ref = ids[d.id];
+        if (!ref) return;
+        var used = Object.keys(working.panels || {}).some(function (pid) {
+          return working.panels[pid].dataRef === ref;
+        }) || (working.controls || []).some(function (c) { return c.dataRef === ref; });
+        if (used) {
+          appendChatBubble('assistant', '“' + (d.title || d.id) + '” is still used by a panel — unbind or delete that panel first.');
+          syncChatChecks(working);
+          return;
+        }
+        delete working.data[ref];
+      }
+      currentSpec = working;
+      if (currentBuilder) currentBuilder.setSpec(working);
+    }
+
+    function appendChatBubble(role, text) {
+      var log = document.getElementById('chat-log');
+      if (!log) return;
+      var b = document.createElement('div');
+      var user = role === 'user';
+      b.style.cssText = 'max-width:88%;padding:8px 12px;border-radius:12px;font-size:16px;line-height:1.45;white-space:pre-wrap;' +
+        (user ? 'align-self:flex-end;background:var(--accent);color:#fff'
+              : 'align-self:flex-start;background:rgba(127,127,127,.12)');
+      b.textContent = text;
+      log.appendChild(b);
+      log.scrollTop = log.scrollHeight;
+      return b;
+    }
+
+    function sendChat() {
+      var input = document.getElementById('chat-input');
+      var msg = (input.value || '').trim();
+      if (!msg) return;
+      input.value = '';
+      appendChatBubble('user', msg);
+      chatHistory.push({ role: 'user', content: msg });
+      var pending = appendChatBubble('assistant', 'Thinking…');
+      // The working spec on the canvas is the revision context, so chat and
+      // hand edits compose; selected datasets scope what the LLM may bind to.
+      var working = currentBuilder ? currentBuilder.getSpec() : currentSpec;
+      fetch(API_BASE + '/api/llm/dashboard', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: msg,
+          history: chatHistory.slice(0, -1),
+          spec: working,
+          datasets: selectedChatDatasets()
+        })
+      }).then(function (r) {
+        return r.json().then(function (body) {
+          if (!r.ok) throw new Error(body.detail || ('HTTP ' + r.status));
+          return body;
+        });
+      }).then(function (res) {
+        pending.textContent = res.reply || 'Done.';
+        chatHistory.push({ role: 'assistant', content: res.reply || '' });
+        if (res.spec) {
+          var v = CXD.validateSpec(res.spec);
+          if (v.valid) {
+            currentSpec = res.spec;
+            if (currentBuilder) currentBuilder.setSpec(res.spec);
+            syncChatChecks(res.spec);
+          } else {
+            appendChatBubble('assistant', 'The generated spec did not validate: ' + v.errors.join('; '));
+          }
+        }
+      }).catch(function (err) {
+        pending.textContent = '⚠ ' + err.message;
+      });
+    }
+
     function showPlaceholder(name) {
       teardown();
       toolbarEl.innerHTML = '<h2 class="view-title">' + name + '</h2>';
@@ -983,6 +1420,7 @@
       navItems.forEach(function (n) { n.classList.toggle('active', n.getAttribute('data-view') === name); });
       if (name === 'Home') showHome();
       else if (name === 'Builder') showBuilder();
+      else if (name === 'Dashboards') showDashboards();
       else if (name === 'Data') showData();
       else if (name === 'Settings') showSettings();
       else if (name === 'Admin') showAdmin();
@@ -990,6 +1428,7 @@
     }
 
     navItems.forEach(function (n) {
+      if (n.getAttribute('href')) return;   // plain links (e.g. Examples) navigate normally
       n.addEventListener('click', function () { activate(n.getAttribute('data-view')); });
     });
 
