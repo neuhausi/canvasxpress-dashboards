@@ -150,6 +150,7 @@
         <a class="nav-item" data-view="Data"><span class="ic">🗂️</span> Data</a>
         <a class="nav-item" data-view="Settings"><span class="ic">⚙️</span> Settings</a>
         <a class="nav-item" data-view="Admin" id="nav-admin" style="display:none"><span class="ic">🛡️</span> Admin</a>
+        <a class="nav-item" data-view="Logs" id="nav-logs" style="display:none"><span class="ic">🧾</span> Logs</a>
         <a class="nav-item" href="/examples/index.html"><span class="ic">🧭</span> Examples</a>
       </nav>
       <div class="rail-foot" id="rail-foot">
@@ -632,6 +633,16 @@
       // The Admin view is only reachable when the server marks you an admin
       // (CXD_ADMINS). Hiding the nav is cosmetic — the API enforces it too.
       if (adminNav) adminNav.style.display = isAdmin ? '' : 'none';
+      // The Logs view (chart-engine request/response log) is server-gated via
+      // CXD_LOGS_PANEL + CXD_MCP_LOG.
+      if (currentUser) {
+        fetch(API_BASE + '/api/llm/status', { credentials: 'include' })
+          .then(function (r) { return r.json(); })
+          .then(function (st) {
+            var nav = document.getElementById('nav-logs');
+            if (nav) nav.style.display = st.logsPanel ? '' : 'none';
+          }).catch(function () {});
+      }
     }
 
     // Ask the server who we are and reflect it in the UI. Safe with no server.
@@ -933,8 +944,13 @@
           // dashboard's "table" control; resizable:false pins it to the canvas.
           // When a dataset is stored wider than tall, transpose the table so
           // the larger dimension always runs down the rows (tall beats wide).
-          var y = data && data.y ? data.y : {};
-          var wideways = (y.vars || []).length > (y.smps || []).length;
+          // Tabular 2D arrays are already row-oriented; only pre-shaped
+          // {y} objects may need the display transpose.
+          var wideways = false;
+          if (!Array.isArray(data)) {
+            var y = data && data.y ? data.y : {};
+            wideways = (y.vars || []).length > (y.smps || []).length;
+          }
           dataPreviewInstance = new window.CanvasXpress(canvas.id, data,
             { view: 'table', title: d.title || d.id, resizable: false,
               transposeData: wideways }, {});
@@ -1459,6 +1475,80 @@
       });
     }
 
+    // --- Logs view: the canvasxpress-mcp bridge log (request + response per
+    // chart-engine call), newest first — for debugging generated configs.
+    function showLogs() {
+      teardown();
+      toolbarEl.innerHTML =
+        '<div style="display:flex;align-items:center;gap:8px;width:100%">' +
+          '<h2 class="view-title">Logs</h2>' +
+          '<span id="logs-path" style="font-size:13px;color:var(--muted)"></span>' +
+          '<button class="cta" id="logs-refresh" style="margin-left:auto;padding:6px 14px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
+        '</div>';
+      viewEl.innerHTML = '<div id="logs-list" style="display:flex;flex-direction:column;gap:10px;max-width:1100px"><div class="placeholder">Loading…</div></div>';
+      document.getElementById('logs-refresh').onclick = loadLogs;
+      loadLogs();
+    }
+
+    function loadLogs() {
+      var listEl = document.getElementById('logs-list');
+      if (!listEl) return;
+      fetch(API_BASE + '/api/llm/mcp-log?n=100', { credentials: 'include' })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          var pathEl = document.getElementById('logs-path');
+          if (pathEl) pathEl.textContent = res.log_path || '';
+          var entries = (res.entries || []).slice().reverse();   // newest first
+          if (!entries.length) {
+            listEl.innerHTML = '<div class="placeholder">No chart-engine calls logged yet — use the Builder chat, then Refresh.</div>';
+            return;
+          }
+          listEl.innerHTML = '';
+          entries.forEach(function (e) {
+            var resp = e.response || {};
+            var ok = !e.error && resp.success !== false;
+            var cfg = resp.config || {};
+            var req = e.request || {};
+            var head = document.createElement('div');
+            var card = document.createElement('details');
+            card.style.cssText = 'border:1px solid var(--rail-border);border-radius:10px;background:var(--rail-bg);padding:10px 14px';
+            var sum = document.createElement('summary');
+            sum.style.cssText = 'cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap;list-style:none';
+            sum.innerHTML =
+              '<span style="font-size:12.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:' + (ok ? '#e6f4ea;color:#137333' : '#fce8e6;color:#c5221f') + '">' + (ok ? 'OK' : 'FAIL') + '</span>' +
+              '<span style="font-weight:600">' + (e.endpoint || '?') + '</span>' +
+              (cfg.graphType ? '<span style="color:var(--accent)">' + cfg.graphType + '</span>' : '') +
+              '<span style="color:var(--muted);font-size:13px">' + (e.ts || '') + '</span>' +
+              '<span style="color:var(--muted);font-size:13px;flex:1;min-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(req.description || req.instruction || '') + '</span>';
+            card.appendChild(sum);
+            var body = document.createElement('div');
+            body.style.cssText = 'margin-top:10px;display:grid;gap:8px';
+            function block(title, obj) {
+              if (obj == null) return;
+              var d = document.createElement('div');
+              d.innerHTML = '<div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:2px">' + title + '</div>';
+              var pre = document.createElement('pre');
+              pre.style.cssText = 'margin:0;padding:8px 10px;background:rgba(127,127,127,.08);border-radius:8px;font-size:12.5px;overflow-x:auto;white-space:pre-wrap';
+              pre.textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+              d.appendChild(pre);
+              body.appendChild(d);
+            }
+            block('Request', req);
+            if (e.error) block('Error', e.error);
+            block('Config returned', resp.config);
+            if ((resp.warnings || []).length) block('Warnings', resp.warnings);
+            if (resp.invalid_refs && Object.keys(resp.invalid_refs).length) block('Invalid references', resp.invalid_refs);
+            if ((resp.removed_params || []).length) block('Removed (hallucinated) params', resp.removed_params);
+            if (resp.request_id) block('MCP request id', resp.request_id);
+            card.appendChild(body);
+            listEl.appendChild(card);
+          });
+        })
+        .catch(function (err) {
+          listEl.innerHTML = '<div class="placeholder">Could not load the log: ' + esc(err.message) + '</div>';
+        });
+    }
+
     function showPlaceholder(name) {
       teardown();
       toolbarEl.innerHTML = '<h2 class="view-title">' + name + '</h2>';
@@ -1467,7 +1557,7 @@
 
     // Views that touch per-user state require a session; visiting one while
     // signed out routes to Login and resumes the intended view after sign-in.
-    var PROTECTED = { Builder: 1, Data: 1, Dashboards: 1, Settings: 1, Admin: 1 };
+    var PROTECTED = { Builder: 1, Data: 1, Dashboards: 1, Settings: 1, Admin: 1, Logs: 1 };
     var pendingView = null;
 
     function activate(name) {
@@ -1477,6 +1567,7 @@
       if (name === 'Home') showHome();
       else if (name === 'Builder') showBuilder();
       else if (name === 'Dashboards') showDashboards();
+      else if (name === 'Logs') showLogs();
       else if (name === 'Data') showData();
       else if (name === 'Settings') showSettings();
       else if (name === 'Admin') showAdmin();

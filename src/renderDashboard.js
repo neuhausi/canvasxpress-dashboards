@@ -529,7 +529,7 @@ function defaultControlTitle(kind) {
  */
 function projectMeasures(data, measures) {
   if (!measures || !measures.length) return data;
-  if (!data || !data.y || !Array.isArray(data.y.vars)) return data;
+  if (!data || Array.isArray(data) || !data.y || !Array.isArray(data.y.vars)) return data;
 
   var indices = [];
   var keptVars = [];

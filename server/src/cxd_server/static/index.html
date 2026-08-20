@@ -147,6 +147,7 @@
         <a class="nav-item" data-view="Data"><span class="ic">🗂️</span> Data</a>
         <a class="nav-item" data-view="Settings"><span class="ic">⚙️</span> Settings</a>
         <a class="nav-item" data-view="Admin" id="nav-admin" style="display:none"><span class="ic">🛡️</span> Admin</a>
+        <a class="nav-item" data-view="Logs" id="nav-logs" style="display:none"><span class="ic">🧾</span> Logs</a>
         <a class="nav-item" href="/examples/index.html"><span class="ic">🧭</span> Examples</a>
       </nav>
       <div class="rail-foot" id="rail-foot">
@@ -258,23 +259,30 @@
       // the rest. Chat authors/revises the spec, the builder shows it live —
       // both edit the SAME working spec.
       viewEl.innerHTML =
-        '<div style="display:flex;gap:12px;align-items:stretch;min-height:70vh">' +
-          '<div id="chat-panel" style="flex:0 0 320px;display:flex;flex-direction:column;border:1px solid var(--rail-border);border-radius:12px;background:var(--rail-bg);overflow:hidden">' +
-            '<div style="padding:10px 14px;border-bottom:1px solid var(--rail-border);font-weight:600;font-size:16px">💬 Assistant</div>' +
-            '<div class="data-dropzone" style="margin:10px 12px 0;padding:12px 12px;text-align:left;border-style:solid">' +
+        '<div style="display:flex;gap:12px;align-items:flex-start;min-height:70vh">' +
+          // The assistant column pins to the viewport (sticky + 100vh-based
+          // height): even when the dashboard canvas is much taller than the
+          // window, the help / datasets / chat sections stay on screen and
+          // scroll internally instead of running off the page.
+          '<div id="chat-panel" style="flex:0 0 320px;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px;display:flex;flex-direction:column;border:1px solid var(--rail-border);border-radius:12px;background:var(--rail-bg);overflow:hidden">' +
+            '<div style="flex:none;padding:10px 14px;border-bottom:1px solid var(--rail-border);font-weight:600;font-size:16px">💬 Assistant</div>' +
+            '<div class="data-dropzone" style="flex:none;margin:10px 12px;padding:12px 12px;text-align:left;border-style:solid">' +
               '<strong>How it works:</strong> tick the datasets to use, then describe the ' +
               'dashboard you want — it appears on the canvas, where you keep refining by hand ' +
               'or by chat. Prefer manual? Tick a dataset and click <strong>+ Panel</strong>.' +
             '</div>' +
-            '<div id="chat-datasets" style="padding:8px 14px;border-bottom:1px solid var(--rail-border);font-size:16px">' +
-              '<div style="font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:4px">Datasets to use</div>' +
-              '<input id="chat-dataset-search" type="search" placeholder="Search datasets…" style="width:100%;box-sizing:border-box;padding:5px 8px;margin-bottom:6px;font:inherit;font-size:14px;border:1px solid var(--rail-border);border-radius:6px"/>' +
-              '<div id="chat-dataset-list" style="display:flex;flex-direction:column;gap:7px;max-height:170px;overflow-y:auto;padding:2px 0">Loading…</div>' +
+            '<div id="chat-datasets" style="flex:none;height:250px;min-height:250px;display:flex;flex-direction:column;padding:4px 14px 8px;font-size:16px;overflow:hidden">' +
+              '<div style="flex:none;font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:4px">Datasets to use</div>' +
+              '<input id="chat-dataset-search" type="search" placeholder="Search datasets…" style="flex:none;width:100%;box-sizing:border-box;padding:5px 8px;margin-bottom:6px;font:inherit;font-size:14px;border:1px solid var(--rail-border);border-radius:6px"/>' +
+              '<div id="chat-dataset-list" style="flex:1;min-height:0;display:flex;flex-direction:column;gap:7px;overflow-y:auto;padding:2px 0">Loading…</div>' +
             '</div>' +
-            '<div id="chat-log" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:300px"></div>' +
-            '<div style="display:flex;gap:6px;padding:8px;border-top:1px solid var(--rail-border)">' +
-              '<textarea id="chat-input" rows="4" placeholder="Describe the dashboard you want…" style="flex:1;resize:none;padding:7px;font:inherit;font-size:16px"></textarea>' +
-              '<button class="cta" id="chat-send" style="padding:6px 12px">Send</button>' +
+            '<div id="chat-splitter" title="Drag to resize" style="flex:none;height:8px;cursor:ns-resize;border-top:1px solid var(--rail-border);border-bottom:1px solid var(--rail-border);background:repeating-linear-gradient(90deg,transparent,transparent 4px,var(--rail-border) 4px,var(--rail-border) 8px);background-size:24px 2px;background-position:center;background-repeat:no-repeat"></div>' +
+            '<div id="chat-section" style="flex:1;min-height:250px;display:flex;flex-direction:column;overflow:hidden">' +
+              '<div id="chat-log" style="flex:1;min-height:0;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>' +
+              '<div style="flex:none;display:flex;gap:6px;padding:8px;border-top:1px solid var(--rail-border)">' +
+                '<textarea id="chat-input" rows="4" placeholder="Describe the dashboard you want…" style="flex:1;resize:none;padding:7px;font:inherit;font-size:16px"></textarea>' +
+                '<button class="cta" id="chat-send" style="padding:6px 12px">Send</button>' +
+              '</div>' +
             '</div>' +
           '</div>' +
           '<div id="builder-host" style="flex:1;min-width:0;border:1px solid var(--rail-border);border-radius:12px;padding:0 12px 12px;background:var(--rail-bg)"></div>' +
@@ -622,6 +630,16 @@
       // The Admin view is only reachable when the server marks you an admin
       // (CXD_ADMINS). Hiding the nav is cosmetic — the API enforces it too.
       if (adminNav) adminNav.style.display = isAdmin ? '' : 'none';
+      // The Logs view (chart-engine request/response log) is server-gated via
+      // CXD_LOGS_PANEL + CXD_MCP_LOG.
+      if (currentUser) {
+        fetch(API_BASE + '/api/llm/status', { credentials: 'include' })
+          .then(function (r) { return r.json(); })
+          .then(function (st) {
+            var nav = document.getElementById('nav-logs');
+            if (nav) nav.style.display = st.logsPanel ? '' : 'none';
+          }).catch(function () {});
+      }
     }
 
     // Ask the server who we are and reflect it in the UI. Safe with no server.
@@ -923,8 +941,13 @@
           // dashboard's "table" control; resizable:false pins it to the canvas.
           // When a dataset is stored wider than tall, transpose the table so
           // the larger dimension always runs down the rows (tall beats wide).
-          var y = data && data.y ? data.y : {};
-          var wideways = (y.vars || []).length > (y.smps || []).length;
+          // Tabular 2D arrays are already row-oriented; only pre-shaped
+          // {y} objects may need the display transpose.
+          var wideways = false;
+          if (!Array.isArray(data)) {
+            var y = data && data.y ? data.y : {};
+            wideways = (y.vars || []).length > (y.smps || []).length;
+          }
           dataPreviewInstance = new window.CanvasXpress(canvas.id, data,
             { view: 'table', title: d.title || d.id, resizable: false,
               transposeData: wideways }, {});
@@ -1112,6 +1135,8 @@
       loadDashList();
     }
 
+    var selectedDashboardId = null;   // last previewed dashboard (survives view switches)
+
     function loadDashList() {
       var listEl = document.getElementById('dash-list');
       if (!listEl) return;
@@ -1162,8 +1187,12 @@
               previewDashboard(d);
             }
           };
+          item.setAttribute('data-dash-id', d.id);
           listEl.appendChild(item);
         });
+        // Default preview: the dashboard picked last time, else the first one.
+        var pick = rows.find(function (d) { return d.id === selectedDashboardId; }) || rows[0];
+        if (pick) previewDashboard(pick);
       }).catch(function (err) {
         listEl.innerHTML = '<div class="placeholder">Could not list dashboards: ' + err.message + '</div>';
       });
@@ -1220,6 +1249,14 @@
     }
 
     function previewDashboard(summary) {
+      selectedDashboardId = summary.id;
+      var listEl = document.getElementById('dash-list');
+      if (listEl) {
+        var active = listEl.querySelector('.data-item.active');
+        if (active) active.classList.remove('active');
+        var mine = listEl.querySelector('[data-dash-id="' + summary.id + '"]');
+        if (mine) mine.classList.add('active');
+      }
       var titleEl = document.getElementById('dash-title');
       if (titleEl) titleEl.textContent = summary.title || summary.id;
       client.load(summary.id).then(function (spec) {
@@ -1242,11 +1279,32 @@
     function initChatPanel() {
       var input = document.getElementById('chat-input');
       var send = document.getElementById('chat-send');
+      var splitter = document.getElementById('chat-splitter');
+      if (splitter) splitter.addEventListener('pointerdown', function (ev) {
+        ev.preventDefault();
+        var ds = document.getElementById('chat-datasets');
+        var section = document.getElementById('chat-section');
+        var startY = ev.clientY;
+        var startH = ds.getBoundingClientRect().height;
+        var maxH = startH + section.getBoundingClientRect().height - 250;
+        function move(e) {
+          var h = Math.max(250, Math.min(maxH, startH + (e.clientY - startY)));
+          ds.style.height = h + 'px';
+          ds.style.minHeight = h + 'px';
+        }
+        function up() {
+          document.removeEventListener('pointermove', move);
+          document.removeEventListener('pointerup', up);
+        }
+        document.addEventListener('pointermove', move);
+        document.addEventListener('pointerup', up);
+      });
       send.onclick = sendChat;
       input.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
       });
       chatHistory.forEach(function (m) { appendChatBubble(m.role, m.content); });
+      scrollChatToEnd();
       loadChatDatasets();
       fetch(API_BASE + '/api/llm/status', { credentials: 'include' })
         .then(function (r) { return r.json(); })
@@ -1346,6 +1404,15 @@
       if (currentBuilder) currentBuilder.setSpec(working);
     }
 
+    // Pin the log to its newest message (bubble growth, replies updating in
+    // place, and late layout shifts all re-anchor to the bottom).
+    function scrollChatToEnd() {
+      var log = document.getElementById('chat-log');
+      if (!log) return;
+      log.scrollTop = log.scrollHeight;
+      requestAnimationFrame(function () { log.scrollTop = log.scrollHeight; });
+    }
+
     function appendChatBubble(role, text) {
       var log = document.getElementById('chat-log');
       if (!log) return;
@@ -1387,6 +1454,7 @@
         });
       }).then(function (res) {
         pending.textContent = res.reply || 'Done.';
+        scrollChatToEnd();
         chatHistory.push({ role: 'assistant', content: res.reply || '' });
         if (res.spec) {
           var v = CXD.validateSpec(res.spec);
@@ -1400,7 +1468,82 @@
         }
       }).catch(function (err) {
         pending.textContent = '⚠ ' + err.message;
+        scrollChatToEnd();
       });
+    }
+
+    // --- Logs view: the canvasxpress-mcp bridge log (request + response per
+    // chart-engine call), newest first — for debugging generated configs.
+    function showLogs() {
+      teardown();
+      toolbarEl.innerHTML =
+        '<div style="display:flex;align-items:center;gap:8px;width:100%">' +
+          '<h2 class="view-title">Logs</h2>' +
+          '<span id="logs-path" style="font-size:13px;color:var(--muted)"></span>' +
+          '<button class="cta" id="logs-refresh" style="margin-left:auto;padding:6px 14px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
+        '</div>';
+      viewEl.innerHTML = '<div id="logs-list" style="display:flex;flex-direction:column;gap:10px;max-width:1100px"><div class="placeholder">Loading…</div></div>';
+      document.getElementById('logs-refresh').onclick = loadLogs;
+      loadLogs();
+    }
+
+    function loadLogs() {
+      var listEl = document.getElementById('logs-list');
+      if (!listEl) return;
+      fetch(API_BASE + '/api/llm/mcp-log?n=100', { credentials: 'include' })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          var pathEl = document.getElementById('logs-path');
+          if (pathEl) pathEl.textContent = res.log_path || '';
+          var entries = (res.entries || []).slice().reverse();   // newest first
+          if (!entries.length) {
+            listEl.innerHTML = '<div class="placeholder">No chart-engine calls logged yet — use the Builder chat, then Refresh.</div>';
+            return;
+          }
+          listEl.innerHTML = '';
+          entries.forEach(function (e) {
+            var resp = e.response || {};
+            var ok = !e.error && resp.success !== false;
+            var cfg = resp.config || {};
+            var req = e.request || {};
+            var head = document.createElement('div');
+            var card = document.createElement('details');
+            card.style.cssText = 'border:1px solid var(--rail-border);border-radius:10px;background:var(--rail-bg);padding:10px 14px';
+            var sum = document.createElement('summary');
+            sum.style.cssText = 'cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap;list-style:none';
+            sum.innerHTML =
+              '<span style="font-size:12.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:' + (ok ? '#e6f4ea;color:#137333' : '#fce8e6;color:#c5221f') + '">' + (ok ? 'OK' : 'FAIL') + '</span>' +
+              '<span style="font-weight:600">' + (e.endpoint || '?') + '</span>' +
+              (cfg.graphType ? '<span style="color:var(--accent)">' + cfg.graphType + '</span>' : '') +
+              '<span style="color:var(--muted);font-size:13px">' + (e.ts || '') + '</span>' +
+              '<span style="color:var(--muted);font-size:13px;flex:1;min-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(req.description || req.instruction || '') + '</span>';
+            card.appendChild(sum);
+            var body = document.createElement('div');
+            body.style.cssText = 'margin-top:10px;display:grid;gap:8px';
+            function block(title, obj) {
+              if (obj == null) return;
+              var d = document.createElement('div');
+              d.innerHTML = '<div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:2px">' + title + '</div>';
+              var pre = document.createElement('pre');
+              pre.style.cssText = 'margin:0;padding:8px 10px;background:rgba(127,127,127,.08);border-radius:8px;font-size:12.5px;overflow-x:auto;white-space:pre-wrap';
+              pre.textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+              d.appendChild(pre);
+              body.appendChild(d);
+            }
+            block('Request', req);
+            if (e.error) block('Error', e.error);
+            block('Config returned', resp.config);
+            if ((resp.warnings || []).length) block('Warnings', resp.warnings);
+            if (resp.invalid_refs && Object.keys(resp.invalid_refs).length) block('Invalid references', resp.invalid_refs);
+            if ((resp.removed_params || []).length) block('Removed (hallucinated) params', resp.removed_params);
+            if (resp.request_id) block('MCP request id', resp.request_id);
+            card.appendChild(body);
+            listEl.appendChild(card);
+          });
+        })
+        .catch(function (err) {
+          listEl.innerHTML = '<div class="placeholder">Could not load the log: ' + esc(err.message) + '</div>';
+        });
     }
 
     function showPlaceholder(name) {
@@ -1411,7 +1554,7 @@
 
     // Views that touch per-user state require a session; visiting one while
     // signed out routes to Login and resumes the intended view after sign-in.
-    var PROTECTED = { Builder: 1, Data: 1, Dashboards: 1, Settings: 1, Admin: 1 };
+    var PROTECTED = { Builder: 1, Data: 1, Dashboards: 1, Settings: 1, Admin: 1, Logs: 1 };
     var pendingView = null;
 
     function activate(name) {
@@ -1421,6 +1564,7 @@
       if (name === 'Home') showHome();
       else if (name === 'Builder') showBuilder();
       else if (name === 'Dashboards') showDashboards();
+      else if (name === 'Logs') showLogs();
       else if (name === 'Data') showData();
       else if (name === 'Settings') showSettings();
       else if (name === 'Admin') showAdmin();

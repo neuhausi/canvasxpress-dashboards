@@ -95,6 +95,8 @@ def reshape_to_cx(fmt: str, content) -> dict:
         return csv_to_cx(content if isinstance(content, str) else str(content))
     if fmt in ("json", "cx"):
         obj = content if not isinstance(content, str) else _parse_json(content)
+        if isinstance(obj, list) and obj and isinstance(obj[0], list):
+            return obj                    # already a tabular 2D array
         if fmt == "cx" or _looks_like_cx(obj):
             if not isinstance(obj, dict) or "y" not in obj:
                 raise ValueError("CanvasXpress data must be an object with a 'y' key")
@@ -131,20 +133,23 @@ def csv_to_cx(text: str) -> dict:
                 return False
         return saw_number
 
-    smps = [str(_cell(r, 0)) for r in body]
-    vars_: List[str] = []
-    data: List[List[Optional[float]]] = []
-    x: Dict[str, List[str]] = {}
-    for col in range(1, ncols):
-        if _is_measure(col):
-            vars_.append(header[col])
-            data.append([None if _is_blank(_cell(r, col)) else float(_cell(r, col)) for r in body])
-        else:
-            x[header[col]] = [_cell(r, col) for r in body]
-    out: Dict = {"y": {"vars": vars_, "smps": smps, "data": data}}
-    if x:
-        out["x"] = x
-    return out
+    # Tabular data stays a 2D ARRAY (header row + data rows): CanvasXpress
+    # accepts array-of-arrays data directly and infers orientation itself, so a
+    # scatter/bar/KM config works regardless of how a pre-shaped {y:{vars,smps}}
+    # object would have been oriented. Numeric cells are coerced to numbers
+    # (blank -> null) so measures plot as numbers, not strings.
+    measure_cols = {col for col in range(ncols) if _is_measure(col)}
+    out_rows: List[list] = [list(header)]
+    for r in body:
+        row_out = []
+        for col in range(ncols):
+            cell = _cell(r, col)
+            if col in measure_cols:
+                row_out.append(None if _is_blank(cell) else float(cell))
+            else:
+                row_out.append(cell)
+        out_rows.append(row_out)
+    return out_rows
 
 
 def rows_to_cx(obj) -> dict:
@@ -168,13 +173,19 @@ def rows_to_cx(obj) -> dict:
 
 
 # ---- helpers ----
-def _summary_meta(dataset_id: str, title: Optional[str], data: dict, updated_at: str) -> dict:
-    y = (data or {}).get("y") or {}
+def _summary_meta(dataset_id: str, title: Optional[str], data, updated_at: str) -> dict:
+    if isinstance(data, list):        # tabular 2D array: header + data rows
+        rows = max(0, len(data) - 1)
+        cols = len(data[0]) if data else 0
+    else:
+        y = (data or {}).get("y") or {}
+        rows = len(y.get("smps") or [])
+        cols = len(y.get("vars") or [])
     return {
         "id": dataset_id,
         "title": title or dataset_id,
-        "rows": len(y.get("smps") or []),
-        "cols": len(y.get("vars") or []),
+        "rows": rows,
+        "cols": cols,
         "updated_at": updated_at,
     }
 

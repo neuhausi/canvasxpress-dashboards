@@ -27,6 +27,8 @@ os.makedirs(DATASET_DIR, exist_ok=True)
 os.environ.setdefault("SESSION_SECRET", "dev-demo-secret-not-for-production")
 os.environ.setdefault("APP_DB_PATH", DB_PATH)
 os.environ.setdefault("CXD_DATASET_STORE", DATASET_URI)
+# Bridge log: every request/response to the canvasxpress-mcp server, as JSONL.
+os.environ.setdefault("CXD_MCP_LOG", os.path.join(DATA_DIR, "mcp-bridge.log"))
 
 from cxd_server.app import create_dashboards_app          # noqa: E402
 from cxd_server.datasets import DatasetStore, reshape_to_cx  # noqa: E402
@@ -60,12 +62,31 @@ _WEATHER_CSV = (
 # data. Each is a well-known public dataset with a mix of categorical columns
 # (grouping/color/facet + cross-panel broadcast) and numeric measures.
 DATA_DIR_CSV = os.path.join(HERE, "data")
+# add_id: the CSV's first column is a real variable (species/country/carat),
+# not a row identifier — prepend a sequence-number Id column so every row has
+# a unique id and the first column survives as a proper annotation/measure.
 _CSV_DATASETS = [
-    ("penguins",   "Palmer Penguins",   "penguins.csv"),    # 342 rows
-    ("gapminder",  "Gapminder",         "gapminder.csv"),   # 3,313 rows (has year)
-    ("superstore", "Sample Superstore", "superstore.csv"),  # 9,994 rows (BI classic)
-    ("diamonds",   "Diamonds",          "diamonds.csv"),    # 53,940 rows (scale)
+    ("penguins",   "Palmer Penguins",   "penguins.csv",   True),   # 342 rows
+    ("gapminder",  "Gapminder",         "gapminder.csv",  True),   # 3,313 rows (has year)
+    ("superstore", "Sample Superstore", "superstore.csv", False),  # 9,994 rows (has Row ID)
+    ("diamonds",   "Diamonds",          "diamonds.csv",   True),   # 53,940 rows (scale)
 ]
+
+
+def _add_row_ids(csv_text):
+    """Prepend an ``Id`` sequence column (1..N) to CSV text."""
+    lines = csv_text.splitlines()
+    out = []
+    n = 0
+    for i, line in enumerate(lines):
+        if not line.strip():
+            continue
+        if not out:
+            out.append("Id," + line)
+        else:
+            n += 1
+            out.append("%d,%s" % (n, line))
+    return "\n".join(out) + "\n"
 
 
 def _seed():
@@ -88,11 +109,12 @@ def _seed():
     add("weather-sample", "Weather Sample", _WEATHER_CSV)
 
     # Larger CSVs from examples/data/ (skipped gracefully if a file is absent).
-    for dataset_id, title, filename in _CSV_DATASETS:
+    for dataset_id, title, filename, add_id in _CSV_DATASETS:
         path = os.path.join(DATA_DIR_CSV, filename)
         if os.path.isfile(path):
             with open(path, encoding="utf-8") as handle:
-                add(dataset_id, title, handle.read())
+                text = handle.read()
+            add(dataset_id, title, _add_row_ids(text) if add_id else text)
         else:
             print("  [seed] NOTE: %s not found — skipping %s." % (path, dataset_id))
 

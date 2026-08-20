@@ -181,6 +181,8 @@ export class DataError extends Error {
  */
 export function isEmptyData(data) {
   if (!data || typeof data !== 'object') return true;
+  // Tabular 2D array (header row + data rows): empty without at least one data row.
+  if (Array.isArray(data)) return data.length < 2;
   var y = data.y;
   if (!y) {
     // Non-{y} shapes (e.g. network/genome) — treat as non-empty; let CX decide.

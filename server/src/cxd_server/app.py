@@ -460,8 +460,18 @@ def create_dashboards_app(
     def llm_status(request: Request):
         """Whether the NL dashboard builder is configured (no secret exposed)."""
         require_user(request)
+        logs_panel = (os.getenv("CXD_LOGS_PANEL") or "1").strip().lower() not in ("0", "false", "no", "off")
         return {"enabled": bool(llm_api_key) or mcp_bridge.enabled(), "model": llm_model,
-                "mcp": {"enabled": mcp_bridge.enabled(), "url": mcp_bridge.base_url()}}
+                "mcp": {"enabled": mcp_bridge.enabled(), "url": mcp_bridge.base_url()},
+                "logsPanel": logs_panel and bool(mcp_bridge.log_path())}
+
+    @app.get("/api/llm/mcp-log")
+    def llm_mcp_log(request: Request, n: int = 50):
+        """The last N canvasxpress-mcp bridge exchanges (request + response),
+        for debugging generated graph configs. Enabled via CXD_MCP_LOG."""
+        require_user(request)
+        return {"log_path": mcp_bridge.log_path(),
+                "entries": mcp_bridge.read_log(n)}
 
     @app.post("/api/llm/dashboard")
     async def llm_dashboard(request: Request):
@@ -500,23 +510,30 @@ def create_dashboards_app(
                          "store": meta.get("store")}
                 data = ds.get(user, meta.get("id")) or {}
                 data_by_id[meta.get("id")] = data
-                y = data.get("y") or {}
-                entry["vars"] = (y.get("vars") or [])[:40]
-                entry["n_vars"] = len(y.get("vars") or [])
-                entry["smps"] = (y.get("smps") or [])[:12]
-                entry["n_smps"] = len(y.get("smps") or [])
-                for annot in ("x", "z"):
-                    keys = list((data.get(annot) or {}).keys())
-                    if keys:
-                        entry[annot + "_annotations"] = keys[:20]
+                if isinstance(data, list):   # tabular 2D array (CSV-derived)
+                    headers = [str(c) for c in (data[0] if data else [])]
+                    entry["columns"] = headers[:40]
+                    entry["n_rows"] = max(0, len(data) - 1)
+                else:
+                    y = data.get("y") or {}
+                    entry["vars"] = (y.get("vars") or [])[:40]
+                    entry["n_vars"] = len(y.get("vars") or [])
+                    entry["smps"] = (y.get("smps") or [])[:12]
+                    entry["n_smps"] = len(y.get("smps") or [])
+                    for annot in ("x", "z"):
+                        keys = list((data.get(annot) or {}).keys())
+                        if keys:
+                            entry[annot + "_annotations"] = keys[:20]
                 catalog.append(entry)
 
-        # ---- Phase 1 fast path: single-chart creation via canvasxpress-mcp ----
-        # Exactly one dataset in scope and no panels on the canvas yet: the MCP
-        # server authors the (validated) graph config deterministically and we
-        # wrap it in a one-panel spec — no LLM planner, no LLM key needed.
+        # ---- Keyless fast path: single-chart creation via canvasxpress-mcp ----
+        # With no LLM key configured, the chat can still build one chart: one
+        # dataset in scope + empty canvas -> the MCP authors the validated
+        # config and we wrap it in a one-panel spec. When an LLM key IS set,
+        # the orchestrator below handles everything (its configs also come
+        # from the MCP tools, and it can plan multi-panel dashboards).
         fresh = not ((current_spec or {}).get("panels"))
-        if mcp_bridge.enabled() and fresh and len(catalog) == 1:
+        if mcp_bridge.enabled() and fresh and len(catalog) == 1 and not llm_api_key:
             entry = catalog[0]
             headers, column_types = mcp_bridge.dataset_columns(data_by_id[entry["id"]])
             mcp = mcp_bridge.generate_config(message, headers, column_types)
@@ -554,7 +571,25 @@ def create_dashboards_app(
                 "The 'anthropic' package is not installed on the server "
                 "(pip install anthropic)."))
 
-        system = _LLM_SYSTEM + "\n\n## The user's datasets\n" + json.dumps(catalog)
+        # Phase 2: with the MCP bridge up, the planner becomes an ORCHESTRATOR —
+        # it plans panels and layout but must fetch every panel's `config` from
+        # the MCP tools (validated, hallucination-stripped). Without the bridge,
+        # it writes configs itself as before.
+        use_mcp_tools = mcp_bridge.enabled()
+        system = _LLM_SYSTEM
+        if use_mcp_tools:
+            system += (
+                "\n## Graph configs come from tools (MANDATORY)\n"
+                "NEVER write a panel's `config` yourself. For each graph panel call "
+                "generate_chart_config(description, dataset_id) — a rich plain-English "
+                "description of the chart (type, axes, grouping, colors) — and use the "
+                "returned config VERBATIM as that panel's `config` (you may only add "
+                "title:false). To change an existing panel's graph, call "
+                "modify_chart_config(config, instruction, dataset_id) with its current "
+                "config. Table controls need no tool. After all tool calls, respond "
+                "with the final JSON object only.")
+
+        system += "\n\n## The user's datasets\n" + json.dumps(catalog)
         messages = []
         for turn in history[-12:]:
             if isinstance(turn, dict) and turn.get("role") in ("user", "assistant") \
@@ -565,6 +600,56 @@ def create_dashboards_app(
             prompt += "\n\n## Current dashboard spec\n" + json.dumps(current_spec)
         messages.append({"role": "user", "content": prompt})
 
+        def run_mcp_tool(name: str, args: dict):
+            """Execute one orchestrator tool via the MCP bridge.
+
+            :returns: ``(payload, is_error)`` — the payload is JSON-encoded into
+                the tool_result either way, so the model can react to failures
+                (and fall back to writing the config itself).
+            """
+            dataset_id = (args or {}).get("dataset_id")
+            print("[llm] tool call: %s(dataset_id=%s%s)" % (
+                name, dataset_id,
+                ", instruction=%r" % (args or {}).get("instruction")
+                if name == "modify_chart_config" else ""), flush=True)
+            data = data_by_id.get(dataset_id)
+            if data is None:
+                return {"error": "unknown dataset_id '%s' — use an id from the catalog" % dataset_id}, True
+            headers, column_types = mcp_bridge.dataset_columns(data)
+            if name == "generate_chart_config":
+                res = mcp_bridge.generate_config(str((args or {}).get("description") or ""),
+                                                 headers, column_types)
+            elif name == "modify_chart_config":
+                cfg = (args or {}).get("config")
+                if not isinstance(cfg, dict):
+                    return {"error": "config must be an object"}, True
+                res = mcp_bridge.modify_config(cfg, str((args or {}).get("instruction") or ""),
+                                               headers)
+            else:
+                return {"error": "unknown tool"}, True
+            if not res:
+                return {"error": "chart engine unavailable — write the config yourself, "
+                                 "using only these columns: " + ", ".join(headers)}, True
+            return {"config": res["config"], "warnings": res.get("warnings") or []}, False
+
+        _MCP_TOOLS = [
+            {"name": "generate_chart_config",
+             "description": "Generate a validated CanvasXpress graph config from a plain-English "
+                            "chart description and the id of the dataset it will bind to.",
+             "input_schema": {"type": "object", "properties": {
+                 "description": {"type": "string"},
+                 "dataset_id": {"type": "string"}},
+                 "required": ["description", "dataset_id"]}},
+            {"name": "modify_chart_config",
+             "description": "Revise an existing CanvasXpress graph config with a plain-English "
+                            "instruction; pass the panel's current config and its dataset id.",
+             "input_schema": {"type": "object", "properties": {
+                 "config": {"type": "object"},
+                 "instruction": {"type": "string"},
+                 "dataset_id": {"type": "string"}},
+                 "required": ["config", "instruction", "dataset_id"]}},
+        ]
+
         client = anthropic.Anthropic(api_key=llm_api_key)
         model = llm_model or "claude-opus-5"
         request_kwargs = dict(
@@ -572,18 +657,39 @@ def create_dashboards_app(
             max_tokens=16000,
             system=[{"type": "text", "text": system,
                      "cache_control": {"type": "ephemeral"}}],
-            messages=messages,
         )
+        if use_mcp_tools:
+            request_kwargs["tools"] = _MCP_TOOLS
         try:
-            try:
-                response = client.messages.create(
-                    output_config={"format": {
-                        "type": "json_schema", "schema": _LLM_OUTPUT_SCHEMA}},
-                    **request_kwargs)
-            except anthropic.BadRequestError:
-                # Structured outputs unavailable for this model/config — fall
-                # back to instructed JSON and parse defensively below.
-                response = client.messages.create(**request_kwargs)
+            for _round in range(8):   # tool-use loop (bounded)
+                if use_mcp_tools:
+                    response = client.messages.create(messages=messages, **request_kwargs)
+                else:
+                    try:
+                        response = client.messages.create(
+                            messages=messages,
+                            output_config={"format": {
+                                "type": "json_schema", "schema": _LLM_OUTPUT_SCHEMA}},
+                            **request_kwargs)
+                    except anthropic.BadRequestError:
+                        # Structured outputs unavailable for this model/config —
+                        # fall back to instructed JSON, parsed defensively below.
+                        response = client.messages.create(messages=messages, **request_kwargs)
+                if response.stop_reason != "tool_use":
+                    break
+                # Execute every tool call in this turn; echo the full assistant
+                # content back (thinking blocks included) plus one user message
+                # carrying ALL tool_result blocks.
+                messages.append({"role": "assistant",
+                                 "content": [b.model_dump() for b in response.content]})
+                results = []
+                for block in response.content:
+                    if block.type != "tool_use":
+                        continue
+                    payload, is_error = run_mcp_tool(block.name, block.input)
+                    results.append({"type": "tool_result", "tool_use_id": block.id,
+                                    "content": json.dumps(payload), "is_error": is_error})
+                messages.append({"role": "user", "content": results})
         except anthropic.AuthenticationError:
             raise HTTPException(status_code=503, detail="LLM API key was rejected")
         except anthropic.RateLimitError:
@@ -604,7 +710,8 @@ def create_dashboards_app(
         spec = parsed.get("spec")
         if spec is not None and (not isinstance(spec, dict) or not spec.get("id")):
             spec = None
-        return {"reply": parsed.get("reply") or "", "spec": spec, "model": model}
+        return {"reply": parsed.get("reply") or "", "spec": spec,
+                "model": model + ("+mcp" if use_mcp_tools else "")}
 
     if serve_static and os.path.isdir(_STATIC_DIR):
         # Inject runtime config (CanvasXpress license + library URL + client

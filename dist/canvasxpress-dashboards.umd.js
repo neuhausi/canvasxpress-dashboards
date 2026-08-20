@@ -350,6 +350,8 @@ class DataError extends Error {
  */
 function isEmptyData(data) {
   if (!data || typeof data !== 'object') return true;
+  // Tabular 2D array (header row + data rows): empty without at least one data row.
+  if (Array.isArray(data)) return data.length < 2;
   var y = data.y;
   if (!y) {
     // Non-{y} shapes (e.g. network/genome) — treat as non-empty; let CX decide.
@@ -1160,7 +1162,7 @@ function defaultControlTitle(kind) {
  */
 function projectMeasures(data, measures) {
   if (!measures || !measures.length) return data;
-  if (!data || !data.y || !Array.isArray(data.y.vars)) return data;
+  if (!data || Array.isArray(data) || !data.y || !Array.isArray(data.y.vars)) return data;
 
   var indices = [];
   var keptVars = [];

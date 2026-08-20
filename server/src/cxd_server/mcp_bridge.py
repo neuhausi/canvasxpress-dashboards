@@ -50,16 +50,66 @@ def timeout_seconds() -> float:
         return 90.0
 
 
+def log_path() -> Optional[str]:
+    """JSONL log of every bridge request/response (CXD_MCP_LOG; empty = off)."""
+    return os.getenv("CXD_MCP_LOG") or None
+
+
+def _log(entry: dict) -> None:
+    """Append one JSONL record to the bridge log (best-effort, never raises)."""
+    path = log_path()
+    if not path:
+        return
+    try:
+        import datetime
+        entry = dict(entry)
+        entry["ts"] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+        with open(path, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass
+
+
+def read_log(limit: int = 50) -> list:
+    """The last ``limit`` bridge log records (newest last); [] when no log."""
+    path = log_path()
+    if not path or not os.path.isfile(path):
+        return []
+    try:
+        with open(path, encoding="utf-8") as handle:
+            lines = handle.readlines()[-max(1, min(limit, 500)):]
+        out = []
+        for line in lines:
+            try:
+                out.append(json.loads(line))
+            except ValueError:
+                continue
+        return out
+    except Exception:
+        return []
+
+
 def _get(path: str, params: dict) -> Optional[dict]:
-    """GET a REST endpoint on the MCP server; None on any failure."""
+    """GET a REST endpoint on the MCP server; None on any failure.
+
+    Every exchange is recorded to the bridge log (CXD_MCP_LOG): the endpoint,
+    the exact request parameters, and the full response or the error.
+    """
     if not enabled():
         return None
     url = base_url() + path + "?" + urllib.parse.urlencode(params)
+    record = {"endpoint": path, "request": {
+        k: (json.loads(v) if k in ("column_types", "config") else v)
+        for k, v in params.items()}}
     try:
         with urllib.request.urlopen(url, timeout=timeout_seconds()) as resp:
             body = json.loads(resp.read().decode("utf-8"))
-    except Exception:
+    except Exception as exc:
+        record["error"] = "%s: %s" % (type(exc).__name__, exc)
+        _log(record)
         return None
+    record["response"] = body if isinstance(body, dict) else {"raw": str(body)[:2000]}
+    _log(record)
     return body if isinstance(body, dict) else None
 
 
@@ -94,9 +144,31 @@ def generate_config(description: str, headers: list, column_types: dict) -> Opti
     return None
 
 
+# Keys that are live CanvasXpress *instance state* (folded into panel configs
+# by the builder's customizer sync), not authoring intent — stripped before a
+# modify call so the MCP reasons over the meaningful config only.
+_INSTANCE_STATE_KEYS = (
+    "broadcastGroup", "resizable", "toolbarSize", "llmHeader",
+    "fontScaleFontFactor", "smpTextScaleFontFactor",
+)
+_INSTANCE_STATE_PREFIXES = ("customizer", "dataTable")
+
+
+def strip_instance_state(config: dict) -> dict:
+    """Drop renderer/customizer bookkeeping keys from a panel config."""
+    out = {}
+    for key, value in (config or {}).items():
+        if key in _INSTANCE_STATE_KEYS:
+            continue
+        if any(key.startswith(p) for p in _INSTANCE_STATE_PREFIXES):
+            continue
+        out[key] = value
+    return out
+
+
 def modify_config(config: dict, instruction: str, headers: Optional[list] = None) -> Optional[dict]:
     """Existing config + plain-English instruction -> revised config (Phase 3)."""
-    params = {"config": json.dumps(config), "instruction": instruction}
+    params = {"config": json.dumps(strip_instance_state(config)), "instruction": instruction}
     if headers:
         params["headers"] = ",".join(headers)
     body = _get("/modify", params)
@@ -114,6 +186,14 @@ def dataset_columns(data: dict):
 
     :returns: ``(headers, column_types)`` ready for :func:`generate_config`.
     """
+    if isinstance(data, list):        # tabular 2D array: header + data rows
+        headers = [str(c) for c in (data[0] if data else [])]
+        sample = data[1] if len(data) > 1 else []
+        types = {}
+        for i, name in enumerate(headers):
+            cell = sample[i] if i < len(sample) else None
+            types[name] = "numeric" if isinstance(cell, (int, float)) else "factor"
+        return headers, types
     y = (data or {}).get("y") or {}
     vars_, smps = y.get("vars") or [], y.get("smps") or []
     cols = vars_ if len(vars_) <= len(smps) else smps
