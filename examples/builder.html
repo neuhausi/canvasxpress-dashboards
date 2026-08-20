@@ -151,7 +151,7 @@
         <a class="nav-item" data-view="Settings"><span class="ic">⚙️</span> Settings</a>
         <a class="nav-item" data-view="Admin" id="nav-admin" style="display:none"><span class="ic">🛡️</span> Admin</a>
         <a class="nav-item" data-view="Logs" id="nav-logs" style="display:none"><span class="ic">🧾</span> Logs</a>
-        <a class="nav-item" href="/examples/index.html"><span class="ic">🧭</span> Examples</a>
+        <a class="nav-item" href="/examples/index.html" id="nav-examples"><span class="ic">🧭</span> Examples</a>
       </nav>
       <div class="rail-foot" id="rail-foot">
         <span class="avatar" id="rail-avatar">?</span>
@@ -182,6 +182,8 @@
     // like /dashboards/ (e.g. canvasxpress.org).
     var API_BASE = new URLSearchParams(location.search).get('api') ||
       location.pathname.replace(/\/(examples\/)?[^/]*$/, '');
+    // Static markup can't embed API_BASE — fix up absolute links here.
+    document.getElementById('nav-examples').href = API_BASE + '/examples/index.html';
     var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: API_BASE });
 
     var CXD = CanvasXpressDashboards;
@@ -226,7 +228,7 @@
       function step(n, img, title, body) {
         return '<div class="howto-step" data-goto="Builder">' +
           '<div class="howto-head"><span class="howto-n">' + n + '</span><h4>' + title + '</h4></div>' +
-          '<img src="/examples/assets/' + img + '?v=4" alt="' + title + '"/>' +
+          '<img src="' + API_BASE + '/examples/assets/' + img + '?v=4" alt="' + title + '"/>' +
           '<p>' + body + '</p></div>';
       }
       viewEl.innerHTML =
@@ -249,7 +251,7 @@
           notice('📣', 'What’s new', 'Every panel opens the native CanvasXpress customizer — click the ⚙ on a panel to change chart type, colors, grouping and more.') +
           notice('🔌', 'Live data', 'Bind panels to databases &amp; Google Sheets through canvasxpress-connectors.') +
           notice('🔗', 'Sharing', 'Share read-only links from the Dashboards view — straight into an email.') +
-          notice('📖', 'The product story', 'Why recipes beat screenshots: <a href="/examples/reproducible-bench/narrative.html">read the Reproducible Bench narrative</a> — illustrated with the live dashboards it describes.') +
+          notice('📖', 'The product story', 'Why recipes beat screenshots: <a href="' + API_BASE + '/examples/reproducible-bench/narrative.html">read the Reproducible Bench narrative</a> — illustrated with the live dashboards it describes.') +
         '</div>';
       var create = document.getElementById('home-create');
       if (create) create.onclick = function () { activate('Builder'); };
