@@ -26,7 +26,7 @@
     .rail { flex: 0 0 220px; width: 220px; background: var(--rail-bg);
       border-right: 1px solid var(--rail-border); display: flex; flex-direction: column;
       padding: 14px 10px; position: sticky; top: 0; height: 100vh; }
-    .brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 16px; text-decoration: none; color: inherit; }
     .brand img { width: 32px; height: 32px; }
     .brand span { font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
     .rail nav { display: flex; flex-direction: column; gap: 2px; }
@@ -50,7 +50,11 @@
 
     /* Home view */
     .hero { background: linear-gradient(120deg, #eaf3fb, #f4f7fb); border-radius: 12px;
-      padding: 28px; margin-bottom: 20px; }
+      padding: 28px; margin-bottom: 20px; position: relative; }
+    .hero-gh { position: absolute; top: 20px; right: 20px; color: var(--muted);
+      opacity: .75; transition: opacity .15s, color .15s; }
+    .hero-gh:hover { opacity: 1; color: var(--accent); }
+    .hero-gh svg { width: 26px; height: 26px; display: block; fill: currentColor; }
     .hero h1 { margin: 0 0 6px; font-size: 26px; }
     .hero p { margin: 0 0 16px; color: var(--muted); font-size:16px; }
     .cta { padding: 10px 18px; background: var(--accent); color: #fff; border: none;
@@ -139,10 +143,10 @@
 <body>
   <div class="app">
     <aside class="rail">
-      <div class="brand">
+      <a class="brand" href="/" title="CanvasXpress home">
         <img src="https://www.canvasxpress.org/favicon.png" alt="CanvasXpress" />
         <span>CanvasXpress</span>
-      </div>
+      </a>
       <nav>
         <a class="nav-item active" data-view="Home"><span class="ic">🏠</span> Home</a>
         <a class="nav-item" data-view="Builder"><span class="ic">🧩</span> Builder</a>
@@ -233,6 +237,9 @@
       }
       viewEl.innerHTML =
         '<div class="hero">' +
+          '<a class="hero-gh" href="https://github.com/neuhausi/canvasxpress-dashboards" target="_blank" rel="noopener" title="View on GitHub" aria-label="View on GitHub">' +
+            '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>' +
+          '</a>' +
           '<h1>Welcome to CanvasXpress Dashboards</h1>' +
           '<p>Pick your data, say what you want, get a live dashboard — then refine it by hand or by chat, and share it.</p>' +
           '<button class="cta" id="home-create">+ Create a dashboard</button>' +
@@ -1489,11 +1496,28 @@
         '<div style="display:flex;align-items:center;gap:8px;width:100%">' +
           '<h2 class="view-title">Logs</h2>' +
           '<span id="logs-path" style="font-size:13px;color:var(--muted)"></span>' +
-          '<button class="cta" id="logs-refresh" style="margin-left:auto;padding:6px 14px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
+          '<button class="cta" id="logs-clear" style="margin-left:auto;padding:6px 14px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:#c5221f">Delete all</button>' +
+          '<button class="cta" id="logs-refresh" style="padding:6px 14px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
         '</div>';
       viewEl.innerHTML = '<div id="logs-list" style="display:flex;flex-direction:column;gap:10px;max-width:1100px"><div class="placeholder">Loading…</div></div>';
       document.getElementById('logs-refresh').onclick = loadLogs;
+      document.getElementById('logs-clear').onclick = clearLogs;
       loadLogs();
+    }
+
+    // Delete every recorded chart-engine call (clears the server log file).
+    function clearLogs() {
+      if (!confirm('Delete all logged chart-engine calls? This cannot be undone.')) return;
+      var btn = document.getElementById('logs-clear');
+      if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+      fetch(API_BASE + '/api/llm/mcp-log', { method: 'DELETE', credentials: 'include' })
+        .then(function (r) { return r.json(); })
+        .then(function () { loadLogs(); })
+        .catch(function (err) { alert('Could not delete logs: ' + err.message); })
+        .then(function () {
+          var b = document.getElementById('logs-clear');
+          if (b) { b.disabled = false; b.textContent = 'Delete all'; }
+        });
     }
 
     function loadLogs() {

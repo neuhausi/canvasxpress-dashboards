@@ -474,6 +474,13 @@ def create_dashboards_app(
         return {"log_path": mcp_bridge.log_path(),
                 "entries": mcp_bridge.read_log(n)}
 
+    @app.delete("/api/llm/mcp-log")
+    def llm_mcp_log_clear(request: Request):
+        """Delete all recorded canvasxpress-mcp bridge exchanges (clears the log
+        file). Available to any logged-in user who can see the Logs panel."""
+        require_user(request)
+        return {"ok": mcp_bridge.clear_log()}
+
     @app.post("/api/llm/dashboard")
     async def llm_dashboard(request: Request):
         """Author or revise a dashboard spec from a natural-language request.

@@ -89,6 +89,25 @@ def read_log(limit: int = 50) -> list:
         return []
 
 
+def clear_log() -> bool:
+    """Delete all recorded bridge exchanges by truncating the log file.
+
+    Returns True if the log is enabled and now empty (truncated, or already
+    absent), False only when logging is off or the file could not be truncated.
+    """
+    path = log_path()
+    if not path:
+        return False
+    if not os.path.isfile(path):
+        return True
+    try:
+        with open(path, "w", encoding="utf-8"):
+            pass
+        return True
+    except Exception:
+        return False
+
+
 def _get(path: str, params: dict) -> Optional[dict]:
     """GET a REST endpoint on the MCP server; None on any failure.
 
