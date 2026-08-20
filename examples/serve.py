@@ -199,6 +199,18 @@ def _shared_bundle():
 app.mount("/", StaticFiles(directory=ROOT, html=True), name="repo")
 
 
+# Some reverse proxies (e.g. LiteSpeed's ProxyPass-in-<Location>) forward the
+# public path prefix unstripped. Set CXD_MOUNT_PREFIX=/dashboards to serve the
+# whole app under that prefix as well as at /.
+_PREFIX = (os.getenv("CXD_MOUNT_PREFIX") or "").rstrip("/")
+if _PREFIX:
+    from fastapi import FastAPI as _FastAPI
+
+    _inner, app = app, _FastAPI(openapi_url=None)
+    app.mount(_PREFIX, _inner)
+    app.mount("/", _inner)
+
+
 if __name__ == "__main__":
     import uvicorn
 

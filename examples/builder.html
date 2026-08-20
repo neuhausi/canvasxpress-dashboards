@@ -177,7 +177,11 @@
     // `python -m http.server`, or file://), point it at the server explicitly
     // with `?api=` — e.g. builder.html?api=http://localhost:8000 — otherwise
     // /api/* requests hit the static server and 404.
-    var API_BASE = new URLSearchParams(location.search).get('api') || '';
+    // Default the API base to the path prefix the app is mounted under, so the
+    // same page works at / (dev server) and behind a reverse-proxy subpath
+    // like /dashboards/ (e.g. canvasxpress.org).
+    var API_BASE = new URLSearchParams(location.search).get('api') ||
+      location.pathname.replace(/\/(examples\/)?[^/]*$/, '');
     var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: API_BASE });
 
     var CXD = CanvasXpressDashboards;

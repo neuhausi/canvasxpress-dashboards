@@ -203,7 +203,8 @@ def create_dashboards_app(
 
     app = FastAPI(title="canvasxpress-dashboards · persistence & sharing")
     app.add_middleware(
-        SessionMiddleware, secret_key=session_secret, same_site="lax", https_only=https_only
+        SessionMiddleware, secret_key=session_secret, same_site="lax", https_only=https_only,
+        session_cookie="cxd_session",  # distinct name so co-hosted apps (e.g. connectors) don't clobber it
     )
     # LLM config lives on app.state for the (future) NL builder; the key never
     # leaves the server.

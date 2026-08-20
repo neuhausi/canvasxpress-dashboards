@@ -38,7 +38,11 @@
     // then render with the standard renderer. Data still resolves through the
     // connectors endpoint with the *viewer's* own session/permissions.
     var token = new URLSearchParams(location.search).get('token');
-    var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: '' });
+    // Base the client on the path prefix this page is served under, so share
+    // links work both at / and behind a reverse-proxy subpath (e.g. /dashboards/).
+    var client = CanvasXpressDashboards.createDashboardClient({
+      baseUrl: location.pathname.replace(/\/[^/]*$/, '')
+    });
 
     function fail(msg) {
       document.getElementById('message').textContent = msg;
