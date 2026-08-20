@@ -10,10 +10,17 @@
 #   ./server.sh logs       # follow the log (Ctrl-C to detach)
 #
 # Config via env: CXD_HOST (default 127.0.0.1), CXD_PORT (default 8000),
-# CXD_PYTHON (a Python with the `web` extra; auto-detected otherwise).
+# CXD_PYTHON (a Python with the `web` extra; auto-detected otherwise),
+# CXD_LLM_API_KEY / CXD_LLM_MODEL (enables the Chat NL builder).
+# A gitignored .env file next to this script is loaded automatically, so
+# secrets like CXD_LLM_API_KEY can live there instead of the shell.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -f "$ROOT/.env" ]; then
+  set -a; . "$ROOT/.env"; set +a
+fi
 SERVE="$ROOT/examples/serve.py"
 RUN_DIR="$ROOT/examples/.cxd-demo"
 PID_FILE="$RUN_DIR/server.pid"

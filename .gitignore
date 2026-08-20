@@ -12,3 +12,4 @@ __pycache__/
 
 # example dev-server data
 examples/.cxd-demo/
+.env
