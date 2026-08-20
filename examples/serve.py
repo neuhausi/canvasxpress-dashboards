@@ -69,8 +69,9 @@ _CSV_DATASETS = [
 
 
 def _seed():
-    """Create the demo user + the demo datasets (idempotent per dataset)."""
-    DashboardStore(DB_PATH).create_user(DEMO_USER, DEMO_PW)  # no-op if it exists
+    """Create the demo user + demo datasets + shipped dashboards (idempotent)."""
+    dashboards = DashboardStore(DB_PATH)
+    dashboards.create_user(DEMO_USER, DEMO_PW)  # no-op if it exists
     datasets = DatasetStore(open_store(DATASET_URI), store_name="local")
     have = {d["id"] for d in datasets.list(DEMO_USER)}
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
@@ -95,19 +96,72 @@ def _seed():
         else:
             print("  [seed] NOTE: %s not found — skipping %s." % (path, dataset_id))
 
+    _seed_shipped_dashboards(dashboards, datasets, have, now)
+
+
+def _seed_shipped_dashboards(dashboards, datasets, have, now):
+    """Ship the example dashboards inside the app: their data goes into the
+    dataset store, and the specs (rewired from inline to kind:"dataset") are
+    saved as demo-user dashboards, so the Dashboards view has real content."""
+    import copy
+    import json
+
+    def load_spec(rel):
+        path = os.path.join(HERE, rel)
+        if not os.path.isfile(path):
+            print("  [seed] NOTE: %s not found — skipping shipped dashboard." % path)
+            return None
+        with open(path, encoding="utf-8") as handle:
+            return json.load(handle)
+
+    saved = {d["id"] for d in dashboards.list_dashboards(DEMO_USER)}
+
+    # Reproducible Bench: generated spec carries inline data; move each inline
+    # value into the dataset store and point the spec at it.
+    bench = load_spec("reproducible-bench/bench.spec.json")
+    if bench and bench["id"] not in saved:
+        bench = copy.deepcopy(bench)
+        for ref, source in bench.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            dataset_id = "bench-" + ref
+            if dataset_id not in have:
+                datasets.create(DEMO_USER, source["value"], now,
+                                title="Bench: " + ref, dataset_id=dataset_id)
+            bench["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+        dashboards.save_dashboard(DEMO_USER, bench, now)
+        print("  [seed] shipped dashboard: %s" % bench["id"])
+
+    # Sales Overview: small inline spec, shipped as-is.
+    sales = load_spec("sales-overview.spec.json")
+    if sales and sales["id"] not in saved:
+        dashboards.save_dashboard(DEMO_USER, sales, now)
+        print("  [seed] shipped dashboard: %s" % sales["id"])
+
 
 _seed()
 
 # API routes first, then mount the repo so /examples/builder.html and /dist/*.js
 # are served from the same origin as /api/* (route lookup tries the API first).
 app = create_dashboards_app(serve_static=False)
+
+
+# Serve the app (builder) directly at / — routes win over the static mount.
+# builder.html's relative "../dist/…" resolves to /dist/… from here, which the
+# repo mount below serves.
+@app.get("/", include_in_schema=False)
+def _root():
+    from fastapi.responses import FileResponse
+    return FileResponse(os.path.join(HERE, "builder.html"), media_type="text/html")
+
+
 app.mount("/", StaticFiles(directory=ROOT, html=True), name="repo")
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    url = "http://%s:%d/examples/builder.html" % (HOST, PORT)
+    url = "http://%s:%d/" % (HOST, PORT)
     print("\n  CanvasXpress Dashboards demo running:\n    %s\n" % url)
     print("  Demo login is automatic (user 'demo'). Data dir: %s\n" % DATA_DIR)
     uvicorn.run(app, host=HOST, port=PORT)

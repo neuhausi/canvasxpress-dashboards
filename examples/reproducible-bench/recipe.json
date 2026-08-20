@@ -1,0 +1,41 @@
+{
+  "cohort": "demo-41",
+  "seed": 41,
+  "description": "The LLM-authored spec that drives the whole run. Edit this, re-run, and every figure regenerates deterministically. This file IS the reproducibility guarantee the narrative is about.",
+  "inputs": {
+    "expression": "raw/expression_raw.csv",
+    "variants": "raw/variants_raw.csv",
+    "clinical": "raw/clinical_raw.csv"
+  },
+  "steps": [
+    {
+      "figure": "heatmap",
+      "from": "expression",
+      "select": { "method": "top_variance", "n": 50 },
+      "cluster": { "rows": "ward.D2", "cols": "pearson", "k": 2 },
+      "overlays": ["cluster", "subtype", "stage"],
+      "note": "The k=2 cut of the sample dendrogram DEFINES the 'cluster' label reused by the other two figures."
+    },
+    {
+      "figure": "oncoprint",
+      "from": "variants",
+      "select": { "method": "top_recurrence", "n": 20 },
+      "collapse_priority": ["FUS", "DEL", "AMP", "MUT"],
+      "sort": "mutation",
+      "overlays": ["cluster", "subtype", "stage"]
+    },
+    {
+      "figure": "survival",
+      "from": "clinical",
+      "time": "time_months",
+      "event": "event",
+      "group": "cluster",
+      "note": "Outcome (time/event) is MEASURED upstream; the grouping is DERIVED in step 1; the KM curve itself is computed by CanvasXpress in the browser."
+    }
+  ],
+  "palette": {
+    "spectrum": ["#0d6b63", "#f4f2ec", "#b0327a"],
+    "onco": { "MUT": "#0d6b63", "AMP": "#b0327a", "DEL": "#3b6ea5", "FUS": "#b06a13" },
+    "groups": ["#0d6b63", "#b0327a"]
+  }
+}

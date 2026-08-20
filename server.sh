@@ -20,7 +20,7 @@ PID_FILE="$RUN_DIR/server.pid"
 LOG_FILE="$RUN_DIR/server.log"
 HOST="${CXD_HOST:-127.0.0.1}"
 PORT="${CXD_PORT:-8000}"
-URL="http://$HOST:$PORT/examples/builder.html"
+URL="http://$HOST:$PORT/"
 
 mkdir -p "$RUN_DIR"
 

@@ -37,6 +37,57 @@ from .stores import StoreRegistry
 
 _STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
+# ---- natural-language dashboard builder (POST /api/llm/dashboard) ----------
+# The LLM's only job is authoring the declarative spec — it never touches the
+# numbers. Datasets are appended per-request after this stable, cacheable text.
+_LLM_SYSTEM = """You author dashboard specs for canvasxpress-dashboards.
+
+Respond ONLY with a JSON object: {"reply": "<one or two sentences for the user>",
+"spec": <a COMPLETE dashboard spec object, or null if no dashboard change is
+needed (e.g. the user asked a question)>}. When revising, return the full
+updated spec, preserving ids and anything the user didn't ask to change.
+
+## Dashboard spec contract
+{
+  "id": "<kebab-case>", "title": "<Title>", "version": 1,
+  "layout": {"cols": 12, "rowHeight": 130, "gap": 12,
+             "items": [{"panel": "<panel-id>", "x": 0-11, "y": 0+, "w": 1-12, "h": 1+}]},
+  "data": {"<ref>": {"kind": "dataset", "id": "<dataset id>", "store": "<store>"}
+           /* or {"kind": "inline", "value": {y:{vars,smps,data}, x?, z?}}
+              or {"kind": "connector", "url": "...", "refresh"?: seconds} */},
+  "panels": {"<panel-id>": {"title": "<Panel title>", "dataRef": "<ref>",
+             "measures"?: ["<var>", ...],
+             "config": { /* passed straight to new CanvasXpress() */ }}},
+  "controls": [{"kind": "table", "dataRef": "<ref>", "title"?: "..."}]
+}
+
+## Rules
+- Bind to the user's datasets (listed below) with kind "dataset" + their exact
+  id and store. Only use "inline" for tiny data the user dictated in chat.
+- config.graphType: Bar, Line, Area, Pie, Scatter2D, Scatter3D, Boxplot,
+  Heatmap, Dotplot, Treemap, Sankey, KaplanMeier, etc. Common config keys:
+  colorBy/groupingFactors (categorical annotation names), title:false (the
+  panel chrome shows the title), showLegend, xAxis/yAxis (variable names),
+  smpOverlays/varOverlays. For KaplanMeier: xAxis:["<time var>"],
+  yAxis:["<event var>"], colorBy:"<group annotation>".
+- Datasets are tables: y.vars are columns/variables, y.smps are rows/samples;
+  x holds per-smp annotations, z per-var annotations. measures picks numeric
+  vars to plot. Categorical columns work as colorBy.
+- Layout on a 12-column grid; typical panel is w:6 h:3; don't overlap items.
+- Panels sharing a dataRef coordinate selections automatically (broadcast).
+- 2-6 panels unless asked otherwise; add a table control when it helps.
+"""
+
+_LLM_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "reply": {"type": "string"},
+        "spec": {"type": ["object", "null"]},
+    },
+    "required": ["reply", "spec"],
+    "additionalProperties": False,
+}
+
 
 def _now_iso() -> str:
     """Return the current UTC time as an ISO-8601 string."""
@@ -394,6 +445,108 @@ def create_dashboards_app(
         """Whether the NL dashboard builder is configured (no secret exposed)."""
         require_user(request)
         return {"enabled": bool(llm_api_key), "model": llm_model}
+
+    @app.post("/api/llm/dashboard")
+    async def llm_dashboard(request: Request):
+        """Author or revise a dashboard spec from a natural-language request.
+
+        Body: ``{message, history?, spec?}`` — ``history`` is a list of prior
+        ``{role, content}`` chat turns, ``spec`` the current working spec.
+        Returns ``{reply, spec}``; ``spec`` is None for purely conversational
+        replies. The LLM only ever emits a declarative spec — it never touches
+        the data (mirrors the "recipe" model: NL in, auditable JSON out).
+        """
+        user = require_user(request)
+        if not llm_api_key:
+            raise HTTPException(status_code=503, detail=(
+                "Natural-language builder is not configured. Set CXD_LLM_API_KEY "
+                "(and optionally CXD_LLM_MODEL) on the server."))
+        try:
+            import anthropic
+        except ImportError:
+            raise HTTPException(status_code=503, detail=(
+                "The 'anthropic' package is not installed on the server "
+                "(pip install anthropic)."))
+        body = await request.json()
+        if not isinstance(body, dict):
+            raise HTTPException(status_code=400, detail="Body must be a JSON object")
+        message = (body.get("message") or "").strip()
+        if not message:
+            raise HTTPException(status_code=400, detail="Body must include 'message'")
+        current_spec = body.get("spec") if isinstance(body.get("spec"), dict) else None
+        history = body.get("history") if isinstance(body.get("history"), list) else []
+
+        # Catalog the user's datasets — id/store plus a schema sketch so the
+        # model binds panels to real columns without ever seeing full data.
+        catalog = []
+        for name in dataset_store_names():
+            ds = dataset_store_for(name)
+            for meta in ds.list(user):
+                entry = {"id": meta.get("id"), "title": meta.get("title"),
+                         "store": meta.get("store")}
+                data = ds.get(user, meta.get("id")) or {}
+                y = data.get("y") or {}
+                entry["vars"] = (y.get("vars") or [])[:40]
+                entry["n_vars"] = len(y.get("vars") or [])
+                entry["smps"] = (y.get("smps") or [])[:12]
+                entry["n_smps"] = len(y.get("smps") or [])
+                for annot in ("x", "z"):
+                    keys = list((data.get(annot) or {}).keys())
+                    if keys:
+                        entry[annot + "_annotations"] = keys[:20]
+                catalog.append(entry)
+
+        system = _LLM_SYSTEM + "\n\n## The user's datasets\n" + json.dumps(catalog)
+        messages = []
+        for turn in history[-12:]:
+            if isinstance(turn, dict) and turn.get("role") in ("user", "assistant") \
+                    and isinstance(turn.get("content"), str):
+                messages.append({"role": turn["role"], "content": turn["content"]})
+        prompt = message
+        if current_spec is not None:
+            prompt += "\n\n## Current dashboard spec\n" + json.dumps(current_spec)
+        messages.append({"role": "user", "content": prompt})
+
+        client = anthropic.Anthropic(api_key=llm_api_key)
+        model = llm_model or "claude-opus-5"
+        request_kwargs = dict(
+            model=model,
+            max_tokens=16000,
+            system=[{"type": "text", "text": system,
+                     "cache_control": {"type": "ephemeral"}}],
+            messages=messages,
+        )
+        try:
+            try:
+                response = client.messages.create(
+                    output_config={"format": {
+                        "type": "json_schema", "schema": _LLM_OUTPUT_SCHEMA}},
+                    **request_kwargs)
+            except anthropic.BadRequestError:
+                # Structured outputs unavailable for this model/config — fall
+                # back to instructed JSON and parse defensively below.
+                response = client.messages.create(**request_kwargs)
+        except anthropic.AuthenticationError:
+            raise HTTPException(status_code=503, detail="LLM API key was rejected")
+        except anthropic.RateLimitError:
+            raise HTTPException(status_code=429, detail="LLM rate limit — try again shortly")
+        except anthropic.APIStatusError as exc:
+            raise HTTPException(status_code=502, detail="LLM error: %s" % exc.message)
+        except anthropic.APIConnectionError:
+            raise HTTPException(status_code=502, detail="Could not reach the LLM API")
+
+        text = "".join(b.text for b in response.content if b.type == "text")
+        try:
+            parsed = json.loads(text)
+        except ValueError:
+            match = re.search(r"\{.*\}", text, re.DOTALL)
+            parsed = json.loads(match.group(0)) if match else {"reply": text}
+        if not isinstance(parsed, dict):
+            parsed = {"reply": text}
+        spec = parsed.get("spec")
+        if spec is not None and (not isinstance(spec, dict) or not spec.get("id")):
+            spec = None
+        return {"reply": parsed.get("reply") or "", "spec": spec, "model": model}
 
     if serve_static and os.path.isdir(_STATIC_DIR):
         # Inject runtime config (CanvasXpress license + library URL + client

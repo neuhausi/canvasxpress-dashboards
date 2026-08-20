@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CanvasXpress Dashboards — examples</title>
+  <style>
+    :root { --accent: #087ad1; --muted: #6b7280; --border: #e6e9ee; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 64px; }
+    header h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.01em; }
+    header p { margin: 0 0 8px; color: var(--muted); max-width: 62ch; }
+    header a { color: var(--accent); }
+    h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em;
+         color: var(--muted); margin: 36px 0 14px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 12px;
+            padding: 18px 18px 16px; text-decoration: none; color: inherit; display: block;
+            transition: box-shadow .15s, transform .15s; }
+    .card:hover { box-shadow: 0 6px 20px rgba(16, 40, 70, .10); transform: translateY(-1px); }
+    .card .ic { font-size: 26px; }
+    .card h3 { margin: 10px 0 6px; font-size: 16px; }
+    .card h3 span { color: var(--accent); }
+    .card p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--muted); }
+    .card .tags { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { font-size: 11.5px; padding: 2px 8px; border-radius: 99px;
+           background: #eaf3fb; color: var(--accent); }
+    footer { margin-top: 44px; font-size: 13px; color: var(--muted); }
+    footer code { background: #e9ecf1; padding: 1px 5px; border-radius: 4px; }
+    .cxd-topnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      background: #fff; border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px 14px; margin-bottom: 24px; font-size: 13.5px; }
+    .cxd-topnav .cxd-brand { margin-right: 10px; color: var(--muted); }
+    .cxd-topnav .cxd-brand b { color: #24292f; }
+    .cxd-topnav a { color: var(--accent); text-decoration: none; padding: 4px 10px; border-radius: 7px; }
+    .cxd-topnav a:hover { background: #eaf3fb; }
+    .cxd-topnav .cxd-here { margin-left: auto; color: var(--muted); padding: 4px 10px;
+      background: #f2f4f7; border-radius: 7px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #14161a; color: #e6e6e6; }
+      .card { background: #1b1e24; border-color: #2a2e36; }
+      .tag { background: #12283a; }
+      footer code { background: #23262d; }
+      .cxd-topnav { background: #1b1e24; border-color: #2a2e36; }
+      .cxd-topnav .cxd-brand b { color: #e6e8ec; }
+      .cxd-topnav a:hover { background: #12283a; }
+      .cxd-topnav .cxd-here { background: #23262d; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="cxd-topnav">
+      <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+      <a href="/">🏠 Home</a>
+      <span class="cxd-here">🧭 All examples</span>
+    </nav>
+    <header>
+      <h1>CanvasXpress Dashboards</h1>
+      <p>Compose, coordinate, and render dashboards — collections of linked
+         CanvasXpress visualizations — from a single declarative JSON spec.
+         See the <a href="https://github.com/neuhausi/canvasxpress-dashboards">repository README</a>
+         for the library API.</p>
+    </header>
+
+    <h2>The app</h2>
+    <div class="cards">
+      <a class="card" href="./builder.html">
+        <div class="ic">🧩</div>
+        <h3>Builder <span>→</span></h3>
+        <p>The full application shell: Home, no-code Builder (drag panels, native
+           CanvasXpress customizer), saved Dashboards, dataset uploads, sharing,
+           and Settings. Uses the demo account automatically.</p>
+        <div class="tags"><span class="tag">app</span><span class="tag">no-code</span><span class="tag">server API</span></div>
+      </a>
+    </div>
+
+    <h2>Standalone examples</h2>
+    <div class="cards">
+      <a class="card" href="./sales-overview.html">
+        <div class="ic">📊</div>
+        <h3>Sales Overview <span>→</span></h3>
+        <p>Backend-free showcase: three linked panels (Bar, Pie, Line) plus a
+           broadcast-aware data table. Click anything — selection coordinates
+           across the board.</p>
+        <div class="tags"><span class="tag">inline data</span><span class="tag">broadcast</span></div>
+      </a>
+      <a class="card" href="./sales-live-demo.html">
+        <div class="ic">📡</div>
+        <h3>Sales Live <span>→</span></h3>
+        <p>Connector-backed dashboard: data fetched from the server API with
+           caching, TTL, and live refresh into bound panels.</p>
+        <div class="tags"><span class="tag">connector</span><span class="tag">live refresh</span></div>
+      </a>
+      <a class="card" href="./reproducible-bench/bench.html">
+        <div class="ic">🧬</div>
+        <h3>Reproducible Bench <span>→</span></h3>
+        <p>Genomics: clustered heatmap, oncoprint, and Kaplan–Meier survival,
+           packaged from distilled CSV tables + a recipe into one spec.
+           Clustering and KM math run in the browser.</p>
+        <div class="tags"><span class="tag">genomics</span><span class="tag">spec generator</span></div>
+      </a>
+      <a class="card" href="./reproducible-bench/narrative.html">
+        <div class="ic">📖</div>
+        <h3>Bench Narrative <span>→</span></h3>
+        <p>The product story behind the reproducible bench: raw run → plain-language
+           description → recipe → self-regenerating figures.</p>
+        <div class="tags"><span class="tag">story</span></div>
+      </a>
+    </div>
+
+    <footer>
+      Serving via <code>examples/serve.py</code> (or <code>./server.sh start</code>).
+      The self-hosted production app (<code>python -m cxd_server</code> / Docker)
+      serves its own bundled viewer at <code>/</code>.
+    </footer>
+  </div>
+</body>
+</html>

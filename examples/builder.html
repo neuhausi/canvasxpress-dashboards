@@ -126,10 +126,12 @@
       <nav>
         <a class="nav-item active" data-view="Home"><span class="ic">🏠</span> Home</a>
         <a class="nav-item" data-view="Builder"><span class="ic">🧩</span> Builder</a>
+        <a class="nav-item" data-view="Chat"><span class="ic">💬</span> Chat</a>
         <a class="nav-item" data-view="Dashboards"><span class="ic">📊</span> Dashboards</a>
         <a class="nav-item" data-view="Data"><span class="ic">🗂️</span> Data</a>
         <a class="nav-item" data-view="Settings"><span class="ic">⚙️</span> Settings</a>
         <a class="nav-item" data-view="Admin" id="nav-admin" style="display:none"><span class="ic">🛡️</span> Admin</a>
+        <a class="nav-item" href="/examples/index.html"><span class="ic">🧭</span> Examples</a>
       </nav>
       <div class="rail-foot" id="rail-foot">
         <span class="avatar" id="rail-avatar">?</span>
@@ -211,6 +213,7 @@
           '<button class="cta" id="home-create">+ Create a dashboard</button>' +
         '</div>' +
         '<div class="notices">' +
+          notice('💬', 'Describe it', 'Open <strong>Chat</strong> and describe the dashboard you want in plain language — the panels are composed for you from your datasets (Builder remains the manual alternative).') +
           notice('📣', 'What’s new', 'Every panel opens the native CanvasXpress customizer — click the ⚙ on a panel to change chart type, colors, grouping and more.') +
           notice('🔌', 'Live data', 'Bind panels to databases &amp; Google Sheets through canvasxpress-connectors.') +
           notice('🔗', 'Sharing', 'Publish read-only share links straight from the Builder.') +
@@ -969,6 +972,203 @@
     function isHex(v) { return /^#[0-9a-fA-F]{3,8}$/.test(v || ''); }
     function hexOr(v, fallback) { return isHex(v) ? v : fallback; }
 
+    // --- Dashboards view: the user's saved dashboards (the shipped examples
+    // are seeded here by examples/serve.py) — open in Builder, preview, delete.
+    function showDashboards() {
+      teardown();
+      toolbarEl.innerHTML =
+        '<div style="display:flex;align-items:center;gap:8px;width:100%">' +
+          '<h2 class="view-title">Dashboards</h2>' +
+          '<button class="cta" id="dash-refresh" style="margin-left:auto;padding:6px 14px;font-size:13px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
+        '</div>';
+      viewEl.innerHTML =
+        '<div class="data-view">' +
+          '<div class="data-list" id="dash-list"><div class="placeholder">Loading…</div></div>' +
+          '<div class="data-preview" id="dash-preview">' +
+            '<div class="data-preview-title" id="dash-title">Select a dashboard to preview it.</div>' +
+            '<div id="dash-host"></div>' +
+          '</div>' +
+        '</div>';
+      document.getElementById('dash-refresh').onclick = loadDashList;
+      loadDashList();
+    }
+
+    function loadDashList() {
+      var listEl = document.getElementById('dash-list');
+      if (!listEl) return;
+      client.list().then(function (rows) {
+        rows = (rows && rows.dashboards) || rows || [];
+        if (!rows.length) {
+          listEl.innerHTML = '<div class="placeholder">No dashboards yet — build one in the Builder (or describe one in Chat) and Save.</div>';
+          return;
+        }
+        listEl.innerHTML = '';
+        rows.forEach(function (d) {
+          var item = document.createElement('div');
+          item.className = 'data-item';
+          item.style.cssText = 'padding:10px 12px;border:1px solid var(--rail-border);border-radius:10px;margin-bottom:8px;cursor:pointer';
+          var when = (d.updated_at || '').replace('T', ' ').slice(0, 16);
+          item.innerHTML =
+            '<div style="font-weight:600">' + (d.title || d.id) + '</div>' +
+            '<div style="font-size:12px;color:var(--muted)">' + d.id + (when ? ' · ' + when : '') + '</div>' +
+            '<div style="display:flex;gap:6px;margin-top:8px">' +
+              '<button class="cta" data-act="open" style="padding:4px 10px;font-size:12px">Open in Builder</button>' +
+              '<button class="cta" data-act="del" style="padding:4px 10px;font-size:12px;background:transparent;border:1px solid var(--rail-border);color:inherit">Delete</button>' +
+            '</div>';
+          item.onclick = function (e) {
+            var act = e.target.getAttribute && e.target.getAttribute('data-act');
+            if (act === 'open') {
+              client.load(d.id).then(function (spec) { currentSpec = spec; activate('Builder'); });
+            } else if (act === 'del') {
+              if (!confirm('Delete "' + (d.title || d.id) + '"?')) return;
+              client.remove(d.id).then(loadDashList);
+            } else {
+              previewDashboard(d);
+            }
+          };
+          listEl.appendChild(item);
+        });
+      }).catch(function (err) {
+        listEl.innerHTML = '<div class="placeholder">Could not list dashboards: ' + err.message + '</div>';
+      });
+    }
+
+    function previewDashboard(summary) {
+      var titleEl = document.getElementById('dash-title');
+      if (titleEl) titleEl.textContent = summary.title || summary.id;
+      client.load(summary.id).then(function (spec) {
+        currentPreview = Promise.resolve(currentPreview).then(function (h) {
+          if (h && h.destroy) { try { h.destroy(); } catch (e) {} }
+          var host = document.getElementById('dash-host');
+          if (!host) return null;
+          host.innerHTML = '';
+          return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE });
+        });
+      });
+    }
+
+    // --- Chat view: describe a dashboard in plain language; the server's LLM
+    // authors the declarative spec (it never touches the data), the client
+    // validates and renders it live. The Builder stays the manual alternative.
+    var chatHistory = [];      // [{role, content}] — survives view switches
+    var chatSpec = null;       // last spec the chat produced
+
+    function showChat() {
+      teardown();
+      toolbarEl.innerHTML = '<h2 class="view-title">Chat</h2>';
+      viewEl.innerHTML =
+        '<div class="data-view" style="align-items:stretch">' +
+          '<div style="flex:0 0 380px;display:flex;flex-direction:column;border:1px solid var(--rail-border);border-radius:12px;background:var(--rail-bg);overflow:hidden">' +
+            '<div id="chat-log" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px"></div>' +
+            '<div style="display:flex;gap:8px;padding:10px;border-top:1px solid var(--rail-border)">' +
+              '<textarea id="chat-input" rows="2" placeholder="e.g. Compare revenue by region as a bar and pie, with a data table" style="flex:1;resize:none;padding:8px;font:inherit;font-size:13px"></textarea>' +
+              '<button class="cta" id="chat-send" style="padding:6px 16px">Send</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="data-preview" style="flex:1">' +
+            '<div class="data-preview-title" id="chat-title">The dashboard you describe appears here.</div>' +
+            '<div style="display:flex;gap:6px;margin:0 0 8px" id="chat-actions"></div>' +
+            '<div id="chat-host"></div>' +
+          '</div>' +
+        '</div>';
+      var input = document.getElementById('chat-input');
+      var send = document.getElementById('chat-send');
+      send.onclick = sendChat;
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+      });
+      chatHistory.forEach(function (m) { appendChatBubble(m.role, m.content); });
+      if (chatSpec) renderChatSpec();
+      fetch(API_BASE + '/api/llm/status', { credentials: 'include' })
+        .then(function (r) { return r.json(); })
+        .then(function (s) {
+          if (!s.enabled) {
+            appendChatBubble('assistant',
+              'The natural-language builder is not configured on this server. ' +
+              'Set CXD_LLM_API_KEY (an Anthropic API key) and restart — or use the Builder to compose dashboards manually.');
+          } else if (!chatHistory.length) {
+            appendChatBubble('assistant',
+              'Describe the dashboard you want — I know your datasets (see the Data view) and will compose the panels for you.');
+          }
+        }).catch(function () {});
+    }
+
+    function appendChatBubble(role, text) {
+      var log = document.getElementById('chat-log');
+      if (!log) return;
+      var b = document.createElement('div');
+      var user = role === 'user';
+      b.style.cssText = 'max-width:88%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.45;white-space:pre-wrap;' +
+        (user ? 'align-self:flex-end;background:var(--accent);color:#fff'
+              : 'align-self:flex-start;background:rgba(127,127,127,.12)');
+      b.textContent = text;
+      log.appendChild(b);
+      log.scrollTop = log.scrollHeight;
+      return b;
+    }
+
+    function sendChat() {
+      var input = document.getElementById('chat-input');
+      var msg = (input.value || '').trim();
+      if (!msg) return;
+      input.value = '';
+      appendChatBubble('user', msg);
+      chatHistory.push({ role: 'user', content: msg });
+      var pending = appendChatBubble('assistant', 'Thinking…');
+      fetch(API_BASE + '/api/llm/dashboard', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, history: chatHistory.slice(0, -1), spec: chatSpec })
+      }).then(function (r) {
+        return r.json().then(function (body) {
+          if (!r.ok) throw new Error(body.detail || ('HTTP ' + r.status));
+          return body;
+        });
+      }).then(function (res) {
+        pending.textContent = res.reply || 'Done.';
+        chatHistory.push({ role: 'assistant', content: res.reply || '' });
+        if (res.spec) {
+          var v = CXD.validateSpec(res.spec);
+          if (v.valid) {
+            chatSpec = res.spec;
+            renderChatSpec();
+          } else {
+            appendChatBubble('assistant', 'The generated spec did not validate: ' + v.errors.join('; '));
+          }
+        }
+      }).catch(function (err) {
+        pending.textContent = '⚠ ' + err.message;
+      });
+    }
+
+    function renderChatSpec() {
+      var titleEl = document.getElementById('chat-title');
+      var actions = document.getElementById('chat-actions');
+      if (titleEl) titleEl.textContent = (chatSpec.title || chatSpec.id);
+      if (actions) {
+        actions.innerHTML =
+          '<button class="cta" id="chat-open" style="padding:4px 12px;font-size:12px">Open in Builder</button>' +
+          '<button class="cta" id="chat-save" style="padding:4px 12px;font-size:12px;background:transparent;border:1px solid var(--rail-border);color:inherit">Save</button>';
+        document.getElementById('chat-open').onclick = function () {
+          currentSpec = chatSpec; activate('Builder');
+        };
+        document.getElementById('chat-save').onclick = function () {
+          client.save(chatSpec).then(function () {
+            appendChatBubble('assistant', 'Saved — it is now in your Dashboards.');
+          }).catch(function (err) {
+            appendChatBubble('assistant', 'Save failed: ' + err.message);
+          });
+        };
+      }
+      currentPreview = Promise.resolve(currentPreview).then(function (h) {
+        if (h && h.destroy) { try { h.destroy(); } catch (e) {} }
+        var host = document.getElementById('chat-host');
+        if (!host) return null;
+        host.innerHTML = '';
+        return CXD.renderDashboard(chatSpec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE });
+      });
+    }
+
     function showPlaceholder(name) {
       teardown();
       toolbarEl.innerHTML = '<h2 class="view-title">' + name + '</h2>';
@@ -977,7 +1177,7 @@
 
     // Views that touch per-user state require a session; visiting one while
     // signed out routes to Login and resumes the intended view after sign-in.
-    var PROTECTED = { Builder: 1, Data: 1, Dashboards: 1, Settings: 1, Admin: 1 };
+    var PROTECTED = { Builder: 1, Chat: 1, Data: 1, Dashboards: 1, Settings: 1, Admin: 1 };
     var pendingView = null;
 
     function activate(name) {
@@ -986,6 +1186,8 @@
       navItems.forEach(function (n) { n.classList.toggle('active', n.getAttribute('data-view') === name); });
       if (name === 'Home') showHome();
       else if (name === 'Builder') showBuilder();
+      else if (name === 'Chat') showChat();
+      else if (name === 'Dashboards') showDashboards();
       else if (name === 'Data') showData();
       else if (name === 'Settings') showSettings();
       else if (name === 'Admin') showAdmin();
@@ -993,6 +1195,7 @@
     }
 
     navItems.forEach(function (n) {
+      if (n.getAttribute('href')) return;   // plain links (e.g. Examples) navigate normally
       n.addEventListener('click', function () { activate(n.getAttribute('data-view')); });
     });
 
