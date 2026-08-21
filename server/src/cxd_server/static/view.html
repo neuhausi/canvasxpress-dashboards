@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard · CanvasXpress Dashboards</title>
+
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+  <script src="./canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    #dashboard { padding: 16px 24px 32px; }
+    #message { padding: 32px 24px; color: #6b7280; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0e1013; color: #e6e8ec; }
+      #message { color: #8a9099; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Full-page dashboard preview: renders one saved dashboard, name-free,
+       exactly as the renderer draws it everywhere else. Opened from the
+       Dashboards page's "Preview" button (?id=<dashboard-id>); uses the
+       viewer's own session, so it needs no share token. -->
+  <div id="message">Loading…</div>
+  <div id="dashboard"></div>
+
+  <script>
+    var id = new URLSearchParams(location.search).get('id');
+    var base = location.pathname.replace(/\/(examples\/)?[^/]*$/, '');
+    var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: base });
+
+    function fail(msg) {
+      var m = document.getElementById('message');
+      m.style.display = '';
+      m.textContent = msg;
+    }
+
+    if (!id) {
+      fail('No dashboard id in the URL (expected ?id=…).');
+    } else {
+      client.load(id).then(function (spec) {
+        document.title = (spec.title || spec.id) + ' · CanvasXpress Dashboards';
+        document.getElementById('message').style.display = 'none';
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard', { baseUrl: base });
+      }).catch(function (err) {
+        if (err && err.status === 401) fail('Sign in to view this dashboard.');
+        else if (err && err.status === 404) fail('Dashboard "' + id + '" not found.');
+        else fail('Could not load the dashboard: ' + (err && err.message || err));
+      });
+    }
+  </script>
+</body>
+</html>

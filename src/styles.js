@@ -22,6 +22,24 @@ export var dashboardCss = [
   // Text elements are chrome-free by default (no border/background) so they sit
   // on the dashboard background; an explicit panel.bg fills the cell instead.
   '.cxd-text-cell { border: none; background: transparent; }',
+  // Annotation-filter controls float free like text: a chrome-less cell holding
+  // a compact pill widget, so it reads cleanly when overlapping a graph.
+  '.cxd-annctl-cell { border: none; background: transparent; overflow: visible; }',
+  '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
+  '  padding: 5px 0; background: transparent;',
+  '  font: 14px/1.3 system-ui, sans-serif; color: var(--cxd-title,#2a2f36); }',
+  '.cxd-annctl-label { font-weight: 600; white-space: nowrap; }',
+  '.cxd-annctl-hint { color: var(--cxd-muted,#8a9099); }',
+  '.cxd-annctl-select { padding: 4px 7px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px;',
+  '  font: inherit; background: var(--cxd-panel-bg,#fff); color: inherit; }',
+  '.cxd-annctl-radios { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }',
+  '.cxd-annctl-radio { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }',
+  '.cxd-annctl-seg { display: inline-flex; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px; overflow: hidden; }',
+  '.cxd-annctl-segbtn { padding: 4px 11px; border: none; border-right: 1px solid var(--cxd-border,#d0d4da);',
+  '  background: transparent; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }',
+  '.cxd-annctl-segbtn:last-child { border-right: none; }',
+  '.cxd-annctl-segbtn:hover { background: rgba(0,0,0,.06); }',
+  '.cxd-annctl-segbtn.cxd-annctl-on { background: #2f6feb; color: #fff; }',
   /* when panels reserve a canvas margin, centre the (smaller) graph in the cell */
   '.cxd-inset .cxd-panel-body { display: flex; align-items: center; justify-content: center; }',
   '.cxd-canvas { display: block; width: 100%; height: 100%; }',
@@ -37,7 +55,10 @@ export var dashboardCss = [
   /* ---- builder (Phase 4) ---- */
   '.cxb { display: flex; flex-direction: column; gap: 10px; font-family: system-ui, sans-serif; }',
   /* toolbar (host may be an app-shell element) */
-  '.cxb-topbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: 100%; }',
+  // Two fixed rows: create actions + Save, then the selected element's
+  // configuration (always reserved, so the stage never jumps on select).
+  '.cxb-topbar { display: flex; flex-direction: column; align-items: stretch; gap: 12px; width: 100%; }',
+  '.cxb-trow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }',
   '.cxb-tgroup { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }',
   '.cxb-spacer { flex: 1 1 auto; }',
   '.cxb-tlabel { font: 600 14px system-ui; text-transform: uppercase; letter-spacing: .03em;',
@@ -46,9 +67,11 @@ export var dashboardCss = [
   '  border-radius: 6px; font: 600 16px system-ui; min-width: 150px; }',
   '.cxb-tinput { padding: 5px 8px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px;',
   '  font: inherit; width: 130px; }',
-  '.cxb-props { padding-left: 8px; }',
-  '.cxb-props:empty { border-left: none; padding-left: 0; }',
-  '.cxb-props select { padding: 5px 7px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px; font: inherit; }',
+  '.cxb-props { min-height: 34px; }',
+  '.cxb-props select { padding: 5px 5px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px; font: inherit; }',
+  // Compact labels in the props row so a control's full configuration fits on
+  // one line in a ~1400px window.
+  '.cxb-props .cxb-tlabel { font-size: 12px; }',
   /* Toolbar controls set explicit colours (they render into the host app shell,
      which may be dark) — `color: inherit` here would pick up light shell text on
      the light button and vanish. Dark-scheme overrides are below. */
@@ -62,19 +85,22 @@ export var dashboardCss = [
   '@media (prefers-color-scheme: dark) {',
   '  .cxb-btn { background: #1d2027; color: #e6e8ec; border-color: #2c313a; }',
   '  .cxb-btn:hover { background: #2c313a; }',
-  '  .cxb-title-input, .cxb-tinput, .cxb-props select { background: #16181d; color: #e6e8ec; border-color: #2c313a; }',
-  '  .cxb-props { border-left-color: #2c313a; } }',
-  '.cxb-stage { width: 100%; min-width: 0; padding-top: 34px; }',
+  '  .cxb-title-input, .cxb-tinput, .cxb-props select { background: #16181d; color: #e6e8ec; border-color: #2c313a; } }',
+  '.cxb-stage { width: 100%; min-width: 0; }',
   /* live editable cells */
-  '.cxb-cell { position: relative; overflow: visible; }',
+  // Cells clip exactly like the viewer (the hover chrome sits inside the cell).
+  '.cxb-cell { position: relative; }',
   '.cxb-cell.cxb-selected { outline: 2px solid #2f6feb; outline-offset: -1px; z-index: 1; }',
   '.cxb-cell.cxb-drop { outline: 2px dashed #2f6feb; outline-offset: -3px; background: rgba(47,111,235,0.06); z-index: 2; }',
   '.cxb-cell .cxd-panel-title { cursor: grab; user-select: none; display: flex; align-items: center; gap: 6px; }',
   '.cxb-tools { margin-left: auto; display: inline-flex; gap: 2px; }',
   /* floating chrome (drag grip + tools) for panels without a title bar */
-  // Editing controls float ABOVE the panel (a hovering toolbar), so they never
-  // overlap the graph canvas or the text content.
-  '.cxb-chrome { position: absolute; top: -30px; right: 0; z-index: 5; display: inline-flex;',
+  // Editing controls float over the panel's top-right corner on hover — kept
+  // ABOVE CanvasXpress's own hover toolbar (z-index ~10001), so the builder's
+  // grip/delete stay clickable on title-less panels —
+  // INSIDE the cell so the stage needs no reserved strip above the top row
+  // (the builder stage starts exactly where the rendered dashboard does).
+  '.cxb-chrome { position: absolute; top: 4px; right: 4px; z-index: 10010; display: inline-flex;',
   '  align-items: center; gap: 1px; padding: 2px 4px; pointer-events: none; opacity: 0;',
   '  transition: opacity .12s ease; background: var(--cxd-panel-bg,#fff);',
   '  border: 1px solid var(--cxd-border,#e2e5ea); border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.18); }',
@@ -87,12 +113,12 @@ export var dashboardCss = [
   '  cursor: pointer; font-size: 19px; color: var(--cxd-muted,#6b7280); }',
   '.cxb-tool:hover { background: rgba(0,0,0,.08); color: inherit; }',
   '.cxb-resize { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize;',
-  '  background: linear-gradient(135deg, transparent 50%, #2f6feb 50%); border-bottom-right-radius: 8px; z-index: 2;',
+  '  background: linear-gradient(135deg, transparent 50%, #2f6feb 50%); border-bottom-right-radius: 8px; z-index: 10006;',
   '  opacity: 0; transition: opacity .12s ease; }',
   '.cxb-cell:hover .cxb-resize, .cxb-cell.cxb-selected .cxb-resize { opacity: 1; }',
   /* control (table/filter) height-resize: a grabbable bottom edge */
   '.cxb-ctl-resize { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; cursor: ns-resize;',
-  '  z-index: 2; opacity: 0; transition: opacity .12s ease;',
+  '  z-index: 10006; opacity: 0; transition: opacity .12s ease;',
   '  background: linear-gradient(to bottom, transparent, rgba(47,111,235,.55)); }',
   '.cxb-cell:hover .cxb-ctl-resize { opacity: 1; }',
   '.cxb-msg { font-size:16px; color: var(--cxd-muted,#8a9099); min-height: 18px; }',

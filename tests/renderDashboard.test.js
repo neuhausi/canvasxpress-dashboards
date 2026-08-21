@@ -7,7 +7,7 @@
  */
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderDashboard } from '../src/renderDashboard.js';
+import { renderDashboard, annotationValues, annotationNames } from '../src/renderDashboard.js';
 import { installDom } from './helpers/dom-stub.js';
 
 var SPEC = {
@@ -268,3 +268,153 @@ test('scheduled refresh re-fetches and live-updates bound instances', async func
 function delay(ms) {
   return new Promise(function (resolve) { setTimeout(resolve, ms); });
 }
+
+test('annotationValues returns unique values in first-appearance order', function () {
+  var data = { y: {}, x: { Tissue: ['Liver', 'Kidney', 'Liver', null, 'Lung'] } };
+  assert.deepEqual(annotationValues(data, 'x', 'Tissue'), ['Liver', 'Kidney', 'Lung']);
+  assert.deepEqual(annotationValues(data, 'x', 'Missing'), []);
+  assert.deepEqual(annotationValues(data, 'z', 'Tissue'), []);
+});
+
+test('renders an annotation-filter control panel as a widget, not a graph', async function () {
+  var spec = {
+    id: 'ann-dash',
+    layout: { cols: 12, items: [
+      { panel: 'bar', x: 0, y: 0, w: 6, h: 3 },
+      { panel: 'ctl', x: 0, y: 0, w: 4, h: 1 }
+    ] },
+    data: { d: { kind: 'inline', value: {
+      y: { vars: ['V1'], smps: ['A', 'B', 'C'], data: [[1, 2, 3]] },
+      x: { Tissue: ['Liver', 'Kidney', 'Liver'] }
+    } } },
+    panels: {
+      bar: { title: 'Bar', dataRef: 'd', config: { graphType: 'Bar' } },
+      ctl: { type: 'control', title: 'Tissue', dataRef: 'd',
+        compartment: 'x', annotation: 'Tissue', style: 'buttons' }
+    }
+  };
+  var container = document.createElement('div');
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CanvasXpressStub });
+  await handle.ready;
+
+  // Only the graph panel instantiated CanvasXpress.
+  assert.equal(created.length, 1);
+  // The widget rendered: label + "All" + one button per unique value.
+  var widget = container.querySelector('.cxd-annctl');
+  assert.ok(widget, 'widget rendered');
+  assert.equal(widget.querySelector('.cxd-annctl-label').textContent, 'Tissue');
+  var buttons = container.querySelectorAll('.cxd-annctl-segbtn');
+  assert.deepEqual(buttons.map(function (b) { return b.textContent; }), ['All', 'Liver', 'Kidney']);
+});
+
+test('an unconfigured control shows a hint instead of inputs', async function () {
+  var spec = {
+    id: 'ann-dash-2',
+    layout: { cols: 12, items: [{ panel: 'ctl', x: 0, y: 0, w: 4, h: 1 }] },
+    data: { d: { kind: 'inline', value: { y: { vars: ['V1'], smps: ['A'], data: [[1]] } } } },
+    panels: { ctl: { type: 'control', dataRef: 'd', compartment: 'x', annotation: '' } }
+  };
+  var container = document.createElement('div');
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CanvasXpressStub });
+  await handle.ready;
+  assert.ok(container.querySelector('.cxd-annctl-hint'));
+  assert.equal(created.length, 0);
+});
+
+test('annotationValues/annotationNames understand tabular 2D-array datasets', function () {
+  var tab = [
+    ['id', 'bill_len', 'species', 'island'],
+    ['s1', 39.1, 'Adelie', 'Torgersen'],
+    ['s2', 46.5, 'Gentoo', 'Biscoe'],
+    ['s3', '', 'Adelie', 'Torgersen']
+  ];
+  assert.deepEqual(annotationNames(tab, 'x'), ['species', 'island']);
+  assert.deepEqual(annotationNames(tab, 'z'), []);
+  assert.deepEqual(annotationValues(tab, 'x', 'species'), ['Adelie', 'Gentoo']);
+  assert.deepEqual(annotationValues(tab, 'x', 'bill_len'), [39.1, 46.5]);
+  assert.deepEqual(annotationValues(tab, 'x', 'missing'), []);
+  assert.deepEqual(annotationValues(tab, 'z', 'species'), []);
+});
+
+test('a control bound to a tabular dataset renders its value buttons', async function () {
+  var spec = {
+    id: 'tab-dash',
+    layout: { cols: 12, items: [{ panel: 'ctl', x: 0, y: 0, w: 4, h: 1 }] },
+    data: { d: { kind: 'inline', value: null } },
+    panels: { ctl: { type: 'control', title: 'Species', dataRef: 'd',
+      compartment: 'x', annotation: 'species', style: 'buttons' } }
+  };
+  // Inline sources must be objects per the validator; bypass it and hand the
+  // tabular array straight through (as a dataset fetch would).
+  spec.data.d.value = [['id', 'species'], ['s1', 'Adelie'], ['s2', 'Gentoo']];
+  var container = document.createElement('div');
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CanvasXpressStub, validate: false });
+  await handle.ready;
+  var buttons = container.querySelectorAll('.cxd-annctl-segbtn');
+  assert.deepEqual(buttons.map(function (b) { return b.textContent; }), ['All', 'Adelie', 'Gentoo']);
+});
+
+test('control label is hidden when hideTitle is set', async function () {
+  var spec = {
+    id: 'lbl-dash',
+    layout: { cols: 12, items: [{ panel: 'ctl', x: 0, y: 0, w: 4, h: 1 }] },
+    data: { d: { kind: 'inline', value: {
+      y: { vars: ['V'], smps: ['a', 'b'], data: [[1, 2]] }, x: { T: ['p', 'q'] }
+    } } },
+    panels: { ctl: { type: 'control', title: 'T', hideTitle: true, dataRef: 'd',
+      compartment: 'x', annotation: 'T', style: 'buttons' } }
+  };
+  var container = document.createElement('div');
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CanvasXpressStub });
+  await handle.ready;
+  assert.equal(container.querySelector('.cxd-annctl-label'), null);
+  assert.equal(container.querySelectorAll('.cxd-annctl-segbtn').length, 3);
+});
+
+test('control auto-detects a variable annotation stored with the wrong compartment', async function () {
+  var spec = {
+    id: 'comp-dash',
+    layout: { cols: 12, items: [{ panel: 'ctl', x: 0, y: 0, w: 4, h: 1 }] },
+    data: { d: { kind: 'inline', value: {
+      y: { vars: ['V1', 'V2'], smps: ['a'], data: [[1], [2]] },
+      z: { Pathway: ['P1', 'P2'] }
+    } } },
+    panels: { ctl: { type: 'control', dataRef: 'd',
+      compartment: 'x', annotation: 'Pathway', style: 'buttons' } }
+  };
+  var container = document.createElement('div');
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CanvasXpressStub });
+  await handle.ready;
+  var buttons = container.querySelectorAll('.cxd-annctl-segbtn');
+  assert.deepEqual(buttons.map(function (b) { return b.textContent; }), ['All', 'P1', 'P2']);
+});
+
+test('text and control panels honor align/valign within their cells', async function () {
+  var spec = {
+    id: 'align-dash',
+    layout: { cols: 12, items: [
+      { panel: 't', x: 0, y: 0, w: 4, h: 2 },
+      { panel: 'c', x: 4, y: 0, w: 4, h: 2 }
+    ] },
+    data: { d: { kind: 'inline', value: {
+      y: { vars: ['V'], smps: ['a', 'b'], data: [[1, 2]] }, x: { T: ['p', 'q'] }
+    } } },
+    panels: {
+      t: { type: 'text', text: 'Hi', align: 'center', valign: 'bottom' },
+      c: { type: 'control', dataRef: 'd', annotation: 'T', style: 'buttons',
+           align: 'right', valign: 'middle' }
+    }
+  };
+  var container = document.createElement('div');
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CanvasXpressStub });
+  await handle.ready;
+
+  var textBody = container.querySelector('.cxd-text').parentNode;
+  assert.equal(textBody.style.alignItems, 'center');
+  assert.equal(textBody.style.justifyContent, 'flex-end');
+  assert.equal(container.querySelector('.cxd-text').style.textAlign, 'center');
+
+  var ctlBody = container.querySelector('.cxd-annctl').parentNode;
+  assert.equal(ctlBody.style.alignItems, 'flex-end');
+  assert.equal(ctlBody.style.justifyContent, 'center');
+});

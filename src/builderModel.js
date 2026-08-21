@@ -50,6 +50,17 @@ export function addPanel(spec, panel) {
       title: panel.title || '',
       text: panel.text || ''
     };
+  } else if (panel.type === 'control') {
+    // An annotation-filter control: one annotation of one dataset, broadcast
+    // to every instance in the dashboard's coordination domain.
+    next.panels[panel.id] = {
+      type: 'control',
+      title: panel.title || '',
+      dataRef: panel.dataRef,
+      compartment: panel.compartment || 'x',
+      annotation: panel.annotation || '',
+      style: panel.style || 'auto'
+    };
   } else {
     next.panels[panel.id] = {
       title: panel.title || panel.id,
@@ -121,8 +132,8 @@ function itemsCollide(a, b) {
  * Resolve panel collisions after a move/resize, react-grid-layout style:
  * the active panel keeps its place, colliding panels are pushed DOWN, and
  * everything is then compacted upward into the gaps (so shrinking a panel
- * pulls the ones below it back up). Text panels are free-floating — they
- * neither push nor get pushed, and may overlap anything.
+ * pulls the ones below it back up). Text and control panels are free-floating —
+ * they neither push nor get pushed, and may overlap anything.
  *
  * @param {object} spec - The current spec.
  * @param {string} [activeId] - The panel the user just moved/resized (placed
@@ -134,7 +145,7 @@ export function resolveCollisions(spec, activeId) {
   var items = next.layout.items || [];
   var solids = items.filter(function (it) {
     var p = next.panels[it.panel];
-    return !(p && p.type === 'text');
+    return !(p && (p.type === 'text' || p.type === 'control'));
   });
   if (solids.length < 2) return next;
 
@@ -192,6 +203,9 @@ export function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'dataRef')) panel.dataRef = changes.dataRef;
   if (Object.prototype.hasOwnProperty.call(changes, 'config')) panel.config = changes.config;
   if (Object.prototype.hasOwnProperty.call(changes, 'text')) panel.text = changes.text;
+  ['compartment', 'annotation', 'style', 'align', 'valign'].forEach(function (key) {
+    if (Object.prototype.hasOwnProperty.call(changes, key)) panel[key] = changes[key];
+  });
   if (Object.prototype.hasOwnProperty.call(changes, 'html')) {
     panel.html = changes.html;
     delete panel.text;   // rich html supersedes the plain-text fallback

@@ -106,3 +106,40 @@ test('a text panel needs no dataRef or inline data', function () {
   var res = validateSpec(spec);
   assert.equal(res.valid, true, JSON.stringify(res.errors));
 });
+
+test('a valid control panel passes', function () {
+  var spec = {
+    id: 'd1',
+    layout: { cols: 12, items: [{ panel: 'c1', x: 0, y: 0, w: 4, h: 2 }] },
+    data: { sales: { kind: 'inline', value: { y: {} } } },
+    panels: { c1: { type: 'control', dataRef: 'sales', compartment: 'x', annotation: 'Region', style: 'auto' } }
+  };
+  var res = validateSpec(spec);
+  assert.equal(res.valid, true, JSON.stringify(res.errors));
+});
+
+test('flags a bad control compartment and style', function () {
+  var spec = {
+    id: 'd1',
+    layout: { cols: 12, items: [{ panel: 'c1', x: 0, y: 0, w: 4, h: 2 }] },
+    data: { sales: { kind: 'inline', value: { y: {} } } },
+    panels: { c1: { type: 'control', dataRef: 'sales', compartment: 'y', style: 'sliders' } }
+  };
+  var res = validateSpec(spec);
+  assert.equal(res.valid, false);
+  assert.ok(res.errors.some(function (e) { return e.includes('.compartment must be'); }));
+  assert.ok(res.errors.some(function (e) { return e.includes('.style must be'); }));
+});
+
+test('flags bad align/valign values', function () {
+  var spec = {
+    id: 'd1',
+    layout: { cols: 12, items: [{ panel: 't1', x: 0, y: 0, w: 4, h: 2 }] },
+    panels: { t1: { type: 'text', text: 'Hi', align: 'justify', valign: 'baseline' } },
+    data: {}
+  };
+  var res = validateSpec(spec);
+  assert.equal(res.valid, false);
+  assert.ok(res.errors.some(function (e) { return e.includes('.align must be'); }));
+  assert.ok(res.errors.some(function (e) { return e.includes('.valign must be'); }));
+});

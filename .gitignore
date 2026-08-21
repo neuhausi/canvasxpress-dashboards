@@ -6,6 +6,8 @@ __pycache__/
 *.db
 *.db-wal
 *.db-shm
+# …except the committed demo database (regenerate with examples/data/make_inventory_db.py)
+!examples/data/inventory.db
 *.egg-info/
 .pytest_cache/
 .ruff_cache/

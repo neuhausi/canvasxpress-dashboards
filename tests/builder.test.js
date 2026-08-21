@@ -251,3 +251,23 @@ test('ACCEPTANCE: build a 4-panel dashboard with no code; the spec validates and
   assert.equal(created.length, 4);
   created.forEach(function (c) { assert.equal(c.config.broadcastGroup, 'sales-overview'); });
 });
+
+test('+ Control is disabled until the dashboard has data and a graph panel', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var calls = [];
+  var builder = createBuilder(container, { spec: blankSpec('d1'), CanvasXpress: makeCX(calls) });
+  function controlBtn() {
+    return [].filter.call(container.querySelectorAll('button'), function (b) {
+      return b.textContent === '+ Control';
+    })[0];
+  }
+  assert.equal(controlBtn().disabled, true, 'disabled on a blank dashboard');
+
+  builder.setSpec(setDataSource(blankSpec('d1'), 'sample', DATA));
+  assert.equal(controlBtn().disabled, true, 'still disabled with data but no panel');
+
+  builder.addPanel({ id: 'p1', dataRef: 'sample', config: { graphType: 'Bar' } });
+  await builder.whenReady();
+  assert.equal(controlBtn().disabled, false, 'enabled once a graph panel exists');
+});

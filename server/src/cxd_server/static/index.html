@@ -39,7 +39,9 @@
 
     /* Main content */
     .content { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
-    .topstrip { display: flex; align-items: center; gap: 12px; padding: 10px 20px; min-height: 56px;
+    /* min-height fits the Builder's two-row toolbar, so the strip is the
+       same height on every view (Builder / Dashboards / Settings). */
+    .topstrip { display: flex; align-items: center; gap: 12px; padding: 10px 20px; min-height: 102px;
       border-bottom: 1px solid var(--rail-border); background: #fff; }
     .toolbar-host { width: 100%; }
     .view-title { margin: 0; font-size:16px; font-weight: 600; }
@@ -80,29 +82,40 @@
 
     /* Settings view */
     .settings { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
-    .settings-form { flex: 0 0 300px; background: #fff; border: 1px solid var(--rail-border);
-      border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    /* An outer panel (like the Dashboards list) holding one card per
+       category. */
+    .settings-form { flex: 0 0 320px; min-width: 0; box-sizing: border-box;
+      background: #fff; border: 1px solid var(--rail-border); border-radius: 10px;
+      padding: 10px; display: flex; flex-direction: column; gap: 12px; }
     .settings-form h3 { margin: 0 0 4px; font-size:16px; }
+    /* Category cards get a slightly darker border than the inputs inside
+       them, so the grouping reads at a glance. */
+    .settings-card { background: #fff; border: 1px solid #c9cfd8; border-radius: 10px;
+      padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .settings-cat { margin: 0; font-size: 15px; font-weight: 700; }
     .settings-form label { display: flex; flex-direction: column; gap: 4px; font-size:14px;
       font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
     .settings-form input, .settings-form select { padding: 6px 8px; border: 1px solid var(--rail-border);
       border-radius: 6px; font: inherit; font-weight: 400; text-transform: none; color: inherit; background: #fff; }
     .settings-form input[type=color] { padding: 2px; height: 34px; }
     .settings-preview { flex: 1 1 380px; min-width: 320px; }
-    .settings-preview #s-preview { border: 1px dashed var(--rail-border); border-radius: 10px; padding: 10px; }
+    .settings-preview #s-preview { border: 1px dashed var(--rail-border); border-radius: 10px; padding: 0 12px 12px; }
     @media (prefers-color-scheme: dark) {
-      .settings-form { background: #16181d; }
+      .settings-form, .settings-card { background: #16181d; }
+      .settings-card { border-color: #3a414c; }
       .settings-form input, .settings-form select { background: #1d2027; }
     }
 
     /* Data view: dataset list + CanvasXpress table preview */
     .data-view { display: flex; gap: 16px; align-items: stretch; }
-    .data-list { flex: 0 0 260px; width: 260px; align-self: flex-start; background: #fff;
+    .data-list { flex: 0 0 260px; width: 260px; box-sizing: border-box; align-self: flex-start; background: #fff;
       border: 1px solid var(--rail-border); border-radius: 10px; overflow: hidden; }
-    .data-item { padding: 10px 12px; border-bottom: 1px solid var(--rail-border); cursor: pointer; }
-    .data-item:last-child { border-bottom: none; }
+    /* Cards: breathing room on all sides instead of edge-to-edge rows. */
+    .data-item { padding: 10px 12px; margin: 10px; border: 1px solid var(--rail-border);
+      border-radius: 8px; cursor: pointer; }
+    .data-item + .data-item { margin-top: 0; }
     .data-item:hover { background: #f4f6f8; }
-    .data-item.active { background: #eaf3fb; box-shadow: inset 3px 0 0 var(--accent); }
+    .data-item.active { background: #eaf3fb; border-color: var(--accent); }
     .data-item-title { font-weight: 600; font-size:16px; }
     .data-item-meta { color: var(--muted); font-size:14px; margin-top: 2px; }
     .data-preview { flex: 1 1 auto; min-width: 320px; background: #fff;
@@ -152,7 +165,7 @@
         <a class="nav-item" data-view="Settings"><span class="ic">⚙️</span> Settings</a>
         <a class="nav-item" data-view="Admin" id="nav-admin" style="display:none"><span class="ic">🛡️</span> Admin</a>
         <a class="nav-item" data-view="Logs" id="nav-logs" style="display:none"><span class="ic">🧾</span> Logs</a>
-        <a class="nav-item" href="/examples/index.html"><span class="ic">🧭</span> Examples</a>
+        <a class="nav-item" href="/examples/index.html" id="nav-examples"><span class="ic">🧭</span> Examples</a>
       </nav>
       <div class="rail-foot" id="rail-foot">
         <span class="avatar" id="rail-avatar">?</span>
@@ -178,7 +191,13 @@
     // `python -m http.server`, or file://), point it at the server explicitly
     // with `?api=` — e.g. builder.html?api=http://localhost:8000 — otherwise
     // /api/* requests hit the static server and 404.
-    var API_BASE = new URLSearchParams(location.search).get('api') || '';
+    // Default the API base to the path prefix the app is mounted under, so the
+    // same page works at / (dev server) and behind a reverse-proxy subpath
+    // like /dashboards/ (e.g. canvasxpress.org).
+    var API_BASE = new URLSearchParams(location.search).get('api') ||
+      location.pathname.replace(/\/(examples\/)?[^/]*$/, '');
+    // Static markup can't embed API_BASE — fix up absolute links here.
+    document.getElementById('nav-examples').href = API_BASE + '/examples/index.html';
     var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: API_BASE });
 
     var CXD = CanvasXpressDashboards;
@@ -223,7 +242,7 @@
       function step(n, img, title, body) {
         return '<div class="howto-step" data-goto="Builder">' +
           '<div class="howto-head"><span class="howto-n">' + n + '</span><h4>' + title + '</h4></div>' +
-          '<img src="/examples/assets/' + img + '?v=4" alt="' + title + '"/>' +
+          '<img src="' + API_BASE + '/examples/assets/' + img + '?v=4" alt="' + title + '"/>' +
           '<p>' + body + '</p></div>';
       }
       viewEl.innerHTML =
@@ -249,7 +268,7 @@
           notice('📣', 'What’s new', 'Every panel opens the native CanvasXpress customizer — click the ⚙ on a panel to change chart type, colors, grouping and more.') +
           notice('🔌', 'Live data', 'Bind panels to databases &amp; Google Sheets through canvasxpress-connectors.') +
           notice('🔗', 'Sharing', 'Share read-only links from the Dashboards view — straight into an email.') +
-          notice('📖', 'The product story', 'Why recipes beat screenshots: <a href="/examples/reproducible-bench/narrative.html">read the Reproducible Bench narrative</a> — illustrated with the live dashboards it describes.') +
+          notice('📖', 'The product story', 'Why recipes beat screenshots: <a href="' + API_BASE + '/examples/reproducible-bench/narrative.html">read the Reproducible Bench narrative</a> — illustrated with the live dashboards it describes.') +
         '</div>';
       var create = document.getElementById('home-create');
       if (create) create.onclick = function () { activate('Builder'); };
@@ -271,20 +290,22 @@
           // height): even when the dashboard canvas is much taller than the
           // window, the help / datasets / chat sections stay on screen and
           // scroll internally instead of running off the page.
-          '<div id="chat-panel" style="flex:0 0 320px;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px;display:flex;flex-direction:column;border:1px solid var(--rail-border);border-radius:12px;background:var(--rail-bg);overflow:hidden">' +
-            '<div style="flex:none;padding:10px 14px;border-bottom:1px solid var(--rail-border);font-weight:600;font-size:16px">💬 Assistant</div>' +
-            '<div class="data-dropzone" style="flex:none;margin:10px 12px;padding:12px 12px;text-align:left;border-style:solid">' +
+          // Outer panel + one card per section, matching the Dashboards and
+          // Settings left panels.
+          '<div id="chat-panel" style="flex:0 0 320px;box-sizing:border-box;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--rail-border);border-radius:10px;background:var(--rail-bg);padding:10px;overflow:hidden">' +
+            '<div class="data-dropzone" style="flex:none;margin:0;padding:12px 12px;text-align:left;border-style:solid;background:var(--rail-bg);border:1px solid #c9cfd8;border-radius:10px;border-style:solid">' +
+              '<div style="font-weight:600;font-size:16px;margin-bottom:6px">💬 Assistant</div>' +
               '<strong>How it works:</strong> tick the datasets to use, then describe the ' +
               'dashboard you want — it appears on the canvas, where you keep refining by hand ' +
               'or by chat. Prefer manual? Tick a dataset and click <strong>+ Panel</strong>.' +
             '</div>' +
-            '<div id="chat-datasets" style="flex:none;height:250px;min-height:250px;display:flex;flex-direction:column;padding:4px 14px 8px;font-size:16px;overflow:hidden">' +
+            '<div id="chat-datasets" style="flex:none;height:250px;min-height:250px;display:flex;flex-direction:column;padding:10px 12px;font-size:16px;overflow:hidden;background:var(--rail-bg);border:1px solid #c9cfd8;border-radius:10px">' +
               '<div style="flex:none;font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:4px">Datasets to use</div>' +
-              '<input id="chat-dataset-search" type="search" placeholder="Search datasets…" style="flex:none;width:100%;box-sizing:border-box;padding:5px 8px;margin-bottom:6px;font:inherit;font-size:14px;border:1px solid var(--rail-border);border-radius:6px"/>' +
+              '<input id="chat-dataset-search" type="search" placeholder="Search datasets…" style="flex:none;width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:6px;font:inherit;font-size:15px;border:1px solid var(--rail-border);border-radius:6px"/>' +
               '<div id="chat-dataset-list" style="flex:1;min-height:0;display:flex;flex-direction:column;gap:7px;overflow-y:auto;padding:2px 0">Loading…</div>' +
             '</div>' +
             '<div id="chat-splitter" title="Drag to resize" style="flex:none;height:8px;cursor:ns-resize;border-top:1px solid var(--rail-border);border-bottom:1px solid var(--rail-border);background:repeating-linear-gradient(90deg,transparent,transparent 4px,var(--rail-border) 4px,var(--rail-border) 8px);background-size:24px 2px;background-position:center;background-repeat:no-repeat"></div>' +
-            '<div id="chat-section" style="flex:1;min-height:250px;display:flex;flex-direction:column;overflow:hidden">' +
+            '<div id="chat-section" style="flex:1;min-height:250px;display:flex;flex-direction:column;overflow:hidden;background:var(--rail-bg);border:1px solid #c9cfd8;border-radius:10px">' +
               '<div id="chat-log" style="flex:1;min-height:0;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>' +
               '<div style="flex:none;display:flex;gap:6px;padding:8px;border-top:1px solid var(--rail-border)">' +
                 '<textarea id="chat-input" rows="4" placeholder="Describe the dashboard you want…" style="flex:1;resize:none;padding:7px;font:inherit;font-size:16px"></textarea>' +
@@ -299,6 +320,18 @@
         spec: currentSpec,
         client: client,
         baseUrl: API_BASE,
+        // Per-user database sources (bridged canvasxpress-connectors): offered
+        // in the per-panel Data dropdown as live connector sources.
+        listConnectorSources: function () {
+          return ensureConnectorsSession().then(function () {
+            return fetch(API_BASE + '/connectors/api/sources', { credentials: 'include' })
+              .then(function (r) { return r.ok ? r.json() : { sources: [] }; });
+          }).then(function (res) {
+            return (res.sources || []).map(function (n) {
+              return { name: n, url: API_BASE + '/connectors/api/data?source=' + encodeURIComponent(n) };
+            });
+          }).catch(function () { return []; });
+        },
         // Datasets are added/managed in the Data view; panels bind to them via
         // the per-panel Data dropdown — so hide the toolbar's "+ Data" button.
         showAddData: false,
@@ -333,14 +366,26 @@
         '</div>';
       viewEl.innerHTML =
         '<div class="data-view">' +
-          '<div style="flex:0 0 300px;display:flex;flex-direction:column">' +
+          // Pinned to the viewport like the Builder's Assistant column: the
+          // column never grows past the window; each card scrolls internally.
+          '<div id="data-left-col" style="flex:0 0 300px;display:flex;flex-direction:column;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px">' +
             '<div class="data-dropzone" id="data-dropzone" style="margin:0 0 12px">' +
               '<span class="dz-icon">📥</span>' +
               '<strong>Drop files here</strong> to upload a dataset:<br>' +
               'delimited text (CSV / TSV / TXT),<br>' +
               'CanvasXpress JSON, or a CanvasXpress PNG.' +
             '</div>' +
-            '<div class="data-list" id="data-list" style="flex:none;width:auto;align-self:stretch"><div class="placeholder">Loading…</div></div>' +
+            '<input id="data-search" type="search" placeholder="Search datasets…" style="flex:none;width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:8px;font:inherit;font-size:15px;border:1px solid var(--rail-border);border-radius:6px"/>' +
+            '<div class="data-list" id="file-sources" style="flex:none;width:auto;align-self:stretch;padding:10px;display:flex;flex-direction:column;height:420px;min-height:250px">' +
+              '<div style="font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:6px">File sources</div>' +
+              '<div id="data-list" style="flex:1;min-height:0;overflow-y:auto"><div class="placeholder">Loading…</div></div>' +
+            '</div>' +
+            '<div id="data-splitter" title="Drag to resize" style="flex:none;height:8px;margin:4px 0;cursor:ns-resize;border-top:1px solid var(--rail-border);border-bottom:1px solid var(--rail-border);background:repeating-linear-gradient(90deg,transparent,transparent 4px,var(--rail-border) 4px,var(--rail-border) 8px);background-size:24px 2px;background-position:center;background-repeat:no-repeat"></div>' +
+            '<div class="data-list" id="db-sources" style="flex:1;min-height:250px;width:auto;align-self:stretch;padding:10px;display:flex;flex-direction:column;overflow:hidden">' +
+              '<div style="font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:6px">Database sources</div>' +
+              '<div id="db-source-list" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px"><div class="placeholder">Loading…</div></div>' +
+              '<button class="cta" id="db-source-add" style="margin-top:8px;padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:var(--accent)">+ Database</button>' +
+            '</div>' +
           '</div>' +
           '<div class="data-preview" id="data-preview">' +
             '<div class="data-preview-title" id="data-title">Select a dataset to preview it — or drop a file here to import it.</div>' +
@@ -358,6 +403,9 @@
       var addBtn = document.getElementById('data-add');
       if (addBtn) addBtn.onclick = openAddDataDialog;
       loadDataList();
+      wireDataSplitter();
+      wireDbSourceForm();
+      loadDbSources();
     }
 
     // Dialog to import a dataset into the store from a file, pasted text, or an
@@ -365,7 +413,7 @@
     function openAddDataDialog() {
       var overlay = document.createElement('div');
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;' +
-        'align-items:center;justify-content:center;z-index:1000';
+        'align-items:center;justify-content:center;z-index:20000';
       var modal = document.createElement('div');
       modal.style.cssText = 'background:var(--rail-bg,#fff);color:inherit;border-radius:12px;' +
         'padding:20px;width:520px;max-width:92vw;box-shadow:0 12px 48px rgba(0,0,0,.3)';
@@ -375,7 +423,7 @@
         '<label style="display:block;font-size:14px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:4px 0 2px">Name</label>' +
         '<input id="ad-name" style="width:100%;padding:8px;box-sizing:border-box" placeholder="e.g. my-data"/>' +
         '<label style="display:block;font-size:14px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:12px 0 2px">Source</label>' +
-        '<select id="ad-type" style="width:100%;padding:8px;box-sizing:border-box">' +
+        '<select id="ad-type" style="width:100%;padding:8px;box-sizing:border-box;appearance:none;-webkit-appearance:none;padding-right:34px;background-image:url(&quot;data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27 viewBox=%270 0 12 8%27><path d=%27M1 1.5l5 5 5-5%27 fill=%27none%27 stroke=%27%236b7280%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/></svg>&quot;);background-repeat:no-repeat;background-position:right 12px center">' +
           '<option value="file">Upload CSV / JSON file</option>' +
           '<option value="csv">Paste CSV</option>' +
           '<option value="url">External URL / connector</option>' +
@@ -830,6 +878,272 @@
 
     // List the datasets and auto-select one so a table is always visible: the
     // requested `selectId`, else the previously-selected dataset, else the first.
+    // Filter a card list (Data / Dashboards) by its items' data-search text —
+    // same behavior as the Builder's dataset search box.
+    function wireListSearch(inputId, listId) {
+      var input = document.getElementById(inputId);
+      var listEl = document.getElementById(listId);
+      if (!input || !listEl) return;
+      input.oninput = function () {
+        var q = input.value.trim().toLowerCase();
+        listEl.querySelectorAll('.data-item').forEach(function (row) {
+          var hay = row.getAttribute('data-search') || '';
+          row.style.display = (!q || hay.indexOf(q) !== -1) ? '' : 'none';
+        });
+      };
+      if (input.value) input.oninput();   // re-apply after a list reload
+    }
+
+    // --- Database sources: the canvasxpress-connectors BYO app mounted at
+    // /connectors, with a BRIDGED session — the user signs in once (to this
+    // app); we fetch a derived credential and log into the connectors app
+    // behind the scenes. Connection strings are stored server-side, encrypted.
+    var connectorsBridge = null;   // Promise: resolves once cxc_session is set
+
+    function ensureConnectorsSession() {
+      if (connectorsBridge) return connectorsBridge;
+      connectorsBridge = fetch(API_BASE + '/api/connectors/credentials', { credentials: 'include' })
+        .then(function (r) { if (!r.ok) throw new Error('bridge: HTTP ' + r.status); return r.json(); })
+        .then(function (cred) {
+          return fetch(API_BASE + '/connectors/auth/login', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cred)
+          });
+        })
+        .then(function (r) { if (!r.ok) throw new Error('login: HTTP ' + r.status); });
+      connectorsBridge.catch(function () { connectorsBridge = null; });  // retry next time
+      return connectorsBridge;
+    }
+
+    function connectorsApi(path, opts) {
+      return ensureConnectorsSession().then(function () {
+        return fetch(API_BASE + '/connectors' + path, Object.assign({ credentials: 'include' }, opts || {}));
+      }).then(function (r) {
+        return r.json().then(function (body) {
+          if (!r.ok) throw new Error(body && body.detail || ('HTTP ' + r.status));
+          return body;
+        });
+      });
+    }
+
+    function loadDbSources() {
+      var listEl = document.getElementById('db-source-list');
+      if (!listEl) return;
+      // The bridged meta endpoint carries updated_at + a credential-free
+      // location; fall back to the plain names list if it's unavailable.
+      ensureConnectorsSession().then(function () {
+        return fetch(API_BASE + '/api/connectors/sources-meta', { credentials: 'include' })
+          .then(function (r) { return r.json().then(function (body) { if (!r.ok) throw new Error(body.detail || r.status); return body; }); });
+      }).catch(function () { return connectorsApi('/api/sources').then(function (res) {
+          return { sources: (res.sources || []).map(function (n) { return { name: n }; }) }; });
+      }).then(function (res) {
+        if (document.getElementById('db-source-list') !== listEl) return;
+        var sources = res.sources || [];
+        listEl.innerHTML = '';
+        if (!sources.length) {
+          listEl.innerHTML = '<div class="placeholder" style="padding:4px 0">No sources yet — click “+ Database”.</div>';
+          return;
+        }
+        sources.forEach(function (src) {
+          var name = src.name;
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:flex-start;gap:6px;padding:6px 8px;' +
+            'border:1px solid var(--rail-border);border-radius:8px;cursor:pointer';
+          // Same presentation as the dataset cards: bold title, muted meta
+          // line underneath (rows×cols · location · date).
+          var bits = [];
+          if (src.location) bits.push(esc(src.location));
+          if (src.updated_at) bits.push(esc(String(src.updated_at).slice(0, 10)));
+          var label = document.createElement('span');
+          label.style.cssText = 'flex:1;min-width:0;overflow:hidden';
+          label.innerHTML =
+            '<div class="data-item-title">🗄 ' + esc(name) + '</div>' +
+            '<div class="data-item-meta"><span data-dims="1" data-sep="' + (bits.length ? ' · ' : '') + '"></span>' + bits.join(' · ') + '</div>';
+          fillDbSourceDims(name, label.querySelector('[data-dims]'));
+          var edit = document.createElement('button');
+          edit.textContent = '✎';
+          edit.title = 'Edit source';
+          edit.style.cssText = 'border:none;background:transparent;color:var(--muted);font-size:15px;cursor:pointer;padding:0 2px';
+          edit.onclick = function (ev) { ev.stopPropagation(); editDbSource(name); };
+          var del = document.createElement('button');
+          del.textContent = '×';
+          del.title = 'Delete source';
+          del.style.cssText = 'border:none;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;padding:0 2px';
+          del.onclick = function (ev) {
+            ev.stopPropagation();
+            if (!window.confirm('Delete database source “' + name + '”?')) return;
+            connectorsApi('/api/sources/' + encodeURIComponent(name), { method: 'DELETE' })
+              .then(loadDbSources, function (e) { window.alert('Delete failed: ' + e.message); });
+          };
+          row.appendChild(label);
+          row.appendChild(edit);
+          row.appendChild(del);
+          row.onclick = function () { previewConnectorSource(name); };
+          listEl.appendChild(row);
+        });
+      }, function (err) {
+        listEl.innerHTML = '<div class="placeholder" style="padding:4px 0">Database sources unavailable.<br><small>' + esc(err.message) + '</small></div>';
+      });
+    }
+
+    // Add/edit a database source in a FLOATING dialog (same overlay pattern
+    // as "+ Data"), so the form never pushes the source list around.
+    function openDbSourceDialog(prefill) {
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;' +
+        'align-items:center;justify-content:center;z-index:20000';
+      var modal = document.createElement('div');
+      modal.style.cssText = 'background:var(--rail-bg,#fff);color:inherit;border-radius:12px;' +
+        'padding:20px;width:560px;max-width:92vw;box-shadow:0 12px 48px rgba(0,0,0,.3);' +
+        'display:flex;flex-direction:column;gap:10px';
+      var FIELD = 'width:100%;box-sizing:border-box;padding:8px;font:inherit;font-size:14px;' +
+        'border:1px solid var(--rail-border);border-radius:6px';
+      modal.innerHTML =
+        '<h3 style="margin:0;font-size:17px">' + (prefill ? 'Edit database source' : 'Add database source') + '</h3>' +
+        '<label style="font-size:13px;font-weight:600;text-transform:uppercase;color:var(--muted)">Name' +
+          '<input id="db-src-name" placeholder="e.g. my-sales" style="' + FIELD + ';margin-top:4px"></label>' +
+        '<label style="font-size:13px;font-weight:600;text-transform:uppercase;color:var(--muted)">Connection URL' +
+          '<input id="db-src-url" placeholder="sqlite:///path.db · postgresql+psycopg://user:pw@host/db" style="' + FIELD + ';margin-top:4px"></label>' +
+        '<label style="font-size:13px;font-weight:600;text-transform:uppercase;color:var(--muted)">Read-only SQL' +
+          '<textarea id="db-src-sql" rows="5" placeholder="SELECT …" style="' + FIELD + ';margin-top:4px;font-family:monospace;font-size:13px;resize:vertical"></textarea></label>' +
+        '<div id="db-src-err" style="color:#c0392b;font-size:13px;min-height:16px"></div>' +
+        '<div style="display:flex;justify-content:flex-end;gap:8px">' +
+          '<button class="cta" id="db-src-cancel" style="padding:6px 14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Cancel</button>' +
+          '<button class="cta" id="db-src-save" style="padding:6px 14px">' + (prefill ? 'Save' : 'Add') + '</button>' +
+        '</div>';
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+      if (prefill) {
+        modal.querySelector('#db-src-name').value = prefill.name || '';
+        modal.querySelector('#db-src-url').value = prefill.conn_url || '';
+        modal.querySelector('#db-src-sql').value = prefill.sql || '';
+      }
+      function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+      overlay.addEventListener('click', function (ev) { if (ev.target === overlay) close(); });
+      modal.querySelector('#db-src-cancel').onclick = close;
+      modal.querySelector('#db-src-save').onclick = function () {
+        var errEl = modal.querySelector('#db-src-err');
+        errEl.textContent = '';
+        var body = {
+          name: modal.querySelector('#db-src-name').value.trim(),
+          conn_url: modal.querySelector('#db-src-url').value.trim(),
+          sql: modal.querySelector('#db-src-sql').value.trim()
+        };
+        connectorsApi('/api/sources', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).then(function () {
+          close();
+          delete dbSourceDims[body.name];
+          loadDbSources();
+          previewConnectorSource(body.name);
+        }, function (e) { errEl.textContent = e.message; });
+      };
+      modal.querySelector('#db-src-name').focus();
+    }
+
+    // Edit = fetch the source (owner-only endpoint) and open the dialog
+    // prefilled; saving upserts by name (renaming creates a new source).
+    function editDbSource(name) {
+      fetch(API_BASE + '/api/connectors/source?name=' + encodeURIComponent(name), { credentials: 'include' })
+        .then(function (r) { return r.json().then(function (b) { if (!r.ok) throw new Error(b.detail || r.status); return b; }); })
+        .then(openDbSourceDialog,
+          function (e) { window.alert('Could not load source: ' + e.message); });
+    }
+
+    // Dimensions badge for a database source (rows×cols, like the dataset
+    // cards). Requires running the query, so results are cached per session.
+    var dbSourceDims = {};
+    function fillDbSourceDims(name, el) {
+      function show(text) {
+        // No isConnected guard: the cached path runs synchronously while the
+        // row is still being built (attached a moment later) — writing to a
+        // momentarily-detached span is harmless, skipping it loses the size.
+        if (!el) return;
+        el.textContent = text && el.getAttribute('data-paren') ? '(' + text + ')' : text;
+      }
+      if (dbSourceDims[name]) { show(dbSourceDims[name] + (el && el.getAttribute('data-sep') || '')); return; }
+      // (data-paren rows carry no data-sep, so the suffix logic stays inert.)
+      connectorsApi('/api/data?source=' + encodeURIComponent(name)).then(function (data) {
+        var rows, cols;
+        if (Array.isArray(data)) {
+          rows = Math.max(0, data.length - 1);
+          cols = data[0] ? data[0].length : 0;
+        } else {
+          var y = data && data.y || {};
+          rows = (y.smps || []).length;
+          cols = 1 + (y.vars || []).length + Object.keys(data && data.x || {}).length;
+        }
+        dbSourceDims[name] = Math.max(rows, cols) + '×' + Math.min(rows, cols);
+        show(dbSourceDims[name] + (el && el.getAttribute('data-sep') || ''));
+      }, function () { show(''); });
+    }
+
+    // Drag the splitter between the FILE SOURCES and DATABASE SOURCES cards
+    // to trade height between them (the file list scrolls internally).
+    function wireDataSplitter() {
+      var splitter = document.getElementById('data-splitter');
+      var filesCard = document.getElementById('file-sources');
+      if (!splitter || !filesCard) return;
+      splitter.onpointerdown = function (ev) {
+        ev.preventDefault();
+        var db = document.getElementById('db-sources');
+        var startY = ev.clientY;
+        var startH = filesCard.getBoundingClientRect().height;
+        // Same clamp AND minimums as the Builder's chat splitter: growth
+        // budget = the other card's spare height at drag start; both cards
+        // keep >= 250px, and the viewport-pinned column can never overflow.
+        var maxH = startH + (db ? db.getBoundingClientRect().height : 0) - 250;
+        function move(e) {
+          filesCard.style.height = Math.max(250, Math.min(maxH, startH + (e.clientY - startY))) + 'px';
+        }
+        function up() {
+          document.removeEventListener('pointermove', move);
+          document.removeEventListener('pointerup', up);
+        }
+        document.addEventListener('pointermove', move);
+        document.addEventListener('pointerup', up);
+      };
+    }
+
+    function wireDbSourceForm() {
+      var addBtn = document.getElementById('db-source-add');
+      if (addBtn) addBtn.onclick = function () { openDbSourceDialog(null); };
+    }
+
+    // Preview a database source: query it LIVE through the connectors app and
+    // show the result as a table — same presentation as a stored dataset.
+    function previewConnectorSource(name) {
+      var titleEl = document.getElementById('data-title');
+      var host = document.getElementById('data-canvas-host');
+      if (!host) return;
+      if (titleEl) { titleEl.style.display = ''; titleEl.textContent = name + '  ·  live database query'; }
+      destroyDataPreview();
+      host.innerHTML = '<div class="placeholder">Querying database…</div>';
+      connectorsApi('/api/data?source=' + encodeURIComponent(name)).then(function (data) {
+        host.innerHTML = '';
+        requestAnimationFrame(function () {
+          if (document.getElementById('data-title') == null) return;
+          var measured = host.clientWidth || 0;
+          if (measured > 320) previewWidth = measured;
+          var width = Math.max(320, previewWidth || measured || 640);
+          var height = Math.max(460, host.clientHeight || 0);
+          var canvas = document.createElement('canvas');
+          canvas.id = 'db-preview-' + name.replace(/[^A-Za-z0-9_-]/g, '_');
+          canvas.setAttribute('width', width);
+          canvas.setAttribute('height', height);
+          canvas.style.width = width + 'px';
+          canvas.style.height = height + 'px';
+          host.appendChild(canvas);
+          dataPreviewInstance = new window.CanvasXpress(canvas.id, data,
+            { view: 'table', title: name, resizable: false }, {});
+        });
+      }, function (err) {
+        host.innerHTML = '<div class="placeholder">Query failed.<br><small>' + esc(err.message) + '</small></div>';
+      });
+    }
+
     function loadDataList(selectId) {
       var listEl = document.getElementById('data-list');
       if (!listEl) return;
@@ -859,6 +1173,7 @@
           if (d.updated_at) meta.push(String(d.updated_at).slice(0, 10));
           var item = document.createElement('div');
           item.className = 'data-item';
+          item.setAttribute('data-search', ((d.title || '') + ' ' + d.id + ' ' + (d.store || '')).toLowerCase());
           item.style.display = 'flex';
           item.style.alignItems = 'center';
           item.style.gap = '8px';
@@ -890,6 +1205,7 @@
           listEl.appendChild(item);
           built.push({ item: item, d: d });
         });
+        wireListSearch('data-search', 'data-list');
         var want = selectId || selectedDatasetId;
         var target = null;
         if (want) { for (var i = 0; i < built.length; i++) { if (built[i].d.id === want) { target = built[i]; break; } } }
@@ -974,12 +1290,13 @@
     // --- Settings view: edit the dashboard's presentation, with a live preview ---
     function showSettings() {
       teardown();
-      toolbarEl.innerHTML = '<h2 class="view-title">Settings</h2>';
+      toolbarEl.innerHTML = '<h2 class="view-title">Dashboard Settings</h2>';
       var L = currentSpec.layout || {};
       viewEl.innerHTML =
         '<div class="settings">' +
           '<div class="settings-form">' +
-            '<h3>Dashboard settings</h3>' +
+            '<div class="settings-card">' +
+            '<h4 class="settings-cat">Background</h4>' +
             '<label>Background color<input type="color" id="s-bg"></label>' +
             '<label>Background (CSS override)<input type="text" id="s-bgtext" placeholder="#f2f4f7 · transparent · linear-gradient(...)"></label>' +
             '<label>Background image' +
@@ -987,14 +1304,27 @@
               '<input type="text" id="s-bgimg-url" placeholder="https://…/image.jpg or paste a URL" style="margin-top:6px">' +
               '<button type="button" id="s-bgimg-clear" style="margin-top:6px;align-self:flex-start;padding:4px 10px">Clear image</button>' +
             '</label>' +
-            '<label>Dashboard width (px, blank = full)<input type="number" id="s-w" min="200" placeholder="auto"></label>' +
-            '<label>Dashboard height (px, blank = auto)<input type="number" id="s-h" min="200" placeholder="auto"></label>' +
+            '</div>' +
+            '<div class="settings-card">' +
+
+            '<h4 class="settings-cat">Dimensions</h4>' +
+            '<label>Dashboard width (px)<input type="number" id="s-w" min="200" placeholder="auto"></label>' +
+            '<label>Dashboard height (px)<input type="number" id="s-h" min="200" placeholder="auto"></label>' +
+            '</div>' +
+            '<div class="settings-card">' +
+
+            '<h4 class="settings-cat">Layout</h4>' +
             '<label>Space between panels (px)<input type="number" id="s-gap" min="0" max="48"></label>' +
             '<label>Row height (px)<input type="number" id="s-rh" min="40" max="400"></label>' +
             '<label>Columns<input type="number" id="s-cols" min="1" max="24"></label>' +
             '<label>Canvas margin (px)<input type="number" id="s-inset" min="0" max="60"></label>' +
+            '</div>' +
+            '<div class="settings-card">' +
+
+            '<h4 class="settings-cat">Appearance</h4>' +
             '<label>Theme<select id="s-theme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>' +
             '<label>Font family<select id="s-font"></select></label>' +
+            '</div>' +
           '</div>' +
           '<div class="settings-preview"><div id="s-preview"></div></div>' +
         '</div>';
@@ -1132,8 +1462,11 @@
         '</div>';
       viewEl.innerHTML =
         '<div class="data-view">' +
-          '<div class="data-list" id="dash-list" style="flex:0 0 490px;width:490px"><div class="placeholder">Loading…</div></div>' +
-          '<div class="data-preview" id="dash-preview">' +
+          '<div style="flex:0 0 320px;width:320px;box-sizing:border-box;display:flex;flex-direction:column">' +
+            '<input id="dash-search" type="search" placeholder="Search dashboards…" style="flex:none;width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:8px;font:inherit;font-size:15px;border:1px solid var(--rail-border);border-radius:6px"/>' +
+            '<div class="data-list" id="dash-list" style="flex:none;width:auto;align-self:stretch"><div class="placeholder">Loading…</div></div>' +
+          '</div>' +
+          '<div class="data-preview" id="dash-preview" style="padding:0 12px 12px">' +
             '<div class="data-preview-title" id="dash-title">Click “View” on a dashboard to preview it here.</div>' +
             '<div id="dash-host"></div>' +
           '</div>' +
@@ -1169,6 +1502,7 @@
             '<div style="font-size:14px;color:var(--muted)">' + d.id + (when ? ' · ' + when : '') + '</div>' +
             '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">' +
               '<button class="cta" data-act="view" style="padding:4px 10px;font-size:14px">View</button>' +
+              '<button class="cta" data-act="preview" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:var(--accent)">Preview</button>' +
               '<button class="cta" data-act="open" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:var(--accent)">Open in Builder</button>' +
               '<button class="cta" data-act="share" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Share</button>' +
               (isShared
@@ -1181,6 +1515,9 @@
             var act = e.target.getAttribute && e.target.getAttribute('data-act');
             if (act === 'view') {
               previewDashboard(d);
+            } else if (act === 'preview') {
+              // Full-page render in a new tab — like opening an example page.
+              window.open(API_BASE + '/examples/view.html?id=' + encodeURIComponent(d.id), '_blank');
             } else if (act === 'open') {
               client.load(d.id).then(function (spec) { currentSpec = spec; activate('Builder'); });
             } else if (act === 'share') {
@@ -1194,9 +1531,11 @@
               previewDashboard(d);
             }
           };
+          item.setAttribute('data-search', ((d.title || '') + ' ' + d.id).toLowerCase());
           item.setAttribute('data-dash-id', d.id);
           listEl.appendChild(item);
         });
+        wireListSearch('dash-search', 'dash-list');
         // Default preview: the dashboard picked last time, else the first one.
         var pick = rows.find(function (d) { return d.id === selectedDashboardId; }) || rows[0];
         if (pick) previewDashboard(pick);
@@ -1264,8 +1603,10 @@
         var mine = listEl.querySelector('[data-dash-id="' + summary.id + '"]');
         if (mine) mine.classList.add('active');
       }
+      // The dashboard renders name-free (matching the builder) — hide the
+      // "click View…" hint line instead of printing the title over it.
       var titleEl = document.getElementById('dash-title');
-      if (titleEl) titleEl.textContent = summary.title || summary.id;
+      if (titleEl) titleEl.style.display = 'none';
       client.load(summary.id).then(function (spec) {
         currentPreview = Promise.resolve(currentPreview).then(function (h) {
           if (h && h.destroy) { try { h.destroy(); } catch (e) {} }
@@ -1358,8 +1699,68 @@
             });
           };
           syncChatChecks(currentSpec);
+          appendChatConnectorRows(listEl);
         })
         .catch(function () { listEl.textContent = 'Could not load datasets.'; });
+    }
+
+    // Database sources (bridged canvasxpress-connectors) join the checklist
+    // below the datasets: checking one declares it as a live connector source
+    // in the working spec, exactly like checking a dataset.
+    function appendChatConnectorRows(listEl) {
+      ensureConnectorsSession().then(function () {
+        return fetch(API_BASE + '/connectors/api/sources', { credentials: 'include' })
+          .then(function (r) { return r.ok ? r.json() : { sources: [] }; });
+      }).then(function (res) {
+        if (document.getElementById('chat-dataset-list') !== listEl) return;
+        (res.sources || []).forEach(function (name) {
+          var url = API_BASE + '/connectors/api/data?source=' + encodeURIComponent(name);
+          var label = document.createElement('label');
+          label.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer';
+          label.className = 'chat-ds-row';
+          label.setAttribute('data-search', name.toLowerCase() + ' database');
+          var cb = document.createElement('input');
+          cb.type = 'checkbox'; cb.value = url; cb.className = 'chat-cs';
+          cb.onchange = function () { toggleSpecConnector(name, url, cb); };
+          label.appendChild(cb);
+          var span = document.createElement('span');
+          span.textContent = '🗄 ' + name + ' ';
+          // Same size annotation as the dataset rows: "(rows×cols)".
+          var dims = document.createElement('span');
+          dims.setAttribute('data-paren', '1');
+          span.appendChild(dims);
+          fillDbSourceDims(name, dims);
+          label.appendChild(span);
+          listEl.appendChild(label);
+        });
+        syncChatChecks(currentSpec);
+      }).catch(function () { /* no connectors app — checklist stays datasets-only */ });
+    }
+
+    function toggleSpecConnector(name, url, cb) {
+      var working = currentBuilder ? currentBuilder.getSpec() : currentSpec;
+      var data = working.data || {};
+      var ref = null;
+      Object.keys(data).forEach(function (r) {
+        if (!ref && data[r] && data[r].kind === 'connector' && data[r].url === url) ref = r;
+      });
+      if (cb.checked) {
+        if (ref) return;
+        working = CXD.setDataSource(working, name, { kind: 'connector', url: url });
+      } else {
+        if (!ref) return;
+        var used = Object.keys(working.panels || {}).some(function (pid) {
+          return working.panels[pid].dataRef === ref;
+        }) || (working.controls || []).some(function (c) { return c.dataRef === ref; });
+        if (used) {
+          appendChatBubble('assistant', '“' + name + '” is still used by a panel — unbind or delete that panel first.');
+          cb.checked = true;
+          return;
+        }
+        delete working.data[ref];
+      }
+      currentSpec = working;
+      if (currentBuilder) currentBuilder.setSpec(working);
     }
 
     function selectedChatDatasets() {
@@ -1384,6 +1785,15 @@
       var ids = specDatasetIds(spec);
       [].slice.call(document.querySelectorAll('.chat-ds')).forEach(function (cb) {
         cb.checked = !!ids[cb.value];
+      });
+      // Connector rows check by URL.
+      var urls = {};
+      var data = (spec && spec.data) || {};
+      Object.keys(data).forEach(function (ref) {
+        if (data[ref] && data[ref].kind === 'connector' && data[ref].url) urls[data[ref].url] = ref;
+      });
+      [].slice.call(document.querySelectorAll('.chat-cs')).forEach(function (cb) {
+        cb.checked = !!urls[cb.value];
       });
     }
 

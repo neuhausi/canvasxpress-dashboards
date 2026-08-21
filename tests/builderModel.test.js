@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  addPanel, removePanel, movePanel, resizePanel, updatePanel, setDataSource, updateSettings, blankSpec
+  addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec
 } from '../src/builderModel.js';
 
 test('blankSpec is a valid empty starter', function () {
@@ -135,4 +135,42 @@ test('updatePanel sets and clears a text background colour', function () {
   assert.equal(s.panels.t1.bg, '#ff0000');
   s = updatePanel(s, 't1', { bg: '' });
   assert.equal('bg' in s.panels.t1, false);
+});
+
+test('addPanel control stores the annotation-filter fields', function () {
+  var s = addPanel(blankSpec('d1'), {
+    id: 'c1', type: 'control', title: 'Tissue', dataRef: 'src',
+    compartment: 'z', annotation: 'Pathway', style: 'radio', w: 4, h: 2
+  });
+  assert.deepEqual(s.panels.c1, {
+    type: 'control', title: 'Tissue', dataRef: 'src',
+    compartment: 'z', annotation: 'Pathway', style: 'radio'
+  });
+  assert.deepEqual(s.layout.items[0], { panel: 'c1', x: 0, y: 0, w: 4, h: 2 });
+});
+
+test('addPanel control defaults compartment/style', function () {
+  var s = addPanel(blankSpec('d1'), { id: 'c1', type: 'control' });
+  assert.equal(s.panels.c1.compartment, 'x');
+  assert.equal(s.panels.c1.style, 'auto');
+  assert.equal(s.panels.c1.annotation, '');
+});
+
+test('control panels float free of collision resolution', function () {
+  var s = addPanel(blankSpec('d1'), { id: 'p1', dataRef: 'src', x: 0, y: 0, w: 6, h: 4 });
+  s = addPanel(s, { id: 'c1', type: 'control', x: 0, y: 0, w: 4, h: 2 });
+  var resolved = resolveCollisions(s, 'c1');
+  var item = resolved.layout.items.filter(function (i) { return i.panel === 'c1'; })[0];
+  var solid = resolved.layout.items.filter(function (i) { return i.panel === 'p1'; })[0];
+  // Overlap kept: neither the control nor the solid panel moved.
+  assert.deepEqual([item.x, item.y], [0, 0]);
+  assert.deepEqual([solid.x, solid.y], [0, 0]);
+});
+
+test('updatePanel edits control fields', function () {
+  var s = addPanel(blankSpec('d1'), { id: 'c1', type: 'control' });
+  s = updatePanel(s, 'c1', { compartment: 'z', annotation: 'Dose', style: 'buttons' });
+  assert.equal(s.panels.c1.compartment, 'z');
+  assert.equal(s.panels.c1.annotation, 'Dose');
+  assert.equal(s.panels.c1.style, 'buttons');
 });

@@ -110,6 +110,59 @@ export function renderDashboard(spec, target, options) {
   container.appendChild(grid);
 
   var instances = [];
+  // Annotation-filter widgets: one entry per control, carrying its current
+  // pick and a reset-to-All UI hook. Applying re-plays every active pick, so
+  // controls combine; "All" in any control clears everything.
+  var controlWidgets = [];
+
+  /**
+   * Re-apply the CURRENT set of control picks serially to every instance:
+   * clear all filters, then modifyFilter('guess', annotation, 'like', value)
+   * for each control that has a pick. Broadcasting is suppressed per call —
+   * each instance is filtered directly — and only the last call redraws.
+   * @returns {void}
+   */
+  function applyControlFilters() {
+    var picks = controlWidgets.filter(function (w) { return w.value != null; });
+    instances.slice().forEach(function (inst) {
+      if (!inst) return;
+      var savedGroup = inst.broadcastGroup;
+      inst.broadcastGroup = '__cxd_annctl_serial__';
+      try {
+        if (!picks.length) {
+          if (typeof inst.resetDataFilter === 'function') inst.resetDataFilter(null, false);
+        } else if (typeof inst.modifyFilter === 'function') {
+          if (typeof inst.resetDataFilter === 'function') inst.resetDataFilter(null, true);
+          picks.forEach(function (w, i) {
+            inst.modifyFilter('guess', w.annotation, 'like', w.value, i < picks.length - 1);
+          });
+        }
+      } catch (e) { /* keep filtering the remaining instances */
+      } finally {
+        inst.broadcastGroup = savedGroup;
+      }
+    });
+  }
+
+  /**
+   * Snap every annotation-filter control back to "All" (UI + filters), as if
+   * All had been clicked. Bound to the Escape key for the dashboard's lifetime.
+   * @returns {void}
+   */
+  function resetAllControls() {
+    if (!controlWidgets.length) return;
+    controlWidgets.forEach(function (w) {
+      w.value = null;
+      if (w.resetUI) w.resetUI();
+    });
+    applyControlFilters();
+  }
+  var doc = container.ownerDocument || (typeof document !== 'undefined' ? document : null);
+  var escListener = null;
+  if (doc && typeof doc.addEventListener === 'function') {
+    escListener = function (ev) { if (ev.key === 'Escape') resetAllControls(); };
+    doc.addEventListener('keydown', escListener);
+  }
   var pending = [];        // per-cell settle promises (feed handle.ready)
   var refMemo = {};        // dataRef -> Promise<data> (one resolve per render)
   var refBindings = {};    // dataRef -> [{ instance }] (for scheduled refresh)
@@ -175,8 +228,10 @@ export function renderDashboard(spec, target, options) {
    * @returns {Promise<object|null>} The instance (or null on empty/error).
    */
   function renderPanelItem(item, panel) {
-    // Text elements never show a title bar; graph panels can opt out via hideTitle.
-    var showTitle = panel && panel.type !== 'text' && !panel.hideTitle && panel.title;
+    // Text/control elements never show a title bar (a control carries its own
+    // inline label); graph panels can opt out via hideTitle.
+    var showTitle = panel && panel.type !== 'text' && panel.type !== 'control' &&
+      !panel.hideTitle && panel.title;
     var cell = buildCell(showTitle ? panel.title : null);
     placeCell(cell.root, item);
     grid.appendChild(cell.root);
@@ -186,6 +241,11 @@ export function renderDashboard(spec, target, options) {
     if (panel && panel.type === 'text') {
       renderTextPanel(cell, item, panel);
       return Promise.resolve(null);
+    }
+
+    // Annotation-filter controls render native inputs, not a graph.
+    if (panel && panel.type === 'control') {
+      return renderControlWidget(cell, item, panel);
     }
 
     var canvasId = makeCanvasId(spec.id, 'panel', item.panel, panelIdCounter.n++);
@@ -248,6 +308,14 @@ export function renderDashboard(spec, target, options) {
     // dashboards are viewed by others); fall back to plain text.
     if (panel && panel.html != null) textEl.innerHTML = sanitizeHtml(panel.html);
     else textEl.textContent = (panel && panel.text) || '';
+    if (panel && (panel.align || panel.valign)) {
+      applyAlignment(cell.body, panel);
+      // The text block shrinks to content height so valign can place it, but
+      // keeps full width so text-align works across the cell.
+      textEl.style.height = 'auto';
+      textEl.style.width = '100%';
+      textEl.style.textAlign = panel.align || 'left';
+    }
     cell.body.appendChild(textEl);
     cell.setState('ready');
     if (typeof options.onPanelRendered === 'function') {
@@ -256,6 +324,95 @@ export function renderDashboard(spec, target, options) {
         canvas: cell.canvas, body: cell.body, instance: null, type: 'text'
       });
     }
+  }
+
+  /**
+   * Render an annotation-filter control panel: native inputs (dropdown / radio /
+   * segmented buttons) whose entries are the unique values of one annotation of
+   * the bound dataset. Choosing a value FILTERS the data: it calls
+   * `modifyFilter('guess', annotation, 'like', value)` on a live instance bound
+   * to the same source — a registered UPDATE_FILTER action, so the dashboard's
+   * shared broadcastGroup propagates it to every panel. "All" clears via
+   * `resetDataFilter()` (also broadcast).
+   *
+   * @param {object} cell - The cell from {@link buildCell}.
+   * @param {object} item - The layout item.
+   * @param {object} panel - The control panel (`{type:'control', dataRef,
+   *   compartment, annotation, style, title}`).
+   * @returns {Promise<null>} Resolves when the widget has settled.
+   */
+  function renderControlWidget(cell, item, panel) {
+    cell.canvas.style.display = 'none';
+    cell.root.classList.add('cxd-annctl-cell');
+
+    function notify(state) {
+      if (typeof options.onPanelRendered === 'function') {
+        options.onPanelRendered({
+          panelId: item.panel, item: item, cell: cell.root,
+          canvas: cell.canvas, body: cell.body, instance: null,
+          type: 'control', state: state
+        });
+      }
+    }
+
+    // The compartment the annotation actually lives in; re-detected below in
+    // case the spec's stored value (or its 'x' default) doesn't match the data.
+    var comp = panel.compartment || 'x';
+
+    return resolveOwnerData(panel)
+      .then(function (data) {
+        var values = annotationValues(data, comp, panel.annotation);
+        if (!values.length) {
+          // Auto-detect: the name may be a variable annotation ('z') instead.
+          var other = comp === 'x' ? 'z' : 'x';
+          var alt = annotationValues(data, other, panel.annotation);
+          if (alt.length) { comp = other; values = alt; }
+        }
+        var widget = document.createElement('div');
+        widget.className = 'cxd-annctl';
+        applyAlignment(cell.body, panel);
+        if (panel.title && !panel.hideTitle) {
+          var label = document.createElement('span');
+          label.className = 'cxd-annctl-label';
+          label.textContent = panel.title;
+          widget.appendChild(label);
+        }
+        if (!panel.annotation || !values.length) {
+          var hint = document.createElement('span');
+          hint.className = 'cxd-annctl-hint';
+          hint.textContent = !panel.annotation
+            ? 'Choose an annotation…'
+            : 'No "' + panel.annotation + '" values';
+          widget.appendChild(hint);
+        } else {
+          var entry = { annotation: panel.annotation, value: null, resetUI: null };
+          controlWidgets.push(entry);
+          var input = buildAnnotationInput(panel, values, function (value) {
+            entry.value = value;
+            if (value == null) {
+              // "All" clears EVERY control's filter — snap the others to All
+              // too. A value pick touches only this control; the other picks
+              // stay and combine.
+              controlWidgets.forEach(function (w) {
+                w.value = null;
+                if (w !== entry && w.resetUI) w.resetUI();
+              });
+            }
+            applyControlFilters();
+          });
+          entry.resetUI = input._cxdResetToAll;
+          widget.appendChild(input);
+        }
+        cell.body.appendChild(widget);
+        cell.setState('ready');
+        notify('ready');
+        return null;
+      })
+      .catch(function (err) {
+        cell.setState('error', String(err && err.message || err));
+        notify('error');
+        return null;
+      });
   }
 
   items.forEach(function (item) {
@@ -383,6 +540,10 @@ export function renderDashboard(spec, target, options) {
      * @returns {void}
      */
     destroy: function () {
+      if (escListener && doc && typeof doc.removeEventListener === 'function') {
+        doc.removeEventListener('keydown', escListener);
+        escListener = null;
+      }
       timers.forEach(function (t) { clearInterval(t); });
       timers.length = 0;
       observers.forEach(function (o) { try { o.disconnect(); } catch (e) { /* noop */ } });
@@ -558,6 +719,199 @@ function projectMeasures(data, measures) {
     out.z = z;
   }
   return out;
+}
+
+/**
+ * The unique values of one annotation of a data object, in first-appearance
+ * order. Null/undefined entries are skipped; values keep their type (they are
+ * compared with `==` by `selectVarsSmpsWithAnnotationValue`).
+ *
+ * @param {object} data - A CanvasXpress data object (`{y, x?, z?}`).
+ * @param {('x'|'z')} compartment - 'x' = sample annotations, 'z' = variable annotations.
+ * @param {string} annotation - The annotation name.
+ * @returns {Array} Unique values (empty when the annotation is absent).
+ */
+export function annotationValues(data, compartment, annotation) {
+  var col;
+  if (Array.isArray(data)) {
+    // Tabular 2D array (header row + data rows) — the shape stored datasets
+    // keep. Its columns are sample-scoped, so 'z' has nothing to offer.
+    if (compartment === 'z' || !data.length) return [];
+    var idx = data[0].indexOf(annotation);
+    if (idx < 0) return [];
+    col = data.slice(1).map(function (row) { return row[idx]; });
+  } else {
+    col = data && data[compartment] && data[compartment][annotation];
+  }
+  if (!Array.isArray(col)) return [];
+  var seen = {};
+  var out = [];
+  col.forEach(function (v) {
+    if (v == null || String(v).trim() === '') return;
+    var key = typeof v + ':' + String(v);
+    if (seen[key]) return;
+    seen[key] = true;
+    out.push(v);
+  });
+  return out;
+}
+
+/**
+ * The annotation names available on a data object for a compartment. For a
+ * tabular 2D array (header + rows), the sample annotations are the non-numeric
+ * columns after the first (id) column — mirroring the `csvToCx` reshape that
+ * CanvasXpress applies when it parses the array.
+ * @param {(object|Array)} data - A CanvasXpress data object or tabular array.
+ * @param {('x'|'z')} compartment - 'x' (samples) or 'z' (variables).
+ * @returns {string[]} Annotation names (empty when none).
+ */
+export function annotationNames(data, compartment) {
+  if (Array.isArray(data)) {
+    if (compartment === 'z' || data.length < 2) return [];
+    var header = data[0];
+    var rows = data.slice(1);
+    var names = [];
+    for (var c = 1; c < header.length; c++) {
+      if (!isNumericColumn(rows, c)) names.push(header[c]);
+    }
+    return names;
+  }
+  var comp = data && data[compartment];
+  return comp && typeof comp === 'object' ? Object.keys(comp) : [];
+}
+
+/**
+ * Whether every non-blank cell of a tabular column is numeric (and at least
+ * one is) — the same rule `csvToCx` uses to split measures from annotations.
+ * @param {Array<Array>} rows - Tabular data rows (no header).
+ * @param {number} col - Column index.
+ * @returns {boolean} True for a numeric measure column.
+ * @private
+ */
+function isNumericColumn(rows, col) {
+  var sawNumber = false;
+  for (var i = 0; i < rows.length; i++) {
+    var cell = rows[i][col];
+    if (cell == null || String(cell).trim() === '') continue;
+    var n = Number(cell);
+    if (isNaN(n) || !isFinite(n)) return false;
+    sawNumber = true;
+  }
+  return sawNumber;
+}
+
+/**
+ * Build the input element for an annotation-filter control. `style: 'auto'`
+ * picks segmented buttons for up to 4 values and a dropdown above that. Every
+ * variant leads with an "All" choice that clears the selection (apply(null)).
+ *
+ * @param {object} panel - The control panel (reads `style`, `annotation`).
+ * @param {Array} values - Unique annotation values.
+ * @param {function(*): void} apply - Called with the chosen value (null = All).
+ * @returns {HTMLElement} The input element.
+ * @private
+ */
+function buildAnnotationInput(panel, values, apply) {
+  var style = panel.style || 'auto';
+  if (style === 'auto') style = values.length <= 4 ? 'buttons' : 'dropdown';
+
+  if (style === 'dropdown') {
+    var select = document.createElement('select');
+    select.className = 'cxd-annctl-select';
+    ['All'].concat(values.map(String)).forEach(function (label, i) {
+      var o = document.createElement('option');
+      o.value = String(i);   // index; 0 = All (values may repeat as strings)
+      o.textContent = label;
+      select.appendChild(o);
+    });
+    listen(select, 'change', function () {
+      var idx = parseInt(select.value, 10);
+      apply(idx > 0 ? values[idx - 1] : null);
+    });
+    select._cxdResetToAll = function () { select.value = '0'; };
+    return select;
+  }
+
+  if (style === 'radio') {
+    var group = document.createElement('span');
+    group.className = 'cxd-annctl-radios';
+    // Radios group by name; scope it to this element so two controls bound to
+    // the same annotation stay independent.
+    var name = 'cxd-annctl-' + Math.random().toString(36).slice(2, 8);
+    [null].concat(values).forEach(function (value) {
+      var label = document.createElement('label');
+      label.className = 'cxd-annctl-radio';
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.name = name;
+      if (value === null) input.checked = true;
+      listen(input, 'change', function () { if (input.checked) apply(value); });
+      var text = document.createElement('span');
+      text.textContent = value === null ? 'All' : String(value);
+      label.appendChild(input);
+      label.appendChild(text);
+      group.appendChild(label);
+    });
+    group._cxdResetToAll = function () {
+      var first = group.querySelector('input');
+      if (first) first.checked = true;
+    };
+    return group;
+  }
+
+  // Segmented buttons.
+  var seg = document.createElement('span');
+  seg.className = 'cxd-annctl-seg';
+  var buttons = [];
+  [null].concat(values).forEach(function (value) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cxd-annctl-segbtn' + (value === null ? ' cxd-annctl-on' : '');
+    btn.textContent = value === null ? 'All' : String(value);
+    listen(btn, 'click', function () {
+      buttons.forEach(function (b) { b.classList.remove('cxd-annctl-on'); });
+      btn.classList.add('cxd-annctl-on');
+      apply(value);
+    });
+    buttons.push(btn);
+    seg.appendChild(btn);
+  });
+  seg._cxdResetToAll = function () {
+    buttons.forEach(function (b) { b.classList.remove('cxd-annctl-on'); });
+    if (buttons[0]) buttons[0].classList.add('cxd-annctl-on');   // "All" is first
+  };
+  return seg;
+}
+
+/**
+ * Position a text/control panel's content within its grid cell per the panel's
+ * `align` (left|center|right) and `valign` (top|middle|bottom). The body
+ * becomes a flex column so the content block sits anywhere in the cell.
+ * @param {HTMLElement} body - The `.cxd-panel-body` element.
+ * @param {object} panel - The panel (reads `align`, `valign`).
+ * @returns {void}
+ * @private
+ */
+function applyAlignment(body, panel) {
+  var h = { left: 'flex-start', center: 'center', right: 'flex-end' };
+  var v = { top: 'flex-start', middle: 'center', bottom: 'flex-end' };
+  body.style.display = 'flex';
+  body.style.flexDirection = 'column';
+  body.style.alignItems = h[panel.align] || 'flex-start';
+  body.style.justifyContent = v[panel.valign] || 'flex-start';
+}
+
+/**
+ * Add an event listener when the element supports it (the test DOM stub does
+ * not), mirroring the builder's `on()` guard.
+ * @param {HTMLElement} node - Target element.
+ * @param {string} type - Event type.
+ * @param {function} handler - Listener.
+ * @returns {void}
+ * @private
+ */
+function listen(node, type, handler) {
+  if (node && typeof node.addEventListener === 'function') node.addEventListener(type, handler);
 }
 
 /**

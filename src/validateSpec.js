@@ -81,6 +81,21 @@ export function validateSpec(spec) {
       if (panel.type !== 'text' && panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
+      if (panel.type === 'control') {
+        if (panel.compartment != null && panel.compartment !== 'x' && panel.compartment !== 'z') {
+          errors.push(at + '.compartment must be "x" (samples) or "z" (variables)');
+        }
+        if (panel.style != null &&
+            ['auto', 'dropdown', 'radio', 'buttons'].indexOf(panel.style) === -1) {
+          errors.push(at + '.style must be "auto", "dropdown", "radio", or "buttons"');
+        }
+      }
+      if (panel.align != null && ['left', 'center', 'right'].indexOf(panel.align) === -1) {
+        errors.push(at + '.align must be "left", "center", or "right"');
+      }
+      if (panel.valign != null && ['top', 'middle', 'bottom'].indexOf(panel.valign) === -1) {
+        errors.push(at + '.valign must be "top", "middle", or "bottom"');
+      }
       if (panel.dataRef != null) {
         if (spec.data == null || !hasOwn(spec.data, panel.dataRef)) {
           errors.push(at + '.dataRef "' + panel.dataRef + '" has no matching entry in spec.data');

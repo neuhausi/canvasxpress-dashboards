@@ -139,10 +139,43 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["text", "control"],
+          "description": "Panel variant: absent = graph; 'text' = free-form text; 'control' = annotation-filter widget. Text and control panels float free (may overlap graph panels)."
+        },
         "title": { "type": "string" },
         "dataRef": { "type": "string" },
         "data": { "type": "object" },
         "config": { "type": "object" },
+        "compartment": {
+          "type": "string",
+          "enum": ["x", "z"],
+          "default": "x",
+          "description": "Control panels: which metadata compartment the annotation lives in — 'x' (sample annotations) or 'z' (variable annotations). The builder detects this from the chosen annotation, and the renderer falls back to the other compartment when the stored one has no values."
+        },
+        "annotation": {
+          "type": "string",
+          "description": "Control panels: the single annotation name whose unique values populate the widget. Selecting a value calls modifyFilter('guess', annotation, 'like', value) serially on every instance in the dashboard."
+        },
+        "style": {
+          "type": "string",
+          "enum": ["auto", "dropdown", "radio", "buttons"],
+          "default": "auto",
+          "description": "Control panels: widget rendering. 'auto' picks buttons for ≤4 values, a dropdown above that."
+        },
+        "align": {
+          "type": "string",
+          "enum": ["left", "center", "right"],
+          "default": "left",
+          "description": "Text/control panels: horizontal alignment of the content within its grid cell."
+        },
+        "valign": {
+          "type": "string",
+          "enum": ["top", "middle", "bottom"],
+          "default": "top",
+          "description": "Text/control panels: vertical alignment (baseline) of the content within its grid cell."
+        },
         "measures": {
           "type": "array",
           "items": { "type": "string" },

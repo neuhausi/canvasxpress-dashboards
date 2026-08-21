@@ -130,6 +130,21 @@ no wrapper API.
 - **`broadcastGroup`** defaults to the dashboard `id`, so two dashboards on a page
   don't cross-talk; panels within a dashboard coordinate automatically.
 - **`broadcast: false`** on a panel opts it out of coordination.
+- **Annotation-filter controls**: a panel with `"type": "control"` renders a
+  compact widget (dropdown / radio / segmented buttons) listing the unique
+  values of **one** annotation of its dataset (`"compartment": "x"` for sample
+  annotations, `"z"` for variable annotations; `"annotation"` names it).
+  Choosing a value calls `modifyFilter('guess', annotation, 'like', value)`
+  serially on every CanvasXpress instance in the dashboard, filtering each
+  panel to the matching samples/variables; "All" clears (`resetDataFilter`). Like text
+  elements, control panels float free on the grid and may overlap any panel.
+
+  ```jsonc
+  "panels": {
+    "tissue-filter": { "type": "control", "title": "Tissue", "dataRef": "sales",
+      "compartment": "x", "annotation": "Tissue", "style": "auto" }
+  }
+  ```
 - The spec is **forward-compatible**: unknown fields are ignored; `version` gates
   migrations.
 
@@ -172,6 +187,62 @@ runs server-side.
 
 The cache is process-wide by default; pass `options.cache = new Map()` to isolate
 a dashboard, or `options.ttl` to set a default lifetime for sources without one.
+
+### Per-user database sources (bridged canvasxpress-connectors)
+
+The demo server goes one step further and mounts the **full
+canvasxpress-connectors BYO-database app** at `/connectors`, with a **bridged
+session** — users sign in once (to the dashboards app) and get their own
+database sources with no second login:
+
+```python
+# examples/serve.py (requires: pip install 'canvasxpress-connectors[sql]')
+from cx_connectors.store import Store
+from cx_connectors.web.byo_app import create_byo_app
+
+store = Store(db_path, encryption_key)            # conn strings stored ENCRYPTED
+app.mount("/connectors", create_byo_app(store=store, serve_static=False))
+```
+
+**How the session bridge works.** The two apps keep separate session cookies
+(`cxd_session` / `cxc_session`) and user tables. `GET /api/connectors/credentials`
+— guarded by the *dashboards* session — returns a derived credential for the
+connectors app: same username, password = `HMAC(SESSION_SECRET, user)` (stable,
+never stored, only obtainable with a valid dashboards session). The front-end
+fetches it and POSTs `/connectors/auth/login` behind the scenes; from then on
+every `/connectors/*` call is authenticated as that user.
+
+**In the app.** The Data page shows a **Database sources** card: each user's
+registered sources (the demo seeds `inventory` and `furniture-only`, backed by
+a real SQLite database COMMITTED to the repo — `examples/data/inventory.db`,
+regenerate with `examples/data/make_inventory_db.py` — and opened strictly
+read-only via `sqlite:///file:…?mode=ro&uri=true`), a **+ Database** form (name, connection URL, read-only SQL),
+per-source **edit** (✎ opens a floating dialog, prefilled; saving upserts by
+name) and delete, each row showing rows×cols · backend · last-saved date,
+and click-to-preview — the preview queries the database
+LIVE through the connectors app and renders the result as a table. The
+Builder's per-panel **Data dropdown** also lists the user's database
+sources (🗄) — picking one binds the panel to a live connector source.
+
+**Binding a source in a spec** is the standard connector shape:
+
+```jsonc
+"data": {
+  "sales": { "kind": "connector", "url": "/connectors/api/data?source=my-sales", "refresh": 60 }
+}
+```
+
+**Configuration & guarantees:**
+
+- `ENCRYPTION_KEY` — Fernet key encrypting stored connection strings. The demo
+  server reads it from `.env` or generates one and persists it at
+  `examples/.cxd-demo/encryption.key`. Losing the key orphans stored sources.
+- `SESSION_SECRET` is shared by both apps and also drives the bridge HMAC.
+- SQL is validated **read-only** by `SqlSource` before it is saved or run;
+  credentials never reach the browser; users are isolated by session.
+- Without `canvasxpress-connectors[sql]` installed the mount is skipped with a
+  log note (and the seeded SQLite demo dataset falls back to stdlib sqlite3) —
+  the server always boots.
 
 ---
 

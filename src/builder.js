@@ -13,7 +13,7 @@
  */
 
 import { injectStyles } from './styles.js';
-import { renderDashboard, resizeInstance, sanitizeHtml } from './renderDashboard.js';
+import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames } from './renderDashboard.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
 import { addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, blankSpec, DEFAULT_COLS }
   from './builderModel.js';
@@ -211,6 +211,7 @@ export function createBuilder(target, options) {
   // lets a host UI (e.g. a dataset checklist) own which datasets are in play.
   var limitDatasetsToSpec = !!options.limitDatasetsToSpec;
   var addPanelBtn = null;   // disabled while no data source is declared (see updateAddPanelState)
+  var addControlBtn = null; // disabled until the dashboard has data AND a graph panel
   var baseUrl = options.baseUrl || '';   // cxd_server origin for kind:"dataset" sources
   var CX = options.CanvasXpress || (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
   var selectedId = null;
@@ -220,6 +221,7 @@ export function createBuilder(target, options) {
   var cellEls = {};         // panelId -> panel cell element
   var instByPanel = {};     // panelId -> CanvasXpress instance
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
+  var availableConnectors = []; // connector sources ({name, url}) from options.listConnectorSources
   var liveRefs = {};        // data-source names the current liveHandle was built with
   var savedTextRange = null; // last selection inside a text editor (for format buttons)
 
@@ -260,28 +262,32 @@ export function createBuilder(target, options) {
   function buildToolbar() {
     toolbarHost.innerHTML = '';
     toolbarHost.classList.add('cxb-topbar');
-    // "Create" actions (dashboard title + add panel/data) — one group.
-    var left = el('div', 'cxb-tgroup');
+    // Row 1: "create" actions (dashboard title + add panel/text/control/data)
+    // and Save, always on one line.
+    var row1 = el('div', 'cxb-trow');
     addPanelBtn = button('+ Panel', function () { doAddPanel(); });
+    addControlBtn = button('+ Control', function () { doAddControl(); });
     var createActions = [titleInput, addPanelBtn,
-      button('+ Text', function () { doAddText(); })];
+      button('+ Text', function () { doAddText(); }),
+      addControlBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
-    append(left, createActions);
-    var right = el('div', 'cxb-tgroup');
-    append(right, [button('Save', function () { doSave(); }, 'cxb-btn-primary')]);
-    // A spacer separates the create-actions group from the selected-panel
-    // properties group (propsGroup: panel title + data source), so the two —
-    // which both mention "panel"/"data" — read as distinct.
-    append(toolbarHost, [left, el('div', 'cxb-spacer'), propsGroup, el('div', 'cxb-spacer'), right]);
+    createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
+    append(row1, createActions);
+    // Row 2: the selected element's configuration. The row is ALWAYS present
+    // (min-height reserved in CSS), so selecting or adding an element never
+    // changes the toolbar height — the stage doesn't jump.
+    append(toolbarHost, [row1, propsGroup]);
   }
   buildToolbar();
   updateAddPanelState();
 
-  var msg = el('div', 'cxb-msg');
-  root.appendChild(msg);
-
+  // The stage comes FIRST so the dashboard starts at the same offset as the
+  // viewer pages; the status message line sits below it.
   var stage = el('div', 'cxb-stage');
   root.appendChild(stage);
+
+  var msg = el('div', 'cxb-msg');
+  root.appendChild(msg);
   // Clicking empty space (not a panel) stops the edit state — deselects the
   // current panel and clears its properties from the toolbar.
   on(stage, 'click', function (ev) {
@@ -310,6 +316,14 @@ export function createBuilder(target, options) {
    * @returns {void}
    */
   function loadDatasets() {
+    if (typeof options.listConnectorSources === 'function') {
+      // Host-provided database/connector sources ({name, url}) — offered in
+      // the Data dropdown alongside stored datasets.
+      Promise.resolve(options.listConnectorSources()).then(function (list) {
+        availableConnectors = list || [];
+        if (selectedId) renderProps();
+      }, function () { /* leave availableConnectors as-is on failure */ });
+    }
     if (!client || typeof client.listDatasets !== 'function') return;
     client.listDatasets().then(function (list) {
       availableDatasets = list || [];
@@ -343,6 +357,28 @@ export function createBuilder(target, options) {
   function doAddText() {
     var id = uniquePanelId(spec);
     commit(addPanel(spec, { id: id, type: 'text', text: 'Click to edit text…', w: 4, h: 1 }), false);
+    selectedId = id;
+    if (liveHandle && liveHandle.addPanel && gridEl) {
+      lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
+    } else {
+      rebuild();
+    }
+  }
+
+  /**
+   * Add an annotation-filter control and select it. The control binds ONE
+   * annotation of one dataset; its properties (data / scope / annotation /
+   * style) are edited in the toolbar props group. Like text elements it floats
+   * free on the grid and may overlap any panel.
+   * @returns {void}
+   */
+  function doAddControl() {
+    var id = uniquePanelId(spec);
+    var firstRef = Object.keys(spec.data || {})[0];
+    commit(addPanel(spec, {
+      id: id, type: 'control', title: 'Filter', dataRef: firstRef,
+      compartment: 'x', annotation: '', style: 'auto', w: 4, h: 2
+    }), false);
     selectedId = id;
     if (liveHandle && liveHandle.addPanel && gridEl) {
       lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
@@ -440,9 +476,10 @@ export function createBuilder(target, options) {
 
     var host = el('div');
     stage.appendChild(host);
-    // Inset the canvas so the corner resize handle sits in a margin, not on the
-    // graph. A spec-level canvasInset (Settings) wins; 18 is the editing default.
-    var opts = { CanvasXpress: CX, validate: false, canvasInset: 18, baseUrl: baseUrl, observeResize: false };
+    // WYSIWYG: the builder renders with EXACTLY the options the viewer pages
+    // use (no editing-only canvasInset) so what you build is what a client
+    // sees. Only a spec-level canvasInset (Settings) applies, as everywhere.
+    var opts = { CanvasXpress: CX, validate: false, baseUrl: baseUrl, observeResize: false };
     opts.onPanelRendered = decorate;
     opts.onControlRendered = decorateControl;
     // Record the sources this render resolves against; the live handle closes
@@ -519,8 +556,10 @@ export function createBuilder(target, options) {
    */
   function decorate(info) {
     var cell = info.cell;
-    var isText = info.type === 'text' ||
-      (spec.panels[info.panelId] && spec.panels[info.panelId].type === 'text');
+    var panelType = info.type ||
+      (spec.panels[info.panelId] && spec.panels[info.panelId].type);
+    var isText = panelType === 'text';
+    var isControl = panelType === 'control';
     cell.classList.add('cxb-cell');
     if (info.panelId === selectedId) cell.classList.add('cxb-selected');
     cellEls[info.panelId] = cell;
@@ -540,7 +579,7 @@ export function createBuilder(target, options) {
     on(grip, 'pointerdown', function (ev) { startDrag(ev, info.panelId, cols, rowHeight, gap); });
     on(grip, 'click', function (ev) { stop(ev); selectPanel(info.panelId); });
     var tools = el('span', 'cxb-tools');
-    if (!isText) {
+    if (!isText && !isControl) {
       var gear = iconBtn('⚙', 'Customize graph', function (ev) {
         stop(ev);
         var inst = instByPanel[info.panelId];
@@ -572,6 +611,9 @@ export function createBuilder(target, options) {
     if (isText) {
       var textEl = cell.querySelector('.cxd-text');
       if (textEl) setupTextEditing(textEl, info.panelId);
+    } else if (isControl) {
+      // Clicking the widget selects the control (its inputs keep working).
+      on(cell, 'click', function () { if (selectedId !== info.panelId) selectPanel(info.panelId); });
     } else {
       setupPanelDrop(cell, info.panelId);
     }
@@ -939,11 +981,19 @@ export function createBuilder(target, options) {
     });
 
     // Text elements: edit inline (contenteditable); the toolbar hosts the
-    // formatting controls (bold/italic/underline, colour, size).
+    // formatting controls (bold/italic/underline, colour, size) plus the
+    // cell alignment fields.
     if (panel.type === 'text') {
       var textLabel = el('span', 'cxb-tlabel');
       textLabel.textContent = 'Text';
-      append(propsGroup, [textLabel, buildTextFormatBar(panel)]);
+      append(propsGroup, [textLabel, buildTextFormatBar(panel)].concat(alignmentFields(panel)));
+      return;
+    }
+
+    // Annotation-filter controls: label + data source + scope (samples /
+    // variables) + annotation + widget style. One annotation per control.
+    if (panel.type === 'control') {
+      renderControlProps(panel, refs, titleField);
       return;
     }
 
@@ -972,8 +1022,183 @@ export function createBuilder(target, options) {
   }
 
 
+  /**
+   * Toolbar properties for an annotation-filter control: Label (+ show/hide
+   * checkbox), Data, Annotation (enumerated from the bound dataset's metadata,
+   * sample and variable annotations together — the compartment is detected
+   * from the chosen name), and widget Style. Committing annotation/style
+   * re-renders just this control so the live widget follows immediately.
+   * @param {object} panel - The selected control panel.
+   * @param {string[]} refs - Current spec data-source names.
+   * @param {HTMLInputElement} titleField - The shared title input (as Label).
+   * @returns {void}
+   * @private
+   */
+  function renderControlProps(panel, refs, titleField) {
+    var labelTag = el('span', 'cxb-tlabel');
+    labelTag.textContent = 'Filter';
+    titleField.style.width = '90px';   // compact: the whole row fits one line
+    // Keep the live widget's inline label in step while typing.
+    on(titleField, 'input', function () {
+      var cell = cellEls[selectedId];
+      var lbl = cell && cell.querySelector('.cxd-annctl-label');
+      if (lbl) lbl.textContent = titleField.value;
+    });
+
+    // Whether the widget shows its label in the dashboard.
+    var labelToggle = el('label', 'cxb-check');
+    var labelCheck = el('input');
+    labelCheck.type = 'checkbox';
+    labelCheck.checked = !panel.hideTitle;
+    on(labelCheck, 'change', function () {
+      commit(updatePanel(spec, selectedId, { hideTitle: !labelCheck.checked }), false);
+      rerenderPanel(selectedId);
+    });
+    var labelToggleText = el('span');
+    labelToggleText.textContent = 'Title';
+    labelToggle.appendChild(labelCheck);
+    labelToggle.appendChild(labelToggleText);
+    labelToggle.setAttribute('title', 'Show the filter title in the dashboard');
+
+    var dataLabel = el('span', 'cxb-tlabel');
+    dataLabel.textContent = 'Data';
+    var dsField = buildDataSelect(panel, refs);
+    dsField.setAttribute('title', 'Data source');
+
+    // Annotation names from BOTH compartments; choosing one detects whether it
+    // is a sample ('x') or variable ('z') annotation — no Scope field needed.
+    var COMP_OPT = ':';   // option value = compartment + ':' + name
+    var annField = el('select');
+    annField.setAttribute('title', 'Annotation');
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = panel.dataRef ? '(choose annotation)' : '(bind data first)';
+    annField.appendChild(placeholder);
+    var currentValue = (panel.compartment || 'x') + COMP_OPT + panel.annotation;
+    if (panel.annotation) {
+      // Show the current pick immediately; the resolved list replaces it below.
+      var cur = document.createElement('option');
+      cur.value = currentValue;
+      cur.textContent = panel.annotation;
+      annField.appendChild(cur);
+      annField.value = currentValue;
+    }
+    var editingId = selectedId;
+    function fillAnnotations(data) {
+      if (selectedId !== editingId) return;   // selection moved on
+      var xNames = annotationNames(data, 'x');
+      var zNames = annotationNames(data, 'z');
+      while (annField.options.length > 1) annField.remove(1);
+      if (!xNames.length && !zNames.length) placeholder.textContent = '(no annotations)';
+      function addNames(names, comp, host) {
+        names.forEach(function (name) {
+          var o = document.createElement('option');
+          o.value = comp + COMP_OPT + name;
+          o.textContent = name;
+          host.appendChild(o);
+        });
+      }
+      if (xNames.length && zNames.length) {
+        // Both kinds present: group them so same-named annotations stay distinct.
+        var gx = document.createElement('optgroup');
+        gx.label = 'Samples';
+        addNames(xNames, 'x', gx);
+        annField.appendChild(gx);
+        var gz = document.createElement('optgroup');
+        gz.label = 'Variables';
+        addNames(zNames, 'z', gz);
+        annField.appendChild(gz);
+      } else {
+        addNames(xNames, 'x', annField);
+        addNames(zNames, 'z', annField);
+      }
+      var have = xNames.indexOf(panel.annotation) >= 0 || zNames.indexOf(panel.annotation) >= 0;
+      annField.value = have ? currentValue : '';
+      if (annField.value !== currentValue && have) {
+        // The stored compartment didn't match where the name actually lives —
+        // select by detected compartment instead.
+        annField.value = (xNames.indexOf(panel.annotation) >= 0 ? 'x' : 'z') + COMP_OPT + panel.annotation;
+      }
+    }
+    if (panel.dataRef) {
+      // Prefer the metadata a live panel bound to the same source already
+      // holds — no refetch, and it works even when the source can't be
+      // re-resolved right now. Fall back to resolving through the data store.
+      var liveData = null;
+      Object.keys(instByPanel).some(function (id) {
+        var p = spec.panels[id];
+        var inst = instByPanel[id];
+        if (p && p.dataRef === panel.dataRef && inst && inst.data) { liveData = inst.data; return true; }
+        return false;
+      });
+      if (liveData) {
+        fillAnnotations(liveData);
+      } else if (liveHandle && liveHandle.store) {
+        liveHandle.store.resolve(panel.dataRef, (spec.data || {})[panel.dataRef]).then(fillAnnotations,
+          function (err) {
+            if (selectedId !== editingId) return;
+            placeholder.textContent = '(data failed: ' + (err && err.message || err) + ')';
+          });
+      }
+    }
+    on(annField, 'change', function () {
+      var v = annField.value;
+      var sep = v.indexOf(COMP_OPT);
+      var comp = sep > 0 ? v.slice(0, sep) : 'x';
+      var name = sep > 0 ? v.slice(sep + 1) : '';
+      commit(updatePanel(spec, selectedId, { compartment: comp, annotation: name }), false);
+      rerenderPanel(selectedId);
+    });
+
+    var styleField = selectField(['auto', 'dropdown', 'radio', 'buttons'], panel.style || 'auto', function (value) {
+      commit(updatePanel(spec, selectedId, { style: value }), false);
+      rerenderPanel(selectedId);
+    });
+    styleField.setAttribute('title', 'Widget style');
+    labelOptions(styleField, { auto: 'Auto', dropdown: 'Dropdown', radio: 'Radio', buttons: 'Buttons' });
+
+    var annLabel = el('span', 'cxb-tlabel');
+    annLabel.textContent = 'Annotation';
+    var styleLabel = el('span', 'cxb-tlabel');
+    styleLabel.textContent = 'Style';
+    // The show-title checkbox goes LAST, mirroring the Panel props row.
+    append(propsGroup, [labelTag, titleField, dataLabel, dsField,
+      annLabel, annField, styleLabel, styleField]
+      .concat(alignmentFields(panel), [labelToggle]));
+  }
+
+  /**
+   * The Align (left/center/right) + Baseline (top/middle/bottom) fields shared
+   * by text and control props — they position the content within its grid
+   * cell. Committing re-renders just the selected element.
+   * @param {object} panel - The selected panel (reads `align`, `valign`).
+   * @returns {HTMLElement[]} Label + select pairs to append to the props row.
+   * @private
+   */
+  function alignmentFields(panel) {
+    var alignLabel = el('span', 'cxb-tlabel');
+    alignLabel.textContent = 'Align';
+    var alignField = selectField(['left', 'center', 'right'], panel.align || 'left', function (value) {
+      commit(updatePanel(spec, selectedId, { align: value }), false);
+      rerenderPanel(selectedId);
+    });
+    alignField.setAttribute('title', 'Horizontal alignment in the cell');
+    labelOptions(alignField, { left: 'Left', center: 'Center', right: 'Right' });
+
+    var valignField = selectField(['top', 'middle', 'bottom'], panel.valign || 'top', function (value) {
+      commit(updatePanel(spec, selectedId, { valign: value }), false);
+      rerenderPanel(selectedId);
+    });
+    valignField.setAttribute('title', 'Vertical alignment (baseline) in the cell');
+    labelOptions(valignField, { top: 'Top', middle: 'Middle', bottom: 'Bottom' });
+    // One label for both axes keeps the control props row on a single line.
+    return [alignLabel, alignField, valignField];
+  }
+
   // Sentinel prefix marking a "use a stored dataset" option (vs a spec ref).
   var STORE_OPT = ' ds:';
+  // Sentinel prefix marking a "use a database/connector source" option.
+  var CONN_OPT = ' cx:';
 
   /**
    * Build the panel Data dropdown. Every dataset from the store is directly
@@ -1018,10 +1243,14 @@ export function createBuilder(target, options) {
     }
     availableDatasets.forEach(function (d, i) {
       if (declared && !declared[d.id]) return;
-      var bits = [];
-      if (d.rows != null) bits.push(d.rows + 'x' + (d.cols != null ? d.cols : '?'));
-      if (d.store) bits.push(d.store);
-      addOption(STORE_OPT + i, (d.title || d.id) + (bits.length ? '  (' + bits.join(' · ') + ')' : ''));
+      addOption(STORE_OPT + i, (d.title || d.id) + (d.store ? '  (' + d.store + ')' : ''));
+    });
+
+    // Database/connector sources the host exposes (e.g. per-user
+    // canvasxpress-connectors sources) — picking one binds the panel to a
+    // live-querying connector source.
+    availableConnectors.forEach(function (c, i) {
+      addOption(CONN_OPT + i, '\u{1F5C4} ' + (c.title || c.name));
     });
 
     // Reflect the panel's current binding as the selected option.
@@ -1035,8 +1264,18 @@ export function createBuilder(target, options) {
         addOption(panel.dataRef, curSrc.id);   // dataset not loaded yet
         current = panel.dataRef;
       }
+    } else if (curSrc && curSrc.kind === 'connector') {
+      var ci = -1;
+      availableConnectors.forEach(function (c, i) { if (ci < 0 && c.url === curSrc.url) ci = i; });
+      current = ci >= 0 ? CONN_OPT + ci : panel.dataRef;
+      if (ci >= 0) {
+        // Remove the duplicate plain-ref option (the connector row covers it).
+        for (var oi = select.options.length - 1; oi >= 0; oi--) {
+          if (select.options[oi].value === panel.dataRef) select.remove(oi);
+        }
+      }
     } else if (curSrc) {
-      current = panel.dataRef;   // inline / connector
+      current = panel.dataRef;   // inline
     }
     select.value = current;
 
@@ -1045,6 +1284,11 @@ export function createBuilder(target, options) {
       if (v.indexOf(STORE_OPT) === 0) {
         var d = availableDatasets[parseInt(v.slice(STORE_OPT.length), 10)];
         if (d) useDataset(d); else renderProps();
+        return;
+      }
+      if (v.indexOf(CONN_OPT) === 0) {
+        var c = availableConnectors[parseInt(v.slice(CONN_OPT.length), 10)];
+        if (c) useConnectorSource(c); else renderProps();
         return;
       }
       // Changing the source re-instantiates this panel's graph.
@@ -1100,6 +1344,31 @@ export function createBuilder(target, options) {
     // (syncLiveConfigs). Drop this panel's stale instance so that fold doesn't
     // clobber the config we just adopted from the dataset.
     if (adoptedConfig) delete instByPanel[selectedId];
+    rerenderPanel(selectedId);
+    renderProps();
+  }
+
+  /**
+   * Bind the selected panel to a database/connector source, reusing a spec
+   * source that already points at its URL or creating one transparently.
+   * @param {object} connector - `{name, url}` from options.listConnectorSources.
+   * @returns {void}
+   * @private
+   */
+  function useConnectorSource(connector) {
+    var existing = spec.data || {};
+    var name = null;
+    Object.keys(existing).forEach(function (ref) {
+      var srcx = existing[ref];
+      if (!name && srcx && srcx.kind === 'connector' && srcx.url === connector.url) name = ref;
+    });
+    var next = spec;
+    if (!name) {
+      name = uniqueSourceName(connector.name);
+      next = setDataSource(spec, name, { kind: 'connector', url: connector.url });
+    }
+    next = updatePanel(next, selectedId, { dataRef: name });
+    commit(next, false);
     rerenderPanel(selectedId);
     renderProps();
   }
@@ -1242,7 +1511,7 @@ export function createBuilder(target, options) {
     if (!inst || !cell) return;
     var body = cell.querySelector('.cxd-panel-body') || cell;
     var box = body.getBoundingClientRect();
-    var inset = typeof spec.canvasInset === 'number' ? spec.canvasInset : 18;
+    var inset = typeof spec.canvasInset === 'number' ? spec.canvasInset : 0;
     resizeInstance(inst, Math.floor(box.width) - inset, Math.floor(box.height) - inset);
   }
 
@@ -1429,13 +1698,24 @@ export function createBuilder(target, options) {
   /**
    * With limitDatasetsToSpec, a panel can only bind to a declared source — so
    * "+ Panel" is disabled until the spec has at least one data source.
+   * "+ Control" additionally needs a graph panel: an annotation filter selects
+   * by broadcasting to bound instances, so without data and a panel it can do
+   * nothing.
    * @returns {void}
    */
   function updateAddPanelState() {
-    if (!addPanelBtn || !limitDatasetsToSpec) return;
     var hasData = Object.keys(spec.data || {}).length > 0;
-    addPanelBtn.disabled = !hasData;
-    addPanelBtn.title = hasData ? '' : 'Select a dataset first';
+    if (addPanelBtn && limitDatasetsToSpec) {
+      addPanelBtn.disabled = !hasData;
+      addPanelBtn.title = hasData ? '' : 'Select a dataset first';
+    }
+    if (addControlBtn) {
+      var hasGraphPanel = Object.keys(spec.panels || {}).some(function (id) {
+        return !spec.panels[id].type;   // graph panels carry no type marker
+      });
+      addControlBtn.disabled = !(hasData && hasGraphPanel);
+      addControlBtn.title = addControlBtn.disabled ? 'Add a panel with data first' : '';
+    }
   }
 
   /** @returns {object} A deep copy of the current spec (raw, no live sync). */
@@ -1683,6 +1963,20 @@ function selectField(options, value, onValue) {
   select.value = value;
   on(select, 'change', function () { onValue(select.value); });
   return select;
+}
+
+/**
+ * Replace a select's option labels with human-readable text (values unchanged).
+ * @param {HTMLSelectElement} select - The select.
+ * @param {object} labels - value -> display label.
+ * @returns {void}
+ * @private
+ */
+function labelOptions(select, labels) {
+  for (var i = 0; i < select.options.length; i++) {
+    var o = select.options[i];
+    if (Object.prototype.hasOwnProperty.call(labels, o.value)) o.textContent = labels[o.value];
+  }
 }
 
 /**

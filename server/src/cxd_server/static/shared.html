@@ -25,8 +25,9 @@
   </style>
 </head>
 <body>
+  <!-- No dashboard name: the dashboard renders name-free everywhere (builder,
+       dashboards page, share view) — only a read-only badge + owner remain. -->
   <header>
-    <h1 id="title">Shared dashboard</h1>
     <span class="badge">read-only</span>
     <span class="owner" id="owner"></span>
   </header>
@@ -54,7 +55,6 @@
       client.loadShared(token).then(function (result) {
         var spec = result.spec;
         document.getElementById('message').style.display = 'none';
-        document.getElementById('title').textContent = spec.title || spec.id || 'Shared dashboard';
         if (result.owner) document.getElementById('owner').textContent = 'shared by ' + result.owner;
         return CanvasXpressDashboards.renderDashboard(spec, 'dashboard');
       }).catch(function (err) {
