@@ -301,8 +301,8 @@ app = create_dashboards_app(serve_static=False)
 
 
 # Serve the app (builder) directly at / — routes win over the static mount.
-# builder.html's relative "../dist/…" resolves to /dist/… from here, which the
-# repo mount below serves.
+# builder.html loads the bundle app-root-relative ("canvasxpress-dashboards.umd.js"),
+# which resolves to the _shared_bundle route below on both / and a /dashboards/ subpath.
 @app.get("/", include_in_schema=False)
 def _root():
     from fastapi.responses import FileResponse

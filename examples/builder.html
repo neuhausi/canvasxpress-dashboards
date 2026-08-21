@@ -11,8 +11,12 @@
        so the build transform still finds the block. -->
   <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
   <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
-  <!-- Cache-bust the local bundle so edits show up on a plain reload (dev convenience). -->
-  <script>document.write('<script src="../dist/canvasxpress-dashboards.umd.js?v=' + Date.now() + '"><\/script>');</script>
+  <!-- Cache-bust the local bundle so edits show up on a plain reload (dev convenience).
+       Load it app-root-relative (NOT ../dist/): under a reverse-proxy subpath like
+       /dashboards/ the "../dist/" form climbs OUT of the mount to the site-root /dist/
+       (a stale copy); the bare name resolves to serve.py's same-origin bundle route on
+       both the dev server (/) and the subpath (/dashboards/). -->
+  <script>document.write('<script src="canvasxpress-dashboards.umd.js?v=' + Date.now() + '"><\/script>');</script>
   <!--CX-LIB-END-->
 
   <style>
