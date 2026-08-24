@@ -627,6 +627,14 @@ function mergeConfig(config, broadcastGroup, owner) {
   if (owner && owner.broadcast === false && !Object.prototype.hasOwnProperty.call(merged, 'broadcast')) {
     merged.broadcast = false;
   }
+  // The dashboard coordinates cross-panel filtering itself via the annotation
+  // "+ Control" (applyControlFilters -> modifyFilter on a private broadcastGroup),
+  // so disable CanvasXpress's own DataFilter-UI filter broadcast (broadcastFilter,
+  // default true in the engine) to avoid double-applying / fighting the control.
+  // A panel/control config may still re-enable it explicitly.
+  if (!Object.prototype.hasOwnProperty.call(merged, 'broadcastFilter')) {
+    merged.broadcastFilter = false;
+  }
   // Every dashboard graph is sized by its cell, never by CanvasXpress's own
   // interactive resizer — that native corner-drag handle conflicts with the
   // builder's resize handle. Panels resize via an explicit setDimensions() call

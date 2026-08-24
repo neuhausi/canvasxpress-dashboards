@@ -56,9 +56,12 @@ test('renders one canvas per layout item and control, all in the broadcast group
   assert.equal(created.length, 3);
   assert.equal(handle.instances.length, 3);
 
-  // Every instance got the dashboard broadcastGroup.
+  // Every instance got the dashboard broadcastGroup, and the engine's own
+  // DataFilter-UI filter broadcast is disabled so it never double-applies with
+  // the dashboard's annotation "+ Control" (broadcastFilter defaults true engine-side).
   created.forEach(function (c) {
     assert.equal(c.config.broadcastGroup, 'grp-sales');
+    assert.equal(c.config.broadcastFilter, false);
   });
 
   // Grid has 12 content columns (interleaved with gap tracks).
