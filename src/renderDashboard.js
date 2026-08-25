@@ -116,25 +116,46 @@ export function renderDashboard(spec, target, options) {
   var controlWidgets = [];
 
   /**
+   * True when an instance's bound data actually carries the annotation —
+   * as a sample annotation (data.x) or a variable annotation (data.z).
+   * Filtering an instance on an annotation it doesn't have corrupts its
+   * rendering (meters/lines on unrelated datasets), so such picks are
+   * skipped per instance.
+   * @param {object} inst - Live CanvasXpress instance.
+   * @param {string} annotation - Annotation name.
+   * @returns {boolean} Whether the annotation exists in the instance's data.
+   */
+  function instanceHasAnnotation(inst, annotation) {
+    var d = inst && inst.data;
+    if (!d || !annotation) return false;
+    return !!((d.x && d.x[annotation] != null) || (d.z && d.z[annotation] != null));
+  }
+
+  /**
    * Re-apply the CURRENT set of control picks serially to every instance:
    * clear all filters, then modifyFilter('guess', annotation, 'like', value)
-   * for each control that has a pick. Broadcasting is suppressed per call —
-   * each instance is filtered directly — and only the last call redraws.
+   * for each control whose pick's annotation exists in that instance's data —
+   * panels on unrelated datasets are left untouched (just reset). Broadcasting
+   * is suppressed per call — each instance is filtered directly — and only the
+   * last call redraws.
    * @returns {void}
    */
   function applyControlFilters() {
     var picks = controlWidgets.filter(function (w) { return w.value != null; });
     instances.slice().forEach(function (inst) {
       if (!inst) return;
+      var applicable = picks.filter(function (w) {
+        return instanceHasAnnotation(inst, w.annotation);
+      });
       var savedGroup = inst.broadcastGroup;
       inst.broadcastGroup = '__cxd_annctl_serial__';
       try {
-        if (!picks.length) {
+        if (!applicable.length) {
           if (typeof inst.resetDataFilter === 'function') inst.resetDataFilter(null, false);
         } else if (typeof inst.modifyFilter === 'function') {
           if (typeof inst.resetDataFilter === 'function') inst.resetDataFilter(null, true);
-          picks.forEach(function (w, i) {
-            inst.modifyFilter('guess', w.annotation, 'like', w.value, i < picks.length - 1);
+          applicable.forEach(function (w, i) {
+            inst.modifyFilter('guess', w.annotation, 'like', w.value, i < applicable.length - 1);
           });
         }
       } catch (e) { /* keep filtering the remaining instances */
@@ -613,11 +634,26 @@ function resolveElement(target) {
  * @returns {object} A new merged config object.
  * @private
  */
+/**
+ * Config keys that are session state, not authored intent. A spec can carry
+ * them anyway (an old builder save, a hand-edited JSON, an imported spec) and
+ * CanvasXpress applies them at construction — a serialized broadcast filter
+ * (filterSmpBy/filterVarBy) then crashes init ("Cannot read properties of
+ * null") and bricks the whole page. Stripped defensively on EVERY render, so
+ * a polluted spec degrades to "renders unfiltered" instead of "renders
+ * nothing".
+ * @type {Object<string, boolean>}
+ * @private
+ */
+var UNSAFE_CONFIG_KEYS = { filterSmpBy: true, filterVarBy: true };
+
 function mergeConfig(config, broadcastGroup, owner) {
   var merged = {};
   if (config) {
     for (var k in config) {
-      if (Object.prototype.hasOwnProperty.call(config, k)) merged[k] = config[k];
+      if (Object.prototype.hasOwnProperty.call(config, k) && !UNSAFE_CONFIG_KEYS[k]) {
+        merged[k] = config[k];
+      }
     }
   }
   if (!Object.prototype.hasOwnProperty.call(merged, 'broadcastGroup')) {

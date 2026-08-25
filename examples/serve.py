@@ -254,43 +254,31 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.save_dashboard(DEMO_USER, bench, now)
         print("  [seed] shipped dashboard: %s" % bench["id"])
 
+    # KPI Overview: ring-card meters + region filter; its inline datasets move
+    # into the dataset store (editable in the app) and the spec binds to them.
+    kpi = load_spec("kpi-overview.spec.json")
+    if kpi and kpi["id"] not in saved:
+        kpi = copy.deepcopy(kpi)
+        for ref, source in kpi.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            dataset_id = "kpi-" + ref
+            if dataset_id not in have:
+                datasets.create(DEMO_USER, source["value"], now,
+                                title="KPI: " + ref, dataset_id=dataset_id)
+            kpi["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+        dashboards.save_dashboard(DEMO_USER, kpi, now)
+        print("  [seed] shipped dashboard: %s" % kpi["id"])
+
     # Sales Overview: small inline spec, shipped as-is.
     sales = load_spec("sales-overview.spec.json")
     if sales and sales["id"] not in saved:
         dashboards.save_dashboard(DEMO_USER, sales, now)
         print("  [seed] shipped dashboard: %s" % sales["id"])
 
-    # Inventory (Live SQL): binds to the connectors-style endpoint that queries
-    # the demo SQLite database on every fetch — a genuinely database-backed
-    # dashboard (refresh re-polls and live-updates the panels).
-    inv = {
-        "id": "inventory-live",
-        "title": "Inventory (Live SQL)",
-        "version": 1,
-        "broadcastGroup": "inventory-live",
-        "layout": {
-            "cols": 12, "rowHeight": 30, "gap": 12,
-            "items": [
-                {"panel": "stock", "x": 0, "y": 0, "w": 6, "h": 12},
-                {"panel": "price", "x": 6, "y": 0, "w": 6, "h": 12},
-                {"panel": "wh",    "x": 0, "y": 12, "w": 5, "h": 2},
-            ],
-        },
-        "data": {
-            "inv": {"kind": "connector", "url": "/api/data?source=inventory", "refresh": 30}
-        },
-        "panels": {
-            "stock": {"title": "Stock by item", "dataRef": "inv",
-                      "config": {"graphType": "Bar"}},
-            "price": {"title": "Price by item", "dataRef": "inv",
-                      "config": {"graphType": "Bar", "measures": ["Price"]}},
-            "wh":    {"type": "control", "title": "Warehouse", "dataRef": "inv",
-                      "compartment": "x", "annotation": "Warehouse", "style": "auto"},
-        },
-    }
-    if inv["id"] not in saved:
-        dashboards.save_dashboard(DEMO_USER, inv, now)
-        print("  [seed] shipped dashboard: %s" % inv["id"])
+    # (The old Inventory (Live SQL) shipped dashboard was retired — its
+    # connector endpoint /api/data?source=inventory remains for the docs and
+    # for hand-built connector dashboards.)
 
 
 _seed()

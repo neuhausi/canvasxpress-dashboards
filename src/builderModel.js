@@ -129,24 +129,21 @@ function itemsCollide(a, b) {
 }
 
 /**
- * Resolve panel collisions after a move/resize, react-grid-layout style:
- * the active panel keeps its place, colliding panels are pushed DOWN, and
- * everything is then compacted upward into the gaps (so shrinking a panel
- * pulls the ones below it back up). Text and control panels are free-floating —
- * they neither push nor get pushed, and may overlap anything.
+ * Resolve panel collisions after a resize (or programmatic placement): the
+ * active panel keeps its place, colliding panels are pushed DOWN. The layout
+ * is WYSIWYG — there is no auto-compaction, so panels stay where the user put
+ * them, gaps included. Text panels are free-floating — they neither push nor
+ * get pushed, and may overlap anything. Control panels are SOLID: they hold
+ * their row, so graphs can never land on top of a filter bar and hide it.
  *
  * @param {object} spec - The current spec.
- * @param {string} [activeId] - The panel the user just moved/resized (placed
- *   first so it wins its spot; others yield).
+ * @param {string} [activeId] - The panel the user just resized (placed first
+ *   so it wins its spot; others yield).
  * @returns {object} A new spec with a collision-free solid-panel layout.
  */
 export function resolveCollisions(spec, activeId) {
   var next = cloneSpec(spec);
-  var items = next.layout.items || [];
-  var solids = items.filter(function (it) {
-    var p = next.panels[it.panel];
-    return !(p && (p.type === 'text' || p.type === 'control'));
-  });
+  var solids = solidItems(next);
   if (solids.length < 2) return next;
 
   // Placement order: the active panel first (it owns its position), then the
@@ -158,30 +155,72 @@ export function resolveCollisions(spec, activeId) {
   });
 
   // Push phase: place each item; while it overlaps anything already placed,
-  // move it down one row.
+  // move it down one row. There is NO compaction pass: panels stay where the
+  // user put them (gaps and all) — auto-compacting yanks panels back up the
+  // moment they are dropped over empty space, which reads as the layout
+  // fighting the user.
   var placed = [];
   ordered.forEach(function (it) {
-    var guard = 0;
     var overlaps = function (p) { return itemsCollide(it, p); };
+    var guard = 0;
     while (placed.some(overlaps) && guard++ < 1000) it.y += 1;
     placed.push(it);
   });
+  return next;
+}
 
-  // Compact phase: top-to-bottom, pull every item (active included) as far up
-  // as it can go without colliding — closing the gap a shrink/move left behind.
-  var byRow = placed.slice().sort(function (a, b) { return (a.y - b.y) || (a.x - b.x); });
-  var settled = [];
-  byRow.forEach(function (it) {
-    var canRise = function () {
-      if (it.y <= 0) return false;
-      it.y -= 1;
-      var hit = settled.some(function (p) { return itemsCollide(it, p); });
-      if (hit) { it.y += 1; return false; }
-      return true;
-    };
+/**
+ * The layout items that take part in collision resolution: everything except
+ * free-floating text panels. Controls are solid — they hold their row.
+ * @param {object} spec - A (cloned) spec whose items may be mutated in place.
+ * @returns {Array} The solid layout items.
+ * @private
+ */
+function solidItems(spec) {
+  return (spec.layout.items || []).filter(function (it) {
+    var p = spec.panels[it.panel];
+    return !(p && p.type === 'text');
+  });
+}
+
+/**
+ * Resolve a completed (or in-progress) DRAG at a drop position. Unlike
+ * {@link resolveCollisions} — where the active panel always wins its exact
+ * spot — the drop position expresses *ordering intent*: panels are placed
+ * top-to-bottom by their current y (the active panel at its drop y, losing
+ * ties in the direction it moved), each pushed down past earlier ones it
+ * overlaps. There is no auto-compaction: the dropped panel stays EXACTLY
+ * where it was dropped — over empty space, below a wider panel, anywhere —
+ * instead of snapping back to where it came from.
+ *
+ * @param {object} spec - Spec with the active panel already at its drop x/y.
+ * @param {string} activeId - The dragged panel.
+ * @param {boolean} movedDown - True when the drag ended below its start row
+ *   (the active panel then loses y-ties, so "just past the top edge" of a
+ *   panel reads as "below it").
+ * @returns {object} A new spec with a collision-free solid-panel layout.
+ */
+export function resolveDrop(spec, activeId, movedDown) {
+  var next = cloneSpec(spec);
+  var solids = solidItems(next);
+  if (solids.length < 2) return next;
+
+  var ordered = solids.slice().sort(function (a, b) {
+    if (a.y !== b.y) return a.y - b.y;
+    if (a.panel === activeId) return movedDown ? 1 : -1;
+    if (b.panel === activeId) return movedDown ? -1 : 1;
+    return a.x - b.x;
+  });
+
+  // Place in order: each item keeps its y unless it overlaps an earlier one,
+  // in which case it moves down past it. No compaction: the dropped panel
+  // stays EXACTLY where it was dropped, gaps included.
+  var placed = [];
+  ordered.forEach(function (it) {
+    var overlaps = function (p) { return itemsCollide(it, p); };
     var guard = 0;
-    while (canRise() && guard++ < 1000) { /* keep rising */ }
-    settled.push(it);
+    while (placed.some(overlaps) && guard++ < 1000) it.y += 1;
+    placed.push(it);
   });
   return next;
 }

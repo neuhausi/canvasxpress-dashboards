@@ -21,10 +21,13 @@ export var dashboardCss = [
   '  font: 16px/1.35 system-ui, sans-serif; color: var(--cxd-title, #2a2f36); white-space: pre-wrap; word-break: break-word; }',
   // Text elements are chrome-free by default (no border/background) so they sit
   // on the dashboard background; an explicit panel.bg fills the cell instead.
-  '.cxd-text-cell { border: none; background: transparent; }',
+  '.cxd-text-cell { border: none; background: transparent; z-index: 2; }',
   // Annotation-filter controls float free like text: a chrome-less cell holding
   // a compact pill widget, so it reads cleanly when overlapping a graph.
-  '.cxd-annctl-cell { border: none; background: transparent; overflow: visible; }',
+  // Free-floating cells (text/control) stack ABOVE solid panels (z-index) —
+  // collision resolution lets graphs compact through their rows, and without
+  // the raise a control ends up hidden behind whichever panel slid over it.
+  '.cxd-annctl-cell { border: none; background: transparent; overflow: visible; z-index: 3; }',
   '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
   '  padding: 5px 0; background: transparent;',
   '  font: 14px/1.3 system-ui, sans-serif; color: var(--cxd-title,#2a2f36); }',
@@ -91,6 +94,9 @@ export var dashboardCss = [
   // Cells clip exactly like the viewer (the hover chrome sits inside the cell).
   '.cxb-cell { position: relative; }',
   '.cxb-cell.cxb-selected { outline: 2px solid #2f6feb; outline-offset: -1px; z-index: 1; }',
+  // A held (dragged) cell floats above everything, semi-transparent: crossing
+  // another panel reads as "in motion", and the board underneath stays visible.
+  '.cxb-cell.cxb-dragging { opacity: .65; z-index: 10; box-shadow: 0 8px 24px rgba(0,0,0,.25); }',
   '.cxb-cell.cxb-drop { outline: 2px dashed #2f6feb; outline-offset: -3px; background: rgba(47,111,235,0.06); z-index: 2; }',
   '.cxb-cell .cxd-panel-title { cursor: grab; user-select: none; display: flex; align-items: center; gap: 6px; }',
   '.cxb-tools { margin-left: auto; display: inline-flex; gap: 2px; }',
@@ -154,7 +160,9 @@ export var dashboardCss = [
   /* Add-data modal */
   '.cxb-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 10000;',
   '  display: flex; align-items: center; justify-content: center; padding: 20px; }',
-  '.cxb-modal { width: 100%; max-width: 460px; background: var(--cxd-panel-bg,#fff); color: inherit;',
+  // Explicit text color: the card is light even when the page/OS is dark, so
+  // inheriting the page's light text would render near-invisible headings.
+  '.cxb-modal { width: 100%; max-width: 460px; background: #ffffff; color: #24292f;',
   '  border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.25); padding: 18px 18px 14px;',
   '  display: flex; flex-direction: column; gap: 12px; font-family: system-ui, sans-serif; }',
   '.cxb-modal-title { margin: 0; font-size: 17px; }',
@@ -166,6 +174,43 @@ export var dashboardCss = [
   '  background: var(--cxd-panel-bg,#fff); color: inherit; }',
   '.cxb-modal-json { font-family: ui-monospace, Menlo, monospace; font-size:14px; min-height: 130px; resize: vertical; }',
   '.cxb-modal-err { color: var(--cxd-error,#c0392b); font-size:14px; min-height: 17px; }',
+  /* Whole-spec JSON editor (✎ next to the dashboard title): a line-number
+     gutter + a highlight.js-style colorized layer under a transparent-text
+     textarea that owns editing and scrolling. */
+  '.cxb-modal-wide { max-width: 780px; }',
+  '.cxb-jsoned { display: flex; height: 55vh; border: 1px solid var(--cxd-border,#d0d4da);',
+  '  border-radius: 6px; overflow: hidden; background: var(--cxd-panel-bg,#fff); }',
+  '.cxb-jsoned, .cxb-jsoned-gutter, .cxb-jsoned-hl, .cxb-jsoned-hl code, .cxb-jsoned-ta {',
+  '  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }',
+  '.cxb-jsoned-gutter { flex: 0 0 auto; min-width: 44px; padding: 8px 8px 8px 4px; text-align: right;',
+  '  color: var(--cxd-muted,#8a9099); background: rgba(0,0,0,.035); border-right: 1px solid var(--cxd-border,#e2e5ea);',
+  '  overflow: hidden; white-space: pre; user-select: none; }',
+  '.cxb-jsoned-body { position: relative; flex: 1 1 auto; min-width: 0; }',
+  '.cxb-jsoned-hl { position: absolute; inset: 0; margin: 0; padding: 8px 10px; overflow: hidden;',
+  '  white-space: pre; color: var(--cxd-title,#24292f); pointer-events: none; }',
+  // !important beats the generic `.cxb-modal textarea { color: inherit; background: … }`
+  // rule (higher specificity), which otherwise paints the textarea text opaque
+  // ON TOP of the colorized layer — leaving the editor looking uncolored.
+  '.cxb-jsoned-ta { position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box;',
+  '  padding: 8px 10px !important; margin: 0; border: none !important; outline: none; resize: none;',
+  '  overflow: auto; white-space: pre; background: transparent !important; color: transparent !important;',
+  '  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;',
+  '  border-radius: 0; caret-color: #24292f; }',
+  // Vivid token palette. The modal is always light (it lives outside the
+  // themed container), so the editor is explicitly light too — theme-tracking
+  // token colors here just wash out on the white card in OS dark mode.
+  '.cxb-jsoned { background: #ffffff; border-color: #d0d4da; }',
+  '.cxb-jsoned-hl { color: #24292f; }',
+  '.cxb-jsoned-ta { caret-color: #24292f; }',
+  '.cxb-jsoned-gutter { color: #8a9099; background: #f2f4f7; border-color: #e2e5ea; }',
+  // Error-line marker: the line a failed Save points at (parse position or
+  // offending key), cleared as soon as the user edits again.
+  '.cxb-hl-errline { background: rgba(207,34,46,.12); box-shadow: inset 3px 0 0 #cf222e; }',
+  '.cxb-jsoned-gutter-err { color: #cf222e; font-weight: 700; }',
+  '.cxb-hl-attr { color: #0969da; font-weight: 600; }',       // property names: blue
+  '.cxb-hl-string { color: #188038; }',                       // string values: green
+  '.cxb-hl-number { color: #e36209; }',                       // numbers: orange
+  '.cxb-hl-literal { color: #cf222e; font-weight: 600; }',    // true/false/null: red
   '.cxb-modal-footer { display: flex; justify-content: flex-end; gap: 8px; }'
 ].join('\n');
 

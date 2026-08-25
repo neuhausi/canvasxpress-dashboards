@@ -156,13 +156,25 @@ test('addPanel control defaults compartment/style', function () {
   assert.equal(s.panels.c1.annotation, '');
 });
 
-test('control panels float free of collision resolution', function () {
+test('control panels are solid in collision resolution', function () {
   var s = addPanel(blankSpec('d1'), { id: 'p1', dataRef: 'src', x: 0, y: 0, w: 6, h: 4 });
   s = addPanel(s, { id: 'c1', type: 'control', x: 0, y: 0, w: 4, h: 2 });
   var resolved = resolveCollisions(s, 'c1');
   var item = resolved.layout.items.filter(function (i) { return i.panel === 'c1'; })[0];
   var solid = resolved.layout.items.filter(function (i) { return i.panel === 'p1'; })[0];
-  // Overlap kept: neither the control nor the solid panel moved.
+  // The control (active) wins its spot; the graph panel is pushed below it —
+  // a graph can never sit on top of (and hide) a filter bar.
+  assert.deepEqual([item.x, item.y], [0, 0]);
+  assert.deepEqual([solid.x, solid.y], [0, 2]);
+});
+
+test('text panels float free of collision resolution', function () {
+  var s = addPanel(blankSpec('d1'), { id: 'p1', dataRef: 'src', x: 0, y: 0, w: 6, h: 4 });
+  s = addPanel(s, { id: 't1', type: 'text', text: 'hi', x: 0, y: 0, w: 4, h: 2 });
+  var resolved = resolveCollisions(s, 't1');
+  var item = resolved.layout.items.filter(function (i) { return i.panel === 't1'; })[0];
+  var solid = resolved.layout.items.filter(function (i) { return i.panel === 'p1'; })[0];
+  // Overlap kept: neither the text element nor the solid panel moved.
   assert.deepEqual([item.x, item.y], [0, 0]);
   assert.deepEqual([solid.x, solid.y], [0, 0]);
 });

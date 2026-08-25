@@ -23,10 +23,13 @@ var dashboardCss = [
   '  font: 16px/1.35 system-ui, sans-serif; color: var(--cxd-title, #2a2f36); white-space: pre-wrap; word-break: break-word; }',
   // Text elements are chrome-free by default (no border/background) so they sit
   // on the dashboard background; an explicit panel.bg fills the cell instead.
-  '.cxd-text-cell { border: none; background: transparent; }',
+  '.cxd-text-cell { border: none; background: transparent; z-index: 2; }',
   // Annotation-filter controls float free like text: a chrome-less cell holding
   // a compact pill widget, so it reads cleanly when overlapping a graph.
-  '.cxd-annctl-cell { border: none; background: transparent; overflow: visible; }',
+  // Free-floating cells (text/control) stack ABOVE solid panels (z-index) —
+  // collision resolution lets graphs compact through their rows, and without
+  // the raise a control ends up hidden behind whichever panel slid over it.
+  '.cxd-annctl-cell { border: none; background: transparent; overflow: visible; z-index: 3; }',
   '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
   '  padding: 5px 0; background: transparent;',
   '  font: 14px/1.3 system-ui, sans-serif; color: var(--cxd-title,#2a2f36); }',
@@ -93,6 +96,9 @@ var dashboardCss = [
   // Cells clip exactly like the viewer (the hover chrome sits inside the cell).
   '.cxb-cell { position: relative; }',
   '.cxb-cell.cxb-selected { outline: 2px solid #2f6feb; outline-offset: -1px; z-index: 1; }',
+  // A held (dragged) cell floats above everything, semi-transparent: crossing
+  // another panel reads as "in motion", and the board underneath stays visible.
+  '.cxb-cell.cxb-dragging { opacity: .65; z-index: 10; box-shadow: 0 8px 24px rgba(0,0,0,.25); }',
   '.cxb-cell.cxb-drop { outline: 2px dashed #2f6feb; outline-offset: -3px; background: rgba(47,111,235,0.06); z-index: 2; }',
   '.cxb-cell .cxd-panel-title { cursor: grab; user-select: none; display: flex; align-items: center; gap: 6px; }',
   '.cxb-tools { margin-left: auto; display: inline-flex; gap: 2px; }',
@@ -156,7 +162,9 @@ var dashboardCss = [
   /* Add-data modal */
   '.cxb-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 10000;',
   '  display: flex; align-items: center; justify-content: center; padding: 20px; }',
-  '.cxb-modal { width: 100%; max-width: 460px; background: var(--cxd-panel-bg,#fff); color: inherit;',
+  // Explicit text color: the card is light even when the page/OS is dark, so
+  // inheriting the page's light text would render near-invisible headings.
+  '.cxb-modal { width: 100%; max-width: 460px; background: #ffffff; color: #24292f;',
   '  border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.25); padding: 18px 18px 14px;',
   '  display: flex; flex-direction: column; gap: 12px; font-family: system-ui, sans-serif; }',
   '.cxb-modal-title { margin: 0; font-size: 17px; }',
@@ -168,6 +176,43 @@ var dashboardCss = [
   '  background: var(--cxd-panel-bg,#fff); color: inherit; }',
   '.cxb-modal-json { font-family: ui-monospace, Menlo, monospace; font-size:14px; min-height: 130px; resize: vertical; }',
   '.cxb-modal-err { color: var(--cxd-error,#c0392b); font-size:14px; min-height: 17px; }',
+  /* Whole-spec JSON editor (✎ next to the dashboard title): a line-number
+     gutter + a highlight.js-style colorized layer under a transparent-text
+     textarea that owns editing and scrolling. */
+  '.cxb-modal-wide { max-width: 780px; }',
+  '.cxb-jsoned { display: flex; height: 55vh; border: 1px solid var(--cxd-border,#d0d4da);',
+  '  border-radius: 6px; overflow: hidden; background: var(--cxd-panel-bg,#fff); }',
+  '.cxb-jsoned, .cxb-jsoned-gutter, .cxb-jsoned-hl, .cxb-jsoned-hl code, .cxb-jsoned-ta {',
+  '  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }',
+  '.cxb-jsoned-gutter { flex: 0 0 auto; min-width: 44px; padding: 8px 8px 8px 4px; text-align: right;',
+  '  color: var(--cxd-muted,#8a9099); background: rgba(0,0,0,.035); border-right: 1px solid var(--cxd-border,#e2e5ea);',
+  '  overflow: hidden; white-space: pre; user-select: none; }',
+  '.cxb-jsoned-body { position: relative; flex: 1 1 auto; min-width: 0; }',
+  '.cxb-jsoned-hl { position: absolute; inset: 0; margin: 0; padding: 8px 10px; overflow: hidden;',
+  '  white-space: pre; color: var(--cxd-title,#24292f); pointer-events: none; }',
+  // !important beats the generic `.cxb-modal textarea { color: inherit; background: … }`
+  // rule (higher specificity), which otherwise paints the textarea text opaque
+  // ON TOP of the colorized layer — leaving the editor looking uncolored.
+  '.cxb-jsoned-ta { position: absolute; inset: 0; width: 100%; height: 100%; box-sizing: border-box;',
+  '  padding: 8px 10px !important; margin: 0; border: none !important; outline: none; resize: none;',
+  '  overflow: auto; white-space: pre; background: transparent !important; color: transparent !important;',
+  '  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;',
+  '  border-radius: 0; caret-color: #24292f; }',
+  // Vivid token palette. The modal is always light (it lives outside the
+  // themed container), so the editor is explicitly light too — theme-tracking
+  // token colors here just wash out on the white card in OS dark mode.
+  '.cxb-jsoned { background: #ffffff; border-color: #d0d4da; }',
+  '.cxb-jsoned-hl { color: #24292f; }',
+  '.cxb-jsoned-ta { caret-color: #24292f; }',
+  '.cxb-jsoned-gutter { color: #8a9099; background: #f2f4f7; border-color: #e2e5ea; }',
+  // Error-line marker: the line a failed Save points at (parse position or
+  // offending key), cleared as soon as the user edits again.
+  '.cxb-hl-errline { background: rgba(207,34,46,.12); box-shadow: inset 3px 0 0 #cf222e; }',
+  '.cxb-jsoned-gutter-err { color: #cf222e; font-weight: 700; }',
+  '.cxb-hl-attr { color: #0969da; font-weight: 600; }',       // property names: blue
+  '.cxb-hl-string { color: #188038; }',                       // string values: green
+  '.cxb-hl-number { color: #e36209; }',                       // numbers: orange
+  '.cxb-hl-literal { color: #cf222e; font-weight: 600; }',    // true/false/null: red
   '.cxb-modal-footer { display: flex; justify-content: flex-end; gap: 8px; }'
 ].join('\n');
 
@@ -784,25 +829,46 @@ function renderDashboard(spec, target, options) {
   var controlWidgets = [];
 
   /**
+   * True when an instance's bound data actually carries the annotation —
+   * as a sample annotation (data.x) or a variable annotation (data.z).
+   * Filtering an instance on an annotation it doesn't have corrupts its
+   * rendering (meters/lines on unrelated datasets), so such picks are
+   * skipped per instance.
+   * @param {object} inst - Live CanvasXpress instance.
+   * @param {string} annotation - Annotation name.
+   * @returns {boolean} Whether the annotation exists in the instance's data.
+   */
+  function instanceHasAnnotation(inst, annotation) {
+    var d = inst && inst.data;
+    if (!d || !annotation) return false;
+    return !!((d.x && d.x[annotation] != null) || (d.z && d.z[annotation] != null));
+  }
+
+  /**
    * Re-apply the CURRENT set of control picks serially to every instance:
    * clear all filters, then modifyFilter('guess', annotation, 'like', value)
-   * for each control that has a pick. Broadcasting is suppressed per call —
-   * each instance is filtered directly — and only the last call redraws.
+   * for each control whose pick's annotation exists in that instance's data —
+   * panels on unrelated datasets are left untouched (just reset). Broadcasting
+   * is suppressed per call — each instance is filtered directly — and only the
+   * last call redraws.
    * @returns {void}
    */
   function applyControlFilters() {
     var picks = controlWidgets.filter(function (w) { return w.value != null; });
     instances.slice().forEach(function (inst) {
       if (!inst) return;
+      var applicable = picks.filter(function (w) {
+        return instanceHasAnnotation(inst, w.annotation);
+      });
       var savedGroup = inst.broadcastGroup;
       inst.broadcastGroup = '__cxd_annctl_serial__';
       try {
-        if (!picks.length) {
+        if (!applicable.length) {
           if (typeof inst.resetDataFilter === 'function') inst.resetDataFilter(null, false);
         } else if (typeof inst.modifyFilter === 'function') {
           if (typeof inst.resetDataFilter === 'function') inst.resetDataFilter(null, true);
-          picks.forEach(function (w, i) {
-            inst.modifyFilter('guess', w.annotation, 'like', w.value, i < picks.length - 1);
+          applicable.forEach(function (w, i) {
+            inst.modifyFilter('guess', w.annotation, 'like', w.value, i < applicable.length - 1);
           });
         }
       } catch (e) { /* keep filtering the remaining instances */
@@ -1281,11 +1347,26 @@ function resolveElement(target) {
  * @returns {object} A new merged config object.
  * @private
  */
+/**
+ * Config keys that are session state, not authored intent. A spec can carry
+ * them anyway (an old builder save, a hand-edited JSON, an imported spec) and
+ * CanvasXpress applies them at construction — a serialized broadcast filter
+ * (filterSmpBy/filterVarBy) then crashes init ("Cannot read properties of
+ * null") and bricks the whole page. Stripped defensively on EVERY render, so
+ * a polluted spec degrades to "renders unfiltered" instead of "renders
+ * nothing".
+ * @type {Object<string, boolean>}
+ * @private
+ */
+var UNSAFE_CONFIG_KEYS = { filterSmpBy: true, filterVarBy: true };
+
 function mergeConfig(config, broadcastGroup, owner) {
   var merged = {};
   if (config) {
     for (var k in config) {
-      if (Object.prototype.hasOwnProperty.call(config, k)) merged[k] = config[k];
+      if (Object.prototype.hasOwnProperty.call(config, k) && !UNSAFE_CONFIG_KEYS[k]) {
+        merged[k] = config[k];
+      }
     }
   }
   if (!Object.prototype.hasOwnProperty.call(merged, 'broadcastGroup')) {
@@ -1294,6 +1375,14 @@ function mergeConfig(config, broadcastGroup, owner) {
   // Per-panel opt-out: `broadcast: false` on the panel disables coordination.
   if (owner && owner.broadcast === false && !Object.prototype.hasOwnProperty.call(merged, 'broadcast')) {
     merged.broadcast = false;
+  }
+  // The dashboard coordinates cross-panel filtering itself via the annotation
+  // "+ Control" (applyControlFilters -> modifyFilter on a private broadcastGroup),
+  // so disable CanvasXpress's own DataFilter-UI filter broadcast (broadcastFilter,
+  // default true in the engine) to avoid double-applying / fighting the control.
+  // A panel/control config may still re-enable it explicitly.
+  if (!Object.prototype.hasOwnProperty.call(merged, 'broadcastFilter')) {
+    merged.broadcastFilter = false;
   }
   // Every dashboard graph is sized by its cell, never by CanvasXpress's own
   // interactive resizer — that native corner-drag handle conflicts with the
@@ -2423,24 +2512,21 @@ function itemsCollide(a, b) {
 }
 
 /**
- * Resolve panel collisions after a move/resize, react-grid-layout style:
- * the active panel keeps its place, colliding panels are pushed DOWN, and
- * everything is then compacted upward into the gaps (so shrinking a panel
- * pulls the ones below it back up). Text and control panels are free-floating —
- * they neither push nor get pushed, and may overlap anything.
+ * Resolve panel collisions after a resize (or programmatic placement): the
+ * active panel keeps its place, colliding panels are pushed DOWN. The layout
+ * is WYSIWYG — there is no auto-compaction, so panels stay where the user put
+ * them, gaps included. Text panels are free-floating — they neither push nor
+ * get pushed, and may overlap anything. Control panels are SOLID: they hold
+ * their row, so graphs can never land on top of a filter bar and hide it.
  *
  * @param {object} spec - The current spec.
- * @param {string} [activeId] - The panel the user just moved/resized (placed
- *   first so it wins its spot; others yield).
+ * @param {string} [activeId] - The panel the user just resized (placed first
+ *   so it wins its spot; others yield).
  * @returns {object} A new spec with a collision-free solid-panel layout.
  */
 function resolveCollisions(spec, activeId) {
   var next = cloneSpec(spec);
-  var items = next.layout.items || [];
-  var solids = items.filter(function (it) {
-    var p = next.panels[it.panel];
-    return !(p && (p.type === 'text' || p.type === 'control'));
-  });
+  var solids = solidItems(next);
   if (solids.length < 2) return next;
 
   // Placement order: the active panel first (it owns its position), then the
@@ -2452,30 +2538,72 @@ function resolveCollisions(spec, activeId) {
   });
 
   // Push phase: place each item; while it overlaps anything already placed,
-  // move it down one row.
+  // move it down one row. There is NO compaction pass: panels stay where the
+  // user put them (gaps and all) — auto-compacting yanks panels back up the
+  // moment they are dropped over empty space, which reads as the layout
+  // fighting the user.
   var placed = [];
   ordered.forEach(function (it) {
-    var guard = 0;
     var overlaps = function (p) { return itemsCollide(it, p); };
+    var guard = 0;
     while (placed.some(overlaps) && guard++ < 1000) it.y += 1;
     placed.push(it);
   });
+  return next;
+}
 
-  // Compact phase: top-to-bottom, pull every item (active included) as far up
-  // as it can go without colliding — closing the gap a shrink/move left behind.
-  var byRow = placed.slice().sort(function (a, b) { return (a.y - b.y) || (a.x - b.x); });
-  var settled = [];
-  byRow.forEach(function (it) {
-    var canRise = function () {
-      if (it.y <= 0) return false;
-      it.y -= 1;
-      var hit = settled.some(function (p) { return itemsCollide(it, p); });
-      if (hit) { it.y += 1; return false; }
-      return true;
-    };
+/**
+ * The layout items that take part in collision resolution: everything except
+ * free-floating text panels. Controls are solid — they hold their row.
+ * @param {object} spec - A (cloned) spec whose items may be mutated in place.
+ * @returns {Array} The solid layout items.
+ * @private
+ */
+function solidItems(spec) {
+  return (spec.layout.items || []).filter(function (it) {
+    var p = spec.panels[it.panel];
+    return !(p && p.type === 'text');
+  });
+}
+
+/**
+ * Resolve a completed (or in-progress) DRAG at a drop position. Unlike
+ * {@link resolveCollisions} — where the active panel always wins its exact
+ * spot — the drop position expresses *ordering intent*: panels are placed
+ * top-to-bottom by their current y (the active panel at its drop y, losing
+ * ties in the direction it moved), each pushed down past earlier ones it
+ * overlaps. There is no auto-compaction: the dropped panel stays EXACTLY
+ * where it was dropped — over empty space, below a wider panel, anywhere —
+ * instead of snapping back to where it came from.
+ *
+ * @param {object} spec - Spec with the active panel already at its drop x/y.
+ * @param {string} activeId - The dragged panel.
+ * @param {boolean} movedDown - True when the drag ended below its start row
+ *   (the active panel then loses y-ties, so "just past the top edge" of a
+ *   panel reads as "below it").
+ * @returns {object} A new spec with a collision-free solid-panel layout.
+ */
+function resolveDrop(spec, activeId, movedDown) {
+  var next = cloneSpec(spec);
+  var solids = solidItems(next);
+  if (solids.length < 2) return next;
+
+  var ordered = solids.slice().sort(function (a, b) {
+    if (a.y !== b.y) return a.y - b.y;
+    if (a.panel === activeId) return movedDown ? 1 : -1;
+    if (b.panel === activeId) return movedDown ? -1 : 1;
+    return a.x - b.x;
+  });
+
+  // Place in order: each item keeps its y unless it overlaps an earlier one,
+  // in which case it moves down past it. No compaction: the dropped panel
+  // stays EXACTLY where it was dropped, gaps included.
+  var placed = [];
+  ordered.forEach(function (it) {
+    var overlaps = function (p) { return itemsCollide(it, p); };
     var guard = 0;
-    while (canRise() && guard++ < 1000) { /* keep rising */ }
-    settled.push(it);
+    while (placed.some(overlaps) && guard++ < 1000) it.y += 1;
+    placed.push(it);
   });
   return next;
 }
@@ -2682,6 +2810,7 @@ function clampInt(value, min, max, fallback) {
 
 
 
+
 // MS-Word-style colour-control icons (the coloured bar is rendered separately).
 var FONT_COLOR_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">' +
   '<path fill="currentColor" d="M11 3L5.5 17h2.25l1.12-3h6.25l1.12 3h2.25L13 3h-2zm-1.38 9L12 5.67 14.38 12H9.62z"/></svg>';
@@ -2884,6 +3013,7 @@ function createBuilder(target, options) {
   var gridEl = null;        // the live grid element (stable during a drag)
   var cellEls = {};         // panelId -> panel cell element
   var instByPanel = {};     // panelId -> CanvasXpress instance
+  var baselineConfigs = {}; // panelId -> {configKey: JSON} snapshot at render (diff-based save capture)
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
   var availableConnectors = []; // connector sources ({name, url}) from options.listConnectorSources
   var liveRefs = {};        // data-source names the current liveHandle was built with
@@ -2931,7 +3061,10 @@ function createBuilder(target, options) {
     var row1 = el('div', 'cxb-trow');
     addPanelBtn = button('+ Panel', function () { doAddPanel(); });
     addControlBtn = button('+ Control', function () { doAddControl(); });
-    var createActions = [titleInput, addPanelBtn,
+    var editJsonBtn = button('✎', function () { doEditJson(); });
+    editJsonBtn.setAttribute('title', 'Edit dashboard JSON');
+    editJsonBtn.setAttribute('aria-label', 'Edit dashboard JSON');
+    var createActions = [titleInput, editJsonBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }),
       addControlBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
@@ -3101,6 +3234,172 @@ function createBuilder(target, options) {
     client.save(getSpec()).then(function () { setMsg('Saved “' + spec.id + '”.'); }, showError);
   }
 
+  /**
+   * Open a modal editor on the dashboard's raw spec JSON (the ✎ button next to
+   * the title). Save first parses the JSON, then runs {@link validateSpec};
+   * nothing is applied until both pass — errors show inline and the editor
+   * stays open. A valid spec replaces the current one, re-renders the board,
+   * and persists through the normal save path when a client is attached.
+   * @returns {void}
+   */
+  function doEditJson() {
+    var overlay = el('div', 'cxb-modal-overlay');
+    var modal = el('div', 'cxb-modal cxb-modal-wide');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Edit dashboard JSON';
+    // highlight.js-style editor: a line-number gutter and a colorized layer
+    // sit UNDER a transparent-text textarea; the textarea owns editing/scroll
+    // and the layers follow it. Self-contained (no external highlighter).
+    var editor = el('div', 'cxb-jsoned');
+    var gutter = el('div', 'cxb-jsoned-gutter');
+    var hl = el('pre', 'cxb-jsoned-hl');
+    var hlCode = el('code');
+    hl.appendChild(hlCode);
+    var area = el('textarea', 'cxb-jsoned-ta');
+    area.value = JSON.stringify(getSpec(), null, 2);
+    area.spellcheck = false;
+    area.setAttribute('aria-label', 'Dashboard spec JSON');
+    var editorBody = el('div', 'cxb-jsoned-body');
+    append(editorBody, [hl, area]);
+    append(editor, [gutter, editorBody]);
+
+    /**
+     * Rebuild the colorized layer + line numbers from the textarea text.
+     * Tokens follow highlight.js JSON classes: attr (key), string, number,
+     * literal (true/false/null).
+     * @returns {void}
+     */
+    function refreshHighlight() {
+      var text = area.value;
+      var esc = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      var html = esc.replace(
+        /("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*")(\s*:)?|\b(true|false|null)\b|-?\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b/g,
+        function (m, str, colon, lit) {
+          if (str) {
+            return colon
+              ? '<span class="cxb-hl-attr">' + str + '</span>' + colon
+              : '<span class="cxb-hl-string">' + str + '</span>';
+          }
+          if (lit) return '<span class="cxb-hl-literal">' + lit + '</span>';
+          return '<span class="cxb-hl-number">' + m + '</span>';
+        });
+      // A failed Save marks the offending line (errLine, 1-based): red-tinted
+      // in the code layer and bold red in the gutter, cleared on the next edit.
+      if (errLine > 0) {
+        var lineParts = html.split('\n');
+        if (errLine <= lineParts.length) {
+          lineParts[errLine - 1] =
+            '<span class="cxb-hl-errline">' + (lineParts[errLine - 1] || ' ') + '</span>';
+        }
+        html = lineParts.join('\n');
+      }
+      // Trailing newline needs a placeholder line so the layer keeps its height.
+      hlCode.innerHTML = html + (/\n$/.test(text) ? ' ' : '');
+      var lines = text.split('\n').length;
+      var nums = [];
+      for (var i = 1; i <= lines; i++) {
+        nums.push(i === errLine ? '<span class="cxb-jsoned-gutter-err">' + i + '</span>' : i);
+      }
+      gutter.innerHTML = nums.join('\n');
+    }
+    function syncScroll() {
+      hl.scrollTop = area.scrollTop;
+      hl.scrollLeft = area.scrollLeft;
+      gutter.scrollTop = area.scrollTop;
+    }
+
+    var errLine = 0;   // 1-based line to mark; 0 = none
+
+    /**
+     * Mark a line as the error location: tint it, flag its gutter number,
+     * scroll it into view, and put the caret at its start.
+     * @param {number} line - 1-based line number.
+     * @returns {void}
+     */
+    function markErrorLine(line) {
+      errLine = line;
+      refreshHighlight();
+      var lineHeight = 13 * 1.5;   // editor font metrics (see styles)
+      area.scrollTop = Math.max(0, (line - 4) * lineHeight);
+      var idx = 0, text = area.value;
+      for (var i = 1; i < line; i++) {
+        idx = text.indexOf('\n', idx) + 1;
+        if (idx === 0) { idx = text.length; break; }
+      }
+      if (typeof area.setSelectionRange === 'function') area.setSelectionRange(idx, idx);
+      if (typeof area.focus === 'function') area.focus();
+      syncScroll();
+    }
+
+    /**
+     * Best-effort line number for an error message: prefer an explicit
+     * "(line N column M)", fall back to "position N" (counted into the text),
+     * else look up the first quoted key/path segment the message names.
+     * @param {string} msg - The error message.
+     * @returns {number} 1-based line, or 0 when nothing locatable.
+     */
+    function errorLineFor(msg) {
+      var m = /line (\d+) column \d+/.exec(msg);
+      if (m) return +m[1];
+      m = /position (\d+)/.exec(msg);
+      if (m) return area.value.slice(0, +m[1]).split('\n').length;
+      m = /"([^"]+)"/.exec(msg) || /spec\.(\w+)/.exec(msg);
+      if (m) {
+        var at = area.value.indexOf('"' + m[1].split('.').pop() + '"');
+        if (at !== -1) return area.value.slice(0, at).split('\n').length;
+      }
+      return 0;
+    }
+    on(area, 'input', function () {
+      if (errLine) errLine = 0;
+      refreshHighlight();
+    });
+    on(area, 'scroll', syncScroll);
+    // Tab inserts two spaces instead of leaving the editor.
+    on(area, 'keydown', function (ev) {
+      if (ev.key === 'Tab') {
+        ev.preventDefault();
+        var s = area.selectionStart, e2 = area.selectionEnd;
+        area.value = area.value.slice(0, s) + '  ' + area.value.slice(e2);
+        area.selectionStart = area.selectionEnd = s + 2;
+        refreshHighlight();
+      }
+    });
+    refreshHighlight();
+    var errEl = el('div', 'cxb-modal-err');
+    function fail(text) {
+      errEl.textContent = '⚠ ' + text;
+      var line = errorLineFor(text);
+      if (line > 0) markErrorLine(line);
+    }
+    function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+    var cancelBtn = button('Cancel', close);
+    var saveBtn = button('Save', function () {
+      var next;
+      try {
+        next = JSON.parse(area.value);
+      } catch (e) {
+        return fail('Invalid JSON: ' + (e && e.message || e));
+      }
+      var result = validateSpec(next);
+      if (!result.valid) {
+        return fail('Invalid spec: ' + result.errors.join(' · '));
+      }
+      close();
+      setSpec(next);
+      titleInput.value = next.title || next.id;
+      if (client) doSave();
+      else setMsg('Spec updated.');
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, saveBtn]);
+    append(modal, [heading, editor, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(); });
+    (document.body || document.documentElement).appendChild(overlay);
+    if (typeof area.focus === 'function') area.focus();
+  }
+
   // ---------------------------------------------------------------- render
   /**
    * Rebuild the stage (live panels) and the editor drawer.
@@ -3228,6 +3527,22 @@ function createBuilder(target, options) {
     if (info.panelId === selectedId) cell.classList.add('cxb-selected');
     cellEls[info.panelId] = cell;
     instByPanel[info.panelId] = info.instance;
+    // Baseline for diff-based save capture: what getConfig() reports right
+    // after render, per key as JSON. On save, only keys whose value CHANGED
+    // since this snapshot (i.e. actual customizer edits) are persisted —
+    // render-derived state present from the start never reaches the spec.
+    if (info.instance && typeof info.instance.getConfig === 'function') {
+      try {
+        var snap = info.instance.getConfig() || {};
+        var base = {};
+        for (var bk in snap) {
+          if (Object.prototype.hasOwnProperty.call(snap, bk)) {
+            try { base[bk] = JSON.stringify(snap[bk]); } catch (e) { /* skip unserializable */ }
+          }
+        }
+        baselineConfigs[info.panelId] = base;
+      } catch (e) { /* no baseline: fall back to blocklist-only capture */ }
+    }
 
     var cols = gridCols(spec);
     var rowHeight = (spec.layout && spec.layout.rowHeight) || 30;
@@ -4088,19 +4403,37 @@ function createBuilder(target, options) {
     var start = rawCell(ev.clientX, ev.clientY, rect0, cols, rowHeight, gap);
     var offX = item0.x - start.x;
     var offY = item0.y - start.y;
+    // Every frame resolves from the DRAG-START spec (spec0) plus the current
+    // pointer cell — never from the incrementally mutated spec, where displaced
+    // panels drift further on every move and the release resolution becomes
+    // meaningless (the panel snaps back to where it came from).
+    var spec0 = spec;
+    var y0 = item0.y;
+    var lastX = item0.x, lastY = item0.y;
+    // While held, the cell floats above the board semi-transparent, so passing
+    // over another panel reads as "in motion", not as a broken overlap.
+    var dragCell = cellEls[panelId];
+    if (dragCell) dragCell.classList.add('cxb-dragging');
     dragLoop(ev, function (moveEv) {
       if (!gridEl) return;
       var rect = gridEl.getBoundingClientRect();
       var c = rawCell(moveEv.clientX, moveEv.clientY, rect, cols, rowHeight, gap);
       var nx = c.x + offX;
       var ny = c.y + offY;
-      var current = itemFor(panelId);
-      if (current && (current.x !== nx || current.y !== ny)) {
-        // movePanel clamps to the grid; resolveCollisions pushes overlapped
-        // solid panels down and compacts the gaps (text panels float free).
-        commit(resolveCollisions(movePanel(spec, panelId, nx, ny), panelId), false);
-        applyAllCellRects();
-      }
+      if (nx === lastX && ny === lastY) return;
+      lastX = nx; lastY = ny;
+      // Preview: the other panels take their would-be drop layout, while the
+      // held panel itself tracks the pointer cell (the trailing movePanel
+      // overrides only the resolver's placement of the active panel).
+      var preview = resolveDrop(movePanel(spec0, panelId, nx, ny), panelId, ny > y0);
+      commit(movePanel(preview, panelId, nx, ny), false);
+      applyAllCellRects();
+    }, function () {
+      // Release: resolve the drop for real — the drop row expresses ordering
+      // intent, so the panel lands (and stays) where it was dropped.
+      if (dragCell) dragCell.classList.remove('cxb-dragging');
+      commit(resolveDrop(movePanel(spec0, panelId, lastX, lastY), panelId, lastY > y0), false);
+      applyAllCellRects();
     });
   }
 
@@ -4282,6 +4615,7 @@ function createBuilder(target, options) {
       liveHandle.removePanel(panelId, spec.layout.items);
       delete cellEls[panelId];
       delete instByPanel[panelId];
+      delete baselineConfigs[panelId];
       renderProps();
     } else {
       rebuild();
@@ -4306,6 +4640,7 @@ function createBuilder(target, options) {
       liveHandle.removePanel(panelId, spec.layout.items);
       delete cellEls[panelId];
       delete instByPanel[panelId];
+      delete baselineConfigs[panelId];
       lastRender = liveHandle.addPanel(itemFor(panelId), spec.panels[panelId], spec.layout.items).then(renderProps);
     } else {
       syncLiveConfigs();
@@ -4330,15 +4665,35 @@ function createBuilder(target, options) {
         // data on re-render, makes the graph fall back to bars. Strip any value
         // carrying that sentinel (real user grouping like ["Region"] is kept).
         var live = stripDerived(inst.getConfig() || {});
-        // MERGE over the existing config, skipping undefined values.
+        // MERGE over the existing config, skipping undefined values. Transient
+        // keys are dropped from the existing config too, so a spec polluted by
+        // an older save self-heals on the next one.
         var merged = {};
         var existing = spec.panels[id].config || {};
         var k;
         for (k in existing) {
-          if (Object.prototype.hasOwnProperty.call(existing, k)) merged[k] = existing[k];
+          if (Object.prototype.hasOwnProperty.call(existing, k) && !TRANSIENT_CONFIG_KEYS[k]) {
+            merged[k] = existing[k];
+          }
         }
+        // Diff-based capture: a live key is persisted only when its value
+        // CHANGED since the post-render baseline (a real customizer edit).
+        // Render-derived state that getConfig() reports from the moment the
+        // chart exists never reaches the spec — even keys the blocklist has
+        // never heard of. Without a baseline (older instances), everything
+        // non-transient is taken, as before.
+        var baseline = baselineConfigs[id];
         for (k in live) {
-          if (Object.prototype.hasOwnProperty.call(live, k) && live[k] !== undefined) merged[k] = live[k];
+          if (!Object.prototype.hasOwnProperty.call(live, k) || live[k] === undefined) continue;
+          if (baseline && Object.prototype.hasOwnProperty.call(baseline, k)) {
+            var liveJson;
+            try { liveJson = JSON.stringify(live[k]); } catch (e) { continue; }
+            if (liveJson === baseline[k] &&
+                !Object.prototype.hasOwnProperty.call(existing, k)) {
+              continue;   // unchanged since render and not authored: derived state
+            }
+          }
+          merged[k] = live[k];
         }
         spec = updatePanel(spec, id, { config: merged });
       } catch (e) { /* keep going */ }
@@ -4485,10 +4840,29 @@ function createBuilder(target, options) {
  * @returns {object} A cleaned shallow copy.
  * @private
  */
+/**
+ * Live-instance config keys that are TRANSIENT RENDER STATE, never authored
+ * intent — they must not be persisted into the spec. filterSmpBy/filterVarBy
+ * are the worst offenders: a broadcast filter (e.g. a Region control pick)
+ * serialized mid-session crashes CanvasXpress at construction on the next
+ * load ("Cannot read properties of null (reading 'length')"), bricking the
+ * dashboard. The rest are UI/session chrome that only adds noise.
+ * @type {Object<string, boolean>}
+ */
+var TRANSIENT_CONFIG_KEYS = {
+  filterSmpBy: true, filterVarBy: true,
+  broadcastGroup: true,            // the renderer re-injects the spec's group
+  llmHeader: true, resizable: true, toolbarSize: true,
+  fontScaleFontFactor: true, smpTextScaleFontFactor: true,
+  customizerCloseBackgroundColor: true, dataTablePaginationSelectTextColor: true
+};
+
 function stripDerived(config) {
   var out = {};
   for (var k in config) {
-    if (Object.prototype.hasOwnProperty.call(config, k) && !hasFactorSentinel(config[k])) {
+    if (Object.prototype.hasOwnProperty.call(config, k) &&
+        !TRANSIENT_CONFIG_KEYS[k] &&
+        !hasFactorSentinel(config[k])) {
       out[k] = config[k];
     }
   }

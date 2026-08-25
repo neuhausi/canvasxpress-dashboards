@@ -14,8 +14,9 @@
 
 import { injectStyles } from './styles.js';
 import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames } from './renderDashboard.js';
+import { validateSpec } from './validateSpec.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
-import { addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, blankSpec, DEFAULT_COLS }
+import { addPanel, removePanel, movePanel, resizePanel, resolveCollisions, resolveDrop, updatePanel, setDataSource, blankSpec, DEFAULT_COLS }
   from './builderModel.js';
 
 // MS-Word-style colour-control icons (the coloured bar is rendered separately).
@@ -220,6 +221,7 @@ export function createBuilder(target, options) {
   var gridEl = null;        // the live grid element (stable during a drag)
   var cellEls = {};         // panelId -> panel cell element
   var instByPanel = {};     // panelId -> CanvasXpress instance
+  var baselineConfigs = {}; // panelId -> {configKey: JSON} snapshot at render (diff-based save capture)
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
   var availableConnectors = []; // connector sources ({name, url}) from options.listConnectorSources
   var liveRefs = {};        // data-source names the current liveHandle was built with
@@ -267,7 +269,10 @@ export function createBuilder(target, options) {
     var row1 = el('div', 'cxb-trow');
     addPanelBtn = button('+ Panel', function () { doAddPanel(); });
     addControlBtn = button('+ Control', function () { doAddControl(); });
-    var createActions = [titleInput, addPanelBtn,
+    var editJsonBtn = button('✎', function () { doEditJson(); });
+    editJsonBtn.setAttribute('title', 'Edit dashboard JSON');
+    editJsonBtn.setAttribute('aria-label', 'Edit dashboard JSON');
+    var createActions = [titleInput, editJsonBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }),
       addControlBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
@@ -437,6 +442,172 @@ export function createBuilder(target, options) {
     client.save(getSpec()).then(function () { setMsg('Saved “' + spec.id + '”.'); }, showError);
   }
 
+  /**
+   * Open a modal editor on the dashboard's raw spec JSON (the ✎ button next to
+   * the title). Save first parses the JSON, then runs {@link validateSpec};
+   * nothing is applied until both pass — errors show inline and the editor
+   * stays open. A valid spec replaces the current one, re-renders the board,
+   * and persists through the normal save path when a client is attached.
+   * @returns {void}
+   */
+  function doEditJson() {
+    var overlay = el('div', 'cxb-modal-overlay');
+    var modal = el('div', 'cxb-modal cxb-modal-wide');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Edit dashboard JSON';
+    // highlight.js-style editor: a line-number gutter and a colorized layer
+    // sit UNDER a transparent-text textarea; the textarea owns editing/scroll
+    // and the layers follow it. Self-contained (no external highlighter).
+    var editor = el('div', 'cxb-jsoned');
+    var gutter = el('div', 'cxb-jsoned-gutter');
+    var hl = el('pre', 'cxb-jsoned-hl');
+    var hlCode = el('code');
+    hl.appendChild(hlCode);
+    var area = el('textarea', 'cxb-jsoned-ta');
+    area.value = JSON.stringify(getSpec(), null, 2);
+    area.spellcheck = false;
+    area.setAttribute('aria-label', 'Dashboard spec JSON');
+    var editorBody = el('div', 'cxb-jsoned-body');
+    append(editorBody, [hl, area]);
+    append(editor, [gutter, editorBody]);
+
+    /**
+     * Rebuild the colorized layer + line numbers from the textarea text.
+     * Tokens follow highlight.js JSON classes: attr (key), string, number,
+     * literal (true/false/null).
+     * @returns {void}
+     */
+    function refreshHighlight() {
+      var text = area.value;
+      var esc = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      var html = esc.replace(
+        /("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*")(\s*:)?|\b(true|false|null)\b|-?\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b/g,
+        function (m, str, colon, lit) {
+          if (str) {
+            return colon
+              ? '<span class="cxb-hl-attr">' + str + '</span>' + colon
+              : '<span class="cxb-hl-string">' + str + '</span>';
+          }
+          if (lit) return '<span class="cxb-hl-literal">' + lit + '</span>';
+          return '<span class="cxb-hl-number">' + m + '</span>';
+        });
+      // A failed Save marks the offending line (errLine, 1-based): red-tinted
+      // in the code layer and bold red in the gutter, cleared on the next edit.
+      if (errLine > 0) {
+        var lineParts = html.split('\n');
+        if (errLine <= lineParts.length) {
+          lineParts[errLine - 1] =
+            '<span class="cxb-hl-errline">' + (lineParts[errLine - 1] || ' ') + '</span>';
+        }
+        html = lineParts.join('\n');
+      }
+      // Trailing newline needs a placeholder line so the layer keeps its height.
+      hlCode.innerHTML = html + (/\n$/.test(text) ? ' ' : '');
+      var lines = text.split('\n').length;
+      var nums = [];
+      for (var i = 1; i <= lines; i++) {
+        nums.push(i === errLine ? '<span class="cxb-jsoned-gutter-err">' + i + '</span>' : i);
+      }
+      gutter.innerHTML = nums.join('\n');
+    }
+    function syncScroll() {
+      hl.scrollTop = area.scrollTop;
+      hl.scrollLeft = area.scrollLeft;
+      gutter.scrollTop = area.scrollTop;
+    }
+
+    var errLine = 0;   // 1-based line to mark; 0 = none
+
+    /**
+     * Mark a line as the error location: tint it, flag its gutter number,
+     * scroll it into view, and put the caret at its start.
+     * @param {number} line - 1-based line number.
+     * @returns {void}
+     */
+    function markErrorLine(line) {
+      errLine = line;
+      refreshHighlight();
+      var lineHeight = 13 * 1.5;   // editor font metrics (see styles)
+      area.scrollTop = Math.max(0, (line - 4) * lineHeight);
+      var idx = 0, text = area.value;
+      for (var i = 1; i < line; i++) {
+        idx = text.indexOf('\n', idx) + 1;
+        if (idx === 0) { idx = text.length; break; }
+      }
+      if (typeof area.setSelectionRange === 'function') area.setSelectionRange(idx, idx);
+      if (typeof area.focus === 'function') area.focus();
+      syncScroll();
+    }
+
+    /**
+     * Best-effort line number for an error message: prefer an explicit
+     * "(line N column M)", fall back to "position N" (counted into the text),
+     * else look up the first quoted key/path segment the message names.
+     * @param {string} msg - The error message.
+     * @returns {number} 1-based line, or 0 when nothing locatable.
+     */
+    function errorLineFor(msg) {
+      var m = /line (\d+) column \d+/.exec(msg);
+      if (m) return +m[1];
+      m = /position (\d+)/.exec(msg);
+      if (m) return area.value.slice(0, +m[1]).split('\n').length;
+      m = /"([^"]+)"/.exec(msg) || /spec\.(\w+)/.exec(msg);
+      if (m) {
+        var at = area.value.indexOf('"' + m[1].split('.').pop() + '"');
+        if (at !== -1) return area.value.slice(0, at).split('\n').length;
+      }
+      return 0;
+    }
+    on(area, 'input', function () {
+      if (errLine) errLine = 0;
+      refreshHighlight();
+    });
+    on(area, 'scroll', syncScroll);
+    // Tab inserts two spaces instead of leaving the editor.
+    on(area, 'keydown', function (ev) {
+      if (ev.key === 'Tab') {
+        ev.preventDefault();
+        var s = area.selectionStart, e2 = area.selectionEnd;
+        area.value = area.value.slice(0, s) + '  ' + area.value.slice(e2);
+        area.selectionStart = area.selectionEnd = s + 2;
+        refreshHighlight();
+      }
+    });
+    refreshHighlight();
+    var errEl = el('div', 'cxb-modal-err');
+    function fail(text) {
+      errEl.textContent = '⚠ ' + text;
+      var line = errorLineFor(text);
+      if (line > 0) markErrorLine(line);
+    }
+    function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+    var cancelBtn = button('Cancel', close);
+    var saveBtn = button('Save', function () {
+      var next;
+      try {
+        next = JSON.parse(area.value);
+      } catch (e) {
+        return fail('Invalid JSON: ' + (e && e.message || e));
+      }
+      var result = validateSpec(next);
+      if (!result.valid) {
+        return fail('Invalid spec: ' + result.errors.join(' · '));
+      }
+      close();
+      setSpec(next);
+      titleInput.value = next.title || next.id;
+      if (client) doSave();
+      else setMsg('Spec updated.');
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, saveBtn]);
+    append(modal, [heading, editor, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(); });
+    (document.body || document.documentElement).appendChild(overlay);
+    if (typeof area.focus === 'function') area.focus();
+  }
+
   // ---------------------------------------------------------------- render
   /**
    * Rebuild the stage (live panels) and the editor drawer.
@@ -564,6 +735,22 @@ export function createBuilder(target, options) {
     if (info.panelId === selectedId) cell.classList.add('cxb-selected');
     cellEls[info.panelId] = cell;
     instByPanel[info.panelId] = info.instance;
+    // Baseline for diff-based save capture: what getConfig() reports right
+    // after render, per key as JSON. On save, only keys whose value CHANGED
+    // since this snapshot (i.e. actual customizer edits) are persisted —
+    // render-derived state present from the start never reaches the spec.
+    if (info.instance && typeof info.instance.getConfig === 'function') {
+      try {
+        var snap = info.instance.getConfig() || {};
+        var base = {};
+        for (var bk in snap) {
+          if (Object.prototype.hasOwnProperty.call(snap, bk)) {
+            try { base[bk] = JSON.stringify(snap[bk]); } catch (e) { /* skip unserializable */ }
+          }
+        }
+        baselineConfigs[info.panelId] = base;
+      } catch (e) { /* no baseline: fall back to blocklist-only capture */ }
+    }
 
     var cols = gridCols(spec);
     var rowHeight = (spec.layout && spec.layout.rowHeight) || 30;
@@ -1424,19 +1611,37 @@ export function createBuilder(target, options) {
     var start = rawCell(ev.clientX, ev.clientY, rect0, cols, rowHeight, gap);
     var offX = item0.x - start.x;
     var offY = item0.y - start.y;
+    // Every frame resolves from the DRAG-START spec (spec0) plus the current
+    // pointer cell — never from the incrementally mutated spec, where displaced
+    // panels drift further on every move and the release resolution becomes
+    // meaningless (the panel snaps back to where it came from).
+    var spec0 = spec;
+    var y0 = item0.y;
+    var lastX = item0.x, lastY = item0.y;
+    // While held, the cell floats above the board semi-transparent, so passing
+    // over another panel reads as "in motion", not as a broken overlap.
+    var dragCell = cellEls[panelId];
+    if (dragCell) dragCell.classList.add('cxb-dragging');
     dragLoop(ev, function (moveEv) {
       if (!gridEl) return;
       var rect = gridEl.getBoundingClientRect();
       var c = rawCell(moveEv.clientX, moveEv.clientY, rect, cols, rowHeight, gap);
       var nx = c.x + offX;
       var ny = c.y + offY;
-      var current = itemFor(panelId);
-      if (current && (current.x !== nx || current.y !== ny)) {
-        // movePanel clamps to the grid; resolveCollisions pushes overlapped
-        // solid panels down and compacts the gaps (text panels float free).
-        commit(resolveCollisions(movePanel(spec, panelId, nx, ny), panelId), false);
-        applyAllCellRects();
-      }
+      if (nx === lastX && ny === lastY) return;
+      lastX = nx; lastY = ny;
+      // Preview: the other panels take their would-be drop layout, while the
+      // held panel itself tracks the pointer cell (the trailing movePanel
+      // overrides only the resolver's placement of the active panel).
+      var preview = resolveDrop(movePanel(spec0, panelId, nx, ny), panelId, ny > y0);
+      commit(movePanel(preview, panelId, nx, ny), false);
+      applyAllCellRects();
+    }, function () {
+      // Release: resolve the drop for real — the drop row expresses ordering
+      // intent, so the panel lands (and stays) where it was dropped.
+      if (dragCell) dragCell.classList.remove('cxb-dragging');
+      commit(resolveDrop(movePanel(spec0, panelId, lastX, lastY), panelId, lastY > y0), false);
+      applyAllCellRects();
     });
   }
 
@@ -1618,6 +1823,7 @@ export function createBuilder(target, options) {
       liveHandle.removePanel(panelId, spec.layout.items);
       delete cellEls[panelId];
       delete instByPanel[panelId];
+      delete baselineConfigs[panelId];
       renderProps();
     } else {
       rebuild();
@@ -1642,6 +1848,7 @@ export function createBuilder(target, options) {
       liveHandle.removePanel(panelId, spec.layout.items);
       delete cellEls[panelId];
       delete instByPanel[panelId];
+      delete baselineConfigs[panelId];
       lastRender = liveHandle.addPanel(itemFor(panelId), spec.panels[panelId], spec.layout.items).then(renderProps);
     } else {
       syncLiveConfigs();
@@ -1666,15 +1873,35 @@ export function createBuilder(target, options) {
         // data on re-render, makes the graph fall back to bars. Strip any value
         // carrying that sentinel (real user grouping like ["Region"] is kept).
         var live = stripDerived(inst.getConfig() || {});
-        // MERGE over the existing config, skipping undefined values.
+        // MERGE over the existing config, skipping undefined values. Transient
+        // keys are dropped from the existing config too, so a spec polluted by
+        // an older save self-heals on the next one.
         var merged = {};
         var existing = spec.panels[id].config || {};
         var k;
         for (k in existing) {
-          if (Object.prototype.hasOwnProperty.call(existing, k)) merged[k] = existing[k];
+          if (Object.prototype.hasOwnProperty.call(existing, k) && !TRANSIENT_CONFIG_KEYS[k]) {
+            merged[k] = existing[k];
+          }
         }
+        // Diff-based capture: a live key is persisted only when its value
+        // CHANGED since the post-render baseline (a real customizer edit).
+        // Render-derived state that getConfig() reports from the moment the
+        // chart exists never reaches the spec — even keys the blocklist has
+        // never heard of. Without a baseline (older instances), everything
+        // non-transient is taken, as before.
+        var baseline = baselineConfigs[id];
         for (k in live) {
-          if (Object.prototype.hasOwnProperty.call(live, k) && live[k] !== undefined) merged[k] = live[k];
+          if (!Object.prototype.hasOwnProperty.call(live, k) || live[k] === undefined) continue;
+          if (baseline && Object.prototype.hasOwnProperty.call(baseline, k)) {
+            var liveJson;
+            try { liveJson = JSON.stringify(live[k]); } catch (e) { continue; }
+            if (liveJson === baseline[k] &&
+                !Object.prototype.hasOwnProperty.call(existing, k)) {
+              continue;   // unchanged since render and not authored: derived state
+            }
+          }
+          merged[k] = live[k];
         }
         spec = updatePanel(spec, id, { config: merged });
       } catch (e) { /* keep going */ }
@@ -1821,10 +2048,29 @@ export function createBuilder(target, options) {
  * @returns {object} A cleaned shallow copy.
  * @private
  */
+/**
+ * Live-instance config keys that are TRANSIENT RENDER STATE, never authored
+ * intent — they must not be persisted into the spec. filterSmpBy/filterVarBy
+ * are the worst offenders: a broadcast filter (e.g. a Region control pick)
+ * serialized mid-session crashes CanvasXpress at construction on the next
+ * load ("Cannot read properties of null (reading 'length')"), bricking the
+ * dashboard. The rest are UI/session chrome that only adds noise.
+ * @type {Object<string, boolean>}
+ */
+var TRANSIENT_CONFIG_KEYS = {
+  filterSmpBy: true, filterVarBy: true,
+  broadcastGroup: true,            // the renderer re-injects the spec's group
+  llmHeader: true, resizable: true, toolbarSize: true,
+  fontScaleFontFactor: true, smpTextScaleFontFactor: true,
+  customizerCloseBackgroundColor: true, dataTablePaginationSelectTextColor: true
+};
+
 function stripDerived(config) {
   var out = {};
   for (var k in config) {
-    if (Object.prototype.hasOwnProperty.call(config, k) && !hasFactorSentinel(config[k])) {
+    if (Object.prototype.hasOwnProperty.call(config, k) &&
+        !TRANSIENT_CONFIG_KEYS[k] &&
+        !hasFactorSentinel(config[k])) {
       out[k] = config[k];
     }
   }
