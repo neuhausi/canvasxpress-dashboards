@@ -14,8 +14,9 @@ Key variables (full list in ``.env.example``):
     SESSION_SECRET        cookie-signing key (auto-generated + persisted if unset)
     CXD_HOST / CXD_PORT   bind address (default 127.0.0.1:8000)
     APP_DB_PATH           SQLite dashboards DB (default ./dashboards.db)
-    CXD_DASHBOARD_STORE   postgres:// URL to use Postgres instead of SQLite
-    CXD_DATASET_STORE     default dataset store URI (file:// / s3:// / postgres://
+    CXD_DASHBOARD_STORE   postgresql:// URL to use Postgres instead of SQLite
+                          (postgres:// is accepted and normalized)
+    CXD_DATASET_STORE     default dataset store URI (file:// / s3:// / postgresql://
                           / sqlite:// / gdrive://)
     CXD_STORES            JSON (or a path to stores.json) naming extra stores
     ALLOW_SIGNUP          "1" (default) to allow account creation, "0" to lock down
@@ -87,6 +88,45 @@ def _resolve_session_secret() -> str:
         return secret
 
 
+def _redact_url(url: str) -> str:
+    """Mask the password in a database/store URL so it is safe to print.
+
+    ``postgresql://user:secret@host/db`` -> ``postgresql://user:***@host/db``.
+    Non-URL values (a bare path) are returned unchanged.
+    """
+    if "://" not in url:
+        return url
+    scheme, rest = url.split("://", 1)
+    if "@" not in rest:
+        return url
+    creds, host = rest.rsplit("@", 1)
+    if ":" in creds:
+        creds = creds.split(":", 1)[0] + ":***"
+    return "%s://%s@%s" % (scheme, creds, host)
+
+
+def _effective_stores() -> tuple:
+    """Return ``(dashboard_store, dataset_store)`` as printable, redacted labels.
+
+    The launcher used to print ``APP_DB_PATH`` unconditionally, which claimed
+    SQLite even when ``CXD_DASHBOARD_STORE`` pointed at Postgres — so a typo in
+    that variable silently fell back to SQLite and still looked healthy. Report
+    what the app will actually open instead. Mirrors the resolution order in
+    :func:`cxd_server.app.create_dashboards_app` and
+    :meth:`cxd_server.stores.StoreRegistry.from_env`.
+    """
+    stores_path = os.getenv("CXD_STORES")
+    if stores_path and os.path.isfile(stores_path):
+        return ("see %s" % stores_path, "see %s" % stores_path)
+    dashboard = os.getenv("CXD_DASHBOARD_STORE")
+    dashboard = _redact_url(dashboard) if dashboard else (
+        "sqlite %s" % os.getenv("APP_DB_PATH", "dashboards.db"))
+    dataset = os.getenv("CXD_DATASET_STORE")
+    dataset = _redact_url(dataset) if dataset else (
+        "file://%s" % os.path.abspath("cxd-datasets"))
+    return (dashboard, dataset)
+
+
 def _int_env(name: str, default: int) -> int:
     """Read an integer env var, falling back to ``default`` when unset/invalid."""
     try:
@@ -138,12 +178,12 @@ def main(argv=None) -> int:
     else:
         target = create_dashboards_app()
 
+    dashboard_store, dataset_store = _effective_stores()
     print("\n  CanvasXpress Dashboards server")
     print("    http://%s:%d/\n" % (args.host, args.port))
-    print("    signup: %s   db: %s\n" % (
-        "disabled" if os.getenv("ALLOW_SIGNUP") == "0" else "enabled",
-        os.getenv("APP_DB_PATH", "dashboards.db"),
-    ))
+    print("    signup:     %s" % ("disabled" if os.getenv("ALLOW_SIGNUP") == "0" else "enabled"))
+    print("    dashboards: %s" % dashboard_store)
+    print("    datasets:   %s\n" % dataset_store)
     uvicorn.run(target, host=args.host, port=args.port, reload=args.reload,
                 factory=args.reload)
     return 0

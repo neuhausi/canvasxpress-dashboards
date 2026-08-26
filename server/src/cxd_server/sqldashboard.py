@@ -19,6 +19,7 @@ import json
 import secrets
 from typing import List, Optional
 
+from .sqlstore import normalize_sql_url
 from .store import hash_password, verify_password
 
 
@@ -28,7 +29,8 @@ class SqlDashboardStore:
     def __init__(self, url: str, engine=None):
         sa = _sqlalchemy()
         self._sa = sa
-        self._engine = engine or sa.create_engine(url, future=True)
+        # postgres:// -> postgresql:// (SQLAlchemy dropped the alias in 1.4).
+        self._engine = engine or sa.create_engine(normalize_sql_url(url), future=True)
         metadata = sa.MetaData()
         self._users = sa.Table(
             "cxd_users",
