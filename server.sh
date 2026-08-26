@@ -69,7 +69,10 @@ start() {
     exit 1
   fi
   echo "starting ($py) on http://$HOST:$PORT/ …"
-  ( cd "$ROOT" && CXD_HOST="$HOST" CXD_PORT="$PORT" nohup "$py" "$SERVE" >"$LOG_FILE" 2>&1 & echo $! >"$PID_FILE" )
+  # Detach stdin (</dev/null) as well as stdout/stderr so the daemon holds none
+  # of the SSH channel's fds — otherwise `ssh … ./server.sh restart` hangs open
+  # waiting on the inherited stdin pipe even though the server has fully started.
+  ( cd "$ROOT" && CXD_HOST="$HOST" CXD_PORT="$PORT" nohup "$py" "$SERVE" </dev/null >"$LOG_FILE" 2>&1 & echo $! >"$PID_FILE" )
   sleep 2
   if pid="$(running_pid)"; then
     echo "started (pid $pid).  logs: ./server.sh logs"
