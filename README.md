@@ -1,5 +1,7 @@
 # canvasxpress-dashboards
 
+[![tests](https://github.com/neuhausi/canvasxpress-dashboards/actions/workflows/tests.yml/badge.svg)](https://github.com/neuhausi/canvasxpress-dashboards/actions/workflows/tests.yml)
+
 Compose, coordinate, and render **dashboards** — collections of linked
 [CanvasXpress](https://www.canvasxpress.org) visualizations — from a single
 declarative JSON spec.
