@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
   <title>CanvasXpress Dashboards — examples</title>
   <style>
     :root { --accent: #087ad1; --muted: #6b7280; --border: #e6e9ee; }
@@ -78,6 +79,34 @@
 
     <h2>Standalone examples</h2>
     <div class="cards">
+      <a class="card" href="./quality-metrics.html">
+        <div class="ic">✅</div>
+        <h3>Quality Metrics <span>→</span></h3>
+        <p>Manufacturing quality board: four ring meters (three averages — yield,
+           defect rate, on-time — plus a total inspection count) over 500
+           inspection records, a 500-point yield run chart per line, and a
+           500-bar defect-rate chart. Line and Shift controls filter every panel.</p>
+        <div class="tags"><span class="tag">meters</span><span class="tag">line</span><span class="tag">bar</span><span class="tag">controls</span></div>
+      </a>
+      <a class="card" href="./biomarker-cohort.html">
+        <div class="ic">🧪</div>
+        <h3>Biomarker Cohort <span>→</span></h3>
+        <p>60-sample immuno-oncology study: two boxplots with individual samples
+           overlaid (IL-6 by group, TNF-α by response), an IL-6 vs TNF-α scatter,
+           and a 24-gene inflammation heatmap. Treatment-group and response filter
+           controls drive every panel.</p>
+        <div class="tags"><span class="tag">boxplot</span><span class="tag">scatter</span><span class="tag">heatmap</span><span class="tag">controls</span></div>
+      </a>
+      <a class="card" href="./genomics-oncology.html">
+        <div class="ic">🧬</div>
+        <h3>Genomics Oncology Cohort <span>→</span></h3>
+        <p>Scientific board over six RNA-seq datasets (&gt;1,000 records each):
+           a clustered expression heatmap, a differential-expression volcano,
+           MA and two-contrast scatters, a 1,600-cell single-cell UMAP, a
+           sample-count ring meter, a response-by-stage stacked bar, and a
+           Kaplan-Meier survival curve.</p>
+        <div class="tags"><span class="tag">genomics</span><span class="tag">heatmap</span><span class="tag">volcano</span><span class="tag">kaplan-meier</span></div>
+      </a>
       <a class="card" href="./sales-overview.html">
         <div class="ic">📊</div>
         <h3>Sales Overview <span>→</span></h3>

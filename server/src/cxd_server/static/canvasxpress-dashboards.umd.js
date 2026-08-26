@@ -852,11 +852,19 @@ function renderDashboard(spec, target, options) {
 
   /**
    * Re-apply the CURRENT set of control picks serially to every instance:
-   * clear all filters, then modifyFilter('guess', annotation, 'like', value)
+   * clear all filters, then modifyFilter('guess', annotation, 'exact', value)
    * for each control whose pick's annotation exists in that instance's data —
    * panels on unrelated datasets are left untouched (just reset). Broadcasting
    * is suppressed per call — each instance is filtered directly — and only the
    * last call redraws.
+   *
+   * EXACT (not 'like') is deliberate: a control pick is always one full
+   * annotation category value, so it must match that value exactly. The 'like'
+   * operator does a substring search, which silently over-matches whenever one
+   * category value is contained in another — e.g. picking "Male" also keeps
+   * "Female" ("female" contains "male"), so the filter appears to do nothing.
+   * 'exact' compares the whole string, removing that whole class of bug and the
+   * "annotation values must be prefix-free" authoring rule it forced on specs.
    * @returns {void}
    */
   function applyControlFilters() {
@@ -874,7 +882,7 @@ function renderDashboard(spec, target, options) {
         } else if (typeof inst.modifyFilter === 'function') {
           if (typeof inst.resetDataFilter === 'function') inst.resetDataFilter(null, true);
           applicable.forEach(function (w, i) {
-            inst.modifyFilter('guess', w.annotation, 'like', w.value, i < applicable.length - 1);
+            inst.modifyFilter('guess', w.annotation, 'exact', w.value, i < applicable.length - 1);
           });
         }
       } catch (e) { /* keep filtering the remaining instances */
@@ -1070,7 +1078,7 @@ function renderDashboard(spec, target, options) {
    * Render an annotation-filter control panel: native inputs (dropdown / radio /
    * segmented buttons) whose entries are the unique values of one annotation of
    * the bound dataset. Choosing a value FILTERS the data: it calls
-   * `modifyFilter('guess', annotation, 'like', value)` on a live instance bound
+   * `modifyFilter('guess', annotation, 'exact', value)` on a live instance bound
    * to the same source — a registered UPDATE_FILTER action, so the dashboard's
    * shared broadcastGroup propagates it to every panel. "All" clears via
    * `resetDataFilter()` (also broadcast).

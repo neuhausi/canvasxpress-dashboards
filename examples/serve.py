@@ -270,6 +270,57 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.save_dashboard(DEMO_USER, kpi, now)
         print("  [seed] shipped dashboard: %s" % kpi["id"])
 
+    # Genomics Oncology Cohort: six inline scientific datasets (heatmap, three
+    # DEG scatters, single-cell UMAP, cohort meter, survival) move into the
+    # dataset store; the spec (three filter controls) binds to them.
+    genomics = load_spec("genomics-oncology.spec.json")
+    if genomics and genomics["id"] not in saved:
+        genomics = copy.deepcopy(genomics)
+        for ref, source in genomics.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            dataset_id = "genomics-" + ref
+            if dataset_id not in have:
+                datasets.create(DEMO_USER, source["value"], now,
+                                title="Genomics: " + ref, dataset_id=dataset_id)
+            genomics["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+        dashboards.save_dashboard(DEMO_USER, genomics, now)
+        print("  [seed] shipped dashboard: %s" % genomics["id"])
+
+    # Biomarker Cohort: 60-sample immuno-oncology board (two boxplots with
+    # individual points, a scatter, a heatmap; Sex/Timepoint filter controls).
+    # Its three inline datasets move into the dataset store.
+    biomarker = load_spec("biomarker-cohort.spec.json")
+    if biomarker and biomarker["id"] not in saved:
+        biomarker = copy.deepcopy(biomarker)
+        for ref, source in biomarker.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            dataset_id = "biomarker-" + ref
+            if dataset_id not in have:
+                datasets.create(DEMO_USER, source["value"], now,
+                                title="Biomarker: " + ref, dataset_id=dataset_id)
+            biomarker["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+        dashboards.save_dashboard(DEMO_USER, biomarker, now)
+        print("  [seed] shipped dashboard: %s" % biomarker["id"])
+
+    # Quality Metrics: manufacturing board (three ring meters, a per-line yield
+    # trend, a stacked defects bar; Line/Shift controls). Its five inline
+    # datasets move into the dataset store.
+    quality = load_spec("quality-metrics.spec.json")
+    if quality and quality["id"] not in saved:
+        quality = copy.deepcopy(quality)
+        for ref, source in quality.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            dataset_id = "quality-" + ref
+            if dataset_id not in have:
+                datasets.create(DEMO_USER, source["value"], now,
+                                title="Quality: " + ref, dataset_id=dataset_id)
+            quality["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+        dashboards.save_dashboard(DEMO_USER, quality, now)
+        print("  [seed] shipped dashboard: %s" % quality["id"])
+
     # Sales Overview: small inline spec, shipped as-is.
     sales = load_spec("sales-overview.spec.json")
     if sales and sales["id"] not in saved:
