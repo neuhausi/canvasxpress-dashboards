@@ -69,10 +69,14 @@ start() {
     exit 1
   fi
   echo "starting ($py) on http://$HOST:$PORT/ …"
-  # Detach stdin (</dev/null) as well as stdout/stderr so the daemon holds none
-  # of the SSH channel's fds — otherwise `ssh … ./server.sh restart` hangs open
-  # waiting on the inherited stdin pipe even though the server has fully started.
-  ( cd "$ROOT" && CXD_HOST="$HOST" CXD_PORT="$PORT" nohup "$py" "$SERVE" </dev/null >"$LOG_FILE" 2>&1 & echo $! >"$PID_FILE" )
+  # `exec` so the backgrounded subshell is REPLACED by the server instead of
+  # staying alive to wait on it: a waiting bash would keep the SSH channel's
+  # stdout/stderr pipe open, so `ssh … ./server.sh restart` hangs long after the
+  # server is up (deploy exit 144). With exec + full fd redirection (stdin from
+  # /dev/null, stdout/stderr to the log) the daemon holds none of those fds, so
+  # the SSH session closes cleanly. $! is the exec'd server's own pid.
+  ( cd "$ROOT" && CXD_HOST="$HOST" CXD_PORT="$PORT" exec nohup "$py" "$SERVE" </dev/null >"$LOG_FILE" 2>&1 ) &
+  echo $! >"$PID_FILE"
   sleep 2
   if pid="$(running_pid)"; then
     echo "started (pid $pid).  logs: ./server.sh logs"
