@@ -118,7 +118,26 @@ def _split_table(uri: str):
     return clean, table
 
 
+def normalize_sql_url(url: str) -> str:
+    """Rewrite a ``postgres://`` URL to ``postgresql://`` for SQLAlchemy.
+
+    SQLAlchemy removed the ``postgres://`` dialect alias in 1.4, so passing one to
+    ``create_engine`` raises ``NoSuchModuleError``. Both store URIs are documented
+    as accepting ``postgres://`` (README, ``.env.example``, ``python -m cxd_server
+    --help``), and it is the spelling most operators reach for, so normalize it
+    here rather than narrowing the documented contract. Shared with
+    :mod:`cxd_server.sqldashboard`, the other ``create_engine`` caller.
+
+    :param url: A database URL, e.g. ``postgres://user:pw@host/db``.
+    :returns: The same URL with a SQLAlchemy-loadable scheme.
+    """
+    if url and url.startswith("postgres://"):
+        return "postgresql://" + url[len("postgres://"):]
+    return url
+
+
 def _get_engine(url: str):
+    url = normalize_sql_url(url)
     if url not in _engines:
         _engines[url] = _sqlalchemy().create_engine(url, future=True)
     return _engines[url]

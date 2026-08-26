@@ -80,7 +80,7 @@ The bundled read-only viewer is served at `/shared.html?token=…`.
 once into a CanvasXpress data object and persisted in a pluggable `ObjectStore`,
 selected by URI scheme. Backends: **`file://`** (local, default, zero-dep),
 **`s3://`** (S3 / S3-compatible MinIO·R2·GCS-interop; `[s3]` extra; `url_for`
-hands panels a short-lived presigned GET URL), and **`postgres://` / `sqlite://`**
+hands panels a short-lived presigned GET URL), and **`postgresql://` / `sqlite://`**
 (SQL via SQLAlchemy; `[sql]` extra + a driver such as `psycopg2-binary`; one row
 per `(owner, id)`, optional `?table=` so datasets and dashboards can share a
 database), and **`gdrive://folderId`** (Google Drive; `[gdrive]` extra; each
@@ -93,9 +93,11 @@ and credential-free and resolve with the viewer's own permissions.
 
 **Dashboards on Postgres.** The dashboard store (users + specs +
 share tokens) is relational, so it upgrades SQLite→Postgres via the *same*
-SQLAlchemy code path: set `CXD_DASHBOARD_STORE=postgres://…` (or `sqlite://…`) to
-run dashboards on Postgres; unset (or a bare path / `file://`) keeps the
-zero-dependency stdlib SQLite store. A parametrized suite runs both backends
+SQLAlchemy code path: set `CXD_DASHBOARD_STORE=postgresql://…` (or `sqlite://…`)
+to run dashboards on Postgres; unset (or a bare path / `file://`) keeps the
+zero-dependency stdlib SQLite store. The older `postgres://` spelling is accepted
+too — it is normalized to `postgresql://`, since SQLAlchemy dropped that dialect
+alias in 1.4. A parametrized suite runs both backends
 through identical asserts, proving parity.
 
 **Config & the store picker.** The browser only ever names a
