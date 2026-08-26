@@ -99,6 +99,15 @@
     .settings-form input, .settings-form select { padding: 6px 8px; border: 1px solid var(--rail-border);
       border-radius: 6px; font: inherit; font-weight: 400; text-transform: none; color: inherit; background: #fff; }
     .settings-form input[type=color] { padding: 2px; height: 34px; }
+    .settings-form .settings-field { display: flex; flex-direction: column; gap: 4px; }
+    .settings-form .settings-lbl { font-size: 14px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .03em; color: var(--muted); }
+    .settings-form .settings-inline { display: flex; align-items: center; gap: 10px; }
+    .settings-form .settings-inline select { flex: 1 1 auto; min-width: 0; }
+    .settings-form label.settings-check { flex-direction: row; align-items: center; gap: 6px;
+      text-transform: none; letter-spacing: 0; font-weight: 400; color: inherit; white-space: nowrap; }
+    .settings-form label.settings-check input[type=checkbox] { width: auto; padding: 0; }
+    .settings-form input:disabled { opacity: .5; cursor: not-allowed; }
     .settings-preview { flex: 1 1 380px; min-width: 320px; }
     .settings-preview #s-preview { border: 1px dashed var(--rail-border); border-radius: 10px; padding: 0 12px 12px; }
     @media (prefers-color-scheme: dark) {
@@ -1323,7 +1332,24 @@
             '<div class="settings-card">' +
 
             '<h4 class="settings-cat">Appearance</h4>' +
-            '<label>Theme<select id="s-theme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>' +
+            '<div class="settings-field">' +
+              '<div class="settings-inline">' +
+                '<label class="settings-lbl" for="s-theme">Theme</label>' +
+                '<label class="settings-check" for="s-bgcoord"><input type="checkbox" id="s-bgcoord"> Coordinate</label>' +
+              '</div>' +
+              '<select id="s-theme"></select>' +
+            '</div>' +
+            '<label>Colors<select id="s-colors"></select></label>' +
+            '<div class="settings-field">' +
+              '<div class="settings-inline">' +
+                '<label class="settings-lbl" for="s-panel">Panel color</label>' +
+                '<label class="settings-check" for="s-panelcoord"><input type="checkbox" id="s-panelcoord"> Match background</label>' +
+              '</div>' +
+              '<div class="settings-inline">' +
+                '<input type="color" id="s-panel">' +
+                '<input type="text" id="s-paneltext" placeholder="#ffffff · transparent" style="flex:1 1 auto;min-width:0">' +
+              '</div>' +
+            '</div>' +
             '<label>Font family<select id="s-font"></select></label>' +
             '</div>' +
           '</div>' +
@@ -1339,6 +1365,11 @@
       var cols = document.getElementById('s-cols');
       var inset = document.getElementById('s-inset');
       var theme = document.getElementById('s-theme');
+      var bgCoord = document.getElementById('s-bgcoord');
+      var colors = document.getElementById('s-colors');
+      var panel = document.getElementById('s-panel');
+      var panelText = document.getElementById('s-paneltext');
+      var panelCoord = document.getElementById('s-panelcoord');
       var fontSel = document.getElementById('s-font');
       var CX_FONTS = ['American Typewriter', 'Andale Mono', 'Arial', 'Bradley Hand',
         'Comic Sans MS', 'Courier', 'Monaco', 'Optima', 'Times New Roman', 'Trebuchet MS'];
@@ -1346,6 +1377,37 @@
         var o = document.createElement('option');
         o.value = f; o.textContent = f; o.style.fontFamily = f;
         fontSel.appendChild(o);
+      });
+
+      // The CanvasXpress library themes (value = the `theme` config value; 'auto'
+      // follows the OS light/dark preference the old way). Ordered for the menu.
+      var CX_THEMES = [
+        ['auto', 'Auto'], ['cx', 'CanvasXpress'], ['cxdark', 'CanvasXpress Dark'],
+        ['cxblue', 'CanvasXpress Blue'], ['light', 'Light'], ['dark', 'Dark'],
+        ['minimal', 'Minimal'], ['classic', 'Classic'], ['grey', 'Grey (ggplot)'],
+        ['bw', 'Black & White'], ['linedraw', 'Line Draw'], ['void', 'Void'],
+        ['economist', 'Economist'], ['excel', 'Excel'], ['solarized', 'Solarized'],
+        ['ptol', 'Paul Tol'], ['highcharts', 'Highcharts'], ['wsj', 'Wall Street Journal'],
+        ['tableau', 'Tableau'], ['stata', 'Stata'], ['ggblanket', 'ggblanket']
+      ];
+      CX_THEMES.forEach(function (t) {
+        var o = document.createElement('option');
+        o.value = t[0]; o.textContent = t[1];
+        theme.appendChild(o);
+      });
+
+      // Color schemes come straight from the loaded library, so the list always
+      // matches whatever CanvasXpress ships. Fall back to a small set if absent.
+      var schemeNames = (window.CanvasXpress && window.CanvasXpress.colorSchemes)
+        ? Object.keys(window.CanvasXpress.colorSchemes).sort()
+        : ['CanvasXpress', 'Tableau', 'Viridis', 'NPG', 'Default'];
+      var noneOpt = document.createElement('option');
+      noneOpt.value = ''; noneOpt.textContent = 'Default (per chart)';
+      colors.appendChild(noneOpt);
+      schemeNames.forEach(function (name) {
+        var o = document.createElement('option');
+        o.value = name; o.textContent = name;
+        colors.appendChild(o);
       });
 
       bg.value = hexOr(currentSpec.background, '#f2f4f7');
@@ -1357,6 +1419,11 @@
       cols.value = L.cols != null ? L.cols : 12;
       inset.value = currentSpec.canvasInset != null ? currentSpec.canvasInset : 18;
       theme.value = currentSpec.theme || 'auto';
+      colors.value = currentSpec.colorScheme || '';
+      bgCoord.checked = !!currentSpec.coordinateBackground;
+      panel.value = hexOr(currentSpec.panelColor, '#ffffff');
+      panelText.value = currentSpec.panelColor || '';
+      panelCoord.checked = !!currentSpec.coordinatePanel;
       fontSel.value = currentSpec.fontName || 'Arial';
 
       var previewTimer = null;
@@ -1368,18 +1435,35 @@
         // burst of `input` events, each tearing down + recreating every graph,
         // and the instances flicker/disappear mid-drag. Layout/theme changes
         // still need a render, but debounced so a rapid input doesn't thrash it.
+        // Chrome (background, panel colour, and their coordinate toggles) is pure
+        // container styling — the renderer only sets it on the host, no
+        // CanvasXpress involvement — so reflect it live and SKIP the re-render.
+        // Otherwise dragging a colour picker fires a burst of `input` events,
+        // each tearing down + recreating every graph, and the instances
+        // flicker/disappear mid-drag. Layout/theme changes still need a render,
+        // debounced so a rapid input doesn't thrash it.
+        var CHROME = { background: 1, backgroundImage: 1, panelColor: 1, coordinateBackground: 1, coordinatePanel: 1 };
         var keys = Object.keys(changes);
-        var bgOnly = keys.length > 0 &&
-          keys.every(function (k) { return k === 'background' || k === 'backgroundImage'; });
-        if (bgOnly) {
-          applyBgLive(document.getElementById('s-preview'));
+        var chromeOnly = keys.length > 0 && keys.every(function (k) { return CHROME[k]; });
+        if (chromeOnly) {
+          applyChromeLive(document.getElementById('s-preview'));
         } else {
           schedulePreview();
         }
       }
-      function applyBgLive(host) {
+      // Effective background: the theme's panel background when coordinating,
+      // else the spec's own background (mirrors renderDashboard).
+      function effBg() {
+        return (currentSpec.coordinateBackground ? themeBg(currentSpec.theme) : '') || currentSpec.background || '';
+      }
+      // Effective panel-chrome colour: the effective background when matching
+      // (borderless), else the spec's own panelColor.
+      function effPanel() {
+        return currentSpec.coordinatePanel ? effBg() : (currentSpec.panelColor || '');
+      }
+      function applyChromeLive(host) {
         if (!host) return;
-        host.style.backgroundColor = currentSpec.background || '';
+        host.style.backgroundColor = effBg();
         if (currentSpec.backgroundImage) {
           host.style.backgroundImage = 'url("' + String(currentSpec.backgroundImage).replace(/"/g, '\\"') + '")';
           host.style.backgroundSize = 'cover';
@@ -1388,13 +1472,48 @@
         } else {
           host.style.backgroundImage = '';
         }
+        var pc = effPanel();
+        ['--cxd-panel-bg', '--cxd-title-bg', '--cxd-border'].forEach(function (v) {
+          if (pc) host.style.setProperty(v, pc); else host.style.removeProperty(v);
+        });
+        // Control borders always contrast with what they sit on (see renderer).
+        var backdrop = pc || effBg();
+        var cb = /^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(backdrop)
+          ? (isDarkHex(backdrop) ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.35)') : '';
+        if (cb) host.style.setProperty('--cxd-ctrl-border', cb); else host.style.removeProperty('--cxd-ctrl-border');
+      }
+      function isDarkHex(color) {
+        var m = /^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.exec(String(color || '').trim());
+        if (!m) return false;
+        var h = m[1];
+        if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
+        return (0.299 * parseInt(h.substr(0, 2), 16) + 0.587 * parseInt(h.substr(2, 2), 16) + 0.114 * parseInt(h.substr(4, 2), 16)) < 128;
       }
       function schedulePreview() {
         if (previewTimer) clearTimeout(previewTimer);
         previewTimer = setTimeout(function () { previewTimer = null; renderSettingsPreview(); }, 150);
       }
-      bg.addEventListener('input', function () { bgText.value = bg.value; apply({ background: bg.value }); });
-      bgText.addEventListener('input', function () { if (isHex(bgText.value)) bg.value = bgText.value; apply({ background: bgText.value }); });
+      bg.addEventListener('input', function () { bgText.value = bg.value; apply({ background: bg.value }); if (panelCoord.checked) reflectPanelControls(); });
+      bgText.addEventListener('input', function () { if (isHex(bgText.value)) bg.value = bgText.value; apply({ background: bgText.value }); if (panelCoord.checked) reflectPanelControls(); });
+
+      // Panel-chrome colour: when "Match background" is on the chrome follows the
+      // effective background (borderless) and the pickers are disabled but show
+      // that colour; otherwise the pickers set an explicit panelColor.
+      function reflectPanelControls() {
+        var coord = panelCoord.checked;
+        panel.disabled = coord; panelText.disabled = coord;
+        if (coord) {
+          var c = effBg();
+          if (isHex(c)) panel.value = c;
+          if (c) panelText.value = c;
+        } else {
+          panel.value = hexOr(currentSpec.panelColor, '#ffffff');
+          panelText.value = currentSpec.panelColor || '';
+        }
+      }
+      panel.addEventListener('input', function () { panelText.value = panel.value; apply({ panelColor: panel.value }); });
+      panelText.addEventListener('input', function () { if (isHex(panelText.value)) panel.value = panelText.value; apply({ panelColor: panelText.value }); });
+      panelCoord.addEventListener('change', function () { apply({ coordinatePanel: panelCoord.checked }); reflectPanelControls(); });
 
       var bgImgFile = document.getElementById('s-bgimg-file');
       var bgImgUrl = document.getElementById('s-bgimg-url');
@@ -1418,7 +1537,78 @@
       rh.addEventListener('input', function () { apply({ rowHeight: num(rh.value) }); });
       cols.addEventListener('input', function () { apply({ cols: num(cols.value) }); });
       inset.addEventListener('input', function () { apply({ canvasInset: num(inset.value) }); });
-      theme.addEventListener('change', function () { apply({ theme: theme.value }); });
+      // Read a theme's panel background straight from the loaded library, so the
+      // "Coordinate" option stays in step with whatever CanvasXpress ships.
+      function themeBg(name) {
+        var CX = window.CanvasXpress;
+        if (!CX || !CX.themeDef) return '';
+        var key = String(name || '').toLowerCase().replace(/[\s_]+/g, '');
+        if (key === 'auto') {
+          var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          key = dark ? 'cxdark' : 'cx';
+        }
+        var def = CX.themeDef[key];
+        if (!def) return '';
+        var fill = def['panel.background.fill'];
+        if (!fill || fill === 'element_blank') fill = def['plot.background.fill'];
+        return (fill && fill !== 'element_blank') ? fill : '';
+      }
+      // While coordinating, the background is derived from the theme (the spec's
+      // own `background` is left untouched, so it returns verbatim on uncheck).
+      // Disable the pickers and show the themed colour in them as feedback.
+      function reflectBgControls() {
+        var coord = bgCoord.checked;
+        bg.disabled = coord; bgText.disabled = coord;
+        if (coord) {
+          var c = themeBg(theme.value);
+          if (isHex(c)) bg.value = c;
+          if (c) bgText.value = c;
+        } else {
+          bg.value = hexOr(currentSpec.background, '#f2f4f7');
+          bgText.value = currentSpec.background || '';
+        }
+      }
+      // Live-apply to every rendered CanvasXpress instance using the library's own
+      // theme switch (setTheme redraws itself) — the same mechanism the library
+      // uses internally. The persisted config change (apply) covers fresh renders.
+      function liveApplyTheme(name) {
+        var list = window.CanvasXpress && window.CanvasXpress.instances || [];
+        for (var i = 0; i < list.length; i++) {
+          try { if (typeof list[i].setTheme === 'function') list[i].setTheme(name || 'auto'); }
+          catch (e) { /* best-effort */ }
+        }
+      }
+      // Live-apply a color scheme: set the instance's colorScheme, recompute its
+      // color array via the library's setColorScheme, then redraw.
+      function liveApplyColors(name) {
+        if (!name) return;   // empty = per-chart default; the re-render restores it
+        var list = window.CanvasXpress && window.CanvasXpress.instances || [];
+        for (var i = 0; i < list.length; i++) {
+          try {
+            var g = list[i];
+            g.colorScheme = name;
+            if (typeof g.setColorScheme === 'function') g.setColorScheme();
+            if (typeof g.draw === 'function') g.draw();
+          } catch (e) { /* best-effort */ }
+        }
+      }
+      theme.addEventListener('change', function () {
+        apply({ theme: theme.value });   // renderer re-derives the coordinated bg
+        reflectBgControls();
+        if (panelCoord.checked) { applyChromeLive(document.getElementById('s-preview')); reflectPanelControls(); }
+        liveApplyTheme(theme.value);
+      });
+      bgCoord.addEventListener('change', function () {
+        apply({ coordinateBackground: bgCoord.checked });
+        reflectBgControls();
+        if (panelCoord.checked) { applyChromeLive(document.getElementById('s-preview')); reflectPanelControls(); }
+      });
+      colors.addEventListener('change', function () {
+        apply({ colorScheme: colors.value });
+        liveApplyColors(colors.value);
+      });
+      reflectBgControls();
+      reflectPanelControls();
       fontSel.addEventListener('change', function () {
         apply({ fontName: fontSel.value });
         // Live-apply to every existing CanvasXpress instance on the page (the

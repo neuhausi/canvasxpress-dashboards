@@ -15,10 +15,15 @@ var dashboardCss = [
   '.cxd-panel { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0;',
   '  border: 1px solid var(--cxd-border, #e2e5ea); border-radius: 8px; overflow: hidden;',
   '  background: var(--cxd-panel-bg, #ffffff); }',
-  '.cxd-panel-title { flex: 0 0 auto; padding: 6px 10px; font: 600 16px/1.3 system-ui, sans-serif;',
+  '.cxd-panel-title { flex: 0 0 auto; padding: 6px 10px; font: 600 16px/1.3 var(--cxd-font, system-ui, sans-serif);',
   '  color: var(--cxd-title, #2a2f36); border-bottom: 1px solid var(--cxd-border, #e2e5ea);',
   '  background: var(--cxd-title-bg, #f7f8fa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
-  '.cxd-panel-body { position: relative; flex: 1 1 auto; min-height: 0; }',
+  // Centre the graph canvas in the body so any leftover space (the few px a
+  // graph leaves, or a reserved canvasInset margin) is even on ALL sides rather
+  // than pooling at the right and bottom. Text/control panels set their own
+  // inline flex alignment (applyAlignment), which overrides this.
+  '.cxd-panel-body { position: relative; flex: 1 1 auto; min-height: 0;',
+  '  display: flex; align-items: center; justify-content: center; }',
   '.cxd-text { width: 100%; height: 100%; padding: 5px 12px; overflow: auto;',
   '  font: 16px/1.35 system-ui, sans-serif; color: var(--cxd-title, #2a2f36); white-space: pre-wrap; word-break: break-word; }',
   // Text elements are chrome-free by default (no border/background) so they sit
@@ -32,15 +37,18 @@ var dashboardCss = [
   '.cxd-annctl-cell { border: none; background: transparent; overflow: visible; z-index: 3; }',
   '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
   '  padding: 5px 0; background: transparent;',
-  '  font: 14px/1.3 system-ui, sans-serif; color: var(--cxd-title,#2a2f36); }',
+  '  font: 14px/1.3 var(--cxd-font, system-ui, sans-serif); color: var(--cxd-title,#2a2f36); }',
   '.cxd-annctl-label { font-weight: 600; white-space: nowrap; }',
   '.cxd-annctl-hint { color: var(--cxd-muted,#8a9099); }',
-  '.cxd-annctl-select { padding: 4px 7px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px;',
+  // Controls use --cxd-ctrl-border (a colour the renderer computes to contrast
+  // with whatever the control sits on) so the box stays visible even when the
+  // panel chrome is coordinated to the background. Falls back to the theme border.
+  '.cxd-annctl-select { padding: 4px 7px; border: 1px solid var(--cxd-ctrl-border,var(--cxd-border,#d0d4da)); border-radius: 6px;',
   '  font: inherit; background: var(--cxd-panel-bg,#fff); color: inherit; }',
   '.cxd-annctl-radios { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }',
   '.cxd-annctl-radio { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }',
-  '.cxd-annctl-seg { display: inline-flex; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px; overflow: hidden; }',
-  '.cxd-annctl-segbtn { padding: 4px 11px; border: none; border-right: 1px solid var(--cxd-border,#d0d4da);',
+  '.cxd-annctl-seg { display: inline-flex; border: 1px solid var(--cxd-ctrl-border,var(--cxd-border,#d0d4da)); border-radius: 6px; overflow: hidden; }',
+  '.cxd-annctl-segbtn { padding: 4px 11px; border: none; border-right: 1px solid var(--cxd-ctrl-border,var(--cxd-border,#d0d4da));',
   '  background: transparent; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }',
   '.cxd-annctl-segbtn:last-child { border-right: none; }',
   '.cxd-annctl-segbtn:hover { background: rgba(0,0,0,.06); }',
@@ -793,6 +801,8 @@ function renderDashboard(spec, target, options) {
   container.innerHTML = '';
   container.classList.add('cxd-dashboard');
   applyTheme(container, spec.theme);
+  applyPanelColor(container, spec);
+  applyDashboardFont(container, spec);
   var cols = (spec.layout && spec.layout.cols) || 12;
   var rowHeight = (spec.layout && spec.layout.rowHeight) || 30;
   var gap = (spec.layout && spec.layout.gap != null) ? spec.layout.gap : 12;
@@ -1011,9 +1021,7 @@ function renderDashboard(spec, target, options) {
         if (isEmptyData(data)) { cell.setState('empty'); notify(null, 'empty'); return null; }
         sizeCanvasToCell(cell, canvasInset);
         var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
-        if (spec.fontName && !Object.prototype.hasOwnProperty.call(config, 'fontName')) {
-          config.fontName = spec.fontName;   // dashboard-wide font (Settings)
-        }
+        applyDashboardChartStyle(config, spec);   // dashboard-wide font/theme/colors (Settings)
         var instance = new CX(canvasId, data, config, panel && panel.events || {});
         instances.push(instance);
         if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
@@ -1207,9 +1215,7 @@ function renderDashboard(spec, target, options) {
         if (isEmptyData(data)) { cell.setState('empty'); notifyControl(null, 'empty'); return; }
         sizeCanvasToCell(cell, canvasInset);
         var config = mergeConfig(controlConfig(control), broadcastGroup, control);
-        if (spec.fontName && !Object.prototype.hasOwnProperty.call(config, 'fontName')) {
-          config.fontName = spec.fontName;   // dashboard-wide font (Settings)
-        }
+        applyDashboardChartStyle(config, spec);   // dashboard-wide font/theme/colors (Settings)
         var instance = new CX(canvasId, data, config, {});
         instances.push(instance);
         bind(control.dataRef, instance);
@@ -1882,15 +1888,184 @@ function buildCell(title) {
 }
 
 /**
- * Apply a theme class to the container.
+ * Apply dashboard-wide chart styling (font, theme, color scheme) onto a single
+ * chart/control config as defaults — only when the dashboard sets them and the
+ * chart hasn't already specified its own. Mutates `config` in place.
+ * @param {object} config - The chart's merged CanvasXpress config.
+ * @param {object} spec - The dashboard spec (`fontName`, `theme`, `colorScheme`).
+ * @returns {void}
+ * @private
+ */
+function applyDashboardChartStyle(config, spec) {
+  if (spec.fontName && !Object.prototype.hasOwnProperty.call(config, 'fontName')) {
+    config.fontName = spec.fontName;
+  }
+  // Theme and color scheme are dashboard-WIDE controls: when the dashboard sets
+  // one it OVERRIDES any per-panel value, so selecting a theme restyles every
+  // graph. (Saved/AI-generated specs commonly bake theme:'auto' into each panel
+  // config; without the override that baked value would win and the dashboard
+  // theme would silently no-op.) 'auto' is a valid value — the engine resolves
+  // it to its light/dark pair.
+  if (spec.theme) {
+    config.theme = spec.theme;
+  }
+  if (spec.colorScheme) {
+    config.colorScheme = spec.colorScheme;
+  }
+}
+
+/**
+ * Apply the dashboard shell (chrome) theme class to the container. The chrome is
+ * only light or dark; we derive which from the chosen CanvasXpress library
+ * theme's panel background luminance (read from the library), so e.g. `cxdark`
+ * and `cxblue` yield the dark chrome. The literal `auto` keeps the old
+ * OS-following behavior via the `cxd-theme-auto` class.
  * @param {HTMLElement} container - Dashboard container.
- * @param {('light'|'dark'|'auto')} [theme] - Theme; defaults to auto.
+ * @param {string} [theme] - A CanvasXpress theme name, or `auto` (default).
  * @returns {void}
  * @private
  */
 function applyTheme(container, theme) {
   container.classList.remove('cxd-theme-light', 'cxd-theme-dark', 'cxd-theme-auto');
-  container.classList.add('cxd-theme-' + (theme || 'auto'));
+  if (!theme || theme === 'auto') {
+    container.classList.add('cxd-theme-auto');
+    return;
+  }
+  var bg = themeBackground(theme);
+  container.classList.add(isDarkColor(bg) ? 'cxd-theme-dark' : 'cxd-theme-light');
+}
+
+/**
+ * Look up a CanvasXpress library theme's panel background color from the loaded
+ * library (`CanvasXpress.themeDef`). Returns a CSS color string, or '' when the
+ * theme, the library, or an explicit fill can't be resolved (transparent panel).
+ * @param {string} theme - A CanvasXpress theme name (e.g. 'cxdark', 'economist').
+ * @returns {string} The panel background color, or '' if none/transparent.
+ * @private
+ */
+function themeBackground(theme) {
+  var CanvasXpress = (typeof window !== 'undefined' && window.CanvasXpress) || null;
+  if (!CanvasXpress || !CanvasXpress.themeDef) return '';
+  var key = String(theme).toLowerCase().replace(/[\s_]+/g, '');
+  if (key === 'auto') {
+    // Follow the OS like the engine does: resolve to the cx light/dark pair.
+    var prefersDark = typeof window !== 'undefined' && window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches;
+    key = prefersDark ? 'cxdark' : 'cx';
+  }
+  var def = CanvasXpress.themeDef[key];
+  if (!def) return '';
+  var fill = def['panel.background.fill'];
+  if (!fill || fill === 'element_blank') fill = def['plot.background.fill'];
+  return (fill && fill !== 'element_blank') ? fill : '';
+}
+
+/**
+ * Decide whether a CSS hex color reads as "dark" (so the shell chrome should use
+ * its dark variant). Non-hex or empty inputs are treated as light.
+ * @param {string} color - A `#rgb`/`#rrggbb` color string.
+ * @returns {boolean} True when the color's perceived luminance is low.
+ * @private
+ */
+function isDarkColor(color) {
+  var m = /^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.exec(String(color || '').trim());
+  if (!m) return false;
+  var hex = m[1];
+  if (hex.length === 3) hex = hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2);
+  var r = parseInt(hex.substr(0, 2), 16);
+  var g = parseInt(hex.substr(2, 2), 16);
+  var b = parseInt(hex.substr(4, 2), 16);
+  // Rec. 601 luma; < 128 is dark.
+  return (0.299 * r + 0.587 * g + 0.114 * b) < 128;
+}
+
+/**
+ * Resolve the dashboard's effective background colour: the theme's panel
+ * background when `coordinateBackground` is set (read from the library), else
+ * the spec's own `background`, else '' (transparent — the container shows
+ * through to the theme chrome).
+ * @param {object} spec - The dashboard spec.
+ * @returns {string} A CSS colour, or '' for none.
+ * @private
+ */
+function effectiveBackground(spec) {
+  var coordinated = spec.coordinateBackground ? themeBackground(spec.theme) : '';
+  return coordinated || (spec.background ? spec.background : '');
+}
+
+/**
+ * Resolve the dashboard's panel-chrome colour: the effective background when
+ * `coordinatePanel` is set (so the panels blend into the background and read as
+ * borderless), else the spec's own `panelColor`, else '' (keep the theme's
+ * chrome).
+ * @param {object} spec - The dashboard spec.
+ * @returns {string} A CSS colour, or '' for none.
+ * @private
+ */
+function effectivePanelColor(spec) {
+  if (spec.coordinatePanel) return effectiveBackground(spec);
+  return spec.panelColor ? spec.panelColor : '';
+}
+
+/**
+ * Paint the panel chrome (title bar, panel background, and border) a single
+ * colour by overriding the theme's CSS custom properties on the container. When
+ * that colour equals the dashboard background, panels blend in and look
+ * borderless. Clearing it restores the theme's chrome.
+ * @param {HTMLElement} container - Dashboard container.
+ * @param {object} spec - The dashboard spec (`panelColor`, `coordinatePanel`).
+ * @returns {void}
+ * @private
+ */
+function applyPanelColor(container, spec) {
+  var style = container.style;
+  // The test DOM stub omits setProperty/removeProperty; skip when unavailable.
+  if (!style || typeof style.setProperty !== 'function' || typeof style.removeProperty !== 'function') return;
+  var color = effectivePanelColor(spec);
+  var vars = ['--cxd-panel-bg', '--cxd-title-bg', '--cxd-border'];
+  for (var i = 0; i < vars.length; i++) {
+    if (color) style.setProperty(vars[i], color);
+    else style.removeProperty(vars[i]);
+  }
+  // Control boxes get a border that always CONTRASTS with whatever they sit on
+  // (the panel colour, else the background) — so coordinating the chrome to the
+  // background can't make the control border vanish. When the backdrop is
+  // unknown/unparseable, fall back to the theme border (var not set).
+  var backdrop = color || effectiveBackground(spec);
+  var ctrlBorder = contrastingBorder(backdrop);
+  if (ctrlBorder) style.setProperty('--cxd-ctrl-border', ctrlBorder);
+  else style.removeProperty('--cxd-ctrl-border');
+}
+
+/**
+ * Pick a border colour that contrasts with a backdrop: a translucent light line
+ * on a dark backdrop, a translucent dark line on a light one. Returns '' when
+ * the backdrop isn't a parseable hex colour (caller then keeps the theme border).
+ * @param {string} backdrop - The colour the control sits on.
+ * @returns {string} An rgba() border colour, or '' if undecidable.
+ * @private
+ */
+function contrastingBorder(backdrop) {
+  if (!/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(backdrop || '').trim())) return '';
+  return isDarkColor(backdrop) ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.35)';
+}
+
+/**
+ * Apply the dashboard-wide font to the DOM chrome (panel titles) by setting the
+ * `--cxd-font` custom property on the container. The graphs themselves get the
+ * font via each chart's `fontName` config; this covers the HTML titles, which
+ * are not drawn by CanvasXpress. A fallback stack keeps text legible if the
+ * named font is unavailable. Clearing it restores the default system font.
+ * @param {HTMLElement} container - Dashboard container.
+ * @param {object} spec - The dashboard spec (`fontName`).
+ * @returns {void}
+ * @private
+ */
+function applyDashboardFont(container, spec) {
+  var style = container.style;
+  if (!style || typeof style.setProperty !== 'function' || typeof style.removeProperty !== 'function') return;
+  if (spec.fontName) style.setProperty('--cxd-font', '"' + spec.fontName + '", system-ui, sans-serif');
+  else style.removeProperty('--cxd-font');
 }
 
 /**
@@ -1898,8 +2073,11 @@ function applyTheme(container, theme) {
  * fills the entire area, and inset the grid by `gap` so the background is
  * visible as a margin around the panels (top/right/bottom/left) — matching the
  * gutters between them.
+ * When `coordinateBackground` is set, the background colour is taken from the
+ * chosen theme's panel background (read from the library) instead of the spec's
+ * own `background`, keeping the dashboard surface in step with the charts.
  * @param {HTMLElement} container - Dashboard container.
- * @param {object} spec - The dashboard spec (`background`, `backgroundImage`).
+ * @param {object} spec - The dashboard spec (`background`, `backgroundImage`, `coordinateBackground`, `theme`).
  * @param {number} gap - The inter-panel gap (px), reused as the outer margin.
  * @returns {void}
  * @private
@@ -1908,7 +2086,7 @@ function applyBackground(container, spec, gap) {
   var s = container.style;
   s.boxSizing = 'border-box';
   s.padding = (gap > 0 ? gap : 0) + 'px';
-  s.backgroundColor = spec.background ? spec.background : '';
+  s.backgroundColor = effectiveBackground(spec);
   if (spec.backgroundImage) {
     s.backgroundImage = 'url("' + String(spec.backgroundImage).replace(/"/g, '\\"') + '")';
     s.backgroundSize = 'cover';
@@ -2671,9 +2849,16 @@ function setDataSource(spec, ref, source) {
 /**
  * Update dashboard-level presentation settings, purely. Recognized keys:
  * top-level `background` (CSS color), `backgroundImage` (URL or data URI),
- * `canvasInset` (px margin around each graph), `theme` ('light'|'dark'|'auto');
- * and layout `cols`, `rowHeight`, `gap` (px between panels). A nullish/empty
- * `background`/`backgroundImage` clears it.
+ * `canvasInset` (px margin around each graph), `theme` (a CanvasXpress library
+ * theme name, or `'auto'` to follow the OS light/dark preference),
+ * `colorScheme` (a CanvasXpress library color-scheme name applied to every
+ * chart), `coordinateBackground` (boolean; sync the dashboard background to the
+ * theme's panel background), `panelColor` (CSS color for the panel chrome —
+ * title bar, panel background, and border), `coordinatePanel` (boolean; match
+ * the panel chrome to the dashboard background for a borderless look); and
+ * layout `cols`, `rowHeight`, `gap` (px between panels). A nullish/empty
+ * `background`/`backgroundImage`/`theme`/`colorScheme`/`panelColor` clears it.
+ * `coordinateBackground`/`coordinatePanel` are deleted when falsy.
  *
  * @param {object} spec - The current spec.
  * @param {object} changes - Any subset of the recognized keys.
@@ -2681,11 +2866,16 @@ function setDataSource(spec, ref, source) {
  */
 function updateSettings(spec, changes) {
   var next = cloneSpec(spec);
-  ['background', 'backgroundImage', 'canvasInset', 'theme', 'width', 'height', 'fontName'].forEach(function (key) {
+  ['background', 'backgroundImage', 'canvasInset', 'theme', 'colorScheme', 'panelColor', 'width', 'height', 'fontName'].forEach(function (key) {
     if (!Object.prototype.hasOwnProperty.call(changes, key)) return;
     var value = changes[key];
     if (value == null || value === '') delete next[key];
     else next[key] = value;
+  });
+  ['coordinateBackground', 'coordinatePanel'].forEach(function (key) {
+    if (!Object.prototype.hasOwnProperty.call(changes, key)) return;
+    if (changes[key]) next[key] = true;
+    else delete next[key];
   });
   ['cols', 'rowHeight', 'gap'].forEach(function (key) {
     if (Object.prototype.hasOwnProperty.call(changes, key) && changes[key] != null) {

@@ -13,10 +13,15 @@ export var dashboardCss = [
   '.cxd-panel { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0;',
   '  border: 1px solid var(--cxd-border, #e2e5ea); border-radius: 8px; overflow: hidden;',
   '  background: var(--cxd-panel-bg, #ffffff); }',
-  '.cxd-panel-title { flex: 0 0 auto; padding: 6px 10px; font: 600 16px/1.3 system-ui, sans-serif;',
+  '.cxd-panel-title { flex: 0 0 auto; padding: 6px 10px; font: 600 16px/1.3 var(--cxd-font, system-ui, sans-serif);',
   '  color: var(--cxd-title, #2a2f36); border-bottom: 1px solid var(--cxd-border, #e2e5ea);',
   '  background: var(--cxd-title-bg, #f7f8fa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
-  '.cxd-panel-body { position: relative; flex: 1 1 auto; min-height: 0; }',
+  // Centre the graph canvas in the body so any leftover space (the few px a
+  // graph leaves, or a reserved canvasInset margin) is even on ALL sides rather
+  // than pooling at the right and bottom. Text/control panels set their own
+  // inline flex alignment (applyAlignment), which overrides this.
+  '.cxd-panel-body { position: relative; flex: 1 1 auto; min-height: 0;',
+  '  display: flex; align-items: center; justify-content: center; }',
   '.cxd-text { width: 100%; height: 100%; padding: 5px 12px; overflow: auto;',
   '  font: 16px/1.35 system-ui, sans-serif; color: var(--cxd-title, #2a2f36); white-space: pre-wrap; word-break: break-word; }',
   // Text elements are chrome-free by default (no border/background) so they sit
@@ -30,15 +35,18 @@ export var dashboardCss = [
   '.cxd-annctl-cell { border: none; background: transparent; overflow: visible; z-index: 3; }',
   '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
   '  padding: 5px 0; background: transparent;',
-  '  font: 14px/1.3 system-ui, sans-serif; color: var(--cxd-title,#2a2f36); }',
+  '  font: 14px/1.3 var(--cxd-font, system-ui, sans-serif); color: var(--cxd-title,#2a2f36); }',
   '.cxd-annctl-label { font-weight: 600; white-space: nowrap; }',
   '.cxd-annctl-hint { color: var(--cxd-muted,#8a9099); }',
-  '.cxd-annctl-select { padding: 4px 7px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px;',
+  // Controls use --cxd-ctrl-border (a colour the renderer computes to contrast
+  // with whatever the control sits on) so the box stays visible even when the
+  // panel chrome is coordinated to the background. Falls back to the theme border.
+  '.cxd-annctl-select { padding: 4px 7px; border: 1px solid var(--cxd-ctrl-border,var(--cxd-border,#d0d4da)); border-radius: 6px;',
   '  font: inherit; background: var(--cxd-panel-bg,#fff); color: inherit; }',
   '.cxd-annctl-radios { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }',
   '.cxd-annctl-radio { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }',
-  '.cxd-annctl-seg { display: inline-flex; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px; overflow: hidden; }',
-  '.cxd-annctl-segbtn { padding: 4px 11px; border: none; border-right: 1px solid var(--cxd-border,#d0d4da);',
+  '.cxd-annctl-seg { display: inline-flex; border: 1px solid var(--cxd-ctrl-border,var(--cxd-border,#d0d4da)); border-radius: 6px; overflow: hidden; }',
+  '.cxd-annctl-segbtn { padding: 4px 11px; border: none; border-right: 1px solid var(--cxd-ctrl-border,var(--cxd-border,#d0d4da));',
   '  background: transparent; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }',
   '.cxd-annctl-segbtn:last-child { border-right: none; }',
   '.cxd-annctl-segbtn:hover { background: rgba(0,0,0,.06); }',

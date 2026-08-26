@@ -98,6 +98,26 @@ test('updateSettings clears an emptied background and only touches provided keys
   assert.equal(cleared.canvasInset, 10, 'unprovided keys are left alone');
 });
 
+test('updateSettings sets/clears colorScheme and coordinateBackground', function () {
+  var s = updateSettings(blankSpec('d1'), { theme: 'cxdark', colorScheme: 'Viridis', coordinateBackground: true });
+  assert.equal(s.theme, 'cxdark');
+  assert.equal(s.colorScheme, 'Viridis');
+  assert.equal(s.coordinateBackground, true);
+  var off = updateSettings(s, { colorScheme: '', coordinateBackground: false });
+  assert.equal(off.colorScheme, undefined, 'emptied colorScheme is removed');
+  assert.equal(off.coordinateBackground, undefined, 'falsy coordinateBackground is removed');
+  assert.equal(off.theme, 'cxdark', 'unprovided keys are left alone');
+});
+
+test('updateSettings sets/clears panelColor and coordinatePanel', function () {
+  var s = updateSettings(blankSpec('d1'), { panelColor: '#101418', coordinatePanel: true });
+  assert.equal(s.panelColor, '#101418');
+  assert.equal(s.coordinatePanel, true);
+  var off = updateSettings(s, { panelColor: '', coordinatePanel: false });
+  assert.equal(off.panelColor, undefined, 'emptied panelColor is removed');
+  assert.equal(off.coordinatePanel, undefined, 'falsy coordinatePanel is removed');
+});
+
 test('updateSettings sets and clears a background image', function () {
   var s = updateSettings(blankSpec('d1'), { backgroundImage: 'data:image/png;base64,AAA' });
   assert.equal(s.backgroundImage, 'data:image/png;base64,AAA');

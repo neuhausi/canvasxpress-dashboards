@@ -280,9 +280,16 @@ export function setDataSource(spec, ref, source) {
 /**
  * Update dashboard-level presentation settings, purely. Recognized keys:
  * top-level `background` (CSS color), `backgroundImage` (URL or data URI),
- * `canvasInset` (px margin around each graph), `theme` ('light'|'dark'|'auto');
- * and layout `cols`, `rowHeight`, `gap` (px between panels). A nullish/empty
- * `background`/`backgroundImage` clears it.
+ * `canvasInset` (px margin around each graph), `theme` (a CanvasXpress library
+ * theme name, or `'auto'` to follow the OS light/dark preference),
+ * `colorScheme` (a CanvasXpress library color-scheme name applied to every
+ * chart), `coordinateBackground` (boolean; sync the dashboard background to the
+ * theme's panel background), `panelColor` (CSS color for the panel chrome —
+ * title bar, panel background, and border), `coordinatePanel` (boolean; match
+ * the panel chrome to the dashboard background for a borderless look); and
+ * layout `cols`, `rowHeight`, `gap` (px between panels). A nullish/empty
+ * `background`/`backgroundImage`/`theme`/`colorScheme`/`panelColor` clears it.
+ * `coordinateBackground`/`coordinatePanel` are deleted when falsy.
  *
  * @param {object} spec - The current spec.
  * @param {object} changes - Any subset of the recognized keys.
@@ -290,11 +297,16 @@ export function setDataSource(spec, ref, source) {
  */
 export function updateSettings(spec, changes) {
   var next = cloneSpec(spec);
-  ['background', 'backgroundImage', 'canvasInset', 'theme', 'width', 'height', 'fontName'].forEach(function (key) {
+  ['background', 'backgroundImage', 'canvasInset', 'theme', 'colorScheme', 'panelColor', 'width', 'height', 'fontName'].forEach(function (key) {
     if (!Object.prototype.hasOwnProperty.call(changes, key)) return;
     var value = changes[key];
     if (value == null || value === '') delete next[key];
     else next[key] = value;
+  });
+  ['coordinateBackground', 'coordinatePanel'].forEach(function (key) {
+    if (!Object.prototype.hasOwnProperty.call(changes, key)) return;
+    if (changes[key]) next[key] = true;
+    else delete next[key];
   });
   ['cols', 'rowHeight', 'gap'].forEach(function (key) {
     if (Object.prototype.hasOwnProperty.call(changes, key) && changes[key] != null) {
