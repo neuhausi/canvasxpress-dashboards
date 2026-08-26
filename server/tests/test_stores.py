@@ -105,7 +105,7 @@ def test_dataset_targets_named_store_and_lists_across_stores(multistore_app):
 
     # Fetch back from the s3 store by id + ?store.
     data = client.get("/api/datasets/%s?store=s3-prod" % s3["id"]).json()
-    assert data["y"]["smps"] == ["B"]
+    assert data == [["id", "v"], ["B", 2.0]]  # 2D array round-trips
     # Wrong store -> 404 (owner-scoped + store-scoped).
     assert client.get("/api/datasets/%s" % s3["id"]).status_code == 404
 

@@ -131,6 +131,17 @@ pip install -e '.[dev,web]'
 pytest -q
 ```
 
+The SQL stores run against SQLite in CI. Before a durable Postgres cutover, prove
+the identical code path on a real Postgres by pointing the suite at one — the
+`pg` backend then joins the object-store and dashboard-store conformance tests
+(unset, it's simply absent, never red):
+
+```bash
+pip install -e '.[dev,web,postgres]'
+CXD_TEST_PG_URL=postgresql://user:pass@localhost:5432/cxd_test \
+    pytest -q tests/test_objectstore.py tests/test_store.py
+```
+
 ## License
 
 MIT © Isaac Neuhaus

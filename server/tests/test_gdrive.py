@@ -75,7 +75,7 @@ def test_dataset_roundtrip_on_gdrive(gdrive_app):
     assert summary["store"] == "gdrive"
     assert summary["url"].startswith("https://drive.google.com/")  # url_for = Drive link
     data = client.get("/api/datasets/%s" % summary["id"]).json()
-    assert data["y"]["smps"] == ["A", "B"]
+    assert data == [["id", "sales"], ["A", 10.0], ["B", 20.0]]  # 2D array round-trips
 
 
 def test_gdrive_owner_isolation(gdrive_app):

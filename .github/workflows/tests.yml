@@ -1,0 +1,49 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  server:
+    name: server (pytest + Postgres)
+    runs-on: ubuntu-latest
+
+    # A real Postgres so the SQL stores' conformance suite runs against the same
+    # engine production uses — not just the SQLite stand-in. Setting CXD_TEST_PG_URL
+    # activates the `pg` backend in tests/test_objectstore.py + tests/test_store.py.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cxd
+          POSTGRES_PASSWORD: cxd
+          POSTGRES_DB: cxd_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cxd -d cxd_test"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install (dev, web, sql, postgres)
+        working-directory: server
+        run: pip install -e '.[dev,web,sql,postgres]'
+
+      # Full suite. With CXD_TEST_PG_URL set, the store conformance tests run their
+      # asserts twice — once on SQLite, once on the real Postgres service above —
+      # so the SQLite↔Postgres parity is proven on every push/PR.
+      - name: Test (SQLite + Postgres)
+        working-directory: server
+        env:
+          CXD_TEST_PG_URL: postgresql://cxd:cxd@localhost:5432/cxd_test
+        run: pytest -q

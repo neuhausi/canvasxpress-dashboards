@@ -136,15 +136,15 @@ def test_dataset_upload_list_fetch_delete(app):
     assert r.status_code == 200, r.text
     summary = r.json()["dataset"]
     dataset_id = summary["id"]
-    assert summary["rows"] == 2 and summary["cols"] == 1
+    # cols counts every column of the 2D array (id + sales), not just measures.
+    assert summary["rows"] == 2 and summary["cols"] == 2
     assert "url" in summary
 
     listing = client.get("/api/datasets").json()["datasets"]
     assert [d["id"] for d in listing] == [dataset_id]
 
     data = client.get("/api/datasets/%s" % dataset_id).json()
-    assert data["y"]["smps"] == ["A", "B"]
-    assert data["y"]["data"] == [[10.0, 20.0]]
+    assert data == [["id", "sales"], ["A", 10.0], ["B", 20.0]]  # 2D array round-trips
 
     client.delete("/api/datasets/%s" % dataset_id)
     assert client.get("/api/datasets/%s" % dataset_id).status_code == 404
@@ -325,7 +325,16 @@ def test_llm_status_endpoint(served_app):
     assert client.get("/api/llm/status").status_code == 401   # login-gated
     _signup(client)
     r = client.get("/api/llm/status").json()
-    assert r == {"enabled": True, "model": "claude-opus-4-8"}
+    # Status now also reports the MCP bridge and whether the Logs panel is on.
+    # Derive the mcp block from the bridge so a dev machine's CXD_MCP_* env can't
+    # make this brittle; logsPanel is off with no CXD_MCP_LOG configured.
+    from cxd_server import mcp_bridge
+    assert r == {
+        "enabled": True,
+        "model": "claude-opus-4-8",
+        "mcp": {"enabled": mcp_bridge.enabled(), "url": mcp_bridge.base_url()},
+        "logsPanel": False,
+    }
 
 
 def test_index_defaults_without_config(tmp_path):

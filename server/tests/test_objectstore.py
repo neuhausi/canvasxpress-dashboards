@@ -5,6 +5,8 @@ owner isolation), so backends are interchangeable and provably isolated. New
 backends (S3, Postgres, Drive) join by adding a factory to ``BACKENDS``.
 """
 
+import os
+
 import pytest
 
 from cxd_server.gdrivestore import GDriveObjectStore
@@ -13,6 +15,11 @@ from cxd_server.s3store import S3ObjectStore
 from cxd_server.sqlstore import SqlObjectStore
 from fake_drive import FakeDrive, FakeDriveClient
 from fake_s3 import FakeS3Client
+
+# Set CXD_TEST_PG_URL (e.g. postgresql://user:pass@localhost:5432/cxd_test) to run
+# the identical conformance suite against a real Postgres — the durable-deployment
+# proof CI's SQLite fixture can't give. Unset → the pg backend is simply absent.
+_PG_URL = os.getenv("CXD_TEST_PG_URL")
 
 
 def _file_backend(tmp_path):
@@ -34,10 +41,22 @@ def _gdrive_backend(tmp_path):
     return GDriveObjectStore("root-folder", client_factory=lambda owner: FakeDriveClient(drive))
 
 
+def _pg_backend(tmp_path):
+    # Real Postgres (gated on CXD_TEST_PG_URL). A shared server DB can't isolate on
+    # tmp_path, so each test gets a unique table derived from tmp_path's name; the
+    # throwaway leftovers are harmless on a test database.
+    table = "cxd_test_" + "".join(c if c.isalnum() else "_" for c in tmp_path.name).lower()[:48]
+    return SqlObjectStore(_PG_URL, table=table)
+
+
 # (id, factory) — every backend runs the identical asserts.
 BACKENDS = [
     ("file", _file_backend), ("s3", _s3_backend), ("sql", _sql_backend), ("gdrive", _gdrive_backend),
 ]
+# The real-Postgres backend joins only when CXD_TEST_PG_URL is set (else skipped,
+# never red) — so the same suite that proves SQLite proves Postgres on demand.
+if _PG_URL:
+    BACKENDS.append(("pg", _pg_backend))
 
 
 @pytest.fixture(params=BACKENDS, ids=[b[0] for b in BACKENDS])
