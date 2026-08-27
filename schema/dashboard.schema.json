@@ -44,6 +44,10 @@
       "type": ["number", "string"],
       "description": "Explicit dashboard height (number = px, or any CSS length). Unset = content height."
     },
+    "maxWidth": {
+      "type": ["number", "string", "boolean"],
+      "description": "Cap on dashboard width for wide screens (number = px, or any CSS length); the dashboard is centered when capped. Unset = 1600px default. Set 0/false/\"none\" to fill the parent uncapped."
+    },
     "layout": {
       "type": "object",
       "required": ["items"],

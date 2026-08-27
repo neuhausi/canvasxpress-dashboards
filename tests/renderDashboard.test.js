@@ -64,9 +64,9 @@ test('renders one canvas per layout item and control, all in the broadcast group
     assert.equal(c.config.broadcastFilter, false);
   });
 
-  // Grid has 12 content columns (interleaved with gap tracks).
+  // Grid is a uniform repeat of 12 equal columns.
   var colTpl = container.querySelector('.cxd-grid').style.gridTemplateColumns;
-  assert.equal((colTpl.match(/minmax\(0, 1fr\)/g) || []).length, 12);
+  assert.equal(colTpl, 'repeat(12, minmax(0, 1fr))');
 
   // One canvas element per instance exists in the DOM.
   assert.equal(container.querySelectorAll('canvas').length, 3);

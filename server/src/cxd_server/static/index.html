@@ -1320,6 +1320,7 @@
             '<h4 class="settings-cat">Dimensions</h4>' +
             '<label>Dashboard width (px)<input type="number" id="s-w" min="200" placeholder="auto"></label>' +
             '<label>Dashboard height (px)<input type="number" id="s-h" min="200" placeholder="auto"></label>' +
+            '<label>Max width (px, 0 = full width)<input type="number" id="s-maxw" min="0" placeholder="1600"></label>' +
             '</div>' +
             '<div class="settings-card">' +
 
@@ -1360,6 +1361,7 @@
       var bgText = document.getElementById('s-bgtext');
       var wIn = document.getElementById('s-w');
       var hIn = document.getElementById('s-h');
+      var maxwIn = document.getElementById('s-maxw');
       var gap = document.getElementById('s-gap');
       var rh = document.getElementById('s-rh');
       var cols = document.getElementById('s-cols');
@@ -1414,6 +1416,11 @@
       bgText.value = currentSpec.background || '';
       wIn.value = currentSpec.width != null ? currentSpec.width : '';
       hIn.value = currentSpec.height != null ? currentSpec.height : '';
+      // Unset reflects as blank (placeholder shows the 1600px default); an
+      // explicit 0/false/'none' cap-off reflects as 0.
+      maxwIn.value = currentSpec.maxWidth == null ? ''
+        : (currentSpec.maxWidth === false || currentSpec.maxWidth === 'none') ? 0
+        : currentSpec.maxWidth;
       gap.value = L.gap != null ? L.gap : 12;
       rh.value = L.rowHeight != null ? L.rowHeight : 30;
       cols.value = L.cols != null ? L.cols : 12;
@@ -1533,6 +1540,8 @@
       });
       wIn.addEventListener('input', function () { apply({ width: wIn.value === '' ? '' : num(wIn.value) }); });
       hIn.addEventListener('input', function () { apply({ height: hIn.value === '' ? '' : num(hIn.value) }); });
+      // Blank = unset (1600px default); a number sets the cap; 0 = full width.
+      maxwIn.addEventListener('input', function () { apply({ maxWidth: maxwIn.value === '' ? '' : num(maxwIn.value) }); });
       gap.addEventListener('input', function () { apply({ gap: num(gap.value) }); });
       rh.addEventListener('input', function () { apply({ rowHeight: num(rh.value) }); });
       cols.addEventListener('input', function () { apply({ cols: num(cols.value) }); });

@@ -1745,8 +1745,9 @@ export function createBuilder(target, options) {
     var area = cellArea(item);
     cell.style.gridColumn = area.column;
     cell.style.gridRow = area.row;
-    // Panel edges moved, so which boundaries carry a gutter may have changed —
-    // restyle the grid tracks in place (placement lines are unaffected).
+    // The row count can change as a panel moves, so refresh the track template
+    // in place (uniform gap and column count are unaffected; placement is a
+    // plain span, so cells never jump).
     if (gridEl) {
       var cols = gridCols(spec);
       var rowHeight = (spec.layout && spec.layout.rowHeight) || 30;
@@ -1754,6 +1755,7 @@ export function createBuilder(target, options) {
       var tpl = gridTemplate(spec.layout.items || [], cols, rowHeight, gap);
       gridEl.style.gridTemplateColumns = tpl.columns;
       gridEl.style.gridTemplateRows = tpl.rows;
+      gridEl.style.gap = tpl.gap;
     }
   }
 
@@ -2062,7 +2064,13 @@ var TRANSIENT_CONFIG_KEYS = {
   broadcastGroup: true,            // the renderer re-injects the spec's group
   llmHeader: true, resizable: true, toolbarSize: true,
   fontScaleFontFactor: true, smpTextScaleFontFactor: true,
-  customizerCloseBackgroundColor: true, dataTablePaginationSelectTextColor: true
+  customizerCloseBackgroundColor: true, dataTablePaginationSelectTextColor: true,
+  // Theme-derived label/title colors: the "auto" theme reports these from
+  // getConfig() as if authored, so a save folds them into every panel and they
+  // then self-perpetuate via the existing-config carry-forward. Block them so
+  // the fold never writes them and any already-polluted spec self-heals on its
+  // next save. (Sample label/title colors are theme-driven here by design.)
+  smpTextColor: true, smpTitleColor: true
 };
 
 function stripDerived(config) {

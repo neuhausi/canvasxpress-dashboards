@@ -101,14 +101,14 @@ export function renderDashboard(spec, target, options) {
 
   var grid = document.createElement('div');
   grid.className = 'cxd-grid';
-  // Gutters live only between adjacent panels (interleaved gap tracks); see
-  // gridLayout. A panel's size is always h*rowHeight, independent of the gap.
+  // Uniform-gap grid (see gridLayout): equal `w` => equal width, equal `h` =>
+  // equal height, with a single gutter between every track.
   var items = (spec.layout && spec.layout.items) || [];
   var tpl = gridTemplate(items, cols, rowHeight, gap);
   grid.style.display = 'grid';
   grid.style.gridTemplateColumns = tpl.columns;
   grid.style.gridTemplateRows = tpl.rows;
-  grid.style.gap = '0';
+  grid.style.gap = tpl.gap;
   container.appendChild(grid);
 
   var instances = [];
@@ -249,6 +249,7 @@ export function renderDashboard(spec, target, options) {
     var t = gridTemplate(renderedItems, cols, rowHeight, gap);
     grid.style.gridTemplateColumns = t.columns;
     grid.style.gridTemplateRows = t.rows;
+    grid.style.gap = t.gap;
   }
 
   /**
@@ -450,11 +451,10 @@ export function renderDashboard(spec, target, options) {
 
   // --- optional dashboard-wide controls (filter / table) ---
   var controls = spec.controls || [];
-  // Controls live OUTSIDE the grid: panels are placed explicitly in the
-  // interleaved tracks, and CSS auto-placement cannot be trusted to slot an
-  // un-placed item around them (it can land in a gap track or overlap a
-  // panel's row, rendering as a sliver). A plain full-width strip below the
-  // grid sidesteps the grid math entirely.
+  // Controls live OUTSIDE the grid: panels are placed explicitly by span, and
+  // CSS auto-placement cannot be trusted to slot an un-placed item around them
+  // (it can overlap a panel's row, rendering as a sliver). A plain full-width
+  // strip below the grid sidesteps the grid math entirely.
   var controlsHost = null;
   if (controls.length) {
     controlsHost = document.createElement('div');
@@ -1388,7 +1388,26 @@ function applyBackground(container, spec, gap) {
 function applySize(container, spec) {
   container.style.width = sizeValue(spec.width);
   container.style.height = sizeValue(spec.height);
+  // Cap the dashboard width on wide screens and center it. Unset defaults to
+  // 1600px; 0/false/'none' removes the cap so the dashboard fills its parent.
+  var maxWidth = maxWidthValue(spec.maxWidth);
+  container.style.maxWidth = maxWidth;
+  container.style.marginLeft = maxWidth ? 'auto' : '';
+  container.style.marginRight = maxWidth ? 'auto' : '';
   container.style.overflow = (sizeValue(spec.width) || sizeValue(spec.height)) ? 'auto' : '';
+}
+
+/**
+ * Resolve the dashboard max-width setting to a CSS length. Unset (null/undefined)
+ * defaults to '1600px'; 0, false, '', or 'none' disable the cap (return '').
+ * @param {(number|string|boolean)} value - The spec.maxWidth setting.
+ * @returns {string} A CSS max-width length, or '' for no cap.
+ * @private
+ */
+function maxWidthValue(value) {
+  if (value == null) return '1600px';
+  if (value === 0 || value === false || value === 'none' || value === '') return '';
+  return sizeValue(value);
 }
 
 /**

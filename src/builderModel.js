@@ -297,7 +297,7 @@ export function setDataSource(spec, ref, source) {
  */
 export function updateSettings(spec, changes) {
   var next = cloneSpec(spec);
-  ['background', 'backgroundImage', 'canvasInset', 'theme', 'colorScheme', 'panelColor', 'width', 'height', 'fontName'].forEach(function (key) {
+  ['background', 'backgroundImage', 'canvasInset', 'theme', 'colorScheme', 'panelColor', 'width', 'height', 'maxWidth', 'fontName'].forEach(function (key) {
     if (!Object.prototype.hasOwnProperty.call(changes, key)) return;
     var value = changes[key];
     if (value == null || value === '') delete next[key];

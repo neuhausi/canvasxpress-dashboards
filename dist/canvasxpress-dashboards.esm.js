@@ -461,92 +461,56 @@ function clearSharedCache() {
 
 /* ==== src/gridLayout.js ==== */
 /**
- * Grid geometry for dashboards. Spacing between panels is a "gutter only between
- * adjacent panels" model: a gap track is interleaved between every unit
- * row/column, but each gap track is sized to `gap` **only when a panel edge
- * falls on that boundary** — otherwise 0. Consequences:
+ * Grid geometry for dashboards. A **uniform-gap** model: the grid is `cols`
+ * equal `minmax(0, 1fr)` columns and `maxRow` fixed `rowHeight` rows, with a
+ * single uniform `gap` between every track (standard CSS `gap`). Consequences:
  *
- *  - a panel always measures exactly `h*rowHeight` (× its columns), independent
- *    of the gap — internal boundaries are 0-sized, so a gap never inflates it;
- *  - gutters appear only where two panels meet; a lone panel and the outer edges
- *    are never affected;
- *  - placement lines are a fixed function of the unit coordinate
- *    (`2*coord+1`), so only the *track sizes* change with the gap — the builder
- *    can restyle cells in place during a drag without anything jumping.
+ *  - two panels with the same `w` always render the SAME pixel width, and two
+ *    with the same `h` the same height, regardless of where other panels sit —
+ *    a panel's size no longer depends on foreign edges in other rows;
+ *  - a panel spanning `w` columns measures `w` column tracks plus the `w-1`
+ *    interior gaps it contains; likewise `h*rowHeight + (h-1)*gap` tall;
+ *  - gutters are uniform everywhere and never appear on the outer edges (CSS
+ *    `gap` only sits between tracks);
+ *  - placement is a plain span from the unit coordinate, so the builder can
+ *    restyle cells in place during a drag without the track template changing.
  *
  * @module gridLayout
  */
 
 /**
- * Build the CSS grid track templates for a set of layout items.
+ * Build the CSS grid track templates and gap for a set of layout items.
  * @param {object[]} items - Layout items (`{x, y, w, h}`).
  * @param {number} cols - Column count.
  * @param {number} rowHeight - Height of one unit row (px).
- * @param {number} gap - Gutter size (px) between adjacent panels.
- * @returns {{columns: string, rows: string, maxRow: number}} Track templates.
+ * @param {number} gap - Uniform gutter size (px) between tracks.
+ * @returns {{columns: string, rows: string, gap: string, maxRow: number}} Track
+ *   templates, the CSS gap value, and the row count.
  */
 function gridTemplate(items, cols, rowHeight, gap) {
   items = items || [];
   var maxRow = 1;
   items.forEach(function (it) { maxRow = Math.max(maxRow, it.y + it.h); });
 
-  var colEdge = boundarySet(items, 'x', 'w', cols);
-  var rowEdge = boundarySet(items, 'y', 'h', maxRow);
-
-  var columns = interleave(cols, 'minmax(0, 1fr)', colEdge, gap);
-  var rows = interleave(maxRow, rowHeight + 'px', rowEdge, gap);
-  return { columns: columns, rows: rows, maxRow: maxRow };
+  return {
+    columns: 'repeat(' + cols + ', minmax(0, 1fr))',
+    rows: 'repeat(' + maxRow + ', ' + rowHeight + 'px)',
+    gap: (gap || 0) + 'px',
+    maxRow: maxRow
+  };
 }
 
 /**
- * The `grid-column` / `grid-row` placement for one item, in the interleaved
- * track coordinate system (fixed regardless of the gap).
+ * The `grid-column` / `grid-row` placement for one item — a plain span from the
+ * unit coordinate (1-based grid lines).
  * @param {object} item - Layout item (`{x, y, w, h}`).
  * @returns {{column: string, row: string}} CSS grid placement values.
  */
 function cellArea(item) {
   return {
-    column: (2 * item.x + 1) + ' / ' + (2 * (item.x + item.w)),
-    row: (2 * item.y + 1) + ' / ' + (2 * (item.y + item.h))
+    column: (item.x + 1) + ' / span ' + item.w,
+    row: (item.y + 1) + ' / span ' + item.h
   };
-}
-
-/**
- * The set of interior boundary lines (1..extent-1) that coincide with a panel
- * edge (a top/left or bottom/right of some item).
- * @param {object[]} items - Layout items.
- * @param {('x'|'y')} pos - Position key.
- * @param {('w'|'h')} size - Size key.
- * @param {number} extent - Number of unit tracks in this axis.
- * @returns {Object<number, boolean>} Map of boundary line → true.
- * @private
- */
-function boundarySet(items, pos, size, extent) {
-  var edges = {};
-  items.forEach(function (it) {
-    if (it[pos] > 0 && it[pos] < extent) edges[it[pos]] = true;
-    var end = it[pos] + it[size];
-    if (end > 0 && end < extent) edges[end] = true;
-  });
-  return edges;
-}
-
-/**
- * Interleave content tracks with gap tracks (gap where a boundary exists, else 0).
- * @param {number} count - Number of content tracks.
- * @param {string} track - CSS size of a content track.
- * @param {Object<number, boolean>} edges - Boundary lines that get a gap.
- * @param {number} gap - Gap size (px).
- * @returns {string} A grid-template-* value.
- * @private
- */
-function interleave(count, track, edges, gap) {
-  var parts = [track];
-  for (var line = 1; line < count; line++) {
-    parts.push((edges[line] ? gap : 0) + 'px');
-    parts.push(track);
-  }
-  return parts.join(' ');
 }
 
 /* ==== src/validateSpec.js ==== */
@@ -822,14 +786,14 @@ function renderDashboard(spec, target, options) {
 
   var grid = document.createElement('div');
   grid.className = 'cxd-grid';
-  // Gutters live only between adjacent panels (interleaved gap tracks); see
-  // gridLayout. A panel's size is always h*rowHeight, independent of the gap.
+  // Uniform-gap grid (see gridLayout): equal `w` => equal width, equal `h` =>
+  // equal height, with a single gutter between every track.
   var items = (spec.layout && spec.layout.items) || [];
   var tpl = gridTemplate(items, cols, rowHeight, gap);
   grid.style.display = 'grid';
   grid.style.gridTemplateColumns = tpl.columns;
   grid.style.gridTemplateRows = tpl.rows;
-  grid.style.gap = '0';
+  grid.style.gap = tpl.gap;
   container.appendChild(grid);
 
   var instances = [];
@@ -970,6 +934,7 @@ function renderDashboard(spec, target, options) {
     var t = gridTemplate(renderedItems, cols, rowHeight, gap);
     grid.style.gridTemplateColumns = t.columns;
     grid.style.gridTemplateRows = t.rows;
+    grid.style.gap = t.gap;
   }
 
   /**
@@ -1171,11 +1136,10 @@ function renderDashboard(spec, target, options) {
 
   // --- optional dashboard-wide controls (filter / table) ---
   var controls = spec.controls || [];
-  // Controls live OUTSIDE the grid: panels are placed explicitly in the
-  // interleaved tracks, and CSS auto-placement cannot be trusted to slot an
-  // un-placed item around them (it can land in a gap track or overlap a
-  // panel's row, rendering as a sliver). A plain full-width strip below the
-  // grid sidesteps the grid math entirely.
+  // Controls live OUTSIDE the grid: panels are placed explicitly by span, and
+  // CSS auto-placement cannot be trusted to slot an un-placed item around them
+  // (it can overlap a panel's row, rendering as a sliver). A plain full-width
+  // strip below the grid sidesteps the grid math entirely.
   var controlsHost = null;
   if (controls.length) {
     controlsHost = document.createElement('div');
@@ -2109,7 +2073,26 @@ function applyBackground(container, spec, gap) {
 function applySize(container, spec) {
   container.style.width = sizeValue(spec.width);
   container.style.height = sizeValue(spec.height);
+  // Cap the dashboard width on wide screens and center it. Unset defaults to
+  // 1600px; 0/false/'none' removes the cap so the dashboard fills its parent.
+  var maxWidth = maxWidthValue(spec.maxWidth);
+  container.style.maxWidth = maxWidth;
+  container.style.marginLeft = maxWidth ? 'auto' : '';
+  container.style.marginRight = maxWidth ? 'auto' : '';
   container.style.overflow = (sizeValue(spec.width) || sizeValue(spec.height)) ? 'auto' : '';
+}
+
+/**
+ * Resolve the dashboard max-width setting to a CSS length. Unset (null/undefined)
+ * defaults to '1600px'; 0, false, '', or 'none' disable the cap (return '').
+ * @param {(number|string|boolean)} value - The spec.maxWidth setting.
+ * @returns {string} A CSS max-width length, or '' for no cap.
+ * @private
+ */
+function maxWidthValue(value) {
+  if (value == null) return '1600px';
+  if (value === 0 || value === false || value === 'none' || value === '') return '';
+  return sizeValue(value);
 }
 
 /**
@@ -2866,7 +2849,7 @@ function setDataSource(spec, ref, source) {
  */
 function updateSettings(spec, changes) {
   var next = cloneSpec(spec);
-  ['background', 'backgroundImage', 'canvasInset', 'theme', 'colorScheme', 'panelColor', 'width', 'height', 'fontName'].forEach(function (key) {
+  ['background', 'backgroundImage', 'canvasInset', 'theme', 'colorScheme', 'panelColor', 'width', 'height', 'maxWidth', 'fontName'].forEach(function (key) {
     if (!Object.prototype.hasOwnProperty.call(changes, key)) return;
     var value = changes[key];
     if (value == null || value === '') delete next[key];
@@ -4735,8 +4718,9 @@ function createBuilder(target, options) {
     var area = cellArea(item);
     cell.style.gridColumn = area.column;
     cell.style.gridRow = area.row;
-    // Panel edges moved, so which boundaries carry a gutter may have changed —
-    // restyle the grid tracks in place (placement lines are unaffected).
+    // The row count can change as a panel moves, so refresh the track template
+    // in place (uniform gap and column count are unaffected; placement is a
+    // plain span, so cells never jump).
     if (gridEl) {
       var cols = gridCols(spec);
       var rowHeight = (spec.layout && spec.layout.rowHeight) || 30;
@@ -4744,6 +4728,7 @@ function createBuilder(target, options) {
       var tpl = gridTemplate(spec.layout.items || [], cols, rowHeight, gap);
       gridEl.style.gridTemplateColumns = tpl.columns;
       gridEl.style.gridTemplateRows = tpl.rows;
+      gridEl.style.gap = tpl.gap;
     }
   }
 
@@ -5052,7 +5037,13 @@ var TRANSIENT_CONFIG_KEYS = {
   broadcastGroup: true,            // the renderer re-injects the spec's group
   llmHeader: true, resizable: true, toolbarSize: true,
   fontScaleFontFactor: true, smpTextScaleFontFactor: true,
-  customizerCloseBackgroundColor: true, dataTablePaginationSelectTextColor: true
+  customizerCloseBackgroundColor: true, dataTablePaginationSelectTextColor: true,
+  // Theme-derived label/title colors: the "auto" theme reports these from
+  // getConfig() as if authored, so a save folds them into every panel and they
+  // then self-perpetuate via the existing-config carry-forward. Block them so
+  // the fold never writes them and any already-polluted spec self-heals on its
+  // next save. (Sample label/title colors are theme-driven here by design.)
+  smpTextColor: true, smpTitleColor: true
 };
 
 function stripDerived(config) {
