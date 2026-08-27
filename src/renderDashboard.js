@@ -1215,11 +1215,14 @@ function applyTheme(container, theme) {
 }
 
 /**
- * Look up a CanvasXpress library theme's panel background color from the loaded
- * library (`CanvasXpress.themeDef`). Returns a CSS color string, or '' when the
- * theme, the library, or an explicit fill can't be resolved (transparent panel).
- * @param {string} theme - A CanvasXpress theme name (e.g. 'cxdark', 'economist').
- * @returns {string} The panel background color, or '' if none/transparent.
+ * Look up a CanvasXpress library theme's background color from the loaded library
+ * (`CanvasXpress.themeDef`). Prefers the outer canvas fill (`plot.background.fill`),
+ * then the inner panel fill (`panel.background.fill`), then the base rectangle fill
+ * (`rect.fill`) that both inherit from in the ggplot theme model. Returns a CSS
+ * color string, or '' when the theme, the library, or an explicit fill can't be
+ * resolved (transparent).
+ * @param {string} theme - A CanvasXpress theme name (e.g. 'cxdark', 'stata').
+ * @returns {string} The theme background color, or '' if none/transparent.
  * @private
  */
 function themeBackground(theme) {
@@ -1234,8 +1237,15 @@ function themeBackground(theme) {
   }
   var def = CanvasXpress.themeDef[key];
   if (!def) return '';
-  var fill = def['panel.background.fill'];
-  if (!fill || fill === 'element_blank') fill = def['plot.background.fill'];
+  // Prefer the outer canvas fill (`plot.background.fill`) — that is the colour the
+  // chart paints around its panels and what the dashboard should blend with. Some
+  // themes (e.g. `stata`) have a white inner panel but a tinted outer canvas
+  // (#eaf2f3), so reading the panel fill first would wrongly report white. Fall
+  // back to the panel fill, then to the base `rect.fill` — themes like `wsj` define
+  // neither plot nor panel fill and inherit their background (#f8f2e4) from `rect`.
+  var fill = def['plot.background.fill'];
+  if (!fill || fill === 'element_blank') fill = def['panel.background.fill'];
+  if (!fill || fill === 'element_blank') fill = def['rect.fill'];
   return (fill && fill !== 'element_blank') ? fill : '';
 }
 
@@ -1389,7 +1399,7 @@ function applySize(container, spec) {
   container.style.width = sizeValue(spec.width);
   container.style.height = sizeValue(spec.height);
   // Cap the dashboard width on wide screens and center it. Unset defaults to
-  // 1600px; 0/false/'none' removes the cap so the dashboard fills its parent.
+  // 1400px; 0/false/'none' removes the cap so the dashboard fills its parent.
   var maxWidth = maxWidthValue(spec.maxWidth);
   container.style.maxWidth = maxWidth;
   container.style.marginLeft = maxWidth ? 'auto' : '';
@@ -1399,13 +1409,13 @@ function applySize(container, spec) {
 
 /**
  * Resolve the dashboard max-width setting to a CSS length. Unset (null/undefined)
- * defaults to '1600px'; 0, false, '', or 'none' disable the cap (return '').
+ * defaults to '1400px'; 0, false, '', or 'none' disable the cap (return '').
  * @param {(number|string|boolean)} value - The spec.maxWidth setting.
  * @returns {string} A CSS max-width length, or '' for no cap.
  * @private
  */
 function maxWidthValue(value) {
-  if (value == null) return '1600px';
+  if (value == null) return '1400px';
   if (value === 0 || value === false || value === 'none' || value === '') return '';
   return sizeValue(value);
 }

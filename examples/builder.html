@@ -1327,7 +1327,7 @@
             '<h4 class="settings-cat">Dimensions</h4>' +
             '<label>Dashboard width (px)<input type="number" id="s-w" min="200" placeholder="auto"></label>' +
             '<label>Dashboard height (px)<input type="number" id="s-h" min="200" placeholder="auto"></label>' +
-            '<label>Max width (px, 0 = full width)<input type="number" id="s-maxw" min="0" placeholder="1600"></label>' +
+            '<label>Max width (px, 0 = full width)<input type="number" id="s-maxw" min="0"></label>' +
             '</div>' +
             '<div class="settings-card">' +
 
@@ -1423,9 +1423,9 @@
       bgText.value = currentSpec.background || '';
       wIn.value = currentSpec.width != null ? currentSpec.width : '';
       hIn.value = currentSpec.height != null ? currentSpec.height : '';
-      // Unset reflects as blank (placeholder shows the 1600px default); an
-      // explicit 0/false/'none' cap-off reflects as 0.
-      maxwIn.value = currentSpec.maxWidth == null ? ''
+      // Unset reflects as the 1400px default value (shown in the field, not as a
+      // placeholder); an explicit 0/false/'none' cap-off reflects as 0.
+      maxwIn.value = currentSpec.maxWidth == null ? 1400
         : (currentSpec.maxWidth === false || currentSpec.maxWidth === 'none') ? 0
         : currentSpec.maxWidth;
       gap.value = L.gap != null ? L.gap : 12;
@@ -1547,7 +1547,7 @@
       });
       wIn.addEventListener('input', function () { apply({ width: wIn.value === '' ? '' : num(wIn.value) }); });
       hIn.addEventListener('input', function () { apply({ height: hIn.value === '' ? '' : num(hIn.value) }); });
-      // Blank = unset (1600px default); a number sets the cap; 0 = full width.
+      // Blank = unset (1400px default); a number sets the cap; 0 = full width.
       maxwIn.addEventListener('input', function () { apply({ maxWidth: maxwIn.value === '' ? '' : num(maxwIn.value) }); });
       gap.addEventListener('input', function () { apply({ gap: num(gap.value) }); });
       rh.addEventListener('input', function () { apply({ rowHeight: num(rh.value) }); });
@@ -1565,8 +1565,13 @@
         }
         var def = CX.themeDef[key];
         if (!def) return '';
-        var fill = def['panel.background.fill'];
-        if (!fill || fill === 'element_blank') fill = def['plot.background.fill'];
+        // Mirror renderDashboard.themeBackground: prefer the outer canvas fill
+        // (`plot.background.fill`), then the inner panel fill, then the base
+        // `rect.fill` both inherit from. Themes like `stata` have a white panel but
+        // a tinted outer canvas (#eaf2f3); `wsj` defines only `rect.fill` (#f8f2e4).
+        var fill = def['plot.background.fill'];
+        if (!fill || fill === 'element_blank') fill = def['panel.background.fill'];
+        if (!fill || fill === 'element_blank') fill = def['rect.fill'];
         return (fill && fill !== 'element_blank') ? fill : '';
       }
       // While coordinating, the background is derived from the theme (the spec's
