@@ -75,6 +75,22 @@
     "controls": {
       "type": "array",
       "items": { "$ref": "#/definitions/control" }
+    },
+    "params": {
+      "type": "object",
+      "description": "Named dashboard parameters written by mode:'param' controls and read by data sources via $name tokens in their query. Each value is a bare default or a { value, type } object.",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": ["string", "number", "boolean", "null"] },
+          {
+            "type": "object",
+            "properties": {
+              "value": {},
+              "type": { "type": "string", "enum": ["string", "number", "boolean"] }
+            }
+          }
+        ]
+      }
     }
   },
   "definitions": {
@@ -122,6 +138,16 @@
         "headers": {
           "type": "object",
           "description": "Optional extra request headers for the connector fetch."
+        },
+        "query": {
+          "type": "object",
+          "description": "Request params merged into the fetch URL. Each value is a literal or a \"$name\" token resolved from spec.params; a token whose param is null/unset is dropped (widens the query). Different resolved values are distinct cache entries.",
+          "additionalProperties": { "type": ["string", "number", "boolean"] }
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Param names this source depends on beyond those named in query (so a param change triggers a refetch)."
         }
       },
       "allOf": [
@@ -161,6 +187,21 @@
         "annotation": {
           "type": "string",
           "description": "Control panels: the single annotation name whose unique values populate the widget. Selecting a value calls modifyFilter('guess', annotation, 'like', value) serially on every instance in the dashboard."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["filter", "param"],
+          "default": "filter",
+          "description": "Control panels: 'filter' (default) filters the data already on the page; 'param' writes a dashboard parameter (see spec.params) so sources consuming it re-query the backend and bound panels live-update."
+        },
+        "param": {
+          "type": "string",
+          "description": "Control panels (mode:'param'): the spec.params name this control writes. 'All' clears it (null), widening the query."
+        },
+        "options": {
+          "type": "array",
+          "items": { "type": ["string", "number", "boolean"] },
+          "description": "Control panels (mode:'param'): a static list of choices (an 'All' entry is prepended automatically). When present, the control needs no data of its own."
         },
         "style": {
           "type": "string",

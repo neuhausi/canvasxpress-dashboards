@@ -143,3 +143,57 @@ test('flags bad align/valign values', function () {
   assert.ok(res.errors.some(function (e) { return e.includes('.align must be'); }));
   assert.ok(res.errors.some(function (e) { return e.includes('.valign must be'); }));
 });
+
+test('accepts a param control + parameterized source', function () {
+  var spec = {
+    id: 'live',
+    params: { region: { value: 'All', type: 'string' } },
+    layout: { cols: 12, items: [
+      { panel: 'pick', x: 0, y: 0, w: 3, h: 1 },
+      { panel: 'bar', x: 0, y: 1, w: 6, h: 3 }
+    ] },
+    data: { sales: { kind: 'connector', url: '/api/data', query: { region: '$region' } } },
+    panels: {
+      pick: { type: 'control', mode: 'param', param: 'region', options: ['All', 'EMEA', 'APAC'] },
+      bar: { dataRef: 'sales', config: { graphType: 'Bar' } }
+    }
+  };
+  var res = validateSpec(spec);
+  assert.equal(res.valid, true, JSON.stringify(res.errors));
+});
+
+test('flags a param control referencing an undeclared param', function () {
+  var spec = {
+    id: 'live',
+    params: { region: { value: 'All' } },
+    layout: { cols: 12, items: [{ panel: 'pick', x: 0, y: 0, w: 3, h: 1 }] },
+    panels: { pick: { type: 'control', mode: 'param', param: 'zone', options: ['a'] } }
+  };
+  var res = validateSpec(spec);
+  assert.equal(res.valid, false);
+  assert.ok(res.errors.some(function (e) { return e.includes('.param "zone"'); }));
+});
+
+test('flags a query token referencing an undeclared param', function () {
+  var spec = {
+    id: 'live',
+    layout: { cols: 12, items: [{ panel: 'bar', x: 0, y: 0, w: 6, h: 3 }] },
+    data: { sales: { kind: 'connector', url: '/api/data', query: { region: '$region' } } },
+    panels: { bar: { dataRef: 'sales' } }
+  };
+  var res = validateSpec(spec);
+  assert.equal(res.valid, false);
+  assert.ok(res.errors.some(function (e) { return e.includes('undeclared param "region"'); }));
+});
+
+test('flags a bad control mode', function () {
+  var spec = {
+    id: 'live',
+    layout: { cols: 12, items: [{ panel: 'pick', x: 0, y: 0, w: 3, h: 1 }] },
+    data: { s: { kind: 'inline', value: { y: {} } } },
+    panels: { pick: { type: 'control', mode: 'nope', dataRef: 's' } }
+  };
+  var res = validateSpec(spec);
+  assert.equal(res.valid, false);
+  assert.ok(res.errors.some(function (e) { return e.includes('.mode must be'); }));
+});

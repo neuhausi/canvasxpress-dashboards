@@ -117,6 +117,20 @@ export function renderDashboard(spec, target, options) {
   // controls combine; "All" in any control clears everything.
   var controlWidgets = [];
 
+  // Live dashboard parameter values, seeded from spec.params. A mode:"param"
+  // control writes one of these; sources whose `query` references `$<name>`
+  // read them, so changing a control re-queries the backend and live-updates
+  // the panels bound to that source (see applyParamChange).
+  var paramState = {};
+  var paramsSpec = spec.params || {};
+  for (var paramName in paramsSpec) {
+    if (Object.prototype.hasOwnProperty.call(paramsSpec, paramName)) {
+      var paramDef = paramsSpec[paramName];
+      paramState[paramName] = paramDef && typeof paramDef === 'object'
+        ? paramDef.value : paramDef;
+    }
+  }
+
   /**
    * True when an instance's bound data actually carries the annotation —
    * as a sample annotation (data.x) or a variable annotation (data.z).
@@ -207,7 +221,7 @@ export function renderDashboard(spec, target, options) {
    */
   function resolveRef(ref) {
     if (refMemo[ref]) return refMemo[ref];
-    var promise = store.resolve(ref, (spec.data || {})[ref]);
+    var promise = store.resolve(ref, (spec.data || {})[ref], { params: paramState });
     refMemo[ref] = promise;
     return promise;
   }
@@ -228,11 +242,71 @@ export function renderDashboard(spec, target, options) {
    * live-update it.
    * @param {string} ref - Source ref name (may be undefined).
    * @param {object} instance - The CanvasXpress instance.
+   * @param {object} [cell] - The cell wrapping the instance (for loading state).
    * @returns {void}
    */
-  function bind(ref, instance) {
+  function bind(ref, instance, cell) {
     if (!ref) return;
-    (refBindings[ref] || (refBindings[ref] = [])).push({ instance: instance });
+    (refBindings[ref] || (refBindings[ref] = [])).push({ instance: instance, cell: cell });
+  }
+
+  /**
+   * Refs whose source `query` references `$<param>` (or lists it in `dependsOn`)
+   * — the panels to re-fetch and live-update when that parameter changes.
+   * @param {string} param - The parameter name that changed.
+   * @returns {string[]} Affected source ref names.
+   */
+  function refsForParam(param) {
+    var sources = spec.data || {};
+    var affected = [];
+    for (var ref in sources) {
+      if (!Object.prototype.hasOwnProperty.call(sources, ref)) continue;
+      var source = sources[ref];
+      if (!source) continue;
+      var uses = false;
+      if (Array.isArray(source.dependsOn) && source.dependsOn.indexOf(param) !== -1) uses = true;
+      var query = source.query || {};
+      for (var qk in query) {
+        if (query[qk] === '$' + param) { uses = true; break; }
+      }
+      if (uses) affected.push(ref);
+    }
+    return affected;
+  }
+
+  /**
+   * Apply a parameter change from a `mode:"param"` control: record the new value,
+   * then for every source that consumes the parameter, re-fetch with the current
+   * params and live-update the bound instances via `updateData`. Bound cells show
+   * a loading state while in flight and keep their prior data on error.
+   * @param {string} param - The parameter name being set.
+   * @param {*} value - The new value (null clears the param → widens the query).
+   * @returns {Promise<void>} Resolves once all affected panels have updated.
+   */
+  function applyParamChange(param, value) {
+    paramState[param] = value;
+    var refs = refsForParam(param);
+    var work = refs.map(function (ref) {
+      var source = (spec.data || {})[ref];
+      var bound = refBindings[ref] || [];
+      refMemo[ref] = null;   // force a fresh resolve for any later renderers of this ref
+      bound.forEach(function (b) { if (b.cell && b.cell.setState) b.cell.setState('loading'); });
+      return store.resolve(ref, source, { params: paramState, force: true })
+        .then(function (data) {
+          bound.forEach(function (b) {
+            if (b.cell && b.cell.setState) b.cell.setState('ready');
+            if (b.instance && typeof b.instance.updateData === 'function') {
+              try { b.instance.updateData(data, true, false); } catch (e) { /* keep others */ }
+            }
+          });
+        }, function (err) {
+          // Keep last-good data; surface the failure on the affected cells.
+          bound.forEach(function (b) {
+            if (b.cell && b.cell.setState) b.cell.setState('error', String(err && err.message || err));
+          });
+        });
+    });
+    return Promise.all(work).then(function () {});
   }
 
   // --- panels laid out in the grid ---
@@ -305,7 +379,7 @@ export function renderDashboard(spec, target, options) {
         var instance = new CX(canvasId, data, config, panel && panel.events || {});
         instances.push(instance);
         if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
-        bind(panel && panel.dataRef, instance);
+        bind(panel && panel.dataRef, instance, cell);
         if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
         notify(instance, 'ready');
@@ -388,6 +462,69 @@ export function renderDashboard(spec, target, options) {
     // The compartment the annotation actually lives in; re-detected below in
     // case the spec's stored value (or its 'x' default) doesn't match the data.
     var comp = panel.compartment || 'x';
+    var isParam = panel.mode === 'param';
+
+    /**
+     * Build the control's DOM from a list of choices and wire its change handler
+     * (param mode → applyParamChange; filter mode → applyControlFilters).
+     * @param {Array} values - The choices to offer (empty renders a hint).
+     * @returns {null} Always null (a control renders no CanvasXpress instance).
+     * @private
+     */
+    function buildWidget(values) {
+      var widget = document.createElement('div');
+      widget.className = 'cxd-annctl';
+      applyAlignment(cell.body, panel);
+      if (panel.title && !panel.hideTitle) {
+        var label = document.createElement('span');
+        label.className = 'cxd-annctl-label';
+        label.textContent = panel.title;
+        widget.appendChild(label);
+      }
+      var configured = isParam ? !!panel.param : !!panel.annotation;
+      if (!configured || !values.length) {
+        var hint = document.createElement('span');
+        hint.className = 'cxd-annctl-hint';
+        hint.textContent = !configured
+          ? (isParam ? 'Choose a parameter…' : 'Choose an annotation…')
+          : (isParam ? 'No values' : 'No "' + panel.annotation + '" values');
+        widget.appendChild(hint);
+      } else if (isParam) {
+        // A param control re-queries the backend on change; "All" → null clears
+        // the param so the source's query widens back to everything.
+        var paramInput = buildAnnotationInput(panel, values, function (value) {
+          applyParamChange(panel.param, value);
+        });
+        widget.appendChild(paramInput);
+      } else {
+        var entry = { annotation: panel.annotation, value: null, resetUI: null };
+        controlWidgets.push(entry);
+        var input = buildAnnotationInput(panel, values, function (value) {
+          entry.value = value;
+          if (value == null) {
+            // "All" clears EVERY control's filter — snap the others to All
+            // too. A value pick touches only this control; the other picks
+            // stay and combine.
+            controlWidgets.forEach(function (w) {
+              w.value = null;
+              if (w !== entry && w.resetUI) w.resetUI();
+            });
+          }
+          applyControlFilters();
+        });
+        entry.resetUI = input._cxdResetToAll;
+        widget.appendChild(input);
+      }
+      cell.body.appendChild(widget);
+      cell.setState('ready');
+      notify('ready');
+      return null;
+    }
+
+    // A param control with a static option list needs no data at all.
+    if (isParam && Array.isArray(panel.options)) {
+      return Promise.resolve(buildWidget(panel.options));
+    }
 
     return resolveOwnerData(panel)
       .then(function (data) {
@@ -398,45 +535,7 @@ export function renderDashboard(spec, target, options) {
           var alt = annotationValues(data, other, panel.annotation);
           if (alt.length) { comp = other; values = alt; }
         }
-        var widget = document.createElement('div');
-        widget.className = 'cxd-annctl';
-        applyAlignment(cell.body, panel);
-        if (panel.title && !panel.hideTitle) {
-          var label = document.createElement('span');
-          label.className = 'cxd-annctl-label';
-          label.textContent = panel.title;
-          widget.appendChild(label);
-        }
-        if (!panel.annotation || !values.length) {
-          var hint = document.createElement('span');
-          hint.className = 'cxd-annctl-hint';
-          hint.textContent = !panel.annotation
-            ? 'Choose an annotation…'
-            : 'No "' + panel.annotation + '" values';
-          widget.appendChild(hint);
-        } else {
-          var entry = { annotation: panel.annotation, value: null, resetUI: null };
-          controlWidgets.push(entry);
-          var input = buildAnnotationInput(panel, values, function (value) {
-            entry.value = value;
-            if (value == null) {
-              // "All" clears EVERY control's filter — snap the others to All
-              // too. A value pick touches only this control; the other picks
-              // stay and combine.
-              controlWidgets.forEach(function (w) {
-                w.value = null;
-                if (w !== entry && w.resetUI) w.resetUI();
-              });
-            }
-            applyControlFilters();
-          });
-          entry.resetUI = input._cxdResetToAll;
-          widget.appendChild(input);
-        }
-        cell.body.appendChild(widget);
-        cell.setState('ready');
-        notify('ready');
-        return null;
+        return buildWidget(values);
       })
       .catch(function (err) {
         cell.setState('error', String(err && err.message || err));
@@ -497,7 +596,7 @@ export function renderDashboard(spec, target, options) {
         applyDashboardChartStyle(config, spec);   // dashboard-wide font/theme/colors (Settings)
         var instance = new CX(canvasId, data, config, {});
         instances.push(instance);
-        bind(control.dataRef, instance);
+        bind(control.dataRef, instance, cell);
         if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
         notifyControl(instance, 'ready');

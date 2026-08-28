@@ -48,6 +48,27 @@ class StubElement {
       }; })(this),
       contains: (function (self) { return function (c) { return self._classes.indexOf(c) !== -1; }; })(this)
     };
+    this._events = {};
+  }
+
+  /**
+   * Register an event listener (minimal — enough for control change handlers).
+   * @param {string} type - Event type (e.g. "change").
+   * @param {function} handler - Listener.
+   * @returns {void}
+   */
+  addEventListener(type, handler) {
+    (this._events[type] || (this._events[type] = [])).push(handler);
+  }
+
+  /**
+   * Fire every listener registered for an event type.
+   * @param {string} type - Event type to dispatch.
+   * @param {object} [event] - Event object passed to listeners.
+   * @returns {void}
+   */
+  dispatchEvent(type, event) {
+    (this._events[type] || []).forEach(function (handler) { handler(event || { type: type }); });
   }
 
   /** @returns {string} The space-joined class list. */

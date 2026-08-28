@@ -78,7 +78,11 @@ export function validateSpec(spec) {
         errors.push(at + ' must be an object');
         return;
       }
-      if (panel.type !== 'text' && panel.dataRef == null && panel.data == null) {
+      // A param control with a static option list drives a backend query and
+      // needs no data of its own, so it is exempt from the data requirement.
+      var paramWithOptions = panel.type === 'control' && panel.mode === 'param' &&
+        Array.isArray(panel.options);
+      if (panel.type !== 'text' && !paramWithOptions && panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
       if (panel.type === 'control') {
@@ -88,6 +92,16 @@ export function validateSpec(spec) {
         if (panel.style != null &&
             ['auto', 'dropdown', 'radio', 'buttons'].indexOf(panel.style) === -1) {
           errors.push(at + '.style must be "auto", "dropdown", "radio", or "buttons"');
+        }
+        if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param') {
+          errors.push(at + '.mode must be "filter" or "param"');
+        }
+        if (panel.mode === 'param') {
+          if (typeof panel.param !== 'string' || panel.param.length === 0) {
+            errors.push(at + ' of mode "param" requires a param name string');
+          } else if (spec.params == null || !hasOwn(spec.params, panel.param)) {
+            errors.push(at + '.param "' + panel.param + '" has no matching entry in spec.params');
+          }
         }
       }
       if (panel.align != null && ['left', 'center', 'right'].indexOf(panel.align) === -1) {
@@ -127,6 +141,40 @@ export function validateSpec(spec) {
         }
         if (src.kind === 'dataset' && (typeof src.id !== 'string' || src.id.length === 0)) {
           errors.push(at + ' of kind "dataset" requires an id string');
+        }
+        // A `query` template maps request keys to literals or "$param" tokens;
+        // every token must name a declared parameter.
+        if (src.query != null) {
+          if (typeof src.query !== 'object' || Array.isArray(src.query)) {
+            errors.push(at + '.query must be an object map');
+          } else {
+            Object.keys(src.query).forEach(function (qk) {
+              var token = src.query[qk];
+              if (typeof token === 'string' && token.charAt(0) === '$') {
+                var name = token.slice(1);
+                if (spec.params == null || !hasOwn(spec.params, name)) {
+                  errors.push(at + '.query["' + qk + '"] references undeclared param "' + name + '"');
+                }
+              }
+            });
+          }
+        }
+      });
+    }
+  }
+
+  // --- params ---
+  if (spec.params != null) {
+    if (typeof spec.params !== 'object' || Array.isArray(spec.params)) {
+      errors.push('spec.params must be an object map');
+    } else {
+      Object.keys(spec.params).forEach(function (name) {
+        var def = spec.params[name];
+        // A param is either a bare default value or a { value, type } object.
+        if (def != null && typeof def === 'object' && !Array.isArray(def) &&
+            def.type != null &&
+            ['string', 'number', 'boolean'].indexOf(def.type) === -1) {
+          errors.push('spec.params["' + name + '"].type must be "string", "number", or "boolean"');
         }
       });
     }

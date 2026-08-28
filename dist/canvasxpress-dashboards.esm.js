@@ -299,10 +299,58 @@ function createDataStore(options) {
    * @param {object} sourceSpec - The data source spec.
    * @returns {string} A cache key.
    */
-  function keyFor(ref, sourceSpec) {
-    if (sourceSpec && sourceSpec.kind === 'connector') return 'connector:' + sourceSpec.url;
-    if (sourceSpec && sourceSpec.kind === 'dataset') return 'dataset:' + datasetUrl(sourceSpec);
+  function keyFor(ref, sourceSpec, params) {
+    if (sourceSpec && sourceSpec.kind === 'connector') {
+      return 'connector:' + appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, params));
+    }
+    if (sourceSpec && sourceSpec.kind === 'dataset') return 'dataset:' + datasetUrl(sourceSpec, params);
     return 'ref:' + ref;
+  }
+
+  /**
+   * Resolve a source's `query` template against the current parameter values:
+   * each `"$name"` token becomes `params[name]`, and any entry whose resolved
+   * value is `null`/`undefined` is dropped (an unset param does not narrow the
+   * query — this is how an "All" sentinel widens back to everything). A literal
+   * (non-`$`) query value passes through unchanged.
+   * @param {object} sourceSpec - The data source spec (may carry `query`).
+   * @param {object} [params] - Current param values (name -> value).
+   * @returns {object} Concrete query params, ready to encode.
+   * @private
+   */
+  function resolvedQuery(sourceSpec, params) {
+    var template = sourceSpec && sourceSpec.query;
+    var out = {};
+    if (!template) return out;
+    params = params || {};
+    for (var name in template) {
+      if (!Object.prototype.hasOwnProperty.call(template, name)) continue;
+      var token = template[name];
+      var value = token;
+      if (typeof token === 'string' && token.charAt(0) === '$') {
+        value = params[token.slice(1)];
+      }
+      if (value != null) out[name] = value;
+    }
+    return out;
+  }
+
+  /**
+   * Append a query object to a URL as a sorted, encoded query string (sorted so
+   * the same params always produce the same cache key regardless of key order).
+   * @param {string} url - The base URL (may already carry a query string).
+   * @param {object} query - Concrete query params from {@link resolvedQuery}.
+   * @returns {string} The URL with the query appended (unchanged if empty).
+   * @private
+   */
+  function appendQuery(url, query) {
+    var names = Object.keys(query || {}).sort();
+    if (!names.length) return url;
+    var pairs = [];
+    for (var i = 0; i < names.length; i++) {
+      pairs.push(encodeURIComponent(names[i]) + '=' + encodeURIComponent(query[names[i]]));
+    }
+    return url + (url.indexOf('?') === -1 ? '?' : '&') + pairs.join('&');
   }
 
   /**
@@ -312,11 +360,15 @@ function createDataStore(options) {
    * @param {object} sourceSpec - Dataset source spec (has `id`, optional `url`).
    * @returns {string} The URL to fetch the CanvasXpress data object from.
    */
-  function datasetUrl(sourceSpec) {
-    if (sourceSpec.url) return sourceSpec.url;
-    var url = baseUrl + '/api/datasets/' + encodeURIComponent(sourceSpec.id);
-    if (sourceSpec.store) url += '?store=' + encodeURIComponent(sourceSpec.store);
-    return url;
+  function datasetUrl(sourceSpec, params) {
+    var url;
+    if (sourceSpec.url) {
+      url = sourceSpec.url;
+    } else {
+      url = baseUrl + '/api/datasets/' + encodeURIComponent(sourceSpec.id);
+      if (sourceSpec.store) url += '?store=' + encodeURIComponent(sourceSpec.store);
+    }
+    return appendQuery(url, resolvedQuery(sourceSpec, params));
   }
 
   /**
@@ -353,6 +405,9 @@ function createDataStore(options) {
      * @param {object} sourceSpec - The data source spec (inline | connector).
      * @param {object} [opts] - Resolution options.
      * @param {boolean} [opts.force=false] - Bypass a fresh cache entry and refetch.
+     * @param {object} [opts.params] - Current dashboard parameter values, used to
+     *   resolve the source's `query` template (`$name` tokens) and to key the
+     *   cache so different parameter values are distinct fetches.
      * @returns {Promise<object>} The resolved data.
      */
     resolve: function (ref, sourceSpec, opts) {
@@ -366,9 +421,11 @@ function createDataStore(options) {
         return Promise.reject(new Error('unknown data source kind "' + sourceSpec.kind + '"'));
       }
 
-      var key = keyFor(ref, sourceSpec);
+      var key = keyFor(ref, sourceSpec, opts.params);
       var ttl = sourceSpec.ttl != null ? sourceSpec.ttl : defaultTtl;
-      var url = sourceSpec.kind === 'dataset' ? datasetUrl(sourceSpec) : sourceSpec.url;
+      var url = sourceSpec.kind === 'dataset'
+        ? datasetUrl(sourceSpec, opts.params)
+        : appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, opts.params));
 
       if (!opts.force) {
         var hit = cache.get(key);
@@ -393,10 +450,11 @@ function createDataStore(options) {
      * Invalidate a cached source (used before a scheduled refresh).
      * @param {string} ref - The source ref name.
      * @param {object} sourceSpec - The data source spec.
+     * @param {object} [params] - Current param values (to key the entry).
      * @returns {void}
      */
-    invalidate: function (ref, sourceSpec) {
-      cache.delete(keyFor(ref, sourceSpec));
+    invalidate: function (ref, sourceSpec, params) {
+      cache.delete(keyFor(ref, sourceSpec, params));
     }
   };
 }
@@ -476,6 +534,22 @@ function clearSharedCache() {
  *
  * @module exportDashboard
  */
+
+/**
+ * Inline SVG favicon (a CanvasXpress-blue bar-chart glyph) as a data URI, so the
+ * exported page shows a tab icon without any external request.
+ * @type {string}
+ * @private
+ */
+var FAVICON_DATA_URI =
+  'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">' +
+    '<rect width="16" height="16" rx="3" fill="#2563eb"/>' +
+    '<rect x="3" y="8" width="2.4" height="5" rx="0.6" fill="#fff"/>' +
+    '<rect x="6.8" y="5" width="2.4" height="8" rx="0.6" fill="#fff"/>' +
+    '<rect x="10.6" y="3" width="2.4" height="10" rx="0.6" fill="#fff"/>' +
+    '</svg>'
+  );
 
 /**
  * Trigger a browser download of a Blob (same pattern as persistence.exportSpec).
@@ -624,6 +698,7 @@ function buildDashboardHtml(spec, opts) {
       '<meta charset="utf-8" />\n' +
       '<meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
       '<title>' + escapeHtml(title) + '</title>\n' +
+      '<link rel="icon" href="' + FAVICON_DATA_URI + '" />\n' +
       '<style>\n' + css + '\n</style>\n' +
       '<style>\nbody{margin:0;font-family:system-ui,sans-serif;background:#f2f4f7;color:#222}' +
       '#dashboard{padding:16px 24px 32px}\n' +
@@ -863,7 +938,11 @@ function validateSpec(spec) {
         errors.push(at + ' must be an object');
         return;
       }
-      if (panel.type !== 'text' && panel.dataRef == null && panel.data == null) {
+      // A param control with a static option list drives a backend query and
+      // needs no data of its own, so it is exempt from the data requirement.
+      var paramWithOptions = panel.type === 'control' && panel.mode === 'param' &&
+        Array.isArray(panel.options);
+      if (panel.type !== 'text' && !paramWithOptions && panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
       if (panel.type === 'control') {
@@ -873,6 +952,16 @@ function validateSpec(spec) {
         if (panel.style != null &&
             ['auto', 'dropdown', 'radio', 'buttons'].indexOf(panel.style) === -1) {
           errors.push(at + '.style must be "auto", "dropdown", "radio", or "buttons"');
+        }
+        if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param') {
+          errors.push(at + '.mode must be "filter" or "param"');
+        }
+        if (panel.mode === 'param') {
+          if (typeof panel.param !== 'string' || panel.param.length === 0) {
+            errors.push(at + ' of mode "param" requires a param name string');
+          } else if (spec.params == null || !hasOwn(spec.params, panel.param)) {
+            errors.push(at + '.param "' + panel.param + '" has no matching entry in spec.params');
+          }
         }
       }
       if (panel.align != null && ['left', 'center', 'right'].indexOf(panel.align) === -1) {
@@ -912,6 +1001,40 @@ function validateSpec(spec) {
         }
         if (src.kind === 'dataset' && (typeof src.id !== 'string' || src.id.length === 0)) {
           errors.push(at + ' of kind "dataset" requires an id string');
+        }
+        // A `query` template maps request keys to literals or "$param" tokens;
+        // every token must name a declared parameter.
+        if (src.query != null) {
+          if (typeof src.query !== 'object' || Array.isArray(src.query)) {
+            errors.push(at + '.query must be an object map');
+          } else {
+            Object.keys(src.query).forEach(function (qk) {
+              var token = src.query[qk];
+              if (typeof token === 'string' && token.charAt(0) === '$') {
+                var name = token.slice(1);
+                if (spec.params == null || !hasOwn(spec.params, name)) {
+                  errors.push(at + '.query["' + qk + '"] references undeclared param "' + name + '"');
+                }
+              }
+            });
+          }
+        }
+      });
+    }
+  }
+
+  // --- params ---
+  if (spec.params != null) {
+    if (typeof spec.params !== 'object' || Array.isArray(spec.params)) {
+      errors.push('spec.params must be an object map');
+    } else {
+      Object.keys(spec.params).forEach(function (name) {
+        var def = spec.params[name];
+        // A param is either a bare default value or a { value, type } object.
+        if (def != null && typeof def === 'object' && !Array.isArray(def) &&
+            def.type != null &&
+            ['string', 'number', 'boolean'].indexOf(def.type) === -1) {
+          errors.push('spec.params["' + name + '"].type must be "string", "number", or "boolean"');
         }
       });
     }
@@ -1071,6 +1194,20 @@ function renderDashboard(spec, target, options) {
   // controls combine; "All" in any control clears everything.
   var controlWidgets = [];
 
+  // Live dashboard parameter values, seeded from spec.params. A mode:"param"
+  // control writes one of these; sources whose `query` references `$<name>`
+  // read them, so changing a control re-queries the backend and live-updates
+  // the panels bound to that source (see applyParamChange).
+  var paramState = {};
+  var paramsSpec = spec.params || {};
+  for (var paramName in paramsSpec) {
+    if (Object.prototype.hasOwnProperty.call(paramsSpec, paramName)) {
+      var paramDef = paramsSpec[paramName];
+      paramState[paramName] = paramDef && typeof paramDef === 'object'
+        ? paramDef.value : paramDef;
+    }
+  }
+
   /**
    * True when an instance's bound data actually carries the annotation —
    * as a sample annotation (data.x) or a variable annotation (data.z).
@@ -1161,7 +1298,7 @@ function renderDashboard(spec, target, options) {
    */
   function resolveRef(ref) {
     if (refMemo[ref]) return refMemo[ref];
-    var promise = store.resolve(ref, (spec.data || {})[ref]);
+    var promise = store.resolve(ref, (spec.data || {})[ref], { params: paramState });
     refMemo[ref] = promise;
     return promise;
   }
@@ -1182,11 +1319,71 @@ function renderDashboard(spec, target, options) {
    * live-update it.
    * @param {string} ref - Source ref name (may be undefined).
    * @param {object} instance - The CanvasXpress instance.
+   * @param {object} [cell] - The cell wrapping the instance (for loading state).
    * @returns {void}
    */
-  function bind(ref, instance) {
+  function bind(ref, instance, cell) {
     if (!ref) return;
-    (refBindings[ref] || (refBindings[ref] = [])).push({ instance: instance });
+    (refBindings[ref] || (refBindings[ref] = [])).push({ instance: instance, cell: cell });
+  }
+
+  /**
+   * Refs whose source `query` references `$<param>` (or lists it in `dependsOn`)
+   * — the panels to re-fetch and live-update when that parameter changes.
+   * @param {string} param - The parameter name that changed.
+   * @returns {string[]} Affected source ref names.
+   */
+  function refsForParam(param) {
+    var sources = spec.data || {};
+    var affected = [];
+    for (var ref in sources) {
+      if (!Object.prototype.hasOwnProperty.call(sources, ref)) continue;
+      var source = sources[ref];
+      if (!source) continue;
+      var uses = false;
+      if (Array.isArray(source.dependsOn) && source.dependsOn.indexOf(param) !== -1) uses = true;
+      var query = source.query || {};
+      for (var qk in query) {
+        if (query[qk] === '$' + param) { uses = true; break; }
+      }
+      if (uses) affected.push(ref);
+    }
+    return affected;
+  }
+
+  /**
+   * Apply a parameter change from a `mode:"param"` control: record the new value,
+   * then for every source that consumes the parameter, re-fetch with the current
+   * params and live-update the bound instances via `updateData`. Bound cells show
+   * a loading state while in flight and keep their prior data on error.
+   * @param {string} param - The parameter name being set.
+   * @param {*} value - The new value (null clears the param → widens the query).
+   * @returns {Promise<void>} Resolves once all affected panels have updated.
+   */
+  function applyParamChange(param, value) {
+    paramState[param] = value;
+    var refs = refsForParam(param);
+    var work = refs.map(function (ref) {
+      var source = (spec.data || {})[ref];
+      var bound = refBindings[ref] || [];
+      refMemo[ref] = null;   // force a fresh resolve for any later renderers of this ref
+      bound.forEach(function (b) { if (b.cell && b.cell.setState) b.cell.setState('loading'); });
+      return store.resolve(ref, source, { params: paramState, force: true })
+        .then(function (data) {
+          bound.forEach(function (b) {
+            if (b.cell && b.cell.setState) b.cell.setState('ready');
+            if (b.instance && typeof b.instance.updateData === 'function') {
+              try { b.instance.updateData(data, true, false); } catch (e) { /* keep others */ }
+            }
+          });
+        }, function (err) {
+          // Keep last-good data; surface the failure on the affected cells.
+          bound.forEach(function (b) {
+            if (b.cell && b.cell.setState) b.cell.setState('error', String(err && err.message || err));
+          });
+        });
+    });
+    return Promise.all(work).then(function () {});
   }
 
   // --- panels laid out in the grid ---
@@ -1259,7 +1456,7 @@ function renderDashboard(spec, target, options) {
         var instance = new CX(canvasId, data, config, panel && panel.events || {});
         instances.push(instance);
         if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
-        bind(panel && panel.dataRef, instance);
+        bind(panel && panel.dataRef, instance, cell);
         if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
         notify(instance, 'ready');
@@ -1342,6 +1539,69 @@ function renderDashboard(spec, target, options) {
     // The compartment the annotation actually lives in; re-detected below in
     // case the spec's stored value (or its 'x' default) doesn't match the data.
     var comp = panel.compartment || 'x';
+    var isParam = panel.mode === 'param';
+
+    /**
+     * Build the control's DOM from a list of choices and wire its change handler
+     * (param mode → applyParamChange; filter mode → applyControlFilters).
+     * @param {Array} values - The choices to offer (empty renders a hint).
+     * @returns {null} Always null (a control renders no CanvasXpress instance).
+     * @private
+     */
+    function buildWidget(values) {
+      var widget = document.createElement('div');
+      widget.className = 'cxd-annctl';
+      applyAlignment(cell.body, panel);
+      if (panel.title && !panel.hideTitle) {
+        var label = document.createElement('span');
+        label.className = 'cxd-annctl-label';
+        label.textContent = panel.title;
+        widget.appendChild(label);
+      }
+      var configured = isParam ? !!panel.param : !!panel.annotation;
+      if (!configured || !values.length) {
+        var hint = document.createElement('span');
+        hint.className = 'cxd-annctl-hint';
+        hint.textContent = !configured
+          ? (isParam ? 'Choose a parameter…' : 'Choose an annotation…')
+          : (isParam ? 'No values' : 'No "' + panel.annotation + '" values');
+        widget.appendChild(hint);
+      } else if (isParam) {
+        // A param control re-queries the backend on change; "All" → null clears
+        // the param so the source's query widens back to everything.
+        var paramInput = buildAnnotationInput(panel, values, function (value) {
+          applyParamChange(panel.param, value);
+        });
+        widget.appendChild(paramInput);
+      } else {
+        var entry = { annotation: panel.annotation, value: null, resetUI: null };
+        controlWidgets.push(entry);
+        var input = buildAnnotationInput(panel, values, function (value) {
+          entry.value = value;
+          if (value == null) {
+            // "All" clears EVERY control's filter — snap the others to All
+            // too. A value pick touches only this control; the other picks
+            // stay and combine.
+            controlWidgets.forEach(function (w) {
+              w.value = null;
+              if (w !== entry && w.resetUI) w.resetUI();
+            });
+          }
+          applyControlFilters();
+        });
+        entry.resetUI = input._cxdResetToAll;
+        widget.appendChild(input);
+      }
+      cell.body.appendChild(widget);
+      cell.setState('ready');
+      notify('ready');
+      return null;
+    }
+
+    // A param control with a static option list needs no data at all.
+    if (isParam && Array.isArray(panel.options)) {
+      return Promise.resolve(buildWidget(panel.options));
+    }
 
     return resolveOwnerData(panel)
       .then(function (data) {
@@ -1352,45 +1612,7 @@ function renderDashboard(spec, target, options) {
           var alt = annotationValues(data, other, panel.annotation);
           if (alt.length) { comp = other; values = alt; }
         }
-        var widget = document.createElement('div');
-        widget.className = 'cxd-annctl';
-        applyAlignment(cell.body, panel);
-        if (panel.title && !panel.hideTitle) {
-          var label = document.createElement('span');
-          label.className = 'cxd-annctl-label';
-          label.textContent = panel.title;
-          widget.appendChild(label);
-        }
-        if (!panel.annotation || !values.length) {
-          var hint = document.createElement('span');
-          hint.className = 'cxd-annctl-hint';
-          hint.textContent = !panel.annotation
-            ? 'Choose an annotation…'
-            : 'No "' + panel.annotation + '" values';
-          widget.appendChild(hint);
-        } else {
-          var entry = { annotation: panel.annotation, value: null, resetUI: null };
-          controlWidgets.push(entry);
-          var input = buildAnnotationInput(panel, values, function (value) {
-            entry.value = value;
-            if (value == null) {
-              // "All" clears EVERY control's filter — snap the others to All
-              // too. A value pick touches only this control; the other picks
-              // stay and combine.
-              controlWidgets.forEach(function (w) {
-                w.value = null;
-                if (w !== entry && w.resetUI) w.resetUI();
-              });
-            }
-            applyControlFilters();
-          });
-          entry.resetUI = input._cxdResetToAll;
-          widget.appendChild(input);
-        }
-        cell.body.appendChild(widget);
-        cell.setState('ready');
-        notify('ready');
-        return null;
+        return buildWidget(values);
       })
       .catch(function (err) {
         cell.setState('error', String(err && err.message || err));
@@ -1451,7 +1673,7 @@ function renderDashboard(spec, target, options) {
         applyDashboardChartStyle(config, spec);   // dashboard-wide font/theme/colors (Settings)
         var instance = new CX(canvasId, data, config, {});
         instances.push(instance);
-        bind(control.dataRef, instance);
+        bind(control.dataRef, instance, cell);
         if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
         notifyControl(instance, 'ready');

@@ -421,3 +421,56 @@ test('text and control panels honor align/valign within their cells', async func
   assert.equal(ctlBody.style.alignItems, 'flex-end');
   assert.equal(ctlBody.style.justifyContent, 'center');
 });
+
+test('a param control re-queries the source and live-updates bound panels', async function () {
+  // A CX stub whose instances record updateData(...) calls.
+  var live = [];
+  function LiveCX(id, data, config) {
+    var inst = { id: id, data: data, config: config, updates: [] };
+    inst.updateData = function (d) { inst.updates.push(d); };
+    live.push(inst);
+    return inst;
+  }
+
+  // fetch returns data tagged with the region query param so we can prove the
+  // bound panel received the re-queried data.
+  function paramFetch(url) {
+    var m = /region=([^&]+)/.exec(url);
+    var region = m ? decodeURIComponent(m[1]) : 'none';
+    var body = JSON.stringify({ y: { vars: ['R'], smps: [region], data: [[1]] } });
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(body); } });
+  }
+
+  var spec = {
+    id: 'live',
+    params: { region: { value: null, type: 'string' } },
+    layout: { cols: 12, items: [
+      { panel: 'pick', x: 0, y: 0, w: 3, h: 1 },
+      { panel: 'bar', x: 0, y: 1, w: 6, h: 3 }
+    ] },
+    data: { sales: { kind: 'connector', url: '/api/data', query: { region: '$region' }, ttl: 0 } },
+    panels: {
+      pick: { type: 'control', mode: 'param', param: 'region', style: 'dropdown', options: ['EMEA', 'APAC'] },
+      bar: { dataRef: 'sales', config: { graphType: 'Bar' } }
+    }
+  };
+
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var handle = await renderDashboard(spec, container, { CanvasXpress: LiveCX, fetch: paramFetch });
+  await handle.ready;
+
+  assert.equal(live.length, 1, 'one bound bar instance');
+  var bar = live[0];
+  assert.equal(bar.updates.length, 0, 'no update before a selection');
+
+  // Pick EMEA (option index 1: [All, EMEA, APAC]) and fire change.
+  var select = container.querySelector('.cxd-annctl-select');
+  assert.ok(select, 'param control renders a dropdown');
+  select.value = '1';
+  select.dispatchEvent('change');
+  await new Promise(function (r) { setTimeout(r, 0); });
+
+  assert.equal(bar.updates.length, 1, 'bound panel live-updated once');
+  assert.equal(bar.updates[0].y.smps[0], 'EMEA', 'panel got EMEA-scoped data');
+});

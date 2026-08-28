@@ -18,6 +18,22 @@
 import { createDataStore } from './dataStore.js';
 
 /**
+ * Inline SVG favicon (a CanvasXpress-blue bar-chart glyph) as a data URI, so the
+ * exported page shows a tab icon without any external request.
+ * @type {string}
+ * @private
+ */
+var FAVICON_DATA_URI =
+  'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">' +
+    '<rect width="16" height="16" rx="3" fill="#2563eb"/>' +
+    '<rect x="3" y="8" width="2.4" height="5" rx="0.6" fill="#fff"/>' +
+    '<rect x="6.8" y="5" width="2.4" height="8" rx="0.6" fill="#fff"/>' +
+    '<rect x="10.6" y="3" width="2.4" height="10" rx="0.6" fill="#fff"/>' +
+    '</svg>'
+  );
+
+/**
  * Trigger a browser download of a Blob (same pattern as persistence.exportSpec).
  * @param {Blob} blob - The file contents.
  * @param {string} name - Download filename.
@@ -164,6 +180,7 @@ export function buildDashboardHtml(spec, opts) {
       '<meta charset="utf-8" />\n' +
       '<meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
       '<title>' + escapeHtml(title) + '</title>\n' +
+      '<link rel="icon" href="' + FAVICON_DATA_URI + '" />\n' +
       '<style>\n' + css + '\n</style>\n' +
       '<style>\nbody{margin:0;font-family:system-ui,sans-serif;background:#f2f4f7;color:#222}' +
       '#dashboard{padding:16px 24px 32px}\n' +

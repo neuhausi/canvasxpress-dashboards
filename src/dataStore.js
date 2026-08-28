@@ -57,10 +57,58 @@ export function createDataStore(options) {
    * @param {object} sourceSpec - The data source spec.
    * @returns {string} A cache key.
    */
-  function keyFor(ref, sourceSpec) {
-    if (sourceSpec && sourceSpec.kind === 'connector') return 'connector:' + sourceSpec.url;
-    if (sourceSpec && sourceSpec.kind === 'dataset') return 'dataset:' + datasetUrl(sourceSpec);
+  function keyFor(ref, sourceSpec, params) {
+    if (sourceSpec && sourceSpec.kind === 'connector') {
+      return 'connector:' + appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, params));
+    }
+    if (sourceSpec && sourceSpec.kind === 'dataset') return 'dataset:' + datasetUrl(sourceSpec, params);
     return 'ref:' + ref;
+  }
+
+  /**
+   * Resolve a source's `query` template against the current parameter values:
+   * each `"$name"` token becomes `params[name]`, and any entry whose resolved
+   * value is `null`/`undefined` is dropped (an unset param does not narrow the
+   * query — this is how an "All" sentinel widens back to everything). A literal
+   * (non-`$`) query value passes through unchanged.
+   * @param {object} sourceSpec - The data source spec (may carry `query`).
+   * @param {object} [params] - Current param values (name -> value).
+   * @returns {object} Concrete query params, ready to encode.
+   * @private
+   */
+  function resolvedQuery(sourceSpec, params) {
+    var template = sourceSpec && sourceSpec.query;
+    var out = {};
+    if (!template) return out;
+    params = params || {};
+    for (var name in template) {
+      if (!Object.prototype.hasOwnProperty.call(template, name)) continue;
+      var token = template[name];
+      var value = token;
+      if (typeof token === 'string' && token.charAt(0) === '$') {
+        value = params[token.slice(1)];
+      }
+      if (value != null) out[name] = value;
+    }
+    return out;
+  }
+
+  /**
+   * Append a query object to a URL as a sorted, encoded query string (sorted so
+   * the same params always produce the same cache key regardless of key order).
+   * @param {string} url - The base URL (may already carry a query string).
+   * @param {object} query - Concrete query params from {@link resolvedQuery}.
+   * @returns {string} The URL with the query appended (unchanged if empty).
+   * @private
+   */
+  function appendQuery(url, query) {
+    var names = Object.keys(query || {}).sort();
+    if (!names.length) return url;
+    var pairs = [];
+    for (var i = 0; i < names.length; i++) {
+      pairs.push(encodeURIComponent(names[i]) + '=' + encodeURIComponent(query[names[i]]));
+    }
+    return url + (url.indexOf('?') === -1 ? '?' : '&') + pairs.join('&');
   }
 
   /**
@@ -70,11 +118,15 @@ export function createDataStore(options) {
    * @param {object} sourceSpec - Dataset source spec (has `id`, optional `url`).
    * @returns {string} The URL to fetch the CanvasXpress data object from.
    */
-  function datasetUrl(sourceSpec) {
-    if (sourceSpec.url) return sourceSpec.url;
-    var url = baseUrl + '/api/datasets/' + encodeURIComponent(sourceSpec.id);
-    if (sourceSpec.store) url += '?store=' + encodeURIComponent(sourceSpec.store);
-    return url;
+  function datasetUrl(sourceSpec, params) {
+    var url;
+    if (sourceSpec.url) {
+      url = sourceSpec.url;
+    } else {
+      url = baseUrl + '/api/datasets/' + encodeURIComponent(sourceSpec.id);
+      if (sourceSpec.store) url += '?store=' + encodeURIComponent(sourceSpec.store);
+    }
+    return appendQuery(url, resolvedQuery(sourceSpec, params));
   }
 
   /**
@@ -111,6 +163,9 @@ export function createDataStore(options) {
      * @param {object} sourceSpec - The data source spec (inline | connector).
      * @param {object} [opts] - Resolution options.
      * @param {boolean} [opts.force=false] - Bypass a fresh cache entry and refetch.
+     * @param {object} [opts.params] - Current dashboard parameter values, used to
+     *   resolve the source's `query` template (`$name` tokens) and to key the
+     *   cache so different parameter values are distinct fetches.
      * @returns {Promise<object>} The resolved data.
      */
     resolve: function (ref, sourceSpec, opts) {
@@ -124,9 +179,11 @@ export function createDataStore(options) {
         return Promise.reject(new Error('unknown data source kind "' + sourceSpec.kind + '"'));
       }
 
-      var key = keyFor(ref, sourceSpec);
+      var key = keyFor(ref, sourceSpec, opts.params);
       var ttl = sourceSpec.ttl != null ? sourceSpec.ttl : defaultTtl;
-      var url = sourceSpec.kind === 'dataset' ? datasetUrl(sourceSpec) : sourceSpec.url;
+      var url = sourceSpec.kind === 'dataset'
+        ? datasetUrl(sourceSpec, opts.params)
+        : appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, opts.params));
 
       if (!opts.force) {
         var hit = cache.get(key);
@@ -151,10 +208,11 @@ export function createDataStore(options) {
      * Invalidate a cached source (used before a scheduled refresh).
      * @param {string} ref - The source ref name.
      * @param {object} sourceSpec - The data source spec.
+     * @param {object} [params] - Current param values (to key the entry).
      * @returns {void}
      */
-    invalidate: function (ref, sourceSpec) {
-      cache.delete(keyFor(ref, sourceSpec));
+    invalidate: function (ref, sourceSpec, params) {
+      cache.delete(keyFor(ref, sourceSpec, params));
     }
   };
 }

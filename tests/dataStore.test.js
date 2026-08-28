@@ -148,3 +148,40 @@ test('clearSharedCache empties the process-wide cache', function () {
   clearSharedCache(); // smoke: should not throw
   assert.ok(true);
 });
+
+test('substitutes $param tokens into a connector query', async function () {
+  var fetchStub = fakeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map() });
+  var src = { kind: 'connector', url: '/api/data?source=sales', query: { region: '$region', fixed: 'x' } };
+  await store.resolve('sales', src, { params: { region: 'EMEA' } });
+  assert.equal(fetchStub.calls.length, 1);
+  assert.match(fetchStub.calls[0].url, /region=EMEA/);
+  assert.match(fetchStub.calls[0].url, /fixed=x/);
+});
+
+test('drops query entries whose param is null (an "All" selection widens)', async function () {
+  var fetchStub = fakeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map() });
+  var src = { kind: 'connector', url: '/api/data?source=sales', query: { region: '$region' } };
+  await store.resolve('sales', src, { params: { region: null } });
+  assert.equal(fetchStub.calls[0].url, '/api/data?source=sales', 'no region param appended');
+});
+
+test('different param values are distinct cache entries (no stale collision)', async function () {
+  var fetchStub = fakeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map(), ttl: 10000, now: function () { return 0; } });
+  var src = { kind: 'connector', url: '/api/data?source=sales', query: { region: '$region' } };
+  await store.resolve('sales', src, { params: { region: 'EMEA' } });
+  await store.resolve('sales', src, { params: { region: 'APAC' } });
+  await store.resolve('sales', src, { params: { region: 'EMEA' } }); // cached
+  assert.equal(fetchStub.calls.length, 2, 'EMEA and APAC fetched once each; second EMEA served from cache');
+});
+
+test('cache key is order-independent for the same param values', async function () {
+  var fetchStub = fakeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map(), ttl: 10000, now: function () { return 0; } });
+  var src = { kind: 'connector', url: '/api/data', query: { a: '$a', b: '$b' } };
+  await store.resolve('s', src, { params: { a: '1', b: '2' } });
+  await store.resolve('s', src, { params: { b: '2', a: '1' } });
+  assert.equal(fetchStub.calls.length, 1, 'same values in any order share one cache entry');
+});
