@@ -1443,23 +1443,24 @@
       var previewTimer = null;
       function apply(changes) {
         currentSpec = CXD.updateSettings(currentSpec, changes);
-        // Background colour/image is pure container styling (the renderer only
-        // sets it on the host — no CanvasXpress involvement), so reflect it live
-        // and SKIP the re-render. Otherwise dragging the colour picker fires a
-        // burst of `input` events, each tearing down + recreating every graph,
-        // and the instances flicker/disappear mid-drag. Layout/theme changes
-        // still need a render, but debounced so a rapid input doesn't thrash it.
-        // Chrome (background, panel colour, and their coordinate toggles) is pure
-        // container styling — the renderer only sets it on the host, no
-        // CanvasXpress involvement — so reflect it live and SKIP the re-render.
-        // Otherwise dragging a colour picker fires a burst of `input` events,
-        // each tearing down + recreating every graph, and the instances
-        // flicker/disappear mid-drag. Layout/theme changes still need a render,
-        // debounced so a rapid input doesn't thrash it.
-        var CHROME = { background: 1, backgroundImage: 1, panelColor: 1, coordinateBackground: 1, coordinatePanel: 1 };
+        // These settings are applied to what's ALREADY on screen — no teardown,
+        // no rebuild — so we keep the rendered plots and just restyle them:
+        //   - Chrome (background, panel colour, and their coordinate toggles) is
+        //     pure container styling — the renderer only sets it on the host, no
+        //     CanvasXpress involvement — reflected live by applyChromeLive.
+        //   - Theme is restyled in place by the library (setTheme redraws itself),
+        //     applied live by the theme change handler via liveApplyTheme.
+        // For a change touching ONLY these keys we SKIP the re-render. Recreating
+        // instead tears down and rebuilds every graph: on a colour-picker drag
+        // they flicker/disappear mid-drag, and on a theme change of a heavy
+        // dashboard the plots go BLANK (white) for the whole rebuild — the
+        // "meter card turns white under cxblue" flash (liveApplyTheme shows the
+        // colour, the rebuild then blanks it). Structural changes (layout,
+        // dimensions, font, colour scheme) still schedule a debounced re-render.
+        var LIVE = { background: 1, backgroundImage: 1, panelColor: 1, coordinateBackground: 1, coordinatePanel: 1, theme: 1 };
         var keys = Object.keys(changes);
-        var chromeOnly = keys.length > 0 && keys.every(function (k) { return CHROME[k]; });
-        if (chromeOnly) {
+        var liveOnly = keys.length > 0 && keys.every(function (k) { return LIVE[k]; });
+        if (liveOnly) {
           applyChromeLive(document.getElementById('s-preview'));
         } else {
           schedulePreview();
@@ -1475,8 +1476,22 @@
       function effPanel() {
         return currentSpec.coordinatePanel ? effBg() : (currentSpec.panelColor || '');
       }
+      // Mirror renderDashboard.applyTheme: panel-title and control text colours
+      // come from --cxd-title, which the cxd-theme-light|dark|auto class on the
+      // host selects (see styles.js). The renderer sets that class on every
+      // render; when a theme change is applied LIVE (no re-render) we must flip
+      // it here too, or the titles/controls keep the previous theme's text colour
+      // and stop contrasting with the new background.
+      function applyThemeClassLive(host) {
+        if (!host) return;
+        host.classList.remove('cxd-theme-light', 'cxd-theme-dark', 'cxd-theme-auto');
+        var theme = currentSpec.theme;
+        if (!theme || theme === 'auto') { host.classList.add('cxd-theme-auto'); return; }
+        host.classList.add(isDarkHex(themeBg(theme)) ? 'cxd-theme-dark' : 'cxd-theme-light');
+      }
       function applyChromeLive(host) {
         if (!host) return;
+        applyThemeClassLive(host);
         host.style.backgroundColor = effBg();
         if (currentSpec.backgroundImage) {
           host.style.backgroundImage = 'url("' + String(currentSpec.backgroundImage).replace(/"/g, '\\"') + '")';
