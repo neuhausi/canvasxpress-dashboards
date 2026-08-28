@@ -16,7 +16,7 @@ import { injectStyles } from './styles.js';
 import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames } from './renderDashboard.js';
 import { validateSpec } from './validateSpec.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
-import { addPanel, removePanel, movePanel, resizePanel, resolveCollisions, resolveDrop, updatePanel, setDataSource, blankSpec, DEFAULT_COLS }
+import { addPanel, removePanel, movePanel, resizePanel, resolveCollisions, resolveDrop, updatePanel, setDataSource, setParam, setSourceQuery, blankSpec, DEFAULT_COLS }
   from './builderModel.js';
 
 // MS-Word-style colour-control icons (the coloured bar is rendered separately).
@@ -1348,10 +1348,212 @@ export function createBuilder(target, options) {
     annLabel.textContent = 'Annotation';
     var styleLabel = el('span', 'cxb-tlabel');
     styleLabel.textContent = 'Style';
-    // The show-title checkbox goes LAST, mirroring the Panel props row.
-    append(propsGroup, [labelTag, titleField, dataLabel, dsField,
-      annLabel, annField, styleLabel, styleField]
-      .concat(alignmentFields(panel), [labelToggle]));
+
+    // Mode: filter the page (client-side, default) vs write a parameter that
+    // re-queries a data source and refreshes the bound panels (live data).
+    var mode = panel.mode === 'param' ? 'param' : 'filter';
+    var modeLabel = el('span', 'cxb-tlabel');
+    modeLabel.textContent = 'Action';
+    var modeField = selectField(['filter', 'param'], mode, function (value) {
+      commit(updatePanel(spec, selectedId, { mode: value }), false);
+      renderProps();          // swap the field set for the chosen mode
+      rerenderPanel(selectedId);
+    });
+    modeField.setAttribute('title', 'Filter this page, or query a data source');
+    labelOptions(modeField, { filter: 'Filter page', param: 'Query source' });
+
+    if (mode !== 'param') {
+      // The show-title checkbox goes LAST, mirroring the Panel props row.
+      append(propsGroup, [labelTag, titleField, modeLabel, modeField, dataLabel, dsField,
+        annLabel, annField, styleLabel, styleField]
+        .concat(alignmentFields(panel), [labelToggle]));
+    } else {
+      append(propsGroup, [labelTag, titleField, modeLabel, modeField]
+        .concat(paramControlFields(panel, refs, styleField))
+        .concat(alignmentFields(panel), [labelToggle]));
+    }
+  }
+
+  /**
+   * The extra property fields for a `mode:"param"` control: the parameter name,
+   * the choice source (a static list or another dataset's values), and the
+   * "applies to" wiring that writes `$param` into a target source's query.
+   * @param {object} panel - The selected control panel.
+   * @param {string[]} refs - Current spec data-source names.
+   * @param {HTMLElement} styleField - The shared widget-style select.
+   * @returns {HTMLElement[]} Fields to append to the props row.
+   * @private
+   */
+  function paramControlFields(panel, refs, styleField) {
+    var out = [];
+
+    // Parameter name — declared in spec.params so a source query can read it.
+    var paramLabel = el('span', 'cxb-tlabel');
+    paramLabel.textContent = 'Param';
+    var paramField = el('input');
+    paramField.type = 'text';
+    paramField.value = panel.param || '';
+    paramField.setAttribute('placeholder', 'e.g. region');
+    paramField.setAttribute('title', 'Parameter name (shared with the source query)');
+    paramField.style.width = '90px';
+    on(paramField, 'change', function () {
+      var name = paramField.value.trim();
+      var next = spec;
+      if (name) next = setParam(next, name, (spec.params && spec.params[name]) || { value: null });
+      next = updatePanel(next, selectedId, { param: name });
+      commit(next, false);
+      rerenderPanel(selectedId);
+    });
+    out.push(paramLabel, paramField);
+
+    // Choices: a static list, or another dataset's distinct values.
+    var usesFrom = panel.optionsFrom != null;
+    var choiceLabel = el('span', 'cxb-tlabel');
+    choiceLabel.textContent = 'Choices';
+    var choiceField = selectField(['static', 'from'], usesFrom ? 'from' : 'static', function (value) {
+      var next;
+      if (value === 'from') next = updatePanel(spec, selectedId, { optionsFrom: { dataRef: refs[0] || '' } });
+      else next = updatePanel(spec, selectedId, { options: [], optionsFrom: null });
+      commit(next, false);
+      renderProps();
+      rerenderPanel(selectedId);
+    });
+    choiceField.setAttribute('title', 'Where the control gets its choices');
+    labelOptions(choiceField, { static: 'Static list', from: 'From data' });
+    out.push(choiceLabel, choiceField);
+
+    if (!usesFrom) {
+      var listField = el('input');
+      listField.type = 'text';
+      listField.value = (panel.options || []).join(', ');
+      listField.setAttribute('placeholder', 'EMEA, APAC, AMER');
+      listField.setAttribute('title', 'Comma-separated choices (an "All" entry is added automatically)');
+      listField.style.width = '160px';
+      on(listField, 'change', function () {
+        var options = listField.value.split(',').map(function (s) { return s.trim(); })
+          .filter(function (s) { return s.length; });
+        commit(updatePanel(spec, selectedId, { options: options }), false);
+        rerenderPanel(selectedId);
+      });
+      out.push(listField);
+    } else {
+      var from = panel.optionsFrom || {};
+      var fromSrc = selectField(refs, from.dataRef || refs[0] || '', function (value) {
+        commit(updatePanel(spec, selectedId, { optionsFrom: mergeInto(panel.optionsFrom, { dataRef: value }) }), false);
+        rerenderPanel(selectedId);
+      });
+      fromSrc.setAttribute('title', 'Dataset supplying the choices');
+      var fromAnn = el('input');
+      fromAnn.type = 'text';
+      fromAnn.value = from.annotation || '';
+      fromAnn.setAttribute('placeholder', 'field');
+      fromAnn.setAttribute('title', 'Annotation/field whose values become the choices');
+      fromAnn.style.width = '90px';
+      on(fromAnn, 'change', function () {
+        commit(updatePanel(spec, selectedId, { optionsFrom: mergeInto(panel.optionsFrom, { annotation: fromAnn.value.trim() }) }), false);
+        rerenderPanel(selectedId);
+      });
+      out.push(fromSrc, fromAnn);
+    }
+
+    // Applies to: which source gets `$param` written into which query field.
+    var binding = findParamBinding(spec, panel.param);
+    var appliesLabel = el('span', 'cxb-tlabel');
+    appliesLabel.textContent = 'Query';
+    var targetField = selectField([''].concat(refs), binding ? binding.ref : '', function (value) {
+      rewireParamBinding(value, fieldField.value.trim());
+    });
+    targetField.setAttribute('title', 'Data source this control queries');
+    labelOptions(targetField, { '': '(none)' });
+    var fieldField = el('input');
+    fieldField.type = 'text';
+    fieldField.value = binding ? binding.field : '';
+    fieldField.setAttribute('placeholder', 'field');
+    fieldField.setAttribute('title', 'Backend query field the parameter fills');
+    fieldField.style.width = '90px';
+    on(fieldField, 'change', function () { rewireParamBinding(targetField.value, fieldField.value.trim()); });
+    out.push(appliesLabel, targetField, fieldField);
+
+    var styleLabel2 = el('span', 'cxb-tlabel');
+    styleLabel2.textContent = 'Style';
+    out.push(styleLabel2, styleField);
+    return out;
+  }
+
+  /**
+   * Rewire the "applies to" query binding for the selected param control: clear
+   * any existing `$param` entries, then (when both target and field are given)
+   * write the token into the chosen source's query.
+   * @param {string} target - Target data-source ref (or '' to unbind).
+   * @param {string} field - Backend query field name.
+   * @returns {void}
+   * @private
+   */
+  function rewireParamBinding(target, field) {
+    var param = spec.panels[selectedId] && spec.panels[selectedId].param;
+    if (!param) return;
+    var next = clearParamBindings(spec, param);
+    if (target && field) next = setSourceQuery(next, target, field, '$' + param);
+    commit(next, false);
+    rerenderPanel(selectedId);
+  }
+
+  /**
+   * Find which data source consumes a parameter, and via which query field.
+   * @param {object} spec - The dashboard spec.
+   * @param {string} param - The parameter name.
+   * @returns {?{ref: string, field: string}} The binding, or null if unbound.
+   * @private
+   */
+  function findParamBinding(spec, param) {
+    if (!param) return null;
+    var token = '$' + param;
+    var sources = spec.data || {};
+    var found = null;
+    Object.keys(sources).some(function (ref) {
+      var query = sources[ref] && sources[ref].query;
+      if (!query) return false;
+      return Object.keys(query).some(function (field) {
+        if (query[field] === token) { found = { ref: ref, field: field }; return true; }
+        return false;
+      });
+    });
+    return found;
+  }
+
+  /**
+   * Remove every query entry (across all sources) that references `$param`.
+   * @param {object} spec - The dashboard spec.
+   * @param {string} param - The parameter name.
+   * @returns {object} A new spec with those bindings cleared.
+   * @private
+   */
+  function clearParamBindings(spec, param) {
+    var token = '$' + param;
+    var next = spec;
+    var sources = spec.data || {};
+    Object.keys(sources).forEach(function (ref) {
+      var query = sources[ref] && sources[ref].query;
+      if (!query) return;
+      Object.keys(query).forEach(function (field) {
+        if (query[field] === token) next = setSourceQuery(next, ref, field, null);
+      });
+    });
+    return next;
+  }
+
+  /**
+   * Shallow-merge patch keys onto a copy of an object (or a fresh one).
+   * @param {?object} base - The object to extend (may be null).
+   * @param {object} patch - Keys to set.
+   * @returns {object} The merged object.
+   * @private
+   */
+  function mergeInto(base, patch) {
+    var out = {};
+    if (base) for (var k in base) if (Object.prototype.hasOwnProperty.call(base, k)) out[k] = base[k];
+    for (var p in patch) if (Object.prototype.hasOwnProperty.call(patch, p)) out[p] = patch[p];
+    return out;
   }
 
   /**

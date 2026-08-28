@@ -53,7 +53,7 @@ export function addPanel(spec, panel) {
   } else if (panel.type === 'control') {
     // An annotation-filter control: one annotation of one dataset, broadcast
     // to every instance in the dashboard's coordination domain.
-    next.panels[panel.id] = {
+    var control = {
       type: 'control',
       title: panel.title || '',
       dataRef: panel.dataRef,
@@ -61,6 +61,15 @@ export function addPanel(spec, panel) {
       annotation: panel.annotation || '',
       style: panel.style || 'auto'
     };
+    // A mode:"param" control drives a live query instead of a local filter; carry
+    // its parameter + choice wiring through when the caller supplies it.
+    if (panel.mode === 'param') {
+      control.mode = 'param';
+      control.param = panel.param || '';
+      if (Array.isArray(panel.options)) control.options = panel.options;
+      if (panel.optionsFrom) control.optionsFrom = panel.optionsFrom;
+    }
+    next.panels[panel.id] = control;
   } else {
     next.panels[panel.id] = {
       title: panel.title || panel.id,
@@ -242,9 +251,19 @@ export function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'dataRef')) panel.dataRef = changes.dataRef;
   if (Object.prototype.hasOwnProperty.call(changes, 'config')) panel.config = changes.config;
   if (Object.prototype.hasOwnProperty.call(changes, 'text')) panel.text = changes.text;
-  ['compartment', 'annotation', 'style', 'align', 'valign'].forEach(function (key) {
+  ['compartment', 'annotation', 'style', 'align', 'valign', 'mode', 'param'].forEach(function (key) {
     if (Object.prototype.hasOwnProperty.call(changes, key)) panel[key] = changes[key];
   });
+  // Param-control choice sources are mutually exclusive: setting one clears the
+  // other so a control never carries a stale static list and a live query.
+  if (Object.prototype.hasOwnProperty.call(changes, 'options')) {
+    if (changes.options && changes.options.length) { panel.options = changes.options; delete panel.optionsFrom; }
+    else delete panel.options;
+  }
+  if (Object.prototype.hasOwnProperty.call(changes, 'optionsFrom')) {
+    if (changes.optionsFrom) { panel.optionsFrom = changes.optionsFrom; delete panel.options; }
+    else delete panel.optionsFrom;
+  }
   if (Object.prototype.hasOwnProperty.call(changes, 'html')) {
     panel.html = changes.html;
     delete panel.text;   // rich html supersedes the plain-text fallback
@@ -274,6 +293,62 @@ export function updatePanel(spec, panelId, changes) {
 export function setDataSource(spec, ref, source) {
   var next = cloneSpec(spec);
   next.data[ref] = source;
+  return next;
+}
+
+/**
+ * Declare (or update) a dashboard parameter. Parameters are the values a
+ * `mode:"param"` control writes and a source's `query` reads via `$name`.
+ * @param {object} spec - The current spec.
+ * @param {string} name - The parameter name.
+ * @param {object} [def] - `{ value, type }`; defaults to `{ value: null }`.
+ * @returns {object} A new spec with the parameter declared.
+ */
+export function setParam(spec, name, def) {
+  var next = cloneSpec(spec);
+  if (!next.params) next.params = {};
+  else next.params = shallow(next.params);
+  next.params[name] = def || { value: null };
+  return next;
+}
+
+/**
+ * Remove a dashboard parameter (leaves any source query/control referencing it
+ * untouched — validateSpec will flag a now-dangling reference).
+ * @param {object} spec - The current spec.
+ * @param {string} name - The parameter to remove.
+ * @returns {object} A new spec without that parameter.
+ */
+export function removeParam(spec, name) {
+  var next = cloneSpec(spec);
+  if (next.params && Object.prototype.hasOwnProperty.call(next.params, name)) {
+    next.params = shallow(next.params);
+    delete next.params[name];
+  }
+  return next;
+}
+
+/**
+ * Set (or clear) one entry of a data source's `query` template — the wiring
+ * that makes a source consume a parameter (`field -> "$param"`). A null/empty
+ * token removes the entry (and the whole `query` when it empties).
+ * @param {object} spec - The current spec.
+ * @param {string} ref - The data source name.
+ * @param {string} field - The backend request field (query key).
+ * @param {(string|null)} token - e.g. `"$region"`, or null/'' to clear.
+ * @returns {object} A new spec with the source query updated.
+ */
+export function setSourceQuery(spec, ref, field, token) {
+  var next = cloneSpec(spec);
+  var source = next.data[ref];
+  if (!source) return next;
+  source = shallow(source);
+  next.data[ref] = source;
+  var query = source.query ? shallow(source.query) : {};
+  if (token) query[field] = token;
+  else delete query[field];
+  if (Object.keys(query).length) source.query = query;
+  else delete source.query;
   return next;
 }
 

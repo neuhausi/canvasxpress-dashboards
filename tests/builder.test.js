@@ -271,3 +271,24 @@ test('+ Control is disabled until the dashboard has data and a graph panel', asy
   await builder.whenReady();
   assert.equal(controlBtn().disabled, false, 'enabled once a graph panel exists');
 });
+
+test('param-control props render without error and expose the mode selector', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var spec = setDataSource(blankSpec('d1'), 'sales',
+    { kind: 'connector', url: '/api/data', query: { region: '$region' } });
+  spec.params = { region: { value: null } };
+  spec.panels = {}; spec.layout.items = [];
+  var builder = createBuilder(container, { spec: spec, CanvasXpress: makeCX([]) });
+  builder.addPanel({ id: 'pick', type: 'control', mode: 'param', param: 'region',
+    options: ['EMEA', 'APAC'] });
+  await builder.whenReady();
+  builder.selectPanel('pick');
+  // The Action (mode) select and the Param field should be present.
+  var selects = container.querySelectorAll('select');
+  var hasModeOption = [].some.call(selects, function (s) {
+    return [].some.call(s.options || [], function (o) { return o.textContent === 'Query source'; });
+  });
+  assert.ok(hasModeOption, 'mode selector offers "Query source"');
+  assert.equal(builder.getSpec().panels.pick.mode, 'param');
+});

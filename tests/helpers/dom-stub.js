@@ -104,6 +104,36 @@ class StubElement {
   setAttribute(name, value) { this.attributes[name] = String(value); }
 
   /**
+   * The OPTION descendants of a <select> (mirrors HTMLSelectElement.options
+   * closely enough for the builder's labelOptions/fill helpers).
+   * @returns {StubElement[]} Option elements in document order.
+   */
+  get options() {
+    var out = [];
+    (function walk(node) {
+      node.children.forEach(function (child) {
+        if (child.tagName === 'OPTION') out.push(child);
+        else walk(child);   // descend into <optgroup>
+      });
+    })(this);
+    return out;
+  }
+
+  /**
+   * Remove the option at an index (mirrors HTMLSelectElement.remove).
+   * @param {number} index - Option index to remove.
+   * @returns {void}
+   */
+  remove(index) {
+    var opt = this.options[index];
+    if (opt && opt.parentNode) {
+      var siblings = opt.parentNode.children;
+      var at = siblings.indexOf(opt);
+      if (at !== -1) siblings.splice(at, 1);
+    }
+  }
+
+  /**
    * @param {string} selector - `tag`, `.class`, or `#id`.
    * @returns {StubElement|null} First match in the subtree.
    */

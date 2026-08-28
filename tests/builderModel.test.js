@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec
+  addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, setParam, removeParam, setSourceQuery
 } from '../src/builderModel.js';
 
 test('blankSpec is a valid empty starter', function () {
@@ -205,4 +205,43 @@ test('updatePanel edits control fields', function () {
   assert.equal(s.panels.c1.compartment, 'z');
   assert.equal(s.panels.c1.annotation, 'Dose');
   assert.equal(s.panels.c1.style, 'buttons');
+});
+
+test('setParam declares a dashboard parameter purely', function () {
+  var s0 = blankSpec('d1');
+  var s1 = setParam(s0, 'region', { value: 'EMEA', type: 'string' });
+  assert.equal(s1.params.region.value, 'EMEA');
+  assert.equal(s0.params, undefined, 'original spec untouched');
+  var s2 = setParam(s1, 'year');
+  assert.deepEqual(s2.params.year, { value: null });
+  assert.equal(s2.params.region.value, 'EMEA', 'existing params preserved');
+});
+
+test('removeParam drops a parameter purely', function () {
+  var s = setParam(setParam(blankSpec('d1'), 'a'), 'b');
+  var s2 = removeParam(s, 'a');
+  assert.equal(s2.params.a, undefined);
+  assert.ok(s2.params.b, 'other params kept');
+  assert.ok(s.params.a, 'original untouched');
+});
+
+test('setSourceQuery wires and clears a query token purely', function () {
+  var s0 = setDataSource(blankSpec('d1'), 'sales', { kind: 'connector', url: '/api/data' });
+  var s1 = setSourceQuery(s0, 'sales', 'region', '$region');
+  assert.deepEqual(s1.data.sales.query, { region: '$region' });
+  assert.equal(s0.data.sales.query, undefined, 'original untouched');
+  var s2 = setSourceQuery(s1, 'sales', 'region', null);
+  assert.equal(s2.data.sales.query, undefined, 'clearing the last entry drops query');
+});
+
+test('updatePanel edits param-control fields and keeps options exclusive', function () {
+  var s = addPanel(blankSpec('d1'), { id: 'c1', type: 'control' });
+  s = updatePanel(s, 'c1', { mode: 'param', param: 'region', options: ['EMEA', 'APAC'] });
+  assert.equal(s.panels.c1.mode, 'param');
+  assert.equal(s.panels.c1.param, 'region');
+  assert.deepEqual(s.panels.c1.options, ['EMEA', 'APAC']);
+  // Switching to optionsFrom clears the static list.
+  s = updatePanel(s, 'c1', { optionsFrom: { dataRef: 'regions', annotation: 'region' } });
+  assert.equal(s.panels.c1.options, undefined);
+  assert.deepEqual(s.panels.c1.optionsFrom, { dataRef: 'regions', annotation: 'region' });
 });
