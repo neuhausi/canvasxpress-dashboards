@@ -235,3 +235,60 @@ def _is_numeric(value) -> bool:
         return True
     except ValueError:
         return False
+
+
+# Query params that address the dataset itself, not annotation filters.
+_RESERVED_QUERY_KEYS = frozenset({"store"})
+
+
+def filter_cx_data(data: dict, filters: dict) -> dict:
+    """Filter a CanvasXpress data object by sample annotations, server-side.
+
+    Each ``filters`` entry ``name -> value`` keeps only the samples (columns)
+    whose ``x[name]`` equals ``value`` (string-compared, so query strings match
+    numeric annotations). Names that are not sample annotations are ignored, so
+    an unknown or injected key simply narrows nothing — there is no query
+    language here, only an in-memory column mask. Non-``{y}`` shapes (network,
+    genome) and tabular arrays are returned unchanged.
+
+    :param data: A CanvasXpress data object (``{y:{vars,smps,data}, x?}``).
+    :param filters: Annotation ``name -> value`` equality filters.
+    :returns: A new data object with non-matching samples removed (or ``data``
+        unchanged when there is nothing to filter).
+    """
+    active = {k: v for k, v in (filters or {}).items() if k not in _RESERVED_QUERY_KEYS}
+    if not active or not isinstance(data, dict):
+        return data
+    y = data.get("y")
+    x = data.get("x")
+    if not isinstance(y, dict) or not isinstance(x, dict):
+        return data
+    smps = y.get("smps")
+    rows = y.get("data")
+    if not isinstance(smps, list) or not isinstance(rows, list):
+        return data
+
+    # Only filters that name an actual sample annotation participate.
+    applicable = {k: v for k, v in active.items()
+                  if isinstance(x.get(k), list) and len(x[k]) == len(smps)}
+    if not applicable:
+        return data
+
+    keep = []
+    for i in range(len(smps)):
+        if all(str(x[name][i]) == str(value) for name, value in applicable.items()):
+            keep.append(i)
+    if len(keep) == len(smps):
+        return data   # nothing removed
+
+    out = dict(data)
+    out_y = dict(y)
+    out_y["smps"] = [smps[i] for i in keep]
+    out_y["data"] = [[row[i] for i in keep if i < len(row)] for row in rows]
+    out["y"] = out_y
+    out_x = dict(x)
+    for name, values in x.items():
+        if isinstance(values, list) and len(values) == len(smps):
+            out_x[name] = [values[i] for i in keep]
+    out["x"] = out_x
+    return out

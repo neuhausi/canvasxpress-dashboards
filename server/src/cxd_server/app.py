@@ -31,7 +31,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import mcp_bridge
-from .datasets import DatasetStore, reshape_to_cx
+from .datasets import DatasetStore, reshape_to_cx, filter_cx_data
 from .sqldashboard import open_dashboard_store
 from .store import DashboardStore
 from .stores import StoreRegistry
@@ -446,6 +446,13 @@ def create_dashboards_app(
         data = resolve_dataset_store(store).get(user, dataset_id)
         if data is None:
             raise HTTPException(status_code=404, detail="No such dataset")
+        # Any extra query params are sample-annotation filters (the parameterized
+        # dataset path for live-data controls): keep only matching samples. Only
+        # keys that name a real annotation participate, so nothing here executes
+        # a query or trusts the key/value beyond an equality mask.
+        filters = {k: v for k, v in request.query_params.items() if k != "store"}
+        if filters:
+            data = filter_cx_data(data, filters)
         return data
 
     @app.delete("/api/datasets/{dataset_id}")

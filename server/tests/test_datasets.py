@@ -105,3 +105,49 @@ def test_store_associates_config(dstore):
     # no config → no config key
     plain = dstore.create("alice", data, "2026-07-23T00:00:00Z", title="P", dataset_id="p")
     assert "config" not in plain
+
+
+def _cx():
+    return {
+        "y": {"vars": ["sales", "units"], "smps": ["s1", "s2", "s3"],
+              "data": [[10, 20, 30], [1, 2, 3]]},
+        "x": {"region": ["EMEA", "APAC", "EMEA"], "tier": ["A", "B", "A"]},
+    }
+
+
+def test_filter_cx_data_keeps_matching_samples():
+    from cxd_server.datasets import filter_cx_data
+    out = filter_cx_data(_cx(), {"region": "EMEA"})
+    assert out["y"]["smps"] == ["s1", "s3"]
+    assert out["y"]["data"] == [[10, 30], [1, 3]]
+    assert out["x"]["region"] == ["EMEA", "EMEA"]
+    assert out["x"]["tier"] == ["A", "A"]
+
+
+def test_filter_cx_data_string_compares_numeric_annotations():
+    data = {"y": {"vars": ["v"], "smps": ["a", "b"], "data": [[1, 2]]},
+            "x": {"year": [2024, 2025]}}
+    from cxd_server.datasets import filter_cx_data
+    out = filter_cx_data(data, {"year": "2025"})
+    assert out["y"]["smps"] == ["b"]
+
+
+def test_filter_cx_data_ignores_reserved_and_unknown_keys():
+    from cxd_server.datasets import filter_cx_data
+    base = _cx()
+    # store is reserved; bogus is not an annotation -> both no-op (unchanged obj).
+    assert filter_cx_data(base, {"store": "x", "bogus": "1"}) is base
+
+
+def test_filter_cx_data_multi_filter_is_conjunctive():
+    from cxd_server.datasets import filter_cx_data
+    out = filter_cx_data(_cx(), {"region": "EMEA", "tier": "A"})
+    assert out["y"]["smps"] == ["s1", "s3"]
+    out2 = filter_cx_data(_cx(), {"region": "EMEA", "tier": "B"})
+    assert out2["y"]["smps"] == []
+
+
+def test_filter_cx_data_passthrough_for_non_y_shapes():
+    from cxd_server.datasets import filter_cx_data
+    net = {"nodes": [], "edges": []}
+    assert filter_cx_data(net, {"region": "EMEA"}) is net

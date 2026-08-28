@@ -150,6 +150,32 @@ def test_dataset_upload_list_fetch_delete(app):
     assert client.get("/api/datasets/%s" % dataset_id).status_code == 404
 
 
+def test_dataset_fetch_filters_by_sample_annotation(app):
+    # The parameterized dataset path for live-data controls: extra query params
+    # filter the CanvasXpress object server-side by matching sample annotations.
+    client = _client(app)
+    _signup(client)
+    cx = {
+        "y": {"vars": ["sales"], "smps": ["s1", "s2", "s3"], "data": [[10, 20, 30]]},
+        "x": {"region": ["EMEA", "APAC", "EMEA"]},
+    }
+    r = client.post("/api/datasets", json={"format": "cx", "data": cx, "title": "Regional"})
+    assert r.status_code == 200, r.text
+    dataset_id = r.json()["dataset"]["id"]
+
+    full = client.get("/api/datasets/%s" % dataset_id).json()
+    assert full["y"]["smps"] == ["s1", "s2", "s3"]
+
+    filtered = client.get("/api/datasets/%s?region=EMEA" % dataset_id).json()
+    assert filtered["y"]["smps"] == ["s1", "s3"]
+    assert filtered["y"]["data"] == [[10, 30]]
+    assert filtered["x"]["region"] == ["EMEA", "EMEA"]
+
+    # An unknown filter key narrows nothing (no query language, just a mask).
+    unchanged = client.get("/api/datasets/%s?bogus=x" % dataset_id).json()
+    assert unchanged["y"]["smps"] == ["s1", "s2", "s3"]
+
+
 def test_dataset_bad_input_is_400(app):
     client = _client(app)
     _signup(client)
