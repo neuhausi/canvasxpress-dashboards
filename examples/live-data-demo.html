@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — Live-data controls demo</title>
+
+  <!-- CanvasXpress (peer dependency) -->
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+
+  <!-- canvasxpress-dashboards renderer (UMD drop-in) -->
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    header { padding: 16px 24px 8px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: #6b7280; font-size: 13px; max-width: 78ch; }
+    header code { background: #e6e9ee; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+    #status { padding: 4px 24px 12px; font-size: 12px; color: #6b7280; }
+    #dashboard { padding: 8px 24px 32px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0e1013; color: #e6e8ec; }
+      header p, #status { color: #8a9099; }
+      header code { background: #23262d; }
+    }
+    .cxd-topnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      background: #fff; border: 1px solid #e6e9ee; border-radius: 10px;
+      padding: 8px 14px; margin: 16px 24px; font-size: 13.5px; }
+    .cxd-topnav .cxd-brand { font-weight: 400; margin-right: 10px; color: #57606a; }
+    .cxd-topnav .cxd-brand b { color: #24292f; }
+    .cxd-topnav a { color: #087ad1; text-decoration: none; padding: 4px 10px; border-radius: 7px; }
+    .cxd-topnav a:hover { background: #eaf3fb; }
+    .cxd-topnav .cxd-here { margin-left: auto; color: #57606a; padding: 4px 10px;
+      background: #f2f4f7; border-radius: 7px; }
+    @media (prefers-color-scheme: dark) {
+      .cxd-topnav { background: #1b1e24; border-color: #2a2e36; }
+      .cxd-topnav .cxd-brand b { color: #e6e8ec; }
+      .cxd-topnav a:hover { background: #12283a; }
+      .cxd-topnav .cxd-here { background: #23262d; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <span class="cxd-here">🎛️ Live-data controls</span>
+  </nav>
+  <header>
+    <h1>Live-data controls — parameters re-query the source</h1>
+    <p>
+      This page injects a <strong>fake connector backend</strong> via
+      <code>options.fetch</code> that <em>reads the query string</em>, so every
+      control below actually <strong>re-queries</strong> and the bound panels
+      refresh — no real database. In production the same spec omits
+      <code>options.fetch</code> and talks to <code>canvasxpress-connectors</code>
+      or the cxd_server dataset API over a cookie-authenticated endpoint.
+    </p>
+    <p style="margin-top:8px">
+      Try: the <strong>Region</strong> dropdown (choices themselves come from a
+      <code>optionsFrom</code> query) · the <strong>Search</strong> box (debounced,
+      filters products by name) · <strong>click a bar</strong> in “Revenue by region”
+      to cross-filter every panel to that region · watch the brief
+      <strong>Loading…</strong> overlay as each query runs.
+    </p>
+  </header>
+  <div id="status">starting…</div>
+  <div id="dashboard"></div>
+
+  <script>
+    // ------------------------------------------------------------------
+    // A tiny in-memory "warehouse": one row per (region, product).
+    // ------------------------------------------------------------------
+    var ROWS = [
+      { region: 'EMEA', product: 'Alpha',   revenue: 820, units: 41 },
+      { region: 'EMEA', product: 'Beacon',  revenue: 610, units: 33 },
+      { region: 'EMEA', product: 'Comet',   revenue: 540, units: 22 },
+      { region: 'APAC', product: 'Alpha',   revenue: 930, units: 55 },
+      { region: 'APAC', product: 'Beacon',  revenue: 480, units: 27 },
+      { region: 'APAC', product: 'Delta',   revenue: 700, units: 38 },
+      { region: 'AMER', product: 'Alpha',   revenue: 1120, units: 61 },
+      { region: 'AMER', product: 'Comet',   revenue: 760, units: 40 },
+      { region: 'AMER', product: 'Delta',   revenue: 880, units: 44 }
+    ];
+
+    // Parse a query string into a plain object.
+    function params(url) {
+      var out = {};
+      var q = url.indexOf('?');
+      if (q === -1) return out;
+      url.slice(q + 1).split('&').forEach(function (pair) {
+        if (!pair) return;
+        var kv = pair.split('=');
+        out[decodeURIComponent(kv[0])] = decodeURIComponent((kv[1] || '').replace(/\+/g, ' '));
+      });
+      return out;
+    }
+
+    function response(status, bodyObj, delay) {
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          resolve({
+            ok: status >= 200 && status < 300,
+            status: status,
+            text: function () { return Promise.resolve(JSON.stringify(bodyObj)); }
+          });
+        }, delay || 300);
+      });
+    }
+
+    // GET /api/data?source=sales&region=&q=  → revenue+units per product,
+    // filtered by region (when set) and product-name-contains-q (when set).
+    function salesResponse(p) {
+      var rows = ROWS.filter(function (r) {
+        if (p.region && r.region !== p.region) return false;
+        if (p.q && r.product.toLowerCase().indexOf(p.q.toLowerCase()) === -1) return false;
+        return true;
+      });
+      // Aggregate per product across whatever regions remain.
+      var byProduct = {};
+      rows.forEach(function (r) {
+        var acc = byProduct[r.product] || (byProduct[r.product] = { revenue: 0, units: 0 });
+        acc.revenue += r.revenue; acc.units += r.units;
+      });
+      var products = Object.keys(byProduct);
+      setStatus('sales query → region="' + (p.region || 'All') + '"  q="' + (p.q || '') +
+        '"  → ' + products.length + ' product(s)');
+      return response(200, {
+        y: {
+          vars: ['Revenue', 'Units'],
+          smps: products,
+          data: [
+            products.map(function (k) { return byProduct[k].revenue; }),
+            products.map(function (k) { return byProduct[k].units; })
+          ]
+        },
+        x: { Product: products }
+      });
+    }
+
+    // GET /api/data?source=byRegion → revenue per region (all regions; the
+    // cross-filter source). Clicking a bar sets the `region` parameter.
+    function byRegionResponse() {
+      var byRegion = {};
+      ROWS.forEach(function (r) { byRegion[r.region] = (byRegion[r.region] || 0) + r.revenue; });
+      var regions = Object.keys(byRegion);
+      return response(200, {
+        y: { vars: ['Revenue'], smps: regions, data: [regions.map(function (k) { return byRegion[k]; })] },
+        x: { Region: regions }
+      });
+    }
+
+    // GET /api/data?source=regions → the distinct regions, as the choice list
+    // feeding the Region dropdown via optionsFrom.
+    function regionsResponse() {
+      var seen = {}; var regions = [];
+      ROWS.forEach(function (r) { if (!seen[r.region]) { seen[r.region] = 1; regions.push(r.region); } });
+      return response(200, {
+        y: { vars: ['n'], smps: regions, data: [regions.map(function () { return 1; })] },
+        x: { region: regions }
+      });
+    }
+
+    function fakeConnector(url) {
+      var p = params(url);
+      if (url.indexOf('source=sales') !== -1)    return salesResponse(p);
+      if (url.indexOf('source=byRegion') !== -1) return byRegionResponse();
+      if (url.indexOf('source=regions') !== -1)  return regionsResponse();
+      return response(404, { detail: 'No such source' });
+    }
+
+    function setStatus(msg) { document.getElementById('status').textContent = msg; }
+
+    // ------------------------------------------------------------------
+    // The dashboard spec — the interesting bits are `params`, the source
+    // `query` templates, and the mode:"param" controls + clickParam.
+    // ------------------------------------------------------------------
+    var spec = {
+      id: 'live-data-demo',
+      broadcastGroup: 'live-data-demo',
+      params: {
+        region: { value: null, type: 'string' },
+        q: { value: null, type: 'string' }
+      },
+      layout: {
+        cols: 12,
+        rowHeight: 130,
+        items: [
+          { panel: 'region-pick', x: 0, y: 0, w: 4, h: 1 },
+          { panel: 'search',      x: 4, y: 0, w: 5, h: 1 },
+          { panel: 'by-region',   x: 0, y: 1, w: 5, h: 3 },
+          { panel: 'by-product',  x: 5, y: 1, w: 7, h: 3 },
+          { panel: 'table',       x: 0, y: 4, w: 12, h: 3 }
+        ]
+      },
+      data: {
+        // Choices for the dropdown come from their own tiny query.
+        regions:  { kind: 'connector', url: '/api/data?source=regions' },
+        // Revenue by region — independent of the params (the cross-filter source).
+        byRegion: { kind: 'connector', url: '/api/data?source=byRegion' },
+        // Revenue by product — consumes BOTH params.
+        sales:    { kind: 'connector', url: '/api/data?source=sales',
+                    query: { region: '$region', q: '$q' }, ttl: 0 }
+      },
+      panels: {
+        'region-pick': {
+          type: 'control', mode: 'param', param: 'region', title: 'Region',
+          style: 'dropdown', optionsFrom: { dataRef: 'regions', annotation: 'region' }
+        },
+        'search': {
+          type: 'control', mode: 'param', param: 'q', title: 'Search product',
+          style: 'search', placeholder: 'type a product name…'
+        },
+        'by-region': {
+          title: 'Revenue by region (click to cross-filter)', dataRef: 'byRegion',
+          clickParam: 'region', clickField: 'Region',
+          config: { graphType: 'Bar', colorBy: 'Region', showLegend: false, title: false }
+        },
+        'by-product': {
+          title: 'Revenue & units by product (follows the params)', dataRef: 'sales',
+          config: { graphType: 'Bar', title: false }
+        },
+        'table': {
+          title: 'Detail (follows the params)', dataRef: 'sales',
+          config: { graphType: 'Bar', view: 'table', title: false }
+        }
+      }
+    };
+
+    CanvasXpressDashboards.renderDashboard(spec, 'dashboard', {
+      fetch: fakeConnector,
+      cache: new Map()   // isolate this demo from the process-wide cache
+    }).then(function (handle) {
+      return handle.ready.then(function () {
+        setStatus('Ready — change the Region, type in Search, or click a region bar.');
+        console.log('Initial render settled:', handle.instances.length, 'instances');
+      });
+    }).catch(function (err) {
+      setStatus('Failed: ' + err.message);
+      console.error(err);
+    });
+  </script>
+</body>
+</html>
