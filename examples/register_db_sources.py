@@ -121,13 +121,25 @@ def main(argv=None) -> int:
             url = _sqlite_ro_url(entry["path"])
         else:
             parser.error("source %r needs 'url' or 'path'" % name)
+
+        # A 'packed' source (CCLE/TCGA expression) carries a config, not SQL.
+        if entry.get("kind") == "packed":
+            cfg = entry.get("config")
+            if not (isinstance(cfg, dict) and cfg.get("table") and cfg.get("value_col")
+                    and cfg.get("template_key")):
+                parser.error("packed source %r needs config with table/value_col/template_key" % name)
+            print("  %-24s [packed] gene_param=%s" % (name, cfg.get("gene_param", "genes")))
+            if not args.dry_run:
+                store.save_source(user, name, url, "", kind="packed", config=cfg)
+            continue
+
         if entry.get("sql"):
             sql = entry["sql"]
         elif entry.get("sql_file"):
             with open(os.path.join(config_dir, entry["sql_file"]), encoding="utf-8") as fh:
                 sql = fh.read()
         else:
-            parser.error("source %r needs 'sql' or 'sql_file'" % name)
+            parser.error("source %r needs 'sql', 'sql_file', or kind 'packed'" % name)
 
         SqlSource(url, sql)   # validates single read-only SELECT
         binds = bind_param_names(sql)
