@@ -222,9 +222,18 @@
         },
         "style": {
           "type": "string",
-          "enum": ["auto", "dropdown", "radio", "buttons"],
+          "enum": ["auto", "dropdown", "radio", "buttons", "search"],
           "default": "auto",
-          "description": "Control panels: widget rendering. 'auto' picks buttons for ≤4 values, a dropdown above that."
+          "description": "Control panels: widget rendering. 'auto' picks buttons for ≤4 values, a dropdown above that. 'search' (param controls) is a debounced free-text box whose value becomes the parameter."
+        },
+        "placeholder": {
+          "type": "string",
+          "description": "Control panels (style:'search'): placeholder text for the search box."
+        },
+        "debounce": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Control panels (style:'search'): ms to wait after the last keystroke before applying (default 250)."
         },
         "align": {
           "type": "string",

@@ -522,3 +522,43 @@ test('a param control sources its choices from optionsFrom (a distinct-values qu
   // Options: All, EMEA, APAC (3 <option> children).
   assert.equal(select.children.length, 3, 'All + two region choices');
 });
+
+test('a search param control applies typed text to the parameter (debounced)', async function () {
+  var live = [];
+  function LiveCX(id, data, config) {
+    var inst = { id: id, data: data, config: config, updates: [] };
+    inst.updateData = function (d) { inst.updates.push(d); };
+    live.push(inst);
+    return inst;
+  }
+  function q(url) {
+    var m = /q=([^&]+)/.exec(url);
+    var body = JSON.stringify({ y: { vars: ['R'], smps: [m ? decodeURIComponent(m[1]) : 'all'], data: [[1]] } });
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(body); } });
+  }
+  var spec = {
+    id: 'search',
+    params: { term: { value: null } },
+    layout: { cols: 12, items: [
+      { panel: 'box', x: 0, y: 0, w: 3, h: 1 },
+      { panel: 'bar', x: 0, y: 1, w: 6, h: 3 }
+    ] },
+    data: { rows: { kind: 'connector', url: '/api/data', query: { q: '$term' }, ttl: 0 } },
+    panels: {
+      box: { type: 'control', mode: 'param', param: 'term', style: 'search', debounce: 0 },
+      bar: { dataRef: 'rows', config: { graphType: 'Bar' } }
+    }
+  };
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var handle = await renderDashboard(spec, container, { CanvasXpress: LiveCX, fetch: q });
+  await handle.ready;
+
+  var input = container.querySelector('.cxd-annctl-search');
+  assert.ok(input, 'search box rendered');
+  input.value = 'acme';
+  input.dispatchEvent('input');
+  await new Promise(function (r) { setTimeout(r, 0); });
+  assert.equal(live[0].updates.length, 1, 'bound panel updated once');
+  assert.equal(live[0].updates[0].y.smps[0], 'acme');
+});

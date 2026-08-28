@@ -251,7 +251,7 @@ export function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'dataRef')) panel.dataRef = changes.dataRef;
   if (Object.prototype.hasOwnProperty.call(changes, 'config')) panel.config = changes.config;
   if (Object.prototype.hasOwnProperty.call(changes, 'text')) panel.text = changes.text;
-  ['compartment', 'annotation', 'style', 'align', 'valign', 'mode', 'param'].forEach(function (key) {
+  ['compartment', 'annotation', 'style', 'align', 'valign', 'mode', 'param', 'placeholder', 'debounce'].forEach(function (key) {
     if (Object.prototype.hasOwnProperty.call(changes, key)) panel[key] = changes[key];
   });
   // Param-control choice sources are mutually exclusive: setting one clears the

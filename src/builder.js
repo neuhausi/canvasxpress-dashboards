@@ -1406,8 +1406,13 @@ export function createBuilder(target, options) {
     });
     out.push(paramLabel, paramField);
 
+    // A search-style control takes free text, so it has no choice list — skip the
+    // Choices fields for it and go straight to the query wiring.
+    var isSearch = panel.style === 'search';
+
     // Choices: a static list, or another dataset's distinct values.
     var usesFrom = panel.optionsFrom != null;
+    if (!isSearch) {
     var choiceLabel = el('span', 'cxb-tlabel');
     choiceLabel.textContent = 'Choices';
     var choiceField = selectField(['static', 'from'], usesFrom ? 'from' : 'static', function (value) {
@@ -1455,6 +1460,7 @@ export function createBuilder(target, options) {
       });
       out.push(fromSrc, fromAnn);
     }
+    }   // end if (!isSearch)
 
     // Applies to: which source gets `$param` written into which query field.
     var binding = findParamBinding(spec, panel.param);
@@ -1474,9 +1480,19 @@ export function createBuilder(target, options) {
     on(fieldField, 'change', function () { rewireParamBinding(targetField.value, fieldField.value.trim()); });
     out.push(appliesLabel, targetField, fieldField);
 
+    // Param controls support an extra 'search' style (a debounced free-text box)
+    // that the shared filter style select does not, so build a dedicated one.
     var styleLabel2 = el('span', 'cxb-tlabel');
     styleLabel2.textContent = 'Style';
-    out.push(styleLabel2, styleField);
+    var paramStyleField = selectField(['auto', 'dropdown', 'radio', 'buttons', 'search'],
+      panel.style || 'auto', function (value) {
+        commit(updatePanel(spec, selectedId, { style: value }), false);
+        renderProps();     // search hides the choice fields; others show them
+        rerenderPanel(selectedId);
+      });
+    paramStyleField.setAttribute('title', 'Widget style');
+    labelOptions(paramStyleField, { auto: 'Auto', dropdown: 'Dropdown', radio: 'Radio', buttons: 'Buttons', search: 'Search box' });
+    out.push(styleLabel2, paramStyleField);
     return out;
   }
 

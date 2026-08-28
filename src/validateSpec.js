@@ -78,11 +78,12 @@ export function validateSpec(spec) {
         errors.push(at + ' must be an object');
         return;
       }
-      // A param control that sources its choices statically (`options`) or from
-      // another dataset (`optionsFrom`) drives a backend query and needs no data
-      // of its own, so it is exempt from the data requirement.
+      // A param control that sources its choices statically (`options`), from
+      // another dataset (`optionsFrom`), or takes free text (`style:"search"`)
+      // drives a backend query and needs no data of its own, so it is exempt
+      // from the data requirement.
       var paramWithOptions = panel.type === 'control' && panel.mode === 'param' &&
-        (Array.isArray(panel.options) || panel.optionsFrom != null);
+        (Array.isArray(panel.options) || panel.optionsFrom != null || panel.style === 'search');
       if (panel.type !== 'text' && !paramWithOptions && panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
@@ -91,8 +92,8 @@ export function validateSpec(spec) {
           errors.push(at + '.compartment must be "x" (samples) or "z" (variables)');
         }
         if (panel.style != null &&
-            ['auto', 'dropdown', 'radio', 'buttons'].indexOf(panel.style) === -1) {
-          errors.push(at + '.style must be "auto", "dropdown", "radio", or "buttons"');
+            ['auto', 'dropdown', 'radio', 'buttons', 'search'].indexOf(panel.style) === -1) {
+          errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", or "search"');
         }
         if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param') {
           errors.push(at + '.mode must be "filter" or "param"');

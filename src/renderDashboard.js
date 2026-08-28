@@ -525,6 +525,56 @@ export function renderDashboard(spec, target, options) {
       return null;
     }
 
+    /**
+     * Build a debounced free-text search control that writes the typed value
+     * into the parameter (empty clears it). Used for `style:"search"`.
+     * @returns {null} Always null (a control renders no CanvasXpress instance).
+     * @private
+     */
+    function buildSearchWidget() {
+      var widget = document.createElement('div');
+      widget.className = 'cxd-annctl';
+      applyAlignment(cell.body, panel);
+      if (panel.title && !panel.hideTitle) {
+        var label = document.createElement('span');
+        label.className = 'cxd-annctl-label';
+        label.textContent = panel.title;
+        widget.appendChild(label);
+      }
+      if (!panel.param) {
+        var hint = document.createElement('span');
+        hint.className = 'cxd-annctl-hint';
+        hint.textContent = 'Choose a parameter…';
+        widget.appendChild(hint);
+      } else {
+        var input = document.createElement('input');
+        input.type = 'search';
+        input.className = 'cxd-annctl-search';
+        if (panel.placeholder) input.setAttribute('placeholder', panel.placeholder);
+        if (paramState[panel.param] != null) input.value = String(paramState[panel.param]);
+        if (panel.disabled) { input.disabled = true; input.setAttribute('disabled', 'disabled'); }
+        var fire = debounce(function () {
+          if (panel.disabled) return;
+          var text = input.value.trim();
+          applyParamChange(panel.param, text === '' ? null : text);
+        }, panel.debounce != null ? panel.debounce : 250);
+        listen(input, 'input', fire);
+        listen(input, 'change', fire);
+        widget.appendChild(input);
+        if (panel.disabled) disableControlInput(widget, input, panel);
+      }
+      cell.body.appendChild(widget);
+      cell.setState('ready');
+      notify('ready');
+      return null;
+    }
+
+    // A free-text search param control: no choices to resolve — the typed text
+    // becomes the parameter value (debounced so each keystroke doesn't refetch).
+    if (isParam && panel.style === 'search') {
+      return Promise.resolve(buildSearchWidget());
+    }
+
     // A param control with a static option list needs no data at all.
     if (isParam && Array.isArray(panel.options)) {
       return Promise.resolve(buildWidget(panel.options));
@@ -1135,6 +1185,26 @@ function applyAlignment(body, panel) {
  */
 function listen(node, type, handler) {
   if (node && typeof node.addEventListener === 'function') node.addEventListener(type, handler);
+}
+
+/**
+ * Wrap a function so rapid calls collapse into one, firing `wait` ms after the
+ * last call. Used to keep a search param control from refetching on every
+ * keystroke. `wait <= 0` disables debouncing (fires synchronously).
+ * @param {function} fn - The function to debounce.
+ * @param {number} wait - Quiet period in ms before firing.
+ * @returns {function} The debounced wrapper.
+ * @private
+ */
+function debounce(fn, wait) {
+  if (!(wait > 0)) return fn;
+  var timer = null;
+  return function () {
+    var cx = this;
+    var args = arguments;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function () { timer = null; fn.apply(cx, args); }, wait);
+  };
 }
 
 /**

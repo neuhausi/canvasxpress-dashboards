@@ -41,6 +41,7 @@ var dashboardCss = [
   '.cxd-annctl-label { font-weight: 600; white-space: nowrap; }',
   '.cxd-annctl-hint { color: var(--cxd-muted,#8a9099); }',
   '.cxd-annctl-disabled { opacity: 0.65; }',
+  '.cxd-annctl-search { min-width: 140px; }',
   // Controls use --cxd-ctrl-border (a colour the renderer computes to contrast
   // with whatever the control sits on) so the box stays visible even when the
   // panel chrome is coordinated to the background. Falls back to the theme border.
@@ -995,11 +996,12 @@ function validateSpec(spec) {
         errors.push(at + ' must be an object');
         return;
       }
-      // A param control that sources its choices statically (`options`) or from
-      // another dataset (`optionsFrom`) drives a backend query and needs no data
-      // of its own, so it is exempt from the data requirement.
+      // A param control that sources its choices statically (`options`), from
+      // another dataset (`optionsFrom`), or takes free text (`style:"search"`)
+      // drives a backend query and needs no data of its own, so it is exempt
+      // from the data requirement.
       var paramWithOptions = panel.type === 'control' && panel.mode === 'param' &&
-        (Array.isArray(panel.options) || panel.optionsFrom != null);
+        (Array.isArray(panel.options) || panel.optionsFrom != null || panel.style === 'search');
       if (panel.type !== 'text' && !paramWithOptions && panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
@@ -1008,8 +1010,8 @@ function validateSpec(spec) {
           errors.push(at + '.compartment must be "x" (samples) or "z" (variables)');
         }
         if (panel.style != null &&
-            ['auto', 'dropdown', 'radio', 'buttons'].indexOf(panel.style) === -1) {
-          errors.push(at + '.style must be "auto", "dropdown", "radio", or "buttons"');
+            ['auto', 'dropdown', 'radio', 'buttons', 'search'].indexOf(panel.style) === -1) {
+          errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", or "search"');
         }
         if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param') {
           errors.push(at + '.mode must be "filter" or "param"');
@@ -1669,6 +1671,56 @@ function renderDashboard(spec, target, options) {
       return null;
     }
 
+    /**
+     * Build a debounced free-text search control that writes the typed value
+     * into the parameter (empty clears it). Used for `style:"search"`.
+     * @returns {null} Always null (a control renders no CanvasXpress instance).
+     * @private
+     */
+    function buildSearchWidget() {
+      var widget = document.createElement('div');
+      widget.className = 'cxd-annctl';
+      applyAlignment(cell.body, panel);
+      if (panel.title && !panel.hideTitle) {
+        var label = document.createElement('span');
+        label.className = 'cxd-annctl-label';
+        label.textContent = panel.title;
+        widget.appendChild(label);
+      }
+      if (!panel.param) {
+        var hint = document.createElement('span');
+        hint.className = 'cxd-annctl-hint';
+        hint.textContent = 'Choose a parameter…';
+        widget.appendChild(hint);
+      } else {
+        var input = document.createElement('input');
+        input.type = 'search';
+        input.className = 'cxd-annctl-search';
+        if (panel.placeholder) input.setAttribute('placeholder', panel.placeholder);
+        if (paramState[panel.param] != null) input.value = String(paramState[panel.param]);
+        if (panel.disabled) { input.disabled = true; input.setAttribute('disabled', 'disabled'); }
+        var fire = debounce(function () {
+          if (panel.disabled) return;
+          var text = input.value.trim();
+          applyParamChange(panel.param, text === '' ? null : text);
+        }, panel.debounce != null ? panel.debounce : 250);
+        listen(input, 'input', fire);
+        listen(input, 'change', fire);
+        widget.appendChild(input);
+        if (panel.disabled) disableControlInput(widget, input, panel);
+      }
+      cell.body.appendChild(widget);
+      cell.setState('ready');
+      notify('ready');
+      return null;
+    }
+
+    // A free-text search param control: no choices to resolve — the typed text
+    // becomes the parameter value (debounced so each keystroke doesn't refetch).
+    if (isParam && panel.style === 'search') {
+      return Promise.resolve(buildSearchWidget());
+    }
+
     // A param control with a static option list needs no data at all.
     if (isParam && Array.isArray(panel.options)) {
       return Promise.resolve(buildWidget(panel.options));
@@ -2279,6 +2331,26 @@ function applyAlignment(body, panel) {
  */
 function listen(node, type, handler) {
   if (node && typeof node.addEventListener === 'function') node.addEventListener(type, handler);
+}
+
+/**
+ * Wrap a function so rapid calls collapse into one, firing `wait` ms after the
+ * last call. Used to keep a search param control from refetching on every
+ * keystroke. `wait <= 0` disables debouncing (fires synchronously).
+ * @param {function} fn - The function to debounce.
+ * @param {number} wait - Quiet period in ms before firing.
+ * @returns {function} The debounced wrapper.
+ * @private
+ */
+function debounce(fn, wait) {
+  if (!(wait > 0)) return fn;
+  var timer = null;
+  return function () {
+    var cx = this;
+    var args = arguments;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function () { timer = null; fn.apply(cx, args); }, wait);
+  };
 }
 
 /**
@@ -3445,7 +3517,7 @@ function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'dataRef')) panel.dataRef = changes.dataRef;
   if (Object.prototype.hasOwnProperty.call(changes, 'config')) panel.config = changes.config;
   if (Object.prototype.hasOwnProperty.call(changes, 'text')) panel.text = changes.text;
-  ['compartment', 'annotation', 'style', 'align', 'valign', 'mode', 'param'].forEach(function (key) {
+  ['compartment', 'annotation', 'style', 'align', 'valign', 'mode', 'param', 'placeholder', 'debounce'].forEach(function (key) {
     if (Object.prototype.hasOwnProperty.call(changes, key)) panel[key] = changes[key];
   });
   // Param-control choice sources are mutually exclusive: setting one clears the
@@ -5096,8 +5168,13 @@ function createBuilder(target, options) {
     });
     out.push(paramLabel, paramField);
 
+    // A search-style control takes free text, so it has no choice list — skip the
+    // Choices fields for it and go straight to the query wiring.
+    var isSearch = panel.style === 'search';
+
     // Choices: a static list, or another dataset's distinct values.
     var usesFrom = panel.optionsFrom != null;
+    if (!isSearch) {
     var choiceLabel = el('span', 'cxb-tlabel');
     choiceLabel.textContent = 'Choices';
     var choiceField = selectField(['static', 'from'], usesFrom ? 'from' : 'static', function (value) {
@@ -5145,6 +5222,7 @@ function createBuilder(target, options) {
       });
       out.push(fromSrc, fromAnn);
     }
+    }   // end if (!isSearch)
 
     // Applies to: which source gets `$param` written into which query field.
     var binding = findParamBinding(spec, panel.param);
@@ -5164,9 +5242,19 @@ function createBuilder(target, options) {
     on(fieldField, 'change', function () { rewireParamBinding(targetField.value, fieldField.value.trim()); });
     out.push(appliesLabel, targetField, fieldField);
 
+    // Param controls support an extra 'search' style (a debounced free-text box)
+    // that the shared filter style select does not, so build a dedicated one.
     var styleLabel2 = el('span', 'cxb-tlabel');
     styleLabel2.textContent = 'Style';
-    out.push(styleLabel2, styleField);
+    var paramStyleField = selectField(['auto', 'dropdown', 'radio', 'buttons', 'search'],
+      panel.style || 'auto', function (value) {
+        commit(updatePanel(spec, selectedId, { style: value }), false);
+        renderProps();     // search hides the choice fields; others show them
+        rerenderPanel(selectedId);
+      });
+    paramStyleField.setAttribute('title', 'Widget style');
+    labelOptions(paramStyleField, { auto: 'Auto', dropdown: 'Dropdown', radio: 'Radio', buttons: 'Buttons', search: 'Search box' });
+    out.push(styleLabel2, paramStyleField);
     return out;
   }
 
