@@ -71,7 +71,18 @@ a literal or a `"$name"` token resolved from the current params. Unset tokens ar
 dropped. The cache key includes the resolved query, so different selections are
 distinct fetches and never serve each other's data.
 
-- **connector**: the query is appended to the URL; your connector backend reads it.
+- **connector**: the query is appended to the URL; your connector backend reads it. With
+  **canvasxpress-connectors** (SQL databases, incl. large SQLite files kept on the server),
+  the query keys map to `:name` **bind parameters** the source SQL declares — forwarded as
+  bound params only (injection-safe), with an absent param bound as `NULL` so the
+  `(:region IS NULL OR region = :region)` idiom widens on "All":
+
+  ```sql
+  SELECT sample, revenue FROM sales
+  WHERE (:region IS NULL OR region = :region)
+    AND (:q IS NULL OR product LIKE '%' || :q || '%')
+  ```
+  paired with `"query": { "region": "$region", "q": "$q" }` on the source.
 - **dataset** (cxd_server): `GET /api/datasets/{id}?region=EMEA` filters the stored
   CanvasXpress object server-side by the `region` **sample annotation** (equality).
   Only keys that name a real annotation participate — it is a mask, not a query
