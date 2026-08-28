@@ -474,3 +474,51 @@ test('a param control re-queries the source and live-updates bound panels', asyn
   assert.equal(bar.updates.length, 1, 'bound panel live-updated once');
   assert.equal(bar.updates[0].y.smps[0], 'EMEA', 'panel got EMEA-scoped data');
 });
+
+test('a param control sources its choices from optionsFrom (a distinct-values query)', async function () {
+  var live = [];
+  function LiveCX(id, data, config) {
+    var inst = { id: id, data: data, config: config, updates: [] };
+    inst.updateData = function (d) { inst.updates.push(d); };
+    live.push(inst);
+    return inst;
+  }
+  // regions source lists the choices; sales source is what the param queries.
+  function routeFetch(url) {
+    var body;
+    if (/source=regions/.test(url)) {
+      body = JSON.stringify({ y: { vars: ['V'], smps: ['s1', 's2'], data: [[1, 2]] },
+        x: { region: ['EMEA', 'APAC'] } });
+    } else {
+      var m = /region=([^&]+)/.exec(url);
+      body = JSON.stringify({ y: { vars: ['R'], smps: [m ? m[1] : 'none'], data: [[1]] } });
+    }
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(body); } });
+  }
+  var spec = {
+    id: 'live2',
+    params: { region: { value: null } },
+    layout: { cols: 12, items: [
+      { panel: 'pick', x: 0, y: 0, w: 3, h: 1 },
+      { panel: 'bar', x: 0, y: 1, w: 6, h: 3 }
+    ] },
+    data: {
+      regions: { kind: 'connector', url: '/api/data?source=regions' },
+      sales: { kind: 'connector', url: '/api/data?source=sales', query: { region: '$region' }, ttl: 0 }
+    },
+    panels: {
+      pick: { type: 'control', mode: 'param', param: 'region', style: 'dropdown',
+              optionsFrom: { dataRef: 'regions', annotation: 'region', compartment: 'x' } },
+      bar: { dataRef: 'sales', config: { graphType: 'Bar' } }
+    }
+  };
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var handle = await renderDashboard(spec, container, { CanvasXpress: LiveCX, fetch: routeFetch });
+  await handle.ready;
+
+  var select = container.querySelector('.cxd-annctl-select');
+  assert.ok(select, 'dropdown rendered from optionsFrom');
+  // Options: All, EMEA, APAC (3 <option> children).
+  assert.equal(select.children.length, 3, 'All + two region choices');
+});

@@ -10,6 +10,10 @@ export { validateSpec } from './validateSpec.js';
 export { dashboardCss, injectStyles } from './styles.js';
 export { createDataStore, isEmptyData, DataError, clearSharedCache } from './dataStore.js';
 export { exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient } from './persistence.js';
+export {
+  inlineSpecData, buildDashboardHtml, exportDashboardHtml,
+  dashboardToPng, exportDashboardPng, exportDashboardPdf
+} from './exportDashboard.js';
 export { createBuilder, pointerToCell, csvToCx, buildDataSource } from './builder.js';
 export {
   addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS

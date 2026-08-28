@@ -78,10 +78,11 @@ export function validateSpec(spec) {
         errors.push(at + ' must be an object');
         return;
       }
-      // A param control with a static option list drives a backend query and
-      // needs no data of its own, so it is exempt from the data requirement.
+      // A param control that sources its choices statically (`options`) or from
+      // another dataset (`optionsFrom`) drives a backend query and needs no data
+      // of its own, so it is exempt from the data requirement.
       var paramWithOptions = panel.type === 'control' && panel.mode === 'param' &&
-        Array.isArray(panel.options);
+        (Array.isArray(panel.options) || panel.optionsFrom != null);
       if (panel.type !== 'text' && !paramWithOptions && panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
@@ -101,6 +102,15 @@ export function validateSpec(spec) {
             errors.push(at + ' of mode "param" requires a param name string');
           } else if (spec.params == null || !hasOwn(spec.params, panel.param)) {
             errors.push(at + '.param "' + panel.param + '" has no matching entry in spec.params');
+          }
+          if (panel.optionsFrom != null) {
+            var from = panel.optionsFrom;
+            if (typeof from !== 'object' || Array.isArray(from)) {
+              errors.push(at + '.optionsFrom must be an object');
+            } else if (typeof from.dataRef !== 'string' ||
+                spec.data == null || !hasOwn(spec.data, from.dataRef)) {
+              errors.push(at + '.optionsFrom.dataRef has no matching entry in spec.data');
+            }
           }
         }
       }

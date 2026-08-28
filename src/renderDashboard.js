@@ -526,13 +526,25 @@ export function renderDashboard(spec, target, options) {
       return Promise.resolve(buildWidget(panel.options));
     }
 
-    return resolveOwnerData(panel)
+    // A param control can source its choices from a DIFFERENT dataset's distinct
+    // annotation values (`optionsFrom: {dataRef, annotation, compartment?}`) —
+    // e.g. a small "list of regions" query feeding a big "sales" query.
+    var optionsFrom = isParam ? panel.optionsFrom : null;
+    var choiceRef = optionsFrom ? optionsFrom.dataRef : panel.dataRef;
+    var choiceAnnotation = optionsFrom ? (optionsFrom.annotation || optionsFrom.field) : panel.annotation;
+    var choiceComp = optionsFrom && optionsFrom.compartment ? optionsFrom.compartment : comp;
+
+    var choiceData = choiceRef && choiceRef !== panel.dataRef
+      ? resolveRef(choiceRef)
+      : resolveOwnerData(panel);
+
+    return choiceData
       .then(function (data) {
-        var values = annotationValues(data, comp, panel.annotation);
+        var values = annotationValues(data, choiceComp, choiceAnnotation);
         if (!values.length) {
           // Auto-detect: the name may be a variable annotation ('z') instead.
-          var other = comp === 'x' ? 'z' : 'x';
-          var alt = annotationValues(data, other, panel.annotation);
+          var other = choiceComp === 'x' ? 'z' : 'x';
+          var alt = annotationValues(data, other, choiceAnnotation);
           if (alt.length) { comp = other; values = alt; }
         }
         return buildWidget(values);

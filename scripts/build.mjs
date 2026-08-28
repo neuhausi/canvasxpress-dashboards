@@ -22,7 +22,7 @@ var srcDir = join(root, 'src');
 var distDir = join(root, 'dist');
 
 // Dependency order — leaves first, entry last-ish. index.js only re-exports.
-var MODULES = ['styles.js', 'dataStore.js', 'gridLayout.js', 'validateSpec.js', 'renderDashboard.js', 'persistence.js', 'builderModel.js', 'builder.js'];
+var MODULES = ['styles.js', 'dataStore.js', 'exportDashboard.js', 'gridLayout.js', 'validateSpec.js', 'renderDashboard.js', 'persistence.js', 'builderModel.js', 'builder.js'];
 
 // Public API exposed by both bundles.
 var EXPORTS = [
@@ -38,6 +38,12 @@ var EXPORTS = [
   'importSpecFromFile',
   'parseAndValidate',
   'createDashboardClient',
+  'inlineSpecData',
+  'buildDashboardHtml',
+  'exportDashboardHtml',
+  'dashboardToPng',
+  'exportDashboardPng',
+  'exportDashboardPdf',
   'createBuilder',
   'pointerToCell',
   'csvToCx',

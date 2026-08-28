@@ -203,6 +203,16 @@
           "items": { "type": ["string", "number", "boolean"] },
           "description": "Control panels (mode:'param'): a static list of choices (an 'All' entry is prepended automatically). When present, the control needs no data of its own."
         },
+        "optionsFrom": {
+          "type": "object",
+          "description": "Control panels (mode:'param'): populate choices from a dataset's distinct annotation values instead of a static list.",
+          "properties": {
+            "dataRef": { "type": "string", "description": "Source to draw choices from." },
+            "annotation": { "type": "string", "description": "Annotation/field whose unique values become the choices." },
+            "compartment": { "type": "string", "enum": ["x", "z"] }
+          },
+          "required": ["dataRef"]
+        },
         "style": {
           "type": "string",
           "enum": ["auto", "dropdown", "radio", "buttons"],

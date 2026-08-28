@@ -9,14 +9,56 @@
   <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
   <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
   <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+  <!-- Export deps (PNG/PDF rasterization). Local to the dashboards repo only. -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <style>
     body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
     #dashboard { padding: 16px 24px 32px; }
     #message { padding: 32px 24px; color: #6b7280; }
+    #cxd-toolbar {
+      display: none; align-items: center; justify-content: flex-end;
+      gap: 4px; padding: 7px 18px; background: #f5f6f7;
+      border-bottom: 1px solid #e4e7eb;
+    }
+    .cxd-tb-menu { position: relative; }
+    .cxd-tb-btn {
+      display: inline-flex; align-items: center; gap: 7px; font: inherit;
+      color: #444a54; background: transparent; border: 1px solid transparent;
+      border-radius: 6px; padding: 6px 10px; cursor: pointer; line-height: 1;
+    }
+    .cxd-tb-btn:hover { background: #e9ebef; color: #1f242b; }
+    .cxd-tb-btn svg { width: 16px; height: 16px; display: block; }
+    .cxd-tb-btn .cxd-caret { width: 11px; height: 11px; opacity: .7; }
+    .cxd-tb-dropdown {
+      position: absolute; right: 0; top: calc(100% + 6px); z-index: 20;
+      min-width: 224px; background: #fff; color: #222;
+      border: 1px solid #e0e3e8; border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(16,24,40,.16); padding: 6px;
+    }
+    .cxd-tb-dropdown[hidden] { display: none; }
+    .cxd-tb-item {
+      display: flex; align-items: center; gap: 11px; width: 100%; font: inherit;
+      text-align: left; color: #333a44; background: transparent; border: 0;
+      border-radius: 7px; padding: 9px 10px; cursor: pointer;
+    }
+    .cxd-tb-item:hover { background: #f1f3f6; }
+    .cxd-tb-item svg { width: 19px; height: 19px; color: #5b6472; flex: 0 0 auto; }
+    .cxd-tb-item b { font-weight: 600; font-size: 13px; }
+    .cxd-tb-item small { display: block; color: #8a92a0; font-size: 11px; margin-top: 1px; }
+    .cxd-tb-item:disabled { opacity: .5; cursor: default; }
     @media (prefers-color-scheme: dark) {
       body { background: #0e1013; color: #e6e8ec; }
       #message { color: #8a9099; }
+      #cxd-toolbar { background: #14171c; border-bottom-color: #262b33; }
+      .cxd-tb-btn { color: #b9c0cb; }
+      .cxd-tb-btn:hover { background: #222731; color: #f0f2f5; }
+      .cxd-tb-dropdown { background: #1a1e24; color: #e6e8ec; border-color: #2c313a; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+      .cxd-tb-item { color: #cdd3dc; }
+      .cxd-tb-item:hover { background: #232832; }
+      .cxd-tb-item svg { color: #8a92a0; }
+      .cxd-tb-item small { color: #7a828f; }
     }
   </style>
 </head>
@@ -26,9 +68,36 @@
        Dashboards page's "Preview" button (?id=<dashboard-id>); uses the
        viewer's own session, so it needs no share token. -->
   <div id="message">Loading…</div>
+  <div id="cxd-toolbar">
+    <div class="cxd-tb-menu">
+      <button type="button" class="cxd-tb-btn" id="cxd-download-btn" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 20h16"/></svg>
+        <span>Download</span>
+        <svg class="cxd-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="cxd-tb-dropdown" id="cxd-download-menu" hidden>
+        <button type="button" class="cxd-tb-item" data-act="html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8.5 9.5L6 12l2.5 2.5"/><path d="M15.5 9.5L18 12l-2.5 2.5"/></svg>
+          <span><b>HTML</b><small>Self-contained page</small></span>
+        </button>
+        <button type="button" class="cxd-tb-item" data-act="png">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 16l-5-5-6 6"/></svg>
+          <span><b>PNG</b><small>Image snapshot</small></span>
+        </button>
+        <button type="button" class="cxd-tb-item" data-act="pdf">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 12h1.5a1.5 1.5 0 0 0 0-3H9v7"/></svg>
+          <span><b>PDF</b><small>Print-ready</small></span>
+        </button>
+      </div>
+    </div>
+  </div>
   <div id="dashboard"></div>
 
   <script>
+    // The dashboards UMD bundle path differs per page; buildDashboardHtml inlines
+    // it, so it must be handed the same path this page loads it from.
+    var UMD_URL = '../dist/canvasxpress-dashboards.umd.js';
+
     var id = new URLSearchParams(location.search).get('id');
     var base = location.pathname.replace(/\/(examples\/)?[^/]*$/, '');
     var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: base });
@@ -39,13 +108,60 @@
       m.textContent = msg;
     }
 
+    // Wire the export toolbar once the dashboard is rendered. HTML export bakes
+    // in the data + libraries (self-contained); PNG/PDF rasterize the live board.
+    function wireToolbar(spec, handle) {
+      var bar = document.getElementById('cxd-toolbar');
+      var trigger = document.getElementById('cxd-download-btn');
+      var menu = document.getElementById('cxd-download-menu');
+      var X = CanvasXpressDashboards;
+      var slug = (spec.id || spec.title || 'dashboard');
+      bar.style.display = 'flex';
+
+      function closeMenu() { menu.hidden = true; trigger.setAttribute('aria-expanded', 'false'); }
+      function openMenu() { menu.hidden = false; trigger.setAttribute('aria-expanded', 'true'); }
+
+      trigger.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (menu.hidden) openMenu(); else closeMenu();
+      });
+      document.addEventListener('click', function (e) {
+        if (!menu.hidden && !menu.contains(e.target) && e.target !== trigger) closeMenu();
+      });
+
+      menu.addEventListener('click', function (e) {
+        var btn = e.target.closest ? e.target.closest('button[data-act]') : null;
+        if (!btn) return;
+        var act = btn.getAttribute('data-act');
+        var done = function () { btn.disabled = false; closeMenu(); };
+        var oops = function (err) { btn.disabled = false; alert('Export failed: ' + (err && err.message || err)); };
+        btn.disabled = true;
+        // Wrap in try/catch so a synchronous failure (e.g. a missing library)
+        // surfaces as an alert instead of silently doing nothing.
+        try {
+          var task = null;
+          if (act === 'html') {
+            task = X.exportDashboardHtml(spec, { baseUrl: base, umdUrl: UMD_URL, dashboardUrl: location.href, filename: slug + '.html' });
+          } else if (act === 'png') {
+            task = X.exportDashboardPng(handle.container, { filename: slug + '.png' });
+          } else if (act === 'pdf') {
+            task = X.exportDashboardPdf(handle.container, { filename: slug + '.pdf' });
+          }
+          Promise.resolve(task).then(done, oops);
+        } catch (err) {
+          oops(err);
+        }
+      });
+    }
+
     if (!id) {
       fail('No dashboard id in the URL (expected ?id=…).');
     } else {
       client.load(id).then(function (spec) {
         document.title = (spec.title || spec.id) + ' · CanvasXpress Dashboards';
         document.getElementById('message').style.display = 'none';
-        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard', { baseUrl: base });
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard', { baseUrl: base })
+          .then(function (handle) { wireToolbar(spec, handle); });
       }).catch(function (err) {
         if (err && err.status === 401) fail('Sign in to view this dashboard.');
         else if (err && err.status === 404) fail('Dashboard "' + id + '" not found.');
