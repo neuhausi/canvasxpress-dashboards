@@ -1204,8 +1204,25 @@ export function createBuilder(target, options) {
     titleToggle.appendChild(checkbox);
     titleToggle.appendChild(toggleText);
 
+    // Chart-click cross-filter: when the dashboard declares parameters, a graph
+    // panel can set one from the clicked mark, re-querying the panels bound to
+    // sources that consume it.
+    var crossFilter = [];
+    var paramNames = Object.keys(spec.params || {});
+    if (paramNames.length) {
+      var clickLabel = el('span', 'cxb-tlabel');
+      clickLabel.textContent = 'Click sets';
+      var clickField = selectField([''].concat(paramNames), panel.clickParam || '', function (value) {
+        commit(updatePanel(spec, selectedId, { clickParam: value }), false);
+        rerenderPanel(selectedId);
+      });
+      clickField.setAttribute('title', 'Clicking a mark sets this parameter (cross-filter)');
+      labelOptions(clickField, { '': '(no cross-filter)' });
+      crossFilter = [clickLabel, clickField];
+    }
+
     // No Delete here — the panel frame already carries a × delete control.
-    append(propsGroup, [titleLabel, titleField, dataLabel, dsField, titleToggle]);
+    append(propsGroup, [titleLabel, titleField, dataLabel, dsField].concat(crossFilter, [titleToggle]));
   }
 
 

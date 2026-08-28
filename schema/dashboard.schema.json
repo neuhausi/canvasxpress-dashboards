@@ -253,7 +253,15 @@
           "description": "Numeric variable names to plot (projects the source to these columns). Empty/absent = all variables."
         },
         "events": { "type": "object" },
-        "broadcast": { "type": "boolean" }
+        "broadcast": { "type": "boolean" },
+        "clickParam": {
+          "type": "string",
+          "description": "Graph panels: clicking a mark sets this dashboard parameter to the clicked value (cross-filter), re-querying dependent sources. Must name an entry in spec.params."
+        },
+        "clickField": {
+          "type": "string",
+          "description": "Graph panels: which annotation/field of the clicked mark supplies the clickParam value (defaults to the clicked sample name)."
+        }
       }
     },
     "control": {

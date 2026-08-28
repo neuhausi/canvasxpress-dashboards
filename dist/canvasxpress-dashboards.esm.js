@@ -1044,6 +1044,14 @@ function validateSpec(spec) {
           errors.push(at + '.dataRef "' + panel.dataRef + '" has no matching entry in spec.data');
         }
       }
+      // Chart-click cross-filter: a clicked mark sets this parameter.
+      if (panel.clickParam != null) {
+        if (typeof panel.clickParam !== 'string') {
+          errors.push(at + '.clickParam must be a string');
+        } else if (spec.params == null || !hasOwn(spec.params, panel.clickParam)) {
+          errors.push(at + '.clickParam "' + panel.clickParam + '" has no matching entry in spec.params');
+        }
+      }
     });
   }
 
@@ -1384,6 +1392,32 @@ function renderDashboard(spec, target, options) {
   }
 
   /**
+   * Build the CanvasXpress events object for a panel, adding a click handler
+   * that sets a dashboard parameter from the clicked mark when the panel opts in
+   * via `clickParam` (cross-filter). Any author-supplied `panel.events.click` is
+   * preserved and still called. When the panel does not opt in, its own events
+   * pass through unchanged.
+   * @param {object} panel - The panel definition.
+   * @returns {object} The events object to hand to the CanvasXpress instance.
+   * @private
+   */
+  function paramClickEvents(panel) {
+    var events = (panel && panel.events) || {};
+    if (!panel || !panel.clickParam) return events;
+    var merged = {};
+    for (var key in events) {
+      if (Object.prototype.hasOwnProperty.call(events, key)) merged[key] = events[key];
+    }
+    var authorClick = events.click;
+    merged.click = function (clicked, mouseEvent, target) {
+      var value = extractClickValue(clicked, panel.clickField);
+      if (value != null) applyParamChange(panel.clickParam, value);
+      if (typeof authorClick === 'function') authorClick.call(this, clicked, mouseEvent, target);
+    };
+    return merged;
+  }
+
+  /**
    * Record a rendered instance against its dataRef so scheduled refresh can
    * live-update it.
    * @param {string} ref - Source ref name (may be undefined).
@@ -1522,7 +1556,7 @@ function renderDashboard(spec, target, options) {
         sizeCanvasToCell(cell, canvasInset);
         var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
         applyDashboardChartStyle(config, spec);   // dashboard-wide font/theme/colors (Settings)
-        var instance = new CX(canvasId, data, config, panel && panel.events || {});
+        var instance = new CX(canvasId, data, config, paramClickEvents(panel));
         instances.push(instance);
         if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
         bind(panel && panel.dataRef, instance, cell);
@@ -2331,6 +2365,33 @@ function applyAlignment(body, panel) {
  */
 function listen(node, type, handler) {
   if (node && typeof node.addEventListener === 'function') node.addEventListener(type, handler);
+}
+
+/**
+ * Best-effort extraction of a value from a CanvasXpress click payload, for the
+ * chart-click cross-filter. The payload shape varies by graph type, so this
+ * tries, in order: an explicit annotation field the panel named (`field`), the
+ * clicked sample name(s), then the clicked variable name(s). Returns null when
+ * nothing usable is found (the click then sets no parameter).
+ * @param {object} clicked - The object CanvasXpress passes to a click handler.
+ * @param {string} [field] - An annotation/field name to prefer, when the payload
+ *   carries per-point annotations (`clicked.x[field]` / `clicked[field]`).
+ * @returns {*} The extracted value, or null.
+ * @private
+ */
+function extractClickValue(clicked, field) {
+  if (!clicked || typeof clicked !== 'object') return null;
+  function first(v) { return Array.isArray(v) ? (v.length ? v[0] : null) : v; }
+  if (field) {
+    if (clicked.x && clicked.x[field] != null) return first(clicked.x[field]);
+    if (clicked[field] != null) return first(clicked[field]);
+    if (clicked.y && clicked.y[field] != null) return first(clicked.y[field]);
+  }
+  if (clicked.smps != null) return first(clicked.smps);
+  if (clicked.y && clicked.y.smps != null) return first(clicked.y.smps);
+  if (clicked.vars != null) return first(clicked.vars);
+  if (clicked.y && clicked.y.vars != null) return first(clicked.y.vars);
+  return null;
 }
 
 /**
@@ -3545,6 +3606,15 @@ function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'measures')) {
     if (changes.measures && changes.measures.length) panel.measures = changes.measures;
     else delete panel.measures;
+  }
+  // Chart-click cross-filter wiring (graph panels).
+  if (Object.prototype.hasOwnProperty.call(changes, 'clickParam')) {
+    if (changes.clickParam) panel.clickParam = changes.clickParam;
+    else delete panel.clickParam;
+  }
+  if (Object.prototype.hasOwnProperty.call(changes, 'clickField')) {
+    if (changes.clickField) panel.clickField = changes.clickField;
+    else delete panel.clickField;
   }
   return next;
 }
@@ -4966,8 +5036,25 @@ function createBuilder(target, options) {
     titleToggle.appendChild(checkbox);
     titleToggle.appendChild(toggleText);
 
+    // Chart-click cross-filter: when the dashboard declares parameters, a graph
+    // panel can set one from the clicked mark, re-querying the panels bound to
+    // sources that consume it.
+    var crossFilter = [];
+    var paramNames = Object.keys(spec.params || {});
+    if (paramNames.length) {
+      var clickLabel = el('span', 'cxb-tlabel');
+      clickLabel.textContent = 'Click sets';
+      var clickField = selectField([''].concat(paramNames), panel.clickParam || '', function (value) {
+        commit(updatePanel(spec, selectedId, { clickParam: value }), false);
+        rerenderPanel(selectedId);
+      });
+      clickField.setAttribute('title', 'Clicking a mark sets this parameter (cross-filter)');
+      labelOptions(clickField, { '': '(no cross-filter)' });
+      crossFilter = [clickLabel, clickField];
+    }
+
     // No Delete here — the panel frame already carries a × delete control.
-    append(propsGroup, [titleLabel, titleField, dataLabel, dsField, titleToggle]);
+    append(propsGroup, [titleLabel, titleField, dataLabel, dsField].concat(crossFilter, [titleToggle]));
   }
 
 

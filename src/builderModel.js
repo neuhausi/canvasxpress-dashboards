@@ -280,6 +280,15 @@ export function updatePanel(spec, panelId, changes) {
     if (changes.measures && changes.measures.length) panel.measures = changes.measures;
     else delete panel.measures;
   }
+  // Chart-click cross-filter wiring (graph panels).
+  if (Object.prototype.hasOwnProperty.call(changes, 'clickParam')) {
+    if (changes.clickParam) panel.clickParam = changes.clickParam;
+    else delete panel.clickParam;
+  }
+  if (Object.prototype.hasOwnProperty.call(changes, 'clickField')) {
+    if (changes.clickField) panel.clickField = changes.clickField;
+    else delete panel.clickField;
+  }
   return next;
 }
 

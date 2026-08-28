@@ -562,3 +562,49 @@ test('a search param control applies typed text to the parameter (debounced)', a
   assert.equal(live[0].updates.length, 1, 'bound panel updated once');
   assert.equal(live[0].updates[0].y.smps[0], 'acme');
 });
+
+test('clicking a mark sets a dashboard param (cross-filter) and refreshes bound panels', async function () {
+  var made = [];
+  function ClickCX(id, data, config, events) {
+    var inst = { id: id, data: data, config: config, events: events, updates: [] };
+    inst.updateData = function (d) { inst.updates.push(d); };
+    made.push(inst);
+    return inst;
+  }
+  function q(url) {
+    var m = /region=([^&]+)/.exec(url);
+    var body = JSON.stringify({ y: { vars: ['R'], smps: [m ? decodeURIComponent(m[1]) : 'all'], data: [[1]] } });
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(body); } });
+  }
+  var spec = {
+    id: 'xfilter',
+    params: { region: { value: null } },
+    layout: { cols: 12, items: [
+      { panel: 'src', x: 0, y: 0, w: 6, h: 3 },
+      { panel: 'dst', x: 6, y: 0, w: 6, h: 3 }
+    ] },
+    data: {
+      all: { kind: 'inline', value: { y: { vars: ['R'], smps: ['EMEA', 'APAC'], data: [[1, 2]] } } },
+      detail: { kind: 'connector', url: '/api/data', query: { region: '$region' }, ttl: 0 }
+    },
+    panels: {
+      src: { dataRef: 'all', clickParam: 'region', config: { graphType: 'Bar' } },
+      dst: { dataRef: 'detail', config: { graphType: 'Bar' } }
+    }
+  };
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var handle = await renderDashboard(spec, container, { CanvasXpress: ClickCX, fetch: q });
+  await handle.ready;
+
+  var src = made.find(function (m) { return m.config.graphType === 'Bar' && m.events && typeof m.events.click === 'function'; });
+  assert.ok(src, 'source panel got a click handler');
+  var dst = made.find(function (m) { return m.id !== src.id; });
+  assert.equal(dst.updates.length, 0);
+
+  // Simulate a CanvasXpress click on the "EMEA" sample.
+  src.events.click({ y: { smps: ['EMEA'] } }, {}, null);
+  await new Promise(function (r) { setTimeout(r, 0); });
+  assert.equal(dst.updates.length, 1, 'the other panel re-queried on click');
+  assert.equal(dst.updates[0].y.smps[0], 'EMEA');
+});

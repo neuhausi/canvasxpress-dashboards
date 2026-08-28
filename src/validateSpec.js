@@ -126,6 +126,14 @@ export function validateSpec(spec) {
           errors.push(at + '.dataRef "' + panel.dataRef + '" has no matching entry in spec.data');
         }
       }
+      // Chart-click cross-filter: a clicked mark sets this parameter.
+      if (panel.clickParam != null) {
+        if (typeof panel.clickParam !== 'string') {
+          errors.push(at + '.clickParam must be a string');
+        } else if (spec.params == null || !hasOwn(spec.params, panel.clickParam)) {
+          errors.push(at + '.clickParam "' + panel.clickParam + '" has no matching entry in spec.params');
+        }
+      }
     });
   }
 
