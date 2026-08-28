@@ -491,10 +491,14 @@ export function renderDashboard(spec, target, options) {
         widget.appendChild(hint);
       } else if (isParam) {
         // A param control re-queries the backend on change; "All" → null clears
-        // the param so the source's query widens back to everything.
+        // the param so the source's query widens back to everything. A disabled
+        // control (e.g. in a self-contained export, where no server is reachable)
+        // renders read-only and shows a "snapshot" note instead of re-querying.
         var paramInput = buildAnnotationInput(panel, values, function (value) {
+          if (panel.disabled) return;
           applyParamChange(panel.param, value);
         });
+        if (panel.disabled) disableControlInput(widget, paramInput, panel);
         widget.appendChild(paramInput);
       } else {
         var entry = { annotation: panel.annotation, value: null, resetUI: null };
@@ -915,6 +919,41 @@ export function annotationValues(data, compartment, annotation) {
     out.push(v);
   });
   return out;
+}
+
+/**
+ * Render a control input read-only. Used for a `mode:"param"` control in a
+ * self-contained export, where no backend is reachable: the widget still shows
+ * (pre-selected to the snapshot value when `panel.value` is set) but ignores
+ * input and carries a muted "snapshot" note so the state is honest.
+ * @param {HTMLElement} widget - The control's wrapper element.
+ * @param {HTMLElement} input - The built input (select / radios / buttons).
+ * @param {object} panel - The control panel (reads `value`).
+ * @returns {void}
+ * @private
+ */
+function disableControlInput(widget, input, panel) {
+  widget.classList.add('cxd-annctl-disabled');
+  var controls = [];
+  if (input.tagName === 'SELECT' || input.tagName === 'BUTTON') controls.push(input);
+  if (typeof input.querySelectorAll === 'function') {
+    var nested = input.querySelectorAll('select,input,button');
+    for (var i = 0; i < nested.length; i++) controls.push(nested[i]);
+  }
+  controls.forEach(function (node) {
+    node.disabled = true;
+    node.setAttribute('disabled', 'disabled');
+  });
+  // Pre-select the snapshot value on a <select> so the frozen state is visible.
+  if (input.tagName === 'SELECT' && panel && panel.value != null) {
+    for (var o = 0; o < input.options.length; o++) {
+      if (input.options[o].textContent === String(panel.value)) { input.value = input.options[o].value; break; }
+    }
+  }
+  var note = document.createElement('span');
+  note.className = 'cxd-annctl-hint';
+  note.textContent = panel && panel.value != null ? '· ' + panel.value + ' (snapshot)' : '· snapshot';
+  widget.appendChild(note);
 }
 
 /**

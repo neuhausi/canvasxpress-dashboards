@@ -61,21 +61,75 @@ function downloadBlob(blob, name, doc) {
  * @param {object} [opts] - Resolution options.
  * @param {string} [opts.baseUrl] - Base URL for dataset/connector resolution.
  * @param {function} [opts.fetch] - fetch implementation; defaults to global.
+ * @param {object} [opts.params] - Current parameter values; sources are resolved
+ *   against them so the snapshot captures the current selection, and param
+ *   controls are frozen to it (see {@link freezeParamControls}).
  * @returns {Promise<object>} A self-contained spec (all sources inline).
  */
 export function inlineSpecData(spec, opts) {
   opts = opts || {};
   var store = createDataStore({ baseUrl: opts.baseUrl || '', fetch: opts.fetch });
   var out = JSON.parse(JSON.stringify(spec));
+  var params = currentParams(spec, opts.params);
   var sources = out.data || {};
   var refs = Object.keys(sources);
   return Promise.all(refs.map(function (ref) {
     var src = sources[ref];
     if (!src || src.kind === 'inline') return null;
-    return store.resolve(ref, src).then(function (data) {
+    return store.resolve(ref, src, { params: params }).then(function (data) {
+      // Drop the now-meaningless query template — the data is baked inline.
       sources[ref] = { kind: 'inline', value: data };
     });
-  })).then(function () { return out; });
+  })).then(function () {
+    freezeParamControls(out, params);
+    return out;
+  });
+}
+
+/**
+ * Merge a spec's declared `params` defaults with any live overrides, yielding
+ * the parameter values in effect for an export snapshot.
+ * @param {object} spec - The dashboard spec (reads `params` defaults).
+ * @param {object} [overrides] - Live values (e.g. current control selections).
+ * @returns {object} name -> value.
+ * @private
+ */
+function currentParams(spec, overrides) {
+  var out = {};
+  var declared = spec.params || {};
+  for (var name in declared) {
+    if (!Object.prototype.hasOwnProperty.call(declared, name)) continue;
+    var def = declared[name];
+    out[name] = def && typeof def === 'object' ? def.value : def;
+  }
+  if (overrides) {
+    for (var key in overrides) {
+      if (Object.prototype.hasOwnProperty.call(overrides, key)) out[key] = overrides[key];
+    }
+  }
+  return out;
+}
+
+/**
+ * Freeze every `mode:"param"` control in an exported spec: since the offline
+ * file cannot reach a backend to re-query, the control is marked `disabled`
+ * (rendered read-only with a "snapshot" note) and pinned to the value in effect
+ * at export time so the visible state matches the baked-in data. Mutates `out`.
+ * @param {object} out - The (already deep-cloned) export spec.
+ * @param {object} params - The parameter values in effect at export time.
+ * @returns {void}
+ * @private
+ */
+function freezeParamControls(out, params) {
+  var panels = out.panels || {};
+  for (var id in panels) {
+    if (!Object.prototype.hasOwnProperty.call(panels, id)) continue;
+    var panel = panels[id];
+    if (panel && panel.type === 'control' && panel.mode === 'param') {
+      panel.disabled = true;
+      if (panel.param != null && params[panel.param] != null) panel.value = params[panel.param];
+    }
+  }
 }
 
 /**
@@ -151,6 +205,8 @@ function escapeHtml(s) {
  * @param {object} [opts] - Build options.
  * @param {string} [opts.baseUrl] - Base URL for dataset/connector resolution.
  * @param {function} [opts.fetch] - fetch implementation; defaults to global.
+ * @param {object} [opts.params] - Current parameter values; the snapshot bakes
+ *   each source at these values and freezes param controls to them.
  * @param {string} [opts.cxJsUrl] - URL of canvasXpress.min.js to inline.
  * @param {string} [opts.cxCssUrl] - URL of canvasXpress.css to inline.
  * @param {string} [opts.umdUrl] - URL of the dashboards UMD bundle to inline.

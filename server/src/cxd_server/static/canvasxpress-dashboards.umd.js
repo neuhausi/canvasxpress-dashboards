@@ -46,6 +46,7 @@ var dashboardCss = [
   '  font: 14px/1.3 var(--cxd-font, system-ui, sans-serif); color: var(--cxd-title,#2a2f36); }',
   '.cxd-annctl-label { font-weight: 600; white-space: nowrap; }',
   '.cxd-annctl-hint { color: var(--cxd-muted,#8a9099); }',
+  '.cxd-annctl-disabled { opacity: 0.65; }',
   // Controls use --cxd-ctrl-border (a colour the renderer computes to contrast
   // with whatever the control sits on) so the box stays visible even when the
   // panel chrome is coordinated to the background. Falls back to the theme border.
@@ -585,21 +586,75 @@ function downloadBlob(blob, name, doc) {
  * @param {object} [opts] - Resolution options.
  * @param {string} [opts.baseUrl] - Base URL for dataset/connector resolution.
  * @param {function} [opts.fetch] - fetch implementation; defaults to global.
+ * @param {object} [opts.params] - Current parameter values; sources are resolved
+ *   against them so the snapshot captures the current selection, and param
+ *   controls are frozen to it (see {@link freezeParamControls}).
  * @returns {Promise<object>} A self-contained spec (all sources inline).
  */
 function inlineSpecData(spec, opts) {
   opts = opts || {};
   var store = createDataStore({ baseUrl: opts.baseUrl || '', fetch: opts.fetch });
   var out = JSON.parse(JSON.stringify(spec));
+  var params = currentParams(spec, opts.params);
   var sources = out.data || {};
   var refs = Object.keys(sources);
   return Promise.all(refs.map(function (ref) {
     var src = sources[ref];
     if (!src || src.kind === 'inline') return null;
-    return store.resolve(ref, src).then(function (data) {
+    return store.resolve(ref, src, { params: params }).then(function (data) {
+      // Drop the now-meaningless query template — the data is baked inline.
       sources[ref] = { kind: 'inline', value: data };
     });
-  })).then(function () { return out; });
+  })).then(function () {
+    freezeParamControls(out, params);
+    return out;
+  });
+}
+
+/**
+ * Merge a spec's declared `params` defaults with any live overrides, yielding
+ * the parameter values in effect for an export snapshot.
+ * @param {object} spec - The dashboard spec (reads `params` defaults).
+ * @param {object} [overrides] - Live values (e.g. current control selections).
+ * @returns {object} name -> value.
+ * @private
+ */
+function currentParams(spec, overrides) {
+  var out = {};
+  var declared = spec.params || {};
+  for (var name in declared) {
+    if (!Object.prototype.hasOwnProperty.call(declared, name)) continue;
+    var def = declared[name];
+    out[name] = def && typeof def === 'object' ? def.value : def;
+  }
+  if (overrides) {
+    for (var key in overrides) {
+      if (Object.prototype.hasOwnProperty.call(overrides, key)) out[key] = overrides[key];
+    }
+  }
+  return out;
+}
+
+/**
+ * Freeze every `mode:"param"` control in an exported spec: since the offline
+ * file cannot reach a backend to re-query, the control is marked `disabled`
+ * (rendered read-only with a "snapshot" note) and pinned to the value in effect
+ * at export time so the visible state matches the baked-in data. Mutates `out`.
+ * @param {object} out - The (already deep-cloned) export spec.
+ * @param {object} params - The parameter values in effect at export time.
+ * @returns {void}
+ * @private
+ */
+function freezeParamControls(out, params) {
+  var panels = out.panels || {};
+  for (var id in panels) {
+    if (!Object.prototype.hasOwnProperty.call(panels, id)) continue;
+    var panel = panels[id];
+    if (panel && panel.type === 'control' && panel.mode === 'param') {
+      panel.disabled = true;
+      if (panel.param != null && params[panel.param] != null) panel.value = params[panel.param];
+    }
+  }
 }
 
 /**
@@ -675,6 +730,8 @@ function escapeHtml(s) {
  * @param {object} [opts] - Build options.
  * @param {string} [opts.baseUrl] - Base URL for dataset/connector resolution.
  * @param {function} [opts.fetch] - fetch implementation; defaults to global.
+ * @param {object} [opts.params] - Current parameter values; the snapshot bakes
+ *   each source at these values and freezes param controls to them.
  * @param {string} [opts.cxJsUrl] - URL of canvasXpress.min.js to inline.
  * @param {string} [opts.cxCssUrl] - URL of canvasXpress.css to inline.
  * @param {string} [opts.umdUrl] - URL of the dashboards UMD bundle to inline.
@@ -1584,10 +1641,14 @@ function renderDashboard(spec, target, options) {
         widget.appendChild(hint);
       } else if (isParam) {
         // A param control re-queries the backend on change; "All" → null clears
-        // the param so the source's query widens back to everything.
+        // the param so the source's query widens back to everything. A disabled
+        // control (e.g. in a self-contained export, where no server is reachable)
+        // renders read-only and shows a "snapshot" note instead of re-querying.
         var paramInput = buildAnnotationInput(panel, values, function (value) {
+          if (panel.disabled) return;
           applyParamChange(panel.param, value);
         });
+        if (panel.disabled) disableControlInput(widget, paramInput, panel);
         widget.appendChild(paramInput);
       } else {
         var entry = { annotation: panel.annotation, value: null, resetUI: null };
@@ -2008,6 +2069,41 @@ function annotationValues(data, compartment, annotation) {
     out.push(v);
   });
   return out;
+}
+
+/**
+ * Render a control input read-only. Used for a `mode:"param"` control in a
+ * self-contained export, where no backend is reachable: the widget still shows
+ * (pre-selected to the snapshot value when `panel.value` is set) but ignores
+ * input and carries a muted "snapshot" note so the state is honest.
+ * @param {HTMLElement} widget - The control's wrapper element.
+ * @param {HTMLElement} input - The built input (select / radios / buttons).
+ * @param {object} panel - The control panel (reads `value`).
+ * @returns {void}
+ * @private
+ */
+function disableControlInput(widget, input, panel) {
+  widget.classList.add('cxd-annctl-disabled');
+  var controls = [];
+  if (input.tagName === 'SELECT' || input.tagName === 'BUTTON') controls.push(input);
+  if (typeof input.querySelectorAll === 'function') {
+    var nested = input.querySelectorAll('select,input,button');
+    for (var i = 0; i < nested.length; i++) controls.push(nested[i]);
+  }
+  controls.forEach(function (node) {
+    node.disabled = true;
+    node.setAttribute('disabled', 'disabled');
+  });
+  // Pre-select the snapshot value on a <select> so the frozen state is visible.
+  if (input.tagName === 'SELECT' && panel && panel.value != null) {
+    for (var o = 0; o < input.options.length; o++) {
+      if (input.options[o].textContent === String(panel.value)) { input.value = input.options[o].value; break; }
+    }
+  }
+  var note = document.createElement('span');
+  note.className = 'cxd-annctl-hint';
+  note.textContent = panel && panel.value != null ? '· ' + panel.value + ' (snapshot)' : '· snapshot';
+  widget.appendChild(note);
 }
 
 /**

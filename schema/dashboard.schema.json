@@ -213,6 +213,13 @@
           },
           "required": ["dataRef"]
         },
+        "disabled": {
+          "type": "boolean",
+          "description": "Control panels: render read-only (ignores input). Set automatically on param controls in a self-contained export, where no backend is reachable."
+        },
+        "value": {
+          "description": "Control panels: the pre-selected value (used to pin a disabled/snapshot param control to the value in effect at export time)."
+        },
         "style": {
           "type": "string",
           "enum": ["auto", "dropdown", "radio", "buttons"],

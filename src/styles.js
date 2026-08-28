@@ -38,6 +38,7 @@ export var dashboardCss = [
   '  font: 14px/1.3 var(--cxd-font, system-ui, sans-serif); color: var(--cxd-title,#2a2f36); }',
   '.cxd-annctl-label { font-weight: 600; white-space: nowrap; }',
   '.cxd-annctl-hint { color: var(--cxd-muted,#8a9099); }',
+  '.cxd-annctl-disabled { opacity: 0.65; }',
   // Controls use --cxd-ctrl-border (a colour the renderer computes to contrast
   // with whatever the control sits on) so the box stays visible even when the
   // panel chrome is coordinated to the background. Falls back to the theme border.
