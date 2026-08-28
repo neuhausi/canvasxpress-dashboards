@@ -1778,6 +1778,29 @@ function renderDashboard(spec, target, options) {
     broadcastGroup: broadcastGroup,
     store: store,
     /**
+     * The live dashboard parameter values (name -> value), reflecting the
+     * current mode:"param" control selections. Pass to the HTML export so the
+     * snapshot captures the active view.
+     * @returns {object} A copy of the current parameter values.
+     */
+    getParams: function () {
+      var copy = {};
+      for (var name in paramState) {
+        if (Object.prototype.hasOwnProperty.call(paramState, name)) copy[name] = paramState[name];
+      }
+      return copy;
+    },
+    /**
+     * Set a dashboard parameter programmatically (re-queries dependent sources
+     * and live-updates their panels), exactly as a param control would.
+     * @param {string} name - Parameter name (should exist in spec.params).
+     * @param {*} value - New value (null clears it, widening the query).
+     * @returns {Promise<void>} Resolves once affected panels have updated.
+     */
+    setParam: function (name, value) {
+      return applyParamChange(name, value);
+    },
+    /**
      * Resolves once every panel and control has settled (rendered, empty, or
      * errored). Useful for tests and for knowing the first paint is complete.
      * @type {Promise<void>}

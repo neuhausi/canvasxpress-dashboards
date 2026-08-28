@@ -141,7 +141,8 @@
         try {
           var task = null;
           if (act === 'html') {
-            task = X.exportDashboardHtml(spec, { baseUrl: base, umdUrl: UMD_URL, dashboardUrl: location.href, filename: slug + '.html' });
+            var liveParams = handle && typeof handle.getParams === 'function' ? handle.getParams() : undefined;
+            task = X.exportDashboardHtml(spec, { baseUrl: base, umdUrl: UMD_URL, dashboardUrl: location.href, filename: slug + '.html', params: liveParams });
           } else if (act === 'png') {
             task = X.exportDashboardPng(handle.container, { filename: slug + '.png' });
           } else if (act === 'pdf') {
