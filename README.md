@@ -147,6 +147,22 @@ no wrapper API.
       "compartment": "x", "annotation": "Tissue", "style": "auto" }
   }
   ```
+- **Live-data controls**: a control with `"mode": "param"` *re-queries a data
+  source* and refreshes the bound panels, instead of filtering what's already on
+  the page — the control writes a dashboard **parameter** (`spec.params`) that a
+  source's `query` reads via a `"$name"` token. Also covers search-box params,
+  chart-click cross-filter, and self-contained snapshot export. See the guide:
+  [`docs/live-data-controls.md`](docs/live-data-controls.md).
+
+  ```jsonc
+  "params": { "region": { "value": null } },
+  "data":   { "sales": { "kind": "connector", "url": "/api/data?source=sales",
+                          "query": { "region": "$region" } } },
+  "panels": {
+    "pick": { "type": "control", "mode": "param", "param": "region",
+              "options": ["EMEA", "APAC", "AMER"] }
+  }
+  ```
 - The spec is **forward-compatible**: unknown fields are ignored; `version` gates
   migrations.
 

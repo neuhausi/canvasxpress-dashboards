@@ -1,22 +1,32 @@
 # Plan — Live-data controls (parameterized sources)
 
-**Status:** Phase 1 DONE (client MVP landed, 2026-08-28) · Phases 2–4 open · target v0.9.0
+**Status:** ✅ ALL PHASES DONE (2026-08-28), unreleased · target v0.9.0
 
-> **Phase 1 shipped (client-side MVP), unreleased:**
-> - `dataStore.js`: `resolve(ref, spec, {params})` substitutes `$name` tokens in a
->   source `query`, appends them to the fetch URL, and keys the cache on the resolved
->   (sorted) query so different param values never collide.
-> - `renderDashboard.js`: `paramState` seeded from `spec.params`; `refsForParam` +
->   `applyParamChange` re-fetch affected sources and `updateData` bound instances (with
->   per-cell loading/error state, last-good on error); `mode:"param"` control branch with
->   static (`options`) or dynamic (annotation) choices.
-> - `validateSpec.js` + `schema/dashboard.schema.json`: `spec.params`, source `query`/
->   `dependsOn`, control `mode`/`param`/`options`, dangling-token checks.
-> - Tests: dataStore param substitution / cache-keying (4), validateSpec (4), a
->   render-level change→refetch→updateData integration test (1). Suite green (112).
-> - **Still open:** builder UI (Phase 2), `optionsFrom` dynamic option lists (Phase 2),
->   export snapshot behavior for param controls (Phase 2), server SQL/dataset params
->   (Phase 3).
+> **Shipped (Phases 1–4), unreleased — full suite green (125 JS + 137 server):**
+> - **Phase 1 — parameterized sources.** `dataStore.resolve(ref, spec, {params})`
+>   substitutes `$name` tokens in a source `query`, appends them to the fetch URL, and
+>   keys the cache on the resolved (sorted) query so param values never collide.
+>   `renderDashboard` seeds `paramState` from `spec.params`; `refsForParam` +
+>   `applyParamChange` re-fetch affected sources and `updateData` bound instances (per-cell
+>   loading/error state, last-good on error). `mode:"param"` control branch.
+> - **Phase 2 — options + export + builder.** `optionsFrom:{dataRef,annotation}` sources a
+>   control's choices from another dataset. HTML export snapshots each source at the current
+>   params and freezes param controls (`disabled` + "snapshot" note); `handle.getParams()/
+>   setParam()` expose live values; the viewer passes them into the export. Builder control
+>   props gain an **Action** selector (Filter page / Query source) with Param name, Choices
+>   (static list / from data), and an Applies-to query binding.
+> - **Phase 3 — server params + search.** `GET /api/datasets/{id}?<ann>=<v>` filters the CX
+>   object server-side (`filter_cx_data`, equality mask, no query language). Client
+>   `style:"search"` param control = a debounced free-text box (`panel.debounce`,
+>   `placeholder`).
+> - **Phase 4 — chart-click cross-filter.** `panel.clickParam`/`clickField` set a parameter
+>   from a clicked mark (`paramClickEvents` preserves author click handlers;
+>   `extractClickValue` reads across payload shapes). Builder "Click sets" picker on graph
+>   panels.
+>
+> Each phase carries tests (dataStore, validateSpec, renderDashboard integration, builder
+> smoke, builderModel, server unit + endpoint). See `docs/live-data-controls.md` for the
+> authoring guide.
 **Scope:** Let a control widget fetch *new* data from a data source and refresh the
 bound visualizations, instead of only filtering the data already on the page.
 
