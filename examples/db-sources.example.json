@@ -1,0 +1,15 @@
+{
+  "user": "REPLACE-with-your-dashboards-login",
+  "sources": [
+    {
+      "name": "sales",
+      "path": "/srv/cxd-data/sales.sqlite",
+      "sql": "SELECT sample, revenue, units FROM sales WHERE (:region IS NULL OR region = :region) AND (:q IS NULL OR product LIKE '%' || :q || '%') ORDER BY sample"
+    },
+    {
+      "name": "genes",
+      "url": "sqlite:///file:/srv/cxd-data/genomes.sqlite?mode=ro&uri=true",
+      "sql": "SELECT gene AS \"Gene\", sample AS \"Sample\", expr AS \"Expr\" FROM expression WHERE (:cohort IS NULL OR cohort = :cohort)"
+    }
+  ]
+}

@@ -91,6 +91,21 @@ distinct fetches and never serve each other's data.
 Add `dependsOn: ["region"]` to a source if it must refetch on a param it reads
 somewhere other than `query`.
 
+### Registering big server-side databases (no repo commit)
+
+Keep large SQLite/Postgres files on the server and register them as **connector
+sources** — only the (encrypted) connection URL + SQL are stored, never the data.
+The zero-config helper resolves the running server's own store + key for you:
+
+```
+python examples/register_db_sources.py examples/db-sources.example.json --dry-run
+python examples/register_db_sources.py my-sources.json          # for real
+```
+
+The config's `user` must be the **dashboards login** that will view the panels
+(the app bridges the session). Declare `:name` binds in the SQL and map them with
+`"query": { "region": "$region" }`. No restart needed — live on the next request.
+
 ## Param controls (`mode:"param"`)
 
 | field | meaning |
