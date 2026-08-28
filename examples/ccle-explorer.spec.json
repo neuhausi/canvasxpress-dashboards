@@ -1,0 +1,331 @@
+{
+  "id": "ccle-explorer",
+  "title": "CCLE Gene Explorer (live)",
+  "version": 2,
+  "broadcastGroup": "ccle-explorer",
+  "theme": "auto",
+  "params": {
+    "gene": {
+      "value": "TP53",
+      "type": "string"
+    },
+    "dtype": {
+      "value": "rnaseq",
+      "type": "string"
+    },
+    "genes": {
+      "value": "TP53,EGFR,MYC,KRAS,BRAF,PTEN",
+      "type": "string"
+    },
+    "genex": {
+      "value": "TP53",
+      "type": "string"
+    },
+    "typex": {
+      "value": "cnv",
+      "type": "string"
+    },
+    "geney": {
+      "value": "TP53",
+      "type": "string"
+    },
+    "typey": {
+      "value": "rna",
+      "type": "string"
+    }
+  },
+  "layout": {
+    "cols": 12,
+    "rowHeight": 40,
+    "gap": 12,
+    "items": [
+      {
+        "panel": "gene-control",
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 1
+      },
+      {
+        "panel": "dtype-control",
+        "x": 4,
+        "y": 0,
+        "w": 4,
+        "h": 1
+      },
+      {
+        "panel": "genes-control",
+        "x": 8,
+        "y": 0,
+        "w": 4,
+        "h": 1
+      },
+      {
+        "panel": "distribution",
+        "x": 0,
+        "y": 1,
+        "w": 12,
+        "h": 9
+      },
+      {
+        "panel": "heatmap",
+        "x": 0,
+        "y": 10,
+        "w": 12,
+        "h": 9
+      },
+      {
+        "panel": "genex-control",
+        "x": 0,
+        "y": 19,
+        "w": 3,
+        "h": 1
+      },
+      {
+        "panel": "typex-control",
+        "x": 3,
+        "y": 19,
+        "w": 3,
+        "h": 1
+      },
+      {
+        "panel": "geney-control",
+        "x": 6,
+        "y": 19,
+        "w": 3,
+        "h": 1
+      },
+      {
+        "panel": "typey-control",
+        "x": 9,
+        "y": 19,
+        "w": 3,
+        "h": 1
+      },
+      {
+        "panel": "correlation",
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 9
+      },
+      {
+        "panel": "mutations",
+        "x": 0,
+        "y": 29,
+        "w": 12,
+        "h": 13
+      }
+    ]
+  },
+  "data": {
+    "genesList": {
+      "kind": "connector",
+      "url": "../api/ccle",
+      "query": {
+        "list": "genes"
+      },
+      "ttl": 600000
+    },
+    "distribution": {
+      "kind": "connector",
+      "url": "../api/ccle",
+      "query": {
+        "type": "violin",
+        "data": "$dtype",
+        "search": "$gene"
+      },
+      "ttl": 0
+    },
+    "heatmap": {
+      "kind": "connector",
+      "url": "../api/ccle",
+      "query": {
+        "type": "heatmap",
+        "data": "$dtype",
+        "search": "$genes"
+      },
+      "ttl": 0
+    },
+    "correlation": {
+      "kind": "connector",
+      "url": "../api/ccle",
+      "query": {
+        "correlation": "1",
+        "genex": "$genex",
+        "typex": "$typex",
+        "geney": "$geney",
+        "typey": "$typey"
+      },
+      "ttl": 0
+    },
+    "mutations": {
+      "kind": "connector",
+      "url": "../api/ccle",
+      "query": {
+        "mutations": "1",
+        "search": "$gene"
+      },
+      "ttl": 0
+    }
+  },
+  "panels": {
+    "gene-control": {
+      "type": "control",
+      "mode": "param",
+      "param": "gene",
+      "title": "Gene",
+      "style": "search",
+      "placeholder": "gene symbol (demo: TP53, EGFR)",
+      "optionsFrom": {
+        "dataRef": "genesList",
+        "annotation": "gene"
+      }
+    },
+    "dtype-control": {
+      "type": "control",
+      "mode": "param",
+      "param": "dtype",
+      "title": "Data type",
+      "style": "dropdown",
+      "options": [
+        "rnaseq",
+        "cnv"
+      ]
+    },
+    "genes-control": {
+      "type": "control",
+      "mode": "param",
+      "param": "genes",
+      "title": "Heatmap genes",
+      "style": "search",
+      "placeholder": "comma-separated (demo: TP53,EGFR,MYC,KRAS,BRAF,PTEN,MYCN,CDKN2A,RB1,MDM2)"
+    },
+    "genex-control": {
+      "type": "control",
+      "mode": "param",
+      "param": "genex",
+      "title": "X gene",
+      "style": "search",
+      "placeholder": "X-axis gene",
+      "optionsFrom": {
+        "dataRef": "genesList",
+        "annotation": "gene"
+      }
+    },
+    "typex-control": {
+      "type": "control",
+      "mode": "param",
+      "param": "typex",
+      "title": "X type",
+      "style": "dropdown",
+      "options": [
+        "cnv",
+        "rna"
+      ]
+    },
+    "geney-control": {
+      "type": "control",
+      "mode": "param",
+      "param": "geney",
+      "title": "Y gene",
+      "style": "search",
+      "placeholder": "Y-axis gene",
+      "optionsFrom": {
+        "dataRef": "genesList",
+        "annotation": "gene"
+      }
+    },
+    "typey-control": {
+      "type": "control",
+      "mode": "param",
+      "param": "typey",
+      "title": "Y type",
+      "style": "dropdown",
+      "options": [
+        "cnv",
+        "rna"
+      ]
+    },
+    "distribution": {
+      "title": "Distribution by disease (violin + boxplot)",
+      "dataRef": "distribution",
+      "config": {
+        "graphType": "Boxplot",
+        "graphOrientation": "vertical",
+        "showBoxplotIfViolin": false,
+        "violinTrim": false,
+        "showViolinBoxplot": true,
+        "groupingFactors": [
+          "disease"
+        ],
+        "showSampleNames": false,
+        "legendColumns": 1,
+        "legendPosition": "right",
+        "legendScaleFontFactor": 0.8,
+        "colorBy": "disease",
+        "xAxis2Show": false,
+        "xAxisMinorTicks": false,
+        "segregateVariablesBy": [],
+        "sortData": [
+          [
+            "cat",
+            "smp",
+            "disease"
+          ]
+        ],
+        "theme": "GGPlot",
+        "colorScheme": "Favorite",
+        "title": false
+      }
+    },
+    "heatmap": {
+      "title": "Expression heatmap (genes \u00d7 cell lines)",
+      "dataRef": "heatmap",
+      "config": {
+        "graphType": "Heatmap",
+        "smpOverlays": [
+          "disease"
+        ],
+        "showSampleNames": false,
+        "colorBy": "disease",
+        "sortData": [
+          [
+            "cat",
+            "smp",
+            "disease"
+          ]
+        ],
+        "theme": "GGPlot",
+        "colorScheme": "Favorite",
+        "title": false
+      }
+    },
+    "correlation": {
+      "title": "Correlation scatter (X vs Y)",
+      "dataRef": "correlation",
+      "config": {
+        "graphType": "Scatter2D",
+        "dataPointSize": 9,
+        "scatterOutlineThreshold": 0,
+        "transparency": 0.5,
+        "xAxisMinorTicks": false,
+        "yAxisMinorTicks": false,
+        "colorBy": "disease",
+        "theme": "GGPlot",
+        "colorScheme": "Favorite",
+        "title": false
+      }
+    },
+    "mutations": {
+      "title": "Mutations (lollipop over gene body)",
+      "dataRef": "mutations",
+      "config": {
+        "graphType": "Genome",
+        "theme": "GGPlot",
+        "colorScheme": "Favorite",
+        "title": false
+      }
+    }
+  }
+}

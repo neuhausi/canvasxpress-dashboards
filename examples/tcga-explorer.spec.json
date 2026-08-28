@@ -1,0 +1,30 @@
+{
+  "id": "tcga-explorer",
+  "title": "TCGA Gene Explorer (live)",
+  "version": 1,
+  "broadcastGroup": "tcga-explorer",
+  "theme": "auto",
+  "params": { "gene": { "value": "TP53", "type": "string" } },
+  "layout": { "cols": 12, "rowHeight": 40, "gap": 12, "items": [
+    { "panel": "gene-control", "x": 0, "y": 0, "w": 6, "h": 1 },
+    { "panel": "distribution", "x": 0, "y": 1, "w": 12, "h": 9 },
+    { "panel": "mutations", "x": 0, "y": 10, "w": 12, "h": 13 }
+  ] },
+  "data": {
+    "genesList":    { "kind": "connector", "url": "../api/tcga", "query": { "list": "genes" }, "ttl": 600000 },
+    "distribution": { "kind": "connector", "url": "../api/tcga", "query": { "type": "violin", "search": "$gene" }, "ttl": 0 },
+    "mutations":    { "kind": "connector", "url": "../api/tcga", "query": { "mutations": "1", "search": "$gene" }, "ttl": 0 }
+  },
+  "panels": {
+    "gene-control": { "type": "control", "mode": "param", "param": "gene", "title": "Gene", "style": "search",
+      "placeholder": "gene symbol (e.g. TP53, EGFR, KRAS)", "optionsFrom": { "dataRef": "genesList", "annotation": "gene" } },
+    "distribution": { "title": "Expression by cancer type (violin + boxplot)", "dataRef": "distribution", "config": {
+      "graphType": "Boxplot", "graphOrientation": "vertical", "showBoxplotIfViolin": false, "violinTrim": false,
+      "showViolinBoxplot": true, "groupingFactors": ["abbr"], "showSampleNames": false, "colorBy": "abbr",
+      "legendColumns": 1, "legendPosition": "right", "legendScaleFontFactor": 0.6, "xAxisTitle": "log2(tpm)",
+      "xAxis2Show": false, "xAxisMinorTicks": false, "sortData": [["cat", "smp", "abbr"]],
+      "theme": "GGPlot", "colorScheme": "Favorite", "title": false } },
+    "mutations": { "title": "Mutations (lollipop over gene body)", "dataRef": "mutations", "config": {
+      "graphType": "Genome", "theme": "GGPlot", "colorScheme": "Favorite", "title": false } }
+  }
+}

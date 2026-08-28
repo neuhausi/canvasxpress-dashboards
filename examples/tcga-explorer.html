@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — 🩺 TCGA Gene Explorer</title>
+
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    header { padding: 16px 24px 8px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: #6b7280; font-size: 13px; max-width: 82ch; }
+    header code { background: #e6e9ee; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+    #status { padding: 4px 24px 12px; font-size: 12px; color: #6b7280; }
+    #dashboard { padding: 8px 24px 32px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0e1013; color: #e6e8ec; }
+      header p, #status { color: #8a9099; }
+      header code { background: #23262d; }
+    }
+    .cxd-topnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      background: #fff; border: 1px solid #e6e9ee; border-radius: 10px;
+      padding: 8px 14px; margin: 16px 24px; font-size: 13.5px; }
+    .cxd-topnav .cxd-brand { font-weight: 400; margin-right: 10px; color: #57606a; }
+    .cxd-topnav .cxd-brand b { color: #24292f; }
+    .cxd-topnav a { color: #087ad1; text-decoration: none; padding: 4px 10px; border-radius: 7px; }
+    .cxd-topnav a:hover { background: #eaf3fb; }
+    .cxd-topnav .cxd-here { margin-left: auto; color: #57606a; padding: 4px 10px;
+      background: #f2f4f7; border-radius: 7px; }
+    @media (prefers-color-scheme: dark) {
+      .cxd-topnav { background: #1b1e24; border-color: #2a2e36; }
+      .cxd-topnav .cxd-brand b { color: #e6e8ec; }
+      .cxd-topnav a:hover { background: #12283a; }
+      .cxd-topnav .cxd-here { background: #23262d; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <span class="cxd-here">🩺 TCGA Gene Explorer</span>
+  </nav>
+  <header>
+    <h1>TCGA — Gene Explorer (live)</h1>
+    <p>Pick a gene: its expression across TCGA cancer types (violin + boxplot) and its somatic mutations mapped over the gene body update live. Served live from <code>tcga.sqlite</code> via the <code>/api/tcga</code>
+       endpoint in <code>examples/dbservices.py</code> — run <code>examples/serve.py</code>
+       or <code>examples/db-adapter.py</code> (see <code>examples/DB-DASHBOARDS.md</code>).</p>
+  </header>
+  <div id="status">starting…</div>
+  <div id="dashboard"></div>
+
+  <script>
+    function setStatus(m) { document.getElementById('status').textContent = m; }
+    // Thin connector: forwards each source query to the live /api/tcga service and
+    // echoes the URL to the status line.
+    function connector(url) { setStatus('query → ' + url); return fetch(url); }
+
+    fetch('./tcga-explorer.spec.json')
+      .then(function (r) { return r.json(); })
+      .then(function (spec) {
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard', { fetch: connector, cache: new Map() });
+      })
+      .then(function (handle) {
+        return handle.ready.then(function () {
+          setStatus('Ready — change the control to re-query the database live.');
+          console.log('Rendered', handle.instances.length, 'instances in', handle.broadcastGroup);
+        });
+      })
+      .catch(function (err) { setStatus('Failed: ' + err.message); console.error(err); });
+  </script>
+</body>
+</html>

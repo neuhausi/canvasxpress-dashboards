@@ -1,0 +1,24 @@
+{
+  "id": "wp-explorer",
+  "title": "WikiPathways Explorer (live)",
+  "version": 1,
+  "broadcastGroup": "wp-explorer",
+  "theme": "auto",
+  "params": { "pathway": { "value": "PI3K-Akt signaling pathway", "type": "string" } },
+  "layout": { "cols": 12, "rowHeight": 40, "gap": 12, "items": [
+    { "panel": "pathway-control", "x": 0, "y": 0, "w": 10, "h": 1 },
+    { "panel": "members", "x": 0, "y": 1, "w": 12, "h": 10 }
+  ] },
+  "data": {
+    "pathwayList": { "kind": "connector", "url": "../api/wp", "query": { "list": "pathways" }, "ttl": 600000 },
+    "members":     { "kind": "connector", "url": "../api/wp", "query": { "pathway": "$pathway" }, "ttl": 0 }
+  },
+  "panels": {
+    "pathway-control": { "type": "control", "mode": "param", "param": "pathway", "title": "Pathway", "style": "search",
+      "placeholder": "human pathway name (e.g. PI3K-Akt signaling pathway)", "optionsFrom": { "dataRef": "pathwayList", "annotation": "pathway" } },
+    "members": { "title": "Member genes — ranked by how many pathways each belongs to (hub genes)", "dataRef": "members", "config": {
+      "graphType": "Bar", "graphOrientation": "vertical", "smpLabelRotate": 45, "showLegend": false,
+      "xAxisTitle": "Pathways containing gene", "colorScheme": "CanvasXpress", "title": false } }
+  },
+  "controls": [ { "kind": "table", "dataRef": "members", "title": "Member genes" } ]
+}

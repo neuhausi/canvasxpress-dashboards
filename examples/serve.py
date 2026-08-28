@@ -17,6 +17,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "server", "src"))
+sys.path.insert(0, HERE)  # so `import dbservices` (the /api/<db> live services) resolves
 
 
 def _load_env_file(path):
@@ -483,6 +484,27 @@ def _connector_data(source: str = ""):
     if source == "inventory":
         return JSONResponse(_query_inventory())
     return JSONResponse({"detail": "unknown source '%s'" % source}, status_code=404)
+
+
+@app.get("/api/{db}", include_in_schema=False)
+def _db_service(db: str, request: Request):
+    """Live data services for the five database dashboards (ccle / tcga / gtex /
+    gencode / wp): read the matching SQLite via examples/dbservices.py and return
+    the CanvasXpress `.data` payload each panel consumes. Reached from the pages
+    as the relative `../api/<db>` connector URL (so it resolves under whatever
+    mount prefix the app is served at)."""
+    from fastapi.responses import JSONResponse
+    import dbservices
+    if db not in ("ccle", "tcga", "gtex", "gencode", "wp"):
+        return JSONResponse({"detail": "unknown db '%s'" % db}, status_code=404)
+    qs = {k: request.query_params.getlist(k) for k in request.query_params.keys()}
+    try:
+        payload = dbservices.handle(db, qs)
+    except Exception as exc:  # noqa: BLE001 - surface DB/query errors to the client
+        return JSONResponse({"detail": str(exc)}, status_code=500)
+    if payload is None:
+        return JSONResponse({"detail": "no data for these params"}, status_code=404)
+    return JSONResponse(payload)
 
 
 @app.get("/view.html", include_in_schema=False)

@@ -1713,11 +1713,16 @@ function renderDashboard(spec, target, options) {
 
     /**
      * Build a debounced free-text search control that writes the typed value
-     * into the parameter (empty clears it). Used for `style:"search"`.
+     * into the parameter (empty clears it). Used for `style:"search"`. When
+     * `suggestions` are supplied (from the control's `optionsFrom` source), a
+     * native `<datalist>` is attached so the user gets type-ahead autocomplete
+     * and can pick a value from the dropdown — while free text is still allowed
+     * (so a value outside the suggestion list can be typed).
+     * @param {Array} [suggestions] - Candidate values for autocomplete.
      * @returns {null} Always null (a control renders no CanvasXpress instance).
      * @private
      */
-    function buildSearchWidget() {
+    function buildSearchWidget(suggestions) {
       var widget = document.createElement('div');
       widget.className = 'cxd-annctl';
       applyAlignment(cell.body, panel);
@@ -1739,6 +1744,19 @@ function renderDashboard(spec, target, options) {
         if (panel.placeholder) input.setAttribute('placeholder', panel.placeholder);
         if (paramState[panel.param] != null) input.value = String(paramState[panel.param]);
         if (panel.disabled) { input.disabled = true; input.setAttribute('disabled', 'disabled'); }
+        // Type-ahead: a <datalist> gives native autocomplete + a pick list.
+        if (suggestions && suggestions.length) {
+          var listId = makeCanvasId(spec.id, 'suggest', panel.param, 0);
+          var datalist = document.createElement('datalist');
+          datalist.id = listId;
+          for (var s = 0; s < suggestions.length; s++) {
+            var opt = document.createElement('option');
+            opt.value = String(suggestions[s]);
+            datalist.appendChild(opt);
+          }
+          input.setAttribute('list', listId);
+          widget.appendChild(datalist);
+        }
         var fire = debounce(function () {
           if (panel.disabled) return;
           var text = input.value.trim();
@@ -1755,10 +1773,25 @@ function renderDashboard(spec, target, options) {
       return null;
     }
 
-    // A free-text search param control: no choices to resolve — the typed text
-    // becomes the parameter value (debounced so each keystroke doesn't refetch).
+    // A free-text search param control. With `optionsFrom`, its candidate values
+    // are resolved from that source and offered as type-ahead autocomplete; the
+    // typed (or picked) text becomes the parameter value (debounced).
     if (isParam && panel.style === 'search') {
-      return Promise.resolve(buildSearchWidget());
+      if (!panel.optionsFrom) {
+        return Promise.resolve(buildSearchWidget());
+      }
+      var suggestComp = panel.optionsFrom.compartment || 'x';
+      var suggestAnn = panel.optionsFrom.annotation || panel.optionsFrom.field;
+      return resolveRef(panel.optionsFrom.dataRef)
+        .then(function (data) {
+          var values = annotationValues(data, suggestComp, suggestAnn);
+          if (!values.length) {
+            var other2 = suggestComp === 'x' ? 'z' : 'x';
+            values = annotationValues(data, other2, suggestAnn);
+          }
+          return buildSearchWidget(values);
+        })
+        .catch(function () { return buildSearchWidget(); });
     }
 
     // A param control with a static option list needs no data at all.

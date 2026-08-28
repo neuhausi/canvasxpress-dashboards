@@ -1,0 +1,26 @@
+{
+  "id": "gtex-explorer",
+  "title": "GTEx Gene Explorer (live)",
+  "version": 1,
+  "broadcastGroup": "gtex-explorer",
+  "theme": "auto",
+  "params": { "gene": { "value": "TP53", "type": "string" } },
+  "layout": { "cols": 12, "rowHeight": 40, "gap": 12, "items": [
+    { "panel": "gene-control", "x": 0, "y": 0, "w": 6, "h": 1 },
+    { "panel": "expression", "x": 0, "y": 1, "w": 12, "h": 12 }
+  ] },
+  "data": {
+    "genesList":  { "kind": "connector", "url": "../api/gtex", "query": { "list": "genes" }, "ttl": 600000 },
+    "expression": { "kind": "connector", "url": "../api/gtex", "query": { "type": "violin", "search": "$gene" }, "ttl": 0 }
+  },
+  "panels": {
+    "gene-control": { "type": "control", "mode": "param", "param": "gene", "title": "Gene", "style": "search",
+      "placeholder": "gene symbol (e.g. TP53, GTEX genes)", "optionsFrom": { "dataRef": "genesList", "annotation": "gene" } },
+    "expression": { "title": "Expression by tissue (violin + boxplot)", "dataRef": "expression", "config": {
+      "graphType": "Boxplot", "graphOrientation": "vertical", "showBoxplotIfViolin": false, "violinTrim": false,
+      "showViolinBoxplot": true, "groupingFactors": ["tissue"], "colorBy": "tissue", "showLegend": false,
+      "smpLabelRotate": 45, "smpLabelScaleFontFactor": 0.4, "xAxisTitle": "TPM",
+      "xAxis2Show": false, "xAxisMinorTicks": false,
+      "sortData": [["cat", "smp", "tissue"]], "theme": "GGPlot", "colorScheme": "Favorite", "title": false } }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "gencode-explorer",
+  "title": "GENCODE Genome Browser (live)",
+  "version": 2,
+  "broadcastGroup": "gencode-explorer",
+  "theme": "auto",
+  "params": { "gene": { "value": "TYK2", "type": "string" } },
+  "layout": { "cols": 12, "rowHeight": 40, "gap": 12, "items": [
+    { "panel": "gene-control", "x": 0, "y": 0, "w": 6, "h": 1 },
+    { "panel": "browser", "x": 0, "y": 1, "w": 12, "h": 13 }
+  ] },
+  "data": {
+    "genesList": { "kind": "connector", "url": "../api/gencode", "query": { "list": "genes" }, "ttl": 600000 },
+    "browser":   { "kind": "connector", "url": "../api/gencode", "query": { "gene": "$gene" }, "ttl": 0 }
+  },
+  "panels": {
+    "gene-control": { "type": "control", "mode": "param", "param": "gene", "title": "Gene", "style": "search",
+      "placeholder": "gene symbol (e.g. TYK2, TP53, BRCA1)", "optionsFrom": { "dataRef": "genesList", "annotation": "gene" } },
+    "browser": { "title": "Genome browser — transcript exon models + GWAS Catalog SNPs in the region", "dataRef": "browser", "config": {
+      "graphType": "Genome", "featureStaggered": true, "subtracksMaxDefault": 10, "dataPointSize": 6,
+      "theme": "GGPlot", "colorScheme": "Favorite", "title": false } }
+  }
+}
