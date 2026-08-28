@@ -7,15 +7,19 @@
   "params": { "pathway": { "value": "PI3K-Akt signaling pathway", "type": "string" } },
   "layout": { "cols": 12, "rowHeight": 40, "gap": 12, "items": [
     { "panel": "pathway-control", "x": 0, "y": 0, "w": 10, "h": 1 },
-    { "panel": "members", "x": 0, "y": 1, "w": 12, "h": 10 }
+    { "panel": "network", "x": 0, "y": 1, "w": 12, "h": 11 },
+    { "panel": "members", "x": 0, "y": 12, "w": 12, "h": 8 }
   ] },
   "data": {
     "pathwayList": { "kind": "connector", "url": "../api/wp", "query": { "list": "pathways" }, "ttl": 600000 },
+    "pathwayNet":  { "kind": "connector", "url": "../api/wp", "query": { "pathwayNet": "$pathway" }, "ttl": 0 },
     "members":     { "kind": "connector", "url": "../api/wp", "query": { "pathway": "$pathway" }, "ttl": 0 }
   },
   "panels": {
     "pathway-control": { "type": "control", "mode": "param", "param": "pathway", "title": "Pathway", "style": "search",
       "placeholder": "human pathway name (e.g. PI3K-Akt signaling pathway)", "optionsFrom": { "dataRef": "pathwayList", "annotation": "pathway" } },
+    "network": { "title": "Pathway diagram (WikiPathways GPML → Network)", "dataRef": "pathwayNet", "config": {
+      "graphType": "Network" } },
     "members": { "title": "Member genes — ranked by how many pathways each belongs to (hub genes)", "dataRef": "members", "config": {
       "graphType": "Bar", "graphOrientation": "vertical", "smpLabelRotate": 45, "showLegend": false,
       "xAxisTitle": "Pathways containing gene", "colorScheme": "CanvasXpress", "title": false } }

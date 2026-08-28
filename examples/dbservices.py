@@ -397,6 +397,18 @@ def _wp_explore(qs):
     if g("list") == "pathways":
         rows = c.execute("SELECT DISTINCT name FROM pathway WHERE taxName='Homo sapiens' ORDER BY name").fetchall()
         return _entity_list([r[0] for r in rows], "pathway")
+    pnet = g("pathwayNet")
+    if pnet:
+        # The pathway diagram itself: hand CanvasXpress the live WikiPathways GPML
+        # URL for this pathway's wpId (open CORS) — CX fetches+parses it into a
+        # Network (graphType:Network). The old /assets/gpml path (wp.pathway.url)
+        # and its Perl CGI are retired, so resolve via wpId to WikiPathways direct.
+        row = c.execute("SELECT wpId FROM pathway WHERE name=? AND taxName='Homo sapiens' "
+                        "AND wpId IS NOT NULL AND wpId!='' LIMIT 1", (pnet,)).fetchone()
+        if not row or not row[0]:
+            return None
+        wpid = row[0]
+        return "https://www.wikipathways.org/wikipathways-assets/pathways/%s/%s.gpml" % (wpid, wpid)
     pathway = g("pathway")
     if pathway:
         rows = c.execute(
@@ -416,7 +428,7 @@ _EXPLORE = {"tcga": _tcga_explore, "gtex": _gtex_explore,
             "gencode": _gencode_explore, "wp": _wp_explore}
 
 # Query keys that mean "this is an explorer request" (else fall back to source=).
-_EXPLORE_KEYS = ("list", "search", "mutations", "type", "trait", "pathway", "gene", "chrom")
+_EXPLORE_KEYS = ("list", "search", "mutations", "type", "trait", "pathway", "pathwayNet", "gene", "chrom")
 
 
 def handle(db, qs):

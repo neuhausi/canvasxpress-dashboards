@@ -269,11 +269,15 @@ export function renderDashboard(spec, target, options) {
    * @param {string} ref - Source ref name (may be undefined).
    * @param {object} instance - The CanvasXpress instance.
    * @param {object} [cell] - The cell wrapping the instance (for loading state).
+   * @param {function} [rebuild] - For remote (URL) sources whose data CX fetches
+   *   itself: a `function(url)` that destroys the old instance and builds a fresh
+   *   one for the new URL, returning it. `updateData` cannot re-fetch a URL, so a
+   *   refresh calls this instead. Absent for ordinary data-object panels.
    * @returns {void}
    */
-  function bind(ref, instance, cell) {
+  function bind(ref, instance, cell, rebuild) {
     if (!ref) return;
-    (refBindings[ref] || (refBindings[ref] = [])).push({ instance: instance, cell: cell });
+    (refBindings[ref] || (refBindings[ref] = [])).push({ instance: instance, cell: cell, rebuild: rebuild });
   }
 
   /**
@@ -321,7 +325,10 @@ export function renderDashboard(spec, target, options) {
         .then(function (data) {
           bound.forEach(function (b) {
             if (b.cell && b.cell.setState) b.cell.setState('ready');
-            if (b.instance && typeof b.instance.updateData === 'function') {
+            if (b.rebuild) {
+              // Remote (URL) source: rebuild the instance to reload+parse the new URL.
+              try { b.instance = b.rebuild(data); } catch (e) { /* keep others */ }
+            } else if (b.instance && typeof b.instance.updateData === 'function') {
               try { b.instance.updateData(data, true, false); } catch (e) { /* keep others */ }
             }
           });
@@ -397,6 +404,45 @@ export function renderDashboard(spec, target, options) {
 
     return resolveOwnerData(panel)
       .then(function (data) {
+        // Remote CanvasXpress source: a bare URL string (e.g. the WikiPathways
+        // Explorer's GPML). CX fetches+parses it itself (GPML → Network), so we
+        // hand the URL straight through rather than treating it as a data object.
+        // `updateData` cannot re-fetch a URL, so a param change REBUILDS the
+        // instance (destroy + new CX) via `buildRemote` — the same dance the
+        // standalone WikiPathways page did on each pathway switch.
+        if (typeof data === 'string') {
+          var remoteInstance = null;
+          var remoteObserver = null;
+          function buildRemote(url) {
+            if (remoteInstance) {
+              try { remoteInstance.destroy(false, true); } catch (e) { /* rebuild regardless */ }
+              var priorIdx = instances.indexOf(remoteInstance);
+              if (priorIdx !== -1) instances.splice(priorIdx, 1);
+            }
+            if (remoteObserver) {
+              try { remoteObserver.disconnect(); } catch (e) { /* noop */ }
+              var obsIdx = observers.indexOf(remoteObserver);
+              if (obsIdx !== -1) observers.splice(obsIdx, 1);
+              remoteObserver = null;
+            }
+            sizeCanvasToCell(cell, canvasInset);
+            var remoteConfig = mergeConfig(panel && panel.config, broadcastGroup, panel);
+            applyDashboardChartStyle(remoteConfig, spec);
+            remoteInstance = new CX(canvasId, url, remoteConfig, paramClickEvents(panel));
+            instances.push(remoteInstance);
+            if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = remoteInstance;
+            if (autoResize) {
+              observeResize(cell, remoteInstance, observers, canvasInset);
+              remoteObserver = observers[observers.length - 1];
+            }
+            return remoteInstance;
+          }
+          buildRemote(data);
+          bind(panel && panel.dataRef, remoteInstance, cell, buildRemote);
+          cell.setState('ready');
+          notify(remoteInstance, 'ready');
+          return remoteInstance;
+        }
         data = projectMeasures(data, panel && panel.measures);
         if (isEmptyData(data)) { cell.setState('empty'); notify(null, 'empty'); return null; }
         sizeCanvasToCell(cell, canvasInset);
@@ -604,6 +650,13 @@ export function renderDashboard(spec, target, options) {
         }, panel.debounce != null ? panel.debounce : 250);
         listen(input, 'input', fire);
         listen(input, 'change', fire);
+        // ESC in a native type=search clears the field, which would blank the
+        // param and tear down its bound viz — and it would also bubble to the
+        // dashboard-wide Escape reset. Neither is wanted here: swallow ESC so the
+        // current entry (and its visualization) survives.
+        listen(input, 'keydown', function (ev) {
+          if (ev.key === 'Escape' || ev.keyCode === 27) { ev.preventDefault(); ev.stopPropagation(); }
+        });
         widget.appendChild(input);
         if (panel.disabled) disableControlInput(widget, input, panel);
       }
@@ -856,6 +909,10 @@ function scheduleRefreshes(spec, store, refBindings, timers, CX) {
       store.resolve(ref, source, { force: true }).then(function (data) {
         var bound = refBindings[ref] || [];
         bound.forEach(function (binding) {
+          if (binding.rebuild) {
+            try { binding.instance = binding.rebuild(data); } catch (e) { /* keep polling */ }
+            return;
+          }
           var instance = binding.instance;
           if (instance && typeof instance.updateData === 'function') {
             try { instance.updateData(data, true, false); } catch (e) { /* keep polling */ }
