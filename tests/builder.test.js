@@ -121,6 +121,29 @@ test('adding a panel renders a live cell with a ⚙ customize icon', async funct
   assert.ok(tools.indexOf('×') !== -1, 'delete icon present');
 });
 
+test('adding an image element renders a placeholder cell (no ⚙) and image props', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var calls = [];
+  var builder = createBuilder(container, {
+    spec: setDataSource(blankSpec('d1'), 'sample', DATA),
+    CanvasXpress: makeCX(calls)
+  });
+
+  builder.addPanel({ id: 'im1', type: 'image', src: '', fit: 'contain' });
+  await builder.whenReady();
+
+  var panel = builder.getSpec().panels.im1;
+  assert.equal(panel.type, 'image', 'image panel in spec');
+  assert.equal(calls.length, 0, 'no CanvasXpress instance for an image');
+  assert.ok(container.querySelector('.cxd-image-cell'), 'image cell rendered');
+  assert.ok(container.querySelector('.cxd-image-ph'), 'empty src shows a placeholder');
+  var tools = [].map.call(container.querySelectorAll('.cxb-tool'), function (t) { return t.textContent; });
+  assert.ok(tools.indexOf('⚙') === -1, 'no customize icon on an image');
+  assert.ok(tools.indexOf('×') !== -1, 'delete icon present');
+  assert.ok(container.querySelector('.cxb-resize'), 'resize handle present (image is resizable)');
+});
+
 test('adding a panel is incremental — existing instances are not recreated or destroyed', async function () {
   installDom();
   var container = document.createElement('div');

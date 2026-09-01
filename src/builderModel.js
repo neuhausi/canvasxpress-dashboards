@@ -50,6 +50,15 @@ export function addPanel(spec, panel) {
       title: panel.title || '',
       text: panel.text || ''
     };
+  } else if (panel.type === 'image') {
+    // An image element: a picture (URL or data: URI), scaled per `fit`. No data.
+    next.panels[panel.id] = {
+      type: 'image',
+      title: panel.title || '',
+      src: panel.src || '',
+      fit: panel.fit || 'contain',
+      alt: panel.alt || ''
+    };
   } else if (panel.type === 'control') {
     // An annotation-filter control: one annotation of one dataset, broadcast
     // to every instance in the dashboard's coordination domain.
@@ -251,7 +260,8 @@ export function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'dataRef')) panel.dataRef = changes.dataRef;
   if (Object.prototype.hasOwnProperty.call(changes, 'config')) panel.config = changes.config;
   if (Object.prototype.hasOwnProperty.call(changes, 'text')) panel.text = changes.text;
-  ['compartment', 'annotation', 'style', 'align', 'valign', 'mode', 'param', 'placeholder', 'debounce'].forEach(function (key) {
+  ['compartment', 'annotation', 'style', 'align', 'valign', 'mode', 'param', 'placeholder', 'debounce',
+    'src', 'fit', 'alt', 'href'].forEach(function (key) {
     if (Object.prototype.hasOwnProperty.call(changes, key)) panel[key] = changes[key];
   });
   // Param-control choice sources are mutually exclusive: setting one clears the

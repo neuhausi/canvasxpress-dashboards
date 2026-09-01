@@ -107,6 +107,34 @@ test('a text panel needs no dataRef or inline data', function () {
   assert.equal(res.valid, true, JSON.stringify(res.errors));
 });
 
+test('an image panel needs no data; empty src is valid; fit is validated', function () {
+  var ok = {
+    id: 'd1', title: 'D',
+    layout: { cols: 12, items: [
+      { panel: 'logo', x: 0, y: 0, w: 4, h: 4 },
+      { panel: 'blank', x: 4, y: 0, w: 4, h: 4 }
+    ] },
+    panels: {
+      logo: { type: 'image', src: 'https://example.com/a.png', fit: 'cover', alt: 'Logo' },
+      blank: { type: 'image', src: '' }   // empty src → placeholder, still valid
+    },
+    data: {}
+  };
+  var r1 = validateSpec(ok);
+  assert.equal(r1.valid, true, JSON.stringify(r1.errors));
+
+  var bad = {
+    id: 'd1',
+    layout: { cols: 12, items: [{ panel: 'im', x: 0, y: 0, w: 4, h: 4 }] },
+    panels: { im: { type: 'image', src: 42, fit: 'squish' } },
+    data: {}
+  };
+  var r2 = validateSpec(bad);
+  assert.equal(r2.valid, false);
+  assert.ok(r2.errors.some(function (e) { return e.includes('.src must be a string'); }));
+  assert.ok(r2.errors.some(function (e) { return e.includes('.fit must be'); }));
+});
+
 test('a valid control panel passes', function () {
   var spec = {
     id: 'd1',
@@ -196,4 +224,54 @@ test('flags a bad control mode', function () {
   var res = validateSpec(spec);
   assert.equal(res.valid, false);
   assert.ok(res.errors.some(function (e) { return e.includes('.mode must be'); }));
+});
+
+test('accepts a config control (slider) driving a target panel — no data needed', function () {
+  var spec = {
+    id: 'wall',
+    layout: { cols: 12, items: [
+      { panel: 'exp', x: 0, y: 0, w: 8, h: 1 },
+      { panel: 'g', x: 0, y: 1, w: 12, h: 8 }
+    ] },
+    data: { prices: { kind: 'inline', value: { y: {} } } },
+    panels: {
+      exp: { type: 'control', mode: 'config', target: 'g', style: 'slider', value: 'a',
+        options: [
+          { label: 'A', value: 'a', config: { optionsWallExpiry: 'a' } },
+          { label: 'B', value: 'b', config: { optionsWallExpiry: 'b' } }
+        ] },
+      g: { dataRef: 'prices', config: { graphType: 'OptionsWall' } }
+    }
+  };
+  var res = validateSpec(spec);
+  assert.equal(res.valid, true, JSON.stringify(res.errors));
+});
+
+test('flags a config control with an unknown target and a bad option', function () {
+  var spec = {
+    id: 'wall',
+    layout: { cols: 12, items: [{ panel: 'm', x: 0, y: 0, w: 4, h: 1 }] },
+    data: {},
+    panels: {
+      m: { type: 'control', mode: 'config', target: 'ghost', style: 'buttons',
+        options: [{ label: 'IV', value: 'iv' }] }   // missing config fragment
+    }
+  };
+  var res = validateSpec(spec);
+  assert.equal(res.valid, false);
+  assert.ok(res.errors.some(function (e) { return e.includes('.target "ghost"'); }));
+  assert.ok(res.errors.some(function (e) { return e.includes('must be an object with a config fragment'); }));
+});
+
+test('flags a config control missing target and options', function () {
+  var spec = {
+    id: 'wall',
+    layout: { cols: 12, items: [{ panel: 'm', x: 0, y: 0, w: 4, h: 1 }] },
+    data: {},
+    panels: { m: { type: 'control', mode: 'config' } }
+  };
+  var res = validateSpec(spec);
+  assert.equal(res.valid, false);
+  assert.ok(res.errors.some(function (e) { return e.includes('requires a target panel id'); }));
+  assert.ok(res.errors.some(function (e) { return e.includes('requires a non-empty options array'); }));
 });

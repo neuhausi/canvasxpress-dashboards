@@ -27,6 +27,14 @@ export var dashboardCss = [
   // Text elements are chrome-free by default (no border/background) so they sit
   // on the dashboard background; an explicit panel.bg fills the cell instead.
   '.cxd-text-cell { border: none; background: transparent; z-index: 2; }',
+  // Image elements: the picture fills the cell and scales via object-fit; the
+  // cell is chrome-free like text. It resizes with the cell (its grid span).
+  '.cxd-image-cell { border: none; background: transparent; z-index: 2; overflow: hidden; }',
+  '.cxd-image { display: block; width: 100%; height: 100%; object-fit: contain; }',
+  '.cxd-image-link { display: block; width: 100%; height: 100%; }',
+  '.cxd-image-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;',
+  '  padding: 8px; text-align: center; box-sizing: border-box; color: var(--cxd-muted, #8a9099);',
+  '  font: 13px/1.4 system-ui, sans-serif; border: 1px dashed var(--cxd-border, #d0d4da); border-radius: 8px; }',
   // Annotation-filter controls float free like text: a chrome-less cell holding
   // a compact pill widget, so it reads cleanly when overlapping a graph.
   // Free-floating cells (text/control) stack ABOVE solid panels (z-index) —
@@ -53,6 +61,20 @@ export var dashboardCss = [
   '.cxd-annctl-segbtn:last-child { border-right: none; }',
   '.cxd-annctl-segbtn:hover { background: rgba(0,0,0,.06); }',
   '.cxd-annctl-segbtn.cxd-annctl-on { background: #2f6feb; color: #fff; }',
+  /* config-control slider. canvasXpress.css (15-range-slider.css) styles EVERY
+     input[type=range] absolute/invisible with a red-square thumb for its
+     dual-thumb widget — and its `input[type=range]::...` selectors outrank a bare
+     `.cxd-slider::...`. Qualify ours with input[type=range] to win the cascade
+     and force the slider visible + interactive. */
+  'input[type=range].cxd-slider { position: static !important; pointer-events: auto !important; opacity: 1 !important;',
+  '  -webkit-appearance: none; appearance: none; width: 220px; max-width: 46vw; height: 20px;',
+  '  background: transparent; cursor: pointer; vertical-align: middle; z-index: auto; }',
+  'input[type=range].cxd-slider::-webkit-slider-runnable-track { height: 5px; border-radius: 3px; background: var(--cxd-ctrl-border,#cfd6e4); }',
+  'input[type=range].cxd-slider::-moz-range-track { height: 5px; border-radius: 3px; background: var(--cxd-ctrl-border,#cfd6e4); }',
+  'input[type=range].cxd-slider::-webkit-slider-thumb { pointer-events: all; -webkit-appearance: none; appearance: none; margin-top: -6px;',
+  '  width: 16px; height: 16px; border-radius: 50%; background: #2f6feb; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); }',
+  'input[type=range].cxd-slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #2f6feb; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); }',
+  '.cxd-slider-readout { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 120px; white-space: nowrap; }',
   /* when panels reserve a canvas margin, centre the (smaller) graph in the cell */
   '.cxd-inset .cxd-panel-body { display: flex; align-items: center; justify-content: center; }',
   '.cxd-canvas { display: block; width: 100%; height: 100%; }',

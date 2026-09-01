@@ -171,13 +171,31 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["text", "control"],
-          "description": "Panel variant: absent = graph; 'text' = free-form text; 'control' = annotation-filter widget. Text and control panels float free (may overlap graph panels)."
+          "enum": ["text", "control", "image"],
+          "description": "Panel variant: absent = graph; 'text' = free-form text; 'control' = annotation-filter widget; 'image' = a picture (URL or data: URI). Text and control panels float free (may overlap graph panels)."
         },
         "title": { "type": "string" },
         "dataRef": { "type": "string" },
         "data": { "type": "object" },
         "config": { "type": "object" },
+        "src": {
+          "type": "string",
+          "description": "Image panels: the picture's URL or a data: URI. Empty renders a placeholder."
+        },
+        "fit": {
+          "type": "string",
+          "enum": ["contain", "cover", "fill", "none", "scale-down"],
+          "default": "contain",
+          "description": "Image panels: CSS object-fit — how the picture scales within its (resizable) cell. 'contain' fits whole; 'cover' fills and crops."
+        },
+        "alt": {
+          "type": "string",
+          "description": "Image panels: alternative text for accessibility."
+        },
+        "href": {
+          "type": "string",
+          "description": "Image panels: optional link opened in a new tab when the image is clicked (http/https/mailto/tel or relative; unsafe schemes are dropped)."
+        },
         "compartment": {
           "type": "string",
           "enum": ["x", "z"],
@@ -190,18 +208,35 @@
         },
         "mode": {
           "type": "string",
-          "enum": ["filter", "param"],
+          "enum": ["filter", "param", "config"],
           "default": "filter",
-          "description": "Control panels: 'filter' (default) filters the data already on the page; 'param' writes a dashboard parameter (see spec.params) so sources consuming it re-query the backend and bound panels live-update."
+          "description": "Control panels: 'filter' (default) filters the data already on the page; 'param' writes a dashboard parameter (see spec.params) so sources consuming it re-query the backend and bound panels live-update; 'config' drives a target panel's live config via updateConfig — each option carries a config fragment, and controls targeting the same panel merge their current fragments."
         },
         "param": {
           "type": "string",
           "description": "Control panels (mode:'param'): the spec.params name this control writes. 'All' clears it (null), widening the query."
         },
+        "target": {
+          "type": "string",
+          "description": "Control panels (mode:'config'): the panel id whose config this control drives (updateConfig)."
+        },
         "options": {
           "type": "array",
-          "items": { "type": ["string", "number", "boolean"] },
-          "description": "Control panels (mode:'param'): a static list of choices (an 'All' entry is prepended automatically). When present, the control needs no data of its own."
+          "description": "Control panels: choices. For mode:'param', a static list of primitives (an 'All' entry is prepended automatically). For mode:'config', an array of {label, value, config} objects whose 'config' fragment is applied to the target panel when chosen. Either way the control needs no data of its own.",
+          "items": {
+            "oneOf": [
+              { "type": ["string", "number", "boolean"] },
+              {
+                "type": "object",
+                "properties": {
+                  "label": { "type": ["string", "number"] },
+                  "value": {},
+                  "config": { "type": "object" }
+                },
+                "required": ["config"]
+              }
+            ]
+          }
         },
         "optionsFrom": {
           "type": "object",
@@ -222,9 +257,9 @@
         },
         "style": {
           "type": "string",
-          "enum": ["auto", "dropdown", "radio", "buttons", "search"],
+          "enum": ["auto", "dropdown", "radio", "buttons", "search", "slider"],
           "default": "auto",
-          "description": "Control panels: widget rendering. 'auto' picks buttons for ≤4 values, a dropdown above that. 'search' (param controls) is a debounced free-text box whose value becomes the parameter."
+          "description": "Control panels: widget rendering. 'auto' picks buttons for ≤4 values, a dropdown above that. 'search' (param controls) is a debounced free-text box whose value becomes the parameter. 'slider' (config controls) is an ordered range over the options."
         },
         "placeholder": {
           "type": "string",

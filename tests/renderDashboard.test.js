@@ -120,7 +120,31 @@ test('background + image + gap padding are applied to the whole container', asyn
   await handle.ready;
   assert.equal(container.style.backgroundColor, '#123456');
   assert.match(container.style.backgroundImage, /url\("https:\/\/x\/i\.png"\)/);
+  assert.equal(container.style.backgroundSize, 'cover', 'image covers (fills) without changing aspect ratio');
   assert.equal(container.style.padding, '16px', 'gap becomes an even background margin around the grid');
+  // The backdrop fills the available vertical space instead of collapsing to the
+  // panels' height (no explicit height set).
+  assert.match(container.style.minHeight, /^calc\(100vh - \d+px\)$/, 'background stretches to the viewport bottom');
+});
+
+test('a background image without an explicit height stretches to fill; an explicit height wins', async function () {
+  var base = {
+    id: 'bgh',
+    backgroundImage: 'https://x/i.png',
+    layout: { items: [{ panel: 'p', x: 0, y: 0, w: 6, h: 3 }] },
+    data: { s: { kind: 'inline', value: { y: { vars: ['A'], smps: ['a'], data: [[1]] } } } },
+    panels: { p: { dataRef: 's', config: { graphType: 'Bar' } } }
+  };
+  var auto = document.createElement('div');
+  var h1 = await renderDashboard(base, auto, { CanvasXpress: CanvasXpressStub });
+  await h1.ready;
+  assert.match(auto.style.minHeight, /^calc\(100vh - \d+px\)$/, 'auto height → fill vertical space');
+
+  var fixed = document.createElement('div');
+  var h2 = await renderDashboard(Object.assign({ height: 500 }, base), fixed, { CanvasXpress: CanvasXpressStub });
+  await h2.ready;
+  assert.equal(fixed.style.height, '500px');
+  assert.equal(fixed.style.minHeight, '', 'an explicit height suppresses the fill min-height');
 });
 
 test('explicit width/height are applied (px) and enable scroll; unset fills', async function () {

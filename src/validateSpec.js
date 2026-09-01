@@ -84,19 +84,51 @@ export function validateSpec(spec) {
       // from the data requirement.
       var paramWithOptions = panel.type === 'control' && panel.mode === 'param' &&
         (Array.isArray(panel.options) || panel.optionsFrom != null || panel.style === 'search');
-      if (panel.type !== 'text' && !paramWithOptions && panel.dataRef == null && panel.data == null) {
+      // A config control drives a target panel's config from its own static
+      // option list, so it too needs no data of its own.
+      var isConfigControl = panel.type === 'control' && panel.mode === 'config';
+      if (panel.type !== 'text' && panel.type !== 'image' && !paramWithOptions && !isConfigControl &&
+          panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
+      }
+      if (panel.type === 'image') {
+        // src is optional (an empty image renders a placeholder, like empty text),
+        // but when present it must be a string.
+        if (panel.src != null && typeof panel.src !== 'string') {
+          errors.push(at + '.src must be a string (URL or data: URI)');
+        }
+        if (panel.fit != null &&
+            ['contain', 'cover', 'fill', 'none', 'scale-down'].indexOf(panel.fit) === -1) {
+          errors.push(at + '.fit must be "contain", "cover", "fill", "none", or "scale-down"');
+        }
       }
       if (panel.type === 'control') {
         if (panel.compartment != null && panel.compartment !== 'x' && panel.compartment !== 'z') {
           errors.push(at + '.compartment must be "x" (samples) or "z" (variables)');
         }
         if (panel.style != null &&
-            ['auto', 'dropdown', 'radio', 'buttons', 'search'].indexOf(panel.style) === -1) {
-          errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", or "search"');
+            ['auto', 'dropdown', 'radio', 'buttons', 'search', 'slider'].indexOf(panel.style) === -1) {
+          errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", "search", or "slider"');
         }
-        if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param') {
-          errors.push(at + '.mode must be "filter" or "param"');
+        if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param' && panel.mode !== 'config') {
+          errors.push(at + '.mode must be "filter", "param", or "config"');
+        }
+        if (panel.mode === 'config') {
+          if (typeof panel.target !== 'string' || panel.target.length === 0) {
+            errors.push(at + ' of mode "config" requires a target panel id string');
+          } else if (spec.panels == null || !hasOwn(spec.panels, panel.target)) {
+            errors.push(at + '.target "' + panel.target + '" has no matching entry in spec.panels');
+          }
+          if (!Array.isArray(panel.options) || panel.options.length === 0) {
+            errors.push(at + ' of mode "config" requires a non-empty options array');
+          } else {
+            panel.options.forEach(function (opt, oi) {
+              if (opt == null || typeof opt !== 'object' || Array.isArray(opt) ||
+                  opt.config == null || typeof opt.config !== 'object') {
+                errors.push(at + '.options[' + oi + '] must be an object with a config fragment');
+              }
+            });
+          }
         }
         if (panel.mode === 'param') {
           if (typeof panel.param !== 'string' || panel.param.length === 0) {

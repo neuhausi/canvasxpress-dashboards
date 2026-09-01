@@ -147,6 +147,22 @@ no wrapper API.
       "compartment": "x", "annotation": "Tissue", "style": "auto" }
   }
   ```
+- **Image elements**: a panel with `"type": "image"` shows a picture (an external
+  URL or an embedded `data:` URI) instead of a graph — for a logo, a legend, a
+  screenshot, an annotation. It **resizes with its cell** (drag the cell's resize
+  handle, like any panel) and scales via `fit` (CSS object-fit: `contain` |
+  `cover` | `fill` | `none` | `scale-down`); `align`/`valign` pin a `cover`/`none`
+  image, and an optional `href` makes it a link. In the builder, **+ Image** adds
+  one and the props toolbar takes a URL or an **Upload** (which embeds the file as
+  a `data:` URI so the dashboard stays self-contained). An empty `src` renders a
+  placeholder.
+
+  ```jsonc
+  "panels": {
+    "logo": { "type": "image", "src": "https://example.com/logo.png",
+      "fit": "contain", "alt": "Company logo", "href": "https://example.com" }
+  }
+  ```
 - **Live-data controls**: a control with `"mode": "param"` *re-queries a data
   source* and refreshes the bound panels, instead of filtering what's already on
   the page — the control writes a dashboard **parameter** (`spec.params`) that a
@@ -161,6 +177,29 @@ no wrapper API.
   "panels": {
     "pick": { "type": "control", "mode": "param", "param": "region",
               "options": ["EMEA", "APAC", "AMER"] }
+  }
+  ```
+- **Config controls**: a control with `"mode": "config"` drives a **target
+  panel's live config** via `updateConfig` — instead of filtering data or
+  re-querying, each option carries a `config` fragment that is applied to the
+  target when chosen. Styles include a new `"slider"` (an ordered range over the
+  options) alongside `buttons`/`dropdown`. Several config controls can target the
+  same panel and their current fragments merge, so independent controls compose
+  (e.g. an expiry slider + an IV/Premium metric toggle over one chart — see the
+  `options-wall` example). The initial UI position comes from `value` and is not
+  applied on load (the target already carries the matching config from the spec).
+
+  ```jsonc
+  "panels": {
+    "wall":   { "dataRef": "prices", "config": { "graphType": "OptionsWall" } },
+    "expiry": { "type": "control", "mode": "config", "target": "wall",
+                "style": "slider", "value": "2026-09-04",
+                "options": [
+                  { "label": "Sep 4",  "value": "2026-09-04",
+                    "config": { "optionsWallExpiry": "2026-09-04", "optionsWallChain": {} } },
+                  { "label": "Sep 11", "value": "2026-09-11",
+                    "config": { "optionsWallExpiry": "2026-09-11", "optionsWallChain": {} } }
+                ] }
   }
   ```
 - The spec is **forward-compatible**: unknown fields are ignored; `version` gates

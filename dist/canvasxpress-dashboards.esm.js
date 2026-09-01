@@ -29,6 +29,14 @@ var dashboardCss = [
   // Text elements are chrome-free by default (no border/background) so they sit
   // on the dashboard background; an explicit panel.bg fills the cell instead.
   '.cxd-text-cell { border: none; background: transparent; z-index: 2; }',
+  // Image elements: the picture fills the cell and scales via object-fit; the
+  // cell is chrome-free like text. It resizes with the cell (its grid span).
+  '.cxd-image-cell { border: none; background: transparent; z-index: 2; overflow: hidden; }',
+  '.cxd-image { display: block; width: 100%; height: 100%; object-fit: contain; }',
+  '.cxd-image-link { display: block; width: 100%; height: 100%; }',
+  '.cxd-image-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;',
+  '  padding: 8px; text-align: center; box-sizing: border-box; color: var(--cxd-muted, #8a9099);',
+  '  font: 13px/1.4 system-ui, sans-serif; border: 1px dashed var(--cxd-border, #d0d4da); border-radius: 8px; }',
   // Annotation-filter controls float free like text: a chrome-less cell holding
   // a compact pill widget, so it reads cleanly when overlapping a graph.
   // Free-floating cells (text/control) stack ABOVE solid panels (z-index) —
@@ -55,6 +63,20 @@ var dashboardCss = [
   '.cxd-annctl-segbtn:last-child { border-right: none; }',
   '.cxd-annctl-segbtn:hover { background: rgba(0,0,0,.06); }',
   '.cxd-annctl-segbtn.cxd-annctl-on { background: #2f6feb; color: #fff; }',
+  /* config-control slider. canvasXpress.css (15-range-slider.css) styles EVERY
+     input[type=range] absolute/invisible with a red-square thumb for its
+     dual-thumb widget — and its `input[type=range]::...` selectors outrank a bare
+     `.cxd-slider::...`. Qualify ours with input[type=range] to win the cascade
+     and force the slider visible + interactive. */
+  'input[type=range].cxd-slider { position: static !important; pointer-events: auto !important; opacity: 1 !important;',
+  '  -webkit-appearance: none; appearance: none; width: 220px; max-width: 46vw; height: 20px;',
+  '  background: transparent; cursor: pointer; vertical-align: middle; z-index: auto; }',
+  'input[type=range].cxd-slider::-webkit-slider-runnable-track { height: 5px; border-radius: 3px; background: var(--cxd-ctrl-border,#cfd6e4); }',
+  'input[type=range].cxd-slider::-moz-range-track { height: 5px; border-radius: 3px; background: var(--cxd-ctrl-border,#cfd6e4); }',
+  'input[type=range].cxd-slider::-webkit-slider-thumb { pointer-events: all; -webkit-appearance: none; appearance: none; margin-top: -6px;',
+  '  width: 16px; height: 16px; border-radius: 50%; background: #2f6feb; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); }',
+  'input[type=range].cxd-slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #2f6feb; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); }',
+  '.cxd-slider-readout { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 120px; white-space: nowrap; }',
   /* when panels reserve a canvas margin, centre the (smaller) graph in the cell */
   '.cxd-inset .cxd-panel-body { display: flex; align-items: center; justify-content: center; }',
   '.cxd-canvas { display: block; width: 100%; height: 100%; }',
@@ -1002,19 +1024,51 @@ function validateSpec(spec) {
       // from the data requirement.
       var paramWithOptions = panel.type === 'control' && panel.mode === 'param' &&
         (Array.isArray(panel.options) || panel.optionsFrom != null || panel.style === 'search');
-      if (panel.type !== 'text' && !paramWithOptions && panel.dataRef == null && panel.data == null) {
+      // A config control drives a target panel's config from its own static
+      // option list, so it too needs no data of its own.
+      var isConfigControl = panel.type === 'control' && panel.mode === 'config';
+      if (panel.type !== 'text' && panel.type !== 'image' && !paramWithOptions && !isConfigControl &&
+          panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
+      }
+      if (panel.type === 'image') {
+        // src is optional (an empty image renders a placeholder, like empty text),
+        // but when present it must be a string.
+        if (panel.src != null && typeof panel.src !== 'string') {
+          errors.push(at + '.src must be a string (URL or data: URI)');
+        }
+        if (panel.fit != null &&
+            ['contain', 'cover', 'fill', 'none', 'scale-down'].indexOf(panel.fit) === -1) {
+          errors.push(at + '.fit must be "contain", "cover", "fill", "none", or "scale-down"');
+        }
       }
       if (panel.type === 'control') {
         if (panel.compartment != null && panel.compartment !== 'x' && panel.compartment !== 'z') {
           errors.push(at + '.compartment must be "x" (samples) or "z" (variables)');
         }
         if (panel.style != null &&
-            ['auto', 'dropdown', 'radio', 'buttons', 'search'].indexOf(panel.style) === -1) {
-          errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", or "search"');
+            ['auto', 'dropdown', 'radio', 'buttons', 'search', 'slider'].indexOf(panel.style) === -1) {
+          errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", "search", or "slider"');
         }
-        if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param') {
-          errors.push(at + '.mode must be "filter" or "param"');
+        if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param' && panel.mode !== 'config') {
+          errors.push(at + '.mode must be "filter", "param", or "config"');
+        }
+        if (panel.mode === 'config') {
+          if (typeof panel.target !== 'string' || panel.target.length === 0) {
+            errors.push(at + ' of mode "config" requires a target panel id string');
+          } else if (spec.panels == null || !hasOwn(spec.panels, panel.target)) {
+            errors.push(at + '.target "' + panel.target + '" has no matching entry in spec.panels');
+          }
+          if (!Array.isArray(panel.options) || panel.options.length === 0) {
+            errors.push(at + ' of mode "config" requires a non-empty options array');
+          } else {
+            panel.options.forEach(function (opt, oi) {
+              if (opt == null || typeof opt !== 'object' || Array.isArray(opt) ||
+                  opt.config == null || typeof opt.config !== 'object') {
+                errors.push(at + '.options[' + oi + '] must be an object with a config fragment');
+              }
+            });
+          }
         }
         if (panel.mode === 'param') {
           if (typeof panel.param !== 'string' || panel.param.length === 0) {
@@ -1271,6 +1325,13 @@ function renderDashboard(spec, target, options) {
   // controls combine; "All" in any control clears everything.
   var controlWidgets = [];
 
+  // Config controls (mode:"config") drive a TARGET panel's live config via
+  // updateConfig — not a data filter. Several config controls can target the
+  // same panel (e.g. an expiry slider + an IV/Premium metric toggle); on any
+  // change their current config fragments are merged (in registration order)
+  // and applied together, so independent controls compose. Keyed by target id.
+  var configControlsByTarget = {};
+
   // Live dashboard parameter values, seeded from spec.params. A mode:"param"
   // control writes one of these; sources whose `query` references `$<name>`
   // read them, so changing a control re-queries the backend and live-updates
@@ -1524,7 +1585,7 @@ function renderDashboard(spec, target, options) {
     // Text/control elements never show a title bar (a control carries its own
     // inline label); graph panels can opt out via hideTitle.
     var showTitle = panel && panel.type !== 'text' && panel.type !== 'control' &&
-      !panel.hideTitle && panel.title;
+      panel.type !== 'image' && !panel.hideTitle && panel.title;
     var cell = buildCell(showTitle ? panel.title : null);
     placeCell(cell.root, item);
     grid.appendChild(cell.root);
@@ -1533,6 +1594,12 @@ function renderDashboard(spec, target, options) {
     // Text elements carry free-form text instead of a graph — no data or canvas.
     if (panel && panel.type === 'text') {
       renderTextPanel(cell, item, panel);
+      return Promise.resolve(null);
+    }
+
+    // Image elements carry a picture (URL or data: URI) instead of a graph.
+    if (panel && panel.type === 'image') {
+      renderImagePanel(cell, item, panel);
       return Promise.resolve(null);
     }
 
@@ -1657,6 +1724,68 @@ function renderDashboard(spec, target, options) {
   }
 
   /**
+   * Render an image element into a cell (no data / canvas). The picture fills the
+   * cell and is scaled per `fit` (contain | cover | fill | none — CSS object-fit);
+   * `align`/`valign` set object-position, so a `cover`/`none` image can be pinned
+   * to an edge. An optional `href` wraps the image in a new-tab link (only safe
+   * http/https/relative/mailto schemes; a `javascript:`/`data:` href is dropped).
+   * The image itself resizes with the cell — the builder's resize handle changes
+   * the cell's grid span like any other panel. An empty `src` renders a
+   * placeholder so a freshly added image is visible and selectable.
+   *
+   * @param {object} cell - A cell from {@link buildCell}.
+   * @param {object} item - The layout item.
+   * @param {object} panel - The image panel (`{type:'image', src, fit, alt, href, bg}`).
+   * @returns {void}
+   * @private
+   */
+  function renderImagePanel(cell, item, panel) {
+    cell.canvas.style.display = 'none';
+    cell.root.classList.add('cxd-image-cell');
+    if (panel && panel.bg) cell.root.style.background = panel.bg;
+
+    var src = (panel && panel.src) || '';
+    if (!src) {
+      cell.root.classList.add('cxd-image-empty');
+      var placeholder = document.createElement('div');
+      placeholder.className = 'cxd-image-ph';
+      placeholder.textContent = 'No image — set a URL or upload a file';
+      cell.body.appendChild(placeholder);
+    } else {
+      var img = document.createElement('img');
+      img.className = 'cxd-image';
+      img.style.objectFit = imageFit(panel && panel.fit);
+      if (panel && panel.alt != null) img.alt = String(panel.alt);
+      if (panel && (panel.align || panel.valign)) {
+        var hx = { left: 'left', center: 'center', right: 'right' }[panel.align] || 'center';
+        var vy = { top: 'top', middle: 'center', bottom: 'bottom' }[panel.valign] || 'center';
+        img.style.objectPosition = hx + ' ' + vy;
+      }
+      img.src = src;
+      var host = img;
+      var safeHref = panel && panel.href ? safeUrl(panel.href) : '';
+      if (safeHref) {
+        var link = document.createElement('a');
+        link.className = 'cxd-image-link';
+        link.href = safeHref;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.appendChild(img);
+        host = link;
+      }
+      cell.body.appendChild(host);
+    }
+
+    cell.setState('ready');
+    if (typeof options.onPanelRendered === 'function') {
+      options.onPanelRendered({
+        panelId: item.panel, item: item, cell: cell.root,
+        canvas: cell.canvas, body: cell.body, instance: null, type: 'image'
+      });
+    }
+  }
+
+  /**
    * Render an annotation-filter control panel: native inputs (dropdown / radio /
    * segmented buttons) whose entries are the unique values of one annotation of
    * the bound dataset. Choosing a value FILTERS the data: it calls
@@ -1689,6 +1818,12 @@ function renderDashboard(spec, target, options) {
     // case the spec's stored value (or its 'x' default) doesn't match the data.
     var comp = panel.compartment || 'x';
     var isParam = panel.mode === 'param';
+
+    // A config control drives a target panel's config (updateConfig), not a data
+    // filter — it needs no data of its own, so short-circuit here.
+    if (panel.mode === 'config') {
+      return Promise.resolve(buildConfigControl(cell, item, panel, notify));
+    }
 
     /**
      * Build the control's DOM from a list of choices and wire its change handler
@@ -1874,6 +2009,133 @@ function renderDashboard(spec, target, options) {
         notify('error');
         return null;
       });
+  }
+
+  /**
+   * Render a config control (`mode:"config"`): a native input whose options each
+   * carry a config fragment. Changing the selection merges the current fragment
+   * from every config control targeting the same panel and calls `updateConfig`
+   * on that panel's live instance. Styles: `slider` (an ordered range over the
+   * options), `buttons` (a segmented toggle), or `dropdown`. The initial UI
+   * position comes from `panel.value` (an option `value` or a 0-based index) and
+   * is NOT applied on load — the target panel already carries the matching config
+   * from the spec, so applying only happens on user change.
+   *
+   * @param {object} cell - The cell from {@link buildCell}.
+   * @param {object} item - The layout item.
+   * @param {object} panel - The control panel (`{mode:'config', target, options,
+   *   style, value, title}`).
+   * @param {function} notify - renderControlWidget's onPanelRendered notifier.
+   * @returns {null} Always null (a control renders no CanvasXpress instance).
+   * @private
+   */
+  function buildConfigControl(cell, item, panel, notify) {
+    var options = panel.options || [];
+    var target = panel.target;
+    var entry = { current: {} };
+    if (!configControlsByTarget[target]) configControlsByTarget[target] = [];
+    configControlsByTarget[target].push(entry);
+
+    // Resolve the initial option: match panel.value against option.value, else
+    // treat it as a 0-based index, else fall back to the first option.
+    var initIdx = 0;
+    if (panel.value != null) {
+      for (var vi = 0; vi < options.length; vi++) {
+        if (options[vi].value === panel.value) { initIdx = vi; break; }
+      }
+      if (initIdx === 0 && options[0].value !== panel.value &&
+          typeof panel.value === 'number' && panel.value >= 0 && panel.value < options.length) {
+        initIdx = panel.value;
+      }
+    }
+    entry.current = (options[initIdx] && options[initIdx].config) || {};
+
+    /**
+     * Merge every config control's current fragment for this target and push it
+     * onto the target panel's live instance.
+     * @param {number} idx - The chosen option index for THIS control.
+     * @returns {void}
+     * @private
+     */
+    function apply(idx) {
+      entry.current = (options[idx] && options[idx].config) || {};
+      var merged = {};
+      var siblings = configControlsByTarget[target];
+      for (var s = 0; s < siblings.length; s++) {
+        var frag = siblings[s].current;
+        for (var k in frag) { if (Object.prototype.hasOwnProperty.call(frag, k)) merged[k] = frag[k]; }
+      }
+      var slot = cellByPanel[target];
+      var inst = slot && slot.instance;
+      if (inst && typeof inst.updateConfig === 'function') inst.updateConfig(merged);
+    }
+
+    var widget = document.createElement('div');
+    widget.className = 'cxd-annctl';
+    applyAlignment(cell.body, panel);
+    if (panel.title && !panel.hideTitle) {
+      var label = document.createElement('span');
+      label.className = 'cxd-annctl-label';
+      label.textContent = panel.title;
+      widget.appendChild(label);
+    }
+
+    var style = panel.style || 'buttons';
+    if (style === 'slider') {
+      var slider = document.createElement('input');
+      slider.type = 'range';
+      slider.className = 'cxd-slider';
+      slider.min = '0';
+      slider.max = String(Math.max(0, options.length - 1));
+      slider.step = '1';
+      slider.value = String(initIdx);
+      var readout = document.createElement('span');
+      readout.className = 'cxd-slider-readout';
+      readout.textContent = options.length ? String(options[initIdx].label) : '';
+      listen(slider, 'input', function () {
+        var idx = parseInt(slider.value, 10) || 0;
+        readout.textContent = options[idx] ? String(options[idx].label) : '';
+        apply(idx);
+      });
+      widget.appendChild(slider);
+      widget.appendChild(readout);
+    } else if (style === 'dropdown') {
+      var select = document.createElement('select');
+      select.className = 'cxd-annctl-select';
+      options.forEach(function (opt, i) {
+        var o = document.createElement('option');
+        o.value = String(i);
+        o.textContent = String(opt.label);
+        if (i === initIdx) o.selected = true;
+        select.appendChild(o);
+      });
+      listen(select, 'change', function () { apply(parseInt(select.value, 10) || 0); });
+      widget.appendChild(select);
+    } else {
+      // Segmented buttons.
+      var seg = document.createElement('span');
+      seg.className = 'cxd-annctl-seg';
+      var buttons = [];
+      options.forEach(function (opt, i) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cxd-annctl-segbtn' + (i === initIdx ? ' cxd-annctl-on' : '');
+        btn.textContent = String(opt.label);
+        listen(btn, 'click', function () {
+          buttons.forEach(function (b) { b.classList.remove('cxd-annctl-on'); });
+          btn.classList.add('cxd-annctl-on');
+          apply(i);
+        });
+        buttons.push(btn);
+        seg.appendChild(btn);
+      });
+      widget.appendChild(seg);
+    }
+
+    cell.body.appendChild(widget);
+    cell.setState('ready');
+    notify('ready');
+    return null;
   }
 
   items.forEach(function (item) {
@@ -2445,6 +2707,35 @@ function applyAlignment(body, panel) {
 }
 
 /**
+ * Normalize an image panel's `fit` to a valid CSS object-fit keyword.
+ * @param {string} fit - Requested fit (contain | cover | fill | none | scale-down).
+ * @returns {string} A valid object-fit value ('contain' when unset/unknown).
+ * @private
+ */
+function imageFit(fit) {
+  return ['contain', 'cover', 'fill', 'none', 'scale-down'].indexOf(fit) !== -1 ? fit : 'contain';
+}
+
+/**
+ * Return a URL only when it uses a safe scheme, else ''. Blocks `javascript:`,
+ * `data:`, `vbscript:` and similar so an image's `href` cannot smuggle script
+ * (shared dashboards are opened by other people). Relative URLs and the common
+ * navigable schemes (http/https/mailto/tel) pass through unchanged.
+ * @param {string} url - Candidate URL.
+ * @returns {string} The URL if safe, otherwise ''.
+ * @private
+ */
+function safeUrl(url) {
+  var value = String(url).trim();
+  // A scheme is letters/digits/+/-/. before the first ':' that precedes any '/',
+  // '?' or '#'. No such scheme → relative URL → safe.
+  var scheme = value.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):/);
+  if (!scheme) return value;
+  var allowed = { http: 1, https: 1, mailto: 1, tel: 1 };
+  return allowed[scheme[1].toLowerCase()] ? value : '';
+}
+
+/**
  * Add an event listener when the element supports it (the test DOM stub does
  * not), mirroring the builder's `on()` guard.
  * @param {HTMLElement} node - Target element.
@@ -2937,14 +3228,28 @@ function applyBackground(container, spec, gap) {
  */
 function applySize(container, spec) {
   container.style.width = sizeValue(spec.width);
-  container.style.height = sizeValue(spec.height);
+  var explicitHeight = sizeValue(spec.height);
+  container.style.height = explicitHeight;
   // Cap the dashboard width on wide screens and center it. Unset defaults to
   // 1400px; 0/false/'none' removes the cap so the dashboard fills its parent.
+  // A background image is painted on this container, so the cap (and centering)
+  // keeps the backdrop within the max width too — unless it is 'auto'/none, where
+  // the backdrop fills the parent's full width.
   var maxWidth = maxWidthValue(spec.maxWidth);
   container.style.maxWidth = maxWidth;
   container.style.marginLeft = maxWidth ? 'auto' : '';
   container.style.marginRight = maxWidth ? 'auto' : '';
-  container.style.overflow = (sizeValue(spec.width) || sizeValue(spec.height)) ? 'auto' : '';
+  // A background image should fill the available vertical space (object-fit
+  // 'cover' already keeps its aspect ratio) instead of collapsing to the panels'
+  // height, which leaves only a short band of the picture. With no explicit
+  // height, stretch the container from its top to the viewport bottom.
+  if (spec.backgroundImage && !explicitHeight) {
+    var offsetTop = typeof container.offsetTop === 'number' ? container.offsetTop : 0;
+    container.style.minHeight = 'calc(100vh - ' + Math.max(0, offsetTop) + 'px)';
+  } else {
+    container.style.minHeight = '';
+  }
+  container.style.overflow = (sizeValue(spec.width) || explicitHeight) ? 'auto' : '';
 }
 
 /**
@@ -3467,6 +3772,15 @@ function addPanel(spec, panel) {
       title: panel.title || '',
       text: panel.text || ''
     };
+  } else if (panel.type === 'image') {
+    // An image element: a picture (URL or data: URI), scaled per `fit`. No data.
+    next.panels[panel.id] = {
+      type: 'image',
+      title: panel.title || '',
+      src: panel.src || '',
+      fit: panel.fit || 'contain',
+      alt: panel.alt || ''
+    };
   } else if (panel.type === 'control') {
     // An annotation-filter control: one annotation of one dataset, broadcast
     // to every instance in the dashboard's coordination domain.
@@ -3668,7 +3982,8 @@ function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'dataRef')) panel.dataRef = changes.dataRef;
   if (Object.prototype.hasOwnProperty.call(changes, 'config')) panel.config = changes.config;
   if (Object.prototype.hasOwnProperty.call(changes, 'text')) panel.text = changes.text;
-  ['compartment', 'annotation', 'style', 'align', 'valign', 'mode', 'param', 'placeholder', 'debounce'].forEach(function (key) {
+  ['compartment', 'annotation', 'style', 'align', 'valign', 'mode', 'param', 'placeholder', 'debounce',
+    'src', 'fit', 'alt', 'href'].forEach(function (key) {
     if (Object.prototype.hasOwnProperty.call(changes, key)) panel[key] = changes[key];
   });
   // Param-control choice sources are mutually exclusive: setting one clears the
@@ -4196,6 +4511,7 @@ function createBuilder(target, options) {
     editJsonBtn.setAttribute('aria-label', 'Edit dashboard JSON');
     var createActions = [titleInput, editJsonBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }),
+      button('+ Image', function () { doAddImage(); }),
       addControlBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
@@ -4284,6 +4600,22 @@ function createBuilder(target, options) {
   function doAddText() {
     var id = uniquePanelId(spec);
     commit(addPanel(spec, { id: id, type: 'text', text: 'Click to edit text…', w: 4, h: 1 }), false);
+    selectedId = id;
+    if (liveHandle && liveHandle.addPanel && gridEl) {
+      lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
+    } else {
+      rebuild();
+    }
+  }
+
+  /**
+   * Add an image element and select it. It starts empty (a placeholder) — the
+   * URL / uploaded file, fit and alt text are set from the panel properties.
+   * @returns {void}
+   */
+  function doAddImage() {
+    var id = uniquePanelId(spec);
+    commit(addPanel(spec, { id: id, type: 'image', src: '', fit: 'contain', w: 4, h: 6 }), false);
     selectedId = id;
     if (liveHandle && liveHandle.addPanel && gridEl) {
       lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
@@ -4653,6 +4985,7 @@ function createBuilder(target, options) {
       (spec.panels[info.panelId] && spec.panels[info.panelId].type);
     var isText = panelType === 'text';
     var isControl = panelType === 'control';
+    var isImage = panelType === 'image';
     cell.classList.add('cxb-cell');
     if (info.panelId === selectedId) cell.classList.add('cxb-selected');
     cellEls[info.panelId] = cell;
@@ -4688,7 +5021,7 @@ function createBuilder(target, options) {
     on(grip, 'pointerdown', function (ev) { startDrag(ev, info.panelId, cols, rowHeight, gap); });
     on(grip, 'click', function (ev) { stop(ev); selectPanel(info.panelId); });
     var tools = el('span', 'cxb-tools');
-    if (!isText && !isControl) {
+    if (!isText && !isControl && !isImage) {
       var gear = iconBtn('⚙', 'Customize graph', function (ev) {
         stop(ev);
         var inst = instByPanel[info.panelId];
@@ -4720,8 +5053,9 @@ function createBuilder(target, options) {
     if (isText) {
       var textEl = cell.querySelector('.cxd-text');
       if (textEl) setupTextEditing(textEl, info.panelId);
-    } else if (isControl) {
-      // Clicking the widget selects the control (its inputs keep working).
+    } else if (isControl || isImage) {
+      // Clicking the widget/image selects it (its inputs keep working); an image
+      // is configured from the props toolbar, never a data drop target.
       on(cell, 'click', function () { if (selectedId !== info.panelId) selectPanel(info.panelId); });
     } else {
       setupPanelDrop(cell, info.panelId);
@@ -5099,6 +5433,13 @@ function createBuilder(target, options) {
       return;
     }
 
+    // Image elements: a URL or uploaded file, a fit mode, and alt text. Resize is
+    // the cell's own handle (like any panel); alignment pins a cover/none image.
+    if (panel.type === 'image') {
+      renderImageProps(panel);
+      return;
+    }
+
     // Annotation-filter controls: label + data source + scope (samples /
     // variables) + annotation + widget style. One annotation per control.
     if (panel.type === 'control') {
@@ -5147,6 +5488,75 @@ function createBuilder(target, options) {
     append(propsGroup, [titleLabel, titleField, dataLabel, dsField].concat(crossFilter, [titleToggle]));
   }
 
+
+  /**
+   * Toolbar properties for an image element: a URL field, an Upload button
+   * (embeds a local file as a data: URI), a Fit selector (contain | cover | fill
+   * | none | scale-down), Alt text, and the shared alignment fields (which pin a
+   * cover/none image within its cell). Each change re-renders just this element.
+   * Resizing is the cell's own handle — no separate control needed.
+   * @param {object} panel - The selected image panel.
+   * @returns {void}
+   * @private
+   */
+  function renderImageProps(panel) {
+    var urlLabel = el('span', 'cxb-tlabel');
+    urlLabel.textContent = 'Image';
+
+    var urlField = el('input');
+    urlField.type = 'text';
+    urlField.className = 'cxb-tinput';
+    urlField.value = panel.src || '';
+    urlField.setAttribute('placeholder', 'Image URL or upload →');
+    urlField.setAttribute('title', 'Image URL or data: URI');
+    on(urlField, 'input', function () {
+      commit(updatePanel(spec, selectedId, { src: urlField.value }), false);
+      rerenderPanel(selectedId);
+    });
+
+    // Upload: embed a local file as a data: URI so the dashboard stays
+    // self-contained (no external host needed) and travels with the spec.
+    var fileInput = el('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    on(fileInput, 'change', function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        commit(updatePanel(spec, selectedId, { src: String(reader.result) }), false);
+        urlField.value = '';   // a data: URI is too long to show; the picture is the feedback
+        rerenderPanel(selectedId);
+      };
+      reader.readAsDataURL(file);
+    });
+    var uploadBtn = button('Upload', function () { fileInput.click(); });
+    uploadBtn.setAttribute('title', 'Embed a local image file');
+
+    var fitField = selectField(['contain', 'cover', 'fill', 'none', 'scale-down'],
+      panel.fit || 'contain', function (value) {
+        commit(updatePanel(spec, selectedId, { fit: value }), false);
+        rerenderPanel(selectedId);
+      });
+    fitField.setAttribute('title', 'How the image scales within its cell');
+    labelOptions(fitField, {
+      contain: 'Fit', cover: 'Fill & crop', fill: 'Stretch', none: 'Actual size', 'scale-down': 'Scale down'
+    });
+
+    var altField = el('input');
+    altField.type = 'text';
+    altField.className = 'cxb-tinput';
+    altField.value = panel.alt || '';
+    altField.setAttribute('placeholder', 'Alt text');
+    altField.setAttribute('title', 'Alternative text (accessibility)');
+    on(altField, 'input', function () {
+      commit(updatePanel(spec, selectedId, { alt: altField.value }), false);
+    });
+
+    append(propsGroup, [urlLabel, urlField, uploadBtn, fileInput, fitField, altField]
+      .concat(alignmentFields(panel)));
+  }
 
   /**
    * Toolbar properties for an annotation-filter control: Label (+ show/hide

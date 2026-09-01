@@ -274,6 +274,7 @@ export function createBuilder(target, options) {
     editJsonBtn.setAttribute('aria-label', 'Edit dashboard JSON');
     var createActions = [titleInput, editJsonBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }),
+      button('+ Image', function () { doAddImage(); }),
       addControlBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
@@ -362,6 +363,22 @@ export function createBuilder(target, options) {
   function doAddText() {
     var id = uniquePanelId(spec);
     commit(addPanel(spec, { id: id, type: 'text', text: 'Click to edit text…', w: 4, h: 1 }), false);
+    selectedId = id;
+    if (liveHandle && liveHandle.addPanel && gridEl) {
+      lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
+    } else {
+      rebuild();
+    }
+  }
+
+  /**
+   * Add an image element and select it. It starts empty (a placeholder) — the
+   * URL / uploaded file, fit and alt text are set from the panel properties.
+   * @returns {void}
+   */
+  function doAddImage() {
+    var id = uniquePanelId(spec);
+    commit(addPanel(spec, { id: id, type: 'image', src: '', fit: 'contain', w: 4, h: 6 }), false);
     selectedId = id;
     if (liveHandle && liveHandle.addPanel && gridEl) {
       lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
@@ -731,6 +748,7 @@ export function createBuilder(target, options) {
       (spec.panels[info.panelId] && spec.panels[info.panelId].type);
     var isText = panelType === 'text';
     var isControl = panelType === 'control';
+    var isImage = panelType === 'image';
     cell.classList.add('cxb-cell');
     if (info.panelId === selectedId) cell.classList.add('cxb-selected');
     cellEls[info.panelId] = cell;
@@ -766,7 +784,7 @@ export function createBuilder(target, options) {
     on(grip, 'pointerdown', function (ev) { startDrag(ev, info.panelId, cols, rowHeight, gap); });
     on(grip, 'click', function (ev) { stop(ev); selectPanel(info.panelId); });
     var tools = el('span', 'cxb-tools');
-    if (!isText && !isControl) {
+    if (!isText && !isControl && !isImage) {
       var gear = iconBtn('⚙', 'Customize graph', function (ev) {
         stop(ev);
         var inst = instByPanel[info.panelId];
@@ -798,8 +816,9 @@ export function createBuilder(target, options) {
     if (isText) {
       var textEl = cell.querySelector('.cxd-text');
       if (textEl) setupTextEditing(textEl, info.panelId);
-    } else if (isControl) {
-      // Clicking the widget selects the control (its inputs keep working).
+    } else if (isControl || isImage) {
+      // Clicking the widget/image selects it (its inputs keep working); an image
+      // is configured from the props toolbar, never a data drop target.
       on(cell, 'click', function () { if (selectedId !== info.panelId) selectPanel(info.panelId); });
     } else {
       setupPanelDrop(cell, info.panelId);
@@ -1177,6 +1196,13 @@ export function createBuilder(target, options) {
       return;
     }
 
+    // Image elements: a URL or uploaded file, a fit mode, and alt text. Resize is
+    // the cell's own handle (like any panel); alignment pins a cover/none image.
+    if (panel.type === 'image') {
+      renderImageProps(panel);
+      return;
+    }
+
     // Annotation-filter controls: label + data source + scope (samples /
     // variables) + annotation + widget style. One annotation per control.
     if (panel.type === 'control') {
@@ -1225,6 +1251,75 @@ export function createBuilder(target, options) {
     append(propsGroup, [titleLabel, titleField, dataLabel, dsField].concat(crossFilter, [titleToggle]));
   }
 
+
+  /**
+   * Toolbar properties for an image element: a URL field, an Upload button
+   * (embeds a local file as a data: URI), a Fit selector (contain | cover | fill
+   * | none | scale-down), Alt text, and the shared alignment fields (which pin a
+   * cover/none image within its cell). Each change re-renders just this element.
+   * Resizing is the cell's own handle — no separate control needed.
+   * @param {object} panel - The selected image panel.
+   * @returns {void}
+   * @private
+   */
+  function renderImageProps(panel) {
+    var urlLabel = el('span', 'cxb-tlabel');
+    urlLabel.textContent = 'Image';
+
+    var urlField = el('input');
+    urlField.type = 'text';
+    urlField.className = 'cxb-tinput';
+    urlField.value = panel.src || '';
+    urlField.setAttribute('placeholder', 'Image URL or upload →');
+    urlField.setAttribute('title', 'Image URL or data: URI');
+    on(urlField, 'input', function () {
+      commit(updatePanel(spec, selectedId, { src: urlField.value }), false);
+      rerenderPanel(selectedId);
+    });
+
+    // Upload: embed a local file as a data: URI so the dashboard stays
+    // self-contained (no external host needed) and travels with the spec.
+    var fileInput = el('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    on(fileInput, 'change', function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        commit(updatePanel(spec, selectedId, { src: String(reader.result) }), false);
+        urlField.value = '';   // a data: URI is too long to show; the picture is the feedback
+        rerenderPanel(selectedId);
+      };
+      reader.readAsDataURL(file);
+    });
+    var uploadBtn = button('Upload', function () { fileInput.click(); });
+    uploadBtn.setAttribute('title', 'Embed a local image file');
+
+    var fitField = selectField(['contain', 'cover', 'fill', 'none', 'scale-down'],
+      panel.fit || 'contain', function (value) {
+        commit(updatePanel(spec, selectedId, { fit: value }), false);
+        rerenderPanel(selectedId);
+      });
+    fitField.setAttribute('title', 'How the image scales within its cell');
+    labelOptions(fitField, {
+      contain: 'Fit', cover: 'Fill & crop', fill: 'Stretch', none: 'Actual size', 'scale-down': 'Scale down'
+    });
+
+    var altField = el('input');
+    altField.type = 'text';
+    altField.className = 'cxb-tinput';
+    altField.value = panel.alt || '';
+    altField.setAttribute('placeholder', 'Alt text');
+    altField.setAttribute('title', 'Alternative text (accessibility)');
+    on(altField, 'input', function () {
+      commit(updatePanel(spec, selectedId, { alt: altField.value }), false);
+    });
+
+    append(propsGroup, [urlLabel, urlField, uploadBtn, fileInput, fitField, altField]
+      .concat(alignmentFields(panel)));
+  }
 
   /**
    * Toolbar properties for an annotation-filter control: Label (+ show/hide

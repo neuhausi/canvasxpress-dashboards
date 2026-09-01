@@ -142,6 +142,23 @@ test('updatePanel edits text content', function () {
   assert.equal(s.panels.t1.text, 'b');
 });
 
+test('addPanel supports image elements (no dataRef/config); updatePanel edits src/fit/alt', function () {
+  var s = addPanel(blankSpec('d1'), { id: 'im1', type: 'image', src: 'a.png', fit: 'cover', w: 4, h: 6 });
+  var p = s.panels.im1;
+  assert.equal(p.type, 'image');
+  assert.equal(p.src, 'a.png');
+  assert.equal(p.fit, 'cover');
+  assert.equal(p.dataRef, undefined);
+  assert.equal(p.config, undefined);
+  assert.ok(s.layout.items.some(function (i) { return i.panel === 'im1'; }));
+
+  s = updatePanel(s, 'im1', { src: 'data:image/png;base64,AAAA', fit: 'contain', alt: 'Logo', href: 'https://x.test' });
+  assert.equal(s.panels.im1.src, 'data:image/png;base64,AAAA');
+  assert.equal(s.panels.im1.fit, 'contain');
+  assert.equal(s.panels.im1.alt, 'Logo');
+  assert.equal(s.panels.im1.href, 'https://x.test');
+});
+
 test('updatePanel html replaces the plain-text fallback', function () {
   var s = addPanel(blankSpec('d1'), { id: 't1', type: 'text', text: 'plain' });
   s = updatePanel(s, 't1', { html: '<b>rich</b>' });
