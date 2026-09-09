@@ -86,5 +86,38 @@
    "has_key": "h"
   },
   "targets": "layout sizing"
+ },
+ {
+  "id": "f09",
+  "datasets": [
+   "sales"
+  ],
+  "message": "Cap the dashboard width at 1200px and give it a light grey background.",
+  "expect": {
+   "has_top_key": "maxWidth"
+  },
+  "targets": "maxWidth/background (newly documented)"
+ },
+ {
+  "id": "f10",
+  "datasets": [
+   "sales"
+  ],
+  "message": "Add a search box to filter by region, with 'Type a region...' as the hint text.",
+  "expect": {
+   "control_style": "search"
+  },
+  "targets": "placeholder on a search control (newly documented)"
+ },
+ {
+  "id": "f11",
+  "datasets": [
+   "sales"
+  ],
+  "message": "Give each chart a bit more breathing room inside its panel.",
+  "expect": {
+   "has_top_key": "canvasInset"
+  },
+  "targets": "canvasInset (newly documented)"
  }
 ]

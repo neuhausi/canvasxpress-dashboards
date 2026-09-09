@@ -56,14 +56,25 @@ updated spec, preserving ids and anything the user didn't ask to change.
              "items": [{"panel": "<panel-id>", "x": 0-11, "y": 0+, "w": 1-12, "h": 1+}]},
   "data": {"<ref>": {"kind": "dataset", "id": "<dataset id>", "store": "<store>"}
            /* or {"kind": "inline", "value": {y:{vars,smps,data}, x?, z?}}
-              or {"kind": "connector", "url": "...", "refresh"?: seconds} */},
+              or {"kind": "connector", "url": "...", "refresh"?: seconds,
+                  "ttl"?: <ms cache lifetime, 0 = none>,
+                  "headers"?: {"<header>": "<value>"},
+                  "dependsOn"?: ["<param>", ...]  // params beyond those in query
+                                                  // that should re-trigger a fetch
+                 } */},
   "panels": {"<panel-id>": {"title": "<Panel title>", "dataRef": "<ref>",
              "measures"?: ["<var>", ...],
              "config": { /* passed straight to new CanvasXpress() */ }}},
   "controls": [{"kind": "table", "dataRef": "<ref>", "title"?: "..."}],
   "params": {"<param-name>": {"value": "<default>", "type": "string|number|boolean"}},
   "theme"?: "light|dark|auto",   /* dashboard-level theme; default "auto" */
-  "broadcastGroup"?: "<name>"    /* coordination domain; defaults to spec.id */
+  "broadcastGroup"?: "<name>",   /* coordination domain; defaults to spec.id */
+  "width"?: <px or CSS length>,  /* unset = fill parent */
+  "height"?: <px or CSS length>, /* unset = content height */
+  "maxWidth"?: <px or CSS length>, /* cap on wide screens; dashboard centres */
+  "background"?: "<CSS color>",
+  "backgroundImage"?: "<url or data: URI>",
+  "canvasInset"?: <px>           /* margin left around each panel's graph */
 }
 
 ## Panel variants
@@ -101,6 +112,9 @@ other panel. They are how the user gets dropdowns/sliders; the top-level
   config fragment.
 
 style: "auto"|"dropdown"|"radio"|"buttons"|"search"|"slider" (default "auto").
+Extra control keys: "disabled": true renders it read-only; for style "search",
+"placeholder" sets the box's hint text and "debounce" the ms to wait after the
+last keystroke before applying (default 250).
 Control panels need no dataRef when mode is "config", or when mode is "param"
 with options/optionsFrom/style:"search".
 
