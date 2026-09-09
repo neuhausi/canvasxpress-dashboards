@@ -146,20 +146,61 @@ with options/optionsFrom/style:"search".
 _SPEC_REPAIR_ROUNDS = 2
 
 
-def _log_usage(response):
+# USD per million tokens for the orchestrator model; override per deployment.
+# A cached read bills at a fraction of the input rate.
+_PRICES = {
+    "claude-opus-5": (5.0, 25.0), "claude-opus-4-8": (5.0, 25.0),
+    "claude-sonnet-5": (2.0, 10.0), "claude-sonnet-4-6": (3.0, 15.0),
+    "claude-haiku-4-5": (1.0, 5.0),
+}
+_CACHE_READ_RATIO = float(os.environ.get("CXD_CACHE_READ_RATIO", "0.1"))
+_CACHE_WRITE_RATIO = float(os.environ.get("CXD_CACHE_WRITE_RATIO", "1.25"))
+
+
+def _model_rates(model):
+    """(input, output) USD per million tokens for `model`; (0,0) if unpriced."""
+    pin, pout = _PRICES.get(model, (0.0, 0.0))
+    try:
+        pin = float(os.environ.get("CXD_PRICE_INPUT", pin))
+        pout = float(os.environ.get("CXD_PRICE_OUTPUT", pout))
+    except ValueError:
+        pass
+    return pin, pout
+
+
+def _usage_cost(usage, model):
+    """Estimated USD for one orchestrator call."""
+    pin, pout = _model_rates(model)
+    if not pin and not pout:
+        return 0.0
+    get = lambda k: getattr(usage, k, 0) or 0  # noqa: E731 - terse accessor
+    return (get("input_tokens") * pin
+            + get("output_tokens") * pout
+            + get("cache_read_input_tokens") * pin * _CACHE_READ_RATIO
+            + get("cache_creation_input_tokens") * pin * _CACHE_WRITE_RATIO) / 1e6
+
+
+def _log_usage(response, model=None, tally=None):
     """Print token usage for one model call, including cache effectiveness.
 
     ``cache_read_input_tokens`` staying at 0 across repeated requests is the
     signal that something is silently invalidating the prefix — the only
     reliable way to tell whether the system-prompt split is actually working.
+
+    When `tally` is given, the call's tokens and cost are accumulated into it so
+    the whole dashboard request can be costed as one number.
     """
     try:
         usage = response.usage
-        print("[llm] tokens in=%s out=%s cache_write=%s cache_read=%s" % (
+        cost = _usage_cost(usage, model) if model else 0.0
+        print("[llm] tokens in=%s out=%s cache_write=%s cache_read=%s cost=$%.5f" % (
             getattr(usage, "input_tokens", "?"),
             getattr(usage, "output_tokens", "?"),
             getattr(usage, "cache_creation_input_tokens", 0),
-            getattr(usage, "cache_read_input_tokens", 0)), flush=True)
+            getattr(usage, "cache_read_input_tokens", 0), cost), flush=True)
+        if tally is not None:
+            tally["calls"] += 1
+            tally["cost_usd"] += cost
     except Exception:  # noqa: BLE001 - telemetry must never break a request
         pass
 
@@ -734,6 +775,10 @@ def create_dashboards_app(
             if not res:
                 return {"error": "chart engine unavailable — write the config yourself, "
                                  "using only these columns: " + ", ".join(headers)}, True
+            mcp_usage = res.get("usage") or {}
+            if mcp_usage:
+                cost_tally["mcp_calls"] += mcp_usage.get("calls", 1) or 1
+                cost_tally["mcp_cost_usd"] += mcp_usage.get("cost_usd", 0.0) or 0.0
             return {"config": res["config"], "warnings": res.get("warnings") or []}, False
 
         _MCP_TOOLS = [
@@ -848,6 +893,12 @@ def create_dashboards_app(
                       "in the catalog above. Do not explain the fix.")})
             return None, "", {"ok": False, "errors": ["repair loop exhausted"], "attempts": attempts}
 
+        # One dashboard = several orchestrator calls plus the MCP calls they
+        # trigger. Both are accumulated here so the log can report what this
+        # dashboard actually cost, end to end.
+        cost_tally = {"calls": 0, "cost_usd": 0.0,
+                      "mcp_calls": 0, "mcp_cost_usd": 0.0}
+
         def run_turns():
             """Drive the bounded tool-use loop until the model stops calling tools.
 
@@ -867,7 +918,7 @@ def create_dashboards_app(
                         # Structured outputs unavailable for this model/config —
                         # fall back to instructed JSON, parsed defensively below.
                         response = client.messages.create(messages=messages, **request_kwargs)
-                _log_usage(response)
+                _log_usage(response, model, cost_tally)
                 if response.stop_reason != "tool_use":
                     break
                 # Execute every tool call in this turn; echo the full assistant
@@ -896,8 +947,18 @@ def create_dashboards_app(
         except anthropic.APIConnectionError:
             raise HTTPException(status_code=502, detail="Could not reach the LLM API")
 
+        total = cost_tally["cost_usd"] + cost_tally["mcp_cost_usd"]
+        print("[llm] DASHBOARD cost=$%.4f (orchestrator $%.4f over %d calls + "
+              "mcp $%.4f over %d calls)" % (
+                  total, cost_tally["cost_usd"], cost_tally["calls"],
+                  cost_tally["mcp_cost_usd"], cost_tally["mcp_calls"]), flush=True)
         return {"reply": reply, "spec": spec, "validation": validation,
-                "model": model + ("+mcp" if use_mcp_tools else "")}
+                "model": model + ("+mcp" if use_mcp_tools else ""),
+                "cost": {"total_usd": round(total, 5),
+                         "orchestrator_usd": round(cost_tally["cost_usd"], 5),
+                         "orchestrator_calls": cost_tally["calls"],
+                         "mcp_usd": round(cost_tally["mcp_cost_usd"], 5),
+                         "mcp_calls": cost_tally["mcp_calls"]}}
 
     if serve_static and os.path.isdir(_STATIC_DIR):
         # Inject runtime config (CanvasXpress license + library URL + client
