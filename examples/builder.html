@@ -2101,6 +2101,8 @@
         scrollChatToEnd();
         chatHistory.push({ role: 'assistant', content: res.reply || '' });
         if (res.spec) {
+          // Defence in depth: the server validates and repairs before replying,
+          // so this should already be clean — but never render an invalid spec.
           var v = CXD.validateSpec(res.spec);
           if (v.valid) {
             currentSpec = res.spec;
@@ -2109,6 +2111,11 @@
           } else {
             appendChatBubble('assistant', 'The generated spec did not validate: ' + v.errors.join('; '));
           }
+        } else if (res.validation && res.validation.ok === false) {
+          // The server tried to repair its own spec and ran out of attempts.
+          // Say why, so the user can rephrase instead of guessing.
+          appendChatBubble('assistant', 'I could not build a valid dashboard: '
+            + (res.validation.errors || []).slice(0, 5).join('; '));
         }
       }).catch(function (err) {
         pending.textContent = '⚠ ' + err.message;

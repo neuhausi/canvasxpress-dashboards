@@ -1,0 +1,7 @@
+# Recorded eval runs: large (they embed every generated spec) and regenerated
+# on demand. Keep the inputs and the runner in git, not the outputs.
+*.json
+!fixtures.json
+!prompts.json
+!prompts_features.json
+!specs_corpus.json

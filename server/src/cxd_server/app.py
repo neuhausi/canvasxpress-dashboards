@@ -35,6 +35,7 @@ from .datasets import DatasetStore, reshape_to_cx, filter_cx_data
 from .sqldashboard import open_dashboard_store
 from .store import DashboardStore
 from .stores import StoreRegistry
+from .validate_spec import validate_bindings, validate_spec
 
 _STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -59,8 +60,49 @@ updated spec, preserving ids and anything the user didn't ask to change.
   "panels": {"<panel-id>": {"title": "<Panel title>", "dataRef": "<ref>",
              "measures"?: ["<var>", ...],
              "config": { /* passed straight to new CanvasXpress() */ }}},
-  "controls": [{"kind": "table", "dataRef": "<ref>", "title"?: "..."}]
+  "controls": [{"kind": "table", "dataRef": "<ref>", "title"?: "..."}],
+  "params": {"<param-name>": {"value": "<default>", "type": "string|number|boolean"}},
+  "theme"?: "light|dark|auto",   /* dashboard-level theme; default "auto" */
+  "broadcastGroup"?: "<name>"    /* coordination domain; defaults to spec.id */
 }
+
+## Panel variants
+A panel's "type" is absent for a GRAPH panel, or one of "text", "control", "image":
+- text  — {"type":"text","text":"<markdown/plain text>","align"?:"left|center|right","valign"?:"top|middle|bottom"}
+- image — {"type":"image","src":"<url or data: URI>","alt"?:"...","fit"?:"contain|cover|fill|none|scale-down","href"?:"<link>"}
+Text and image panels need NO dataRef and no data. Use them for titles, notes,
+logos and banners — never refuse such a request.
+
+## Cross-filtering by clicking a chart
+A GRAPH panel can turn a click into a dashboard parameter:
+  {"dataRef":"<ref>","clickParam":"<name in spec.params>","clickField"?:"<annotation>","config":{...}}
+clickParam MUST name an entry in spec.params (declare it there); clickField
+picks which annotation of the clicked mark supplies the value, defaulting to the
+clicked sample name. Use this when the user asks that clicking one chart filter
+or drive the others.
+
+## Interactive controls (dropdowns, sliders, radios, buttons)
+Controls are PANELS with "type": "control" — place them in layout.items like any
+other panel. They are how the user gets dropdowns/sliders; the top-level
+"controls" array above is only the filter/table widgets. Three modes:
+
+- mode "filter" — filter the panels that share a dataRef by an annotation:
+  {"type":"control","mode":"filter","dataRef":"<ref>","compartment":"x","annotation":"<annotation name>","style":"dropdown"}
+  compartment "x" filters samples (rows) by an x annotation, "z" filters variables.
+- mode "param" — set a declared parameter, e.g. to drive a connector query:
+  {"type":"control","mode":"param","param":"<name in spec.params>","options":["A","B"],"style":"dropdown"}
+  Every referenced param MUST be declared in spec.params. Instead of a literal
+  options list you may use "optionsFrom": {"dataRef":"<ref>", ...}, or
+  "style":"search" for free text.
+- mode "config" — swap config fragments on a target panel:
+  {"type":"control","mode":"config","target":"<panel-id>","style":"slider",
+   "options":[{"label":"Bar","value":"bar","config":{"graphType":"Bar"}}, ...]}
+  Requires a target panel id and a NON-EMPTY options array; each option needs a
+  config fragment.
+
+style: "auto"|"dropdown"|"radio"|"buttons"|"search"|"slider" (default "auto").
+Control panels need no dataRef when mode is "config", or when mode is "param"
+with options/optionsFrom/style:"search".
 
 ## Rules
 - Bind to the user's datasets (listed below) with kind "dataset" + their exact
@@ -77,7 +119,35 @@ updated spec, preserving ids and anything the user didn't ask to change.
 - Layout on a 12-column grid; typical panel is w:6 h:3; don't overlap items.
 - Panels sharing a dataRef coordinate selections automatically (broadcast).
 - 2-6 panels unless asked otherwise; add a table control when it helps.
+- When the user asks to filter, choose, or switch something interactively,
+  add a control PANEL (see Interactive controls) — never say controls are
+  unsupported. Declare any param it needs in spec.params.
+- Dashboard-wide look ("dark theme") is the TOP-LEVEL "theme" key, not a
+  per-panel config.theme. To coordinate selections across panels set the
+  top-level "broadcastGroup" (panels sharing a dataRef already coordinate).
 """
+
+# How many times the model may be handed its own spec-validation errors and
+# asked to fix them before we give up and report the errors instead.
+_SPEC_REPAIR_ROUNDS = 2
+
+
+def _log_usage(response):
+    """Print token usage for one model call, including cache effectiveness.
+
+    ``cache_read_input_tokens`` staying at 0 across repeated requests is the
+    signal that something is silently invalidating the prefix — the only
+    reliable way to tell whether the system-prompt split is actually working.
+    """
+    try:
+        usage = response.usage
+        print("[llm] tokens in=%s out=%s cache_write=%s cache_read=%s" % (
+            getattr(usage, "input_tokens", "?"),
+            getattr(usage, "output_tokens", "?"),
+            getattr(usage, "cache_creation_input_tokens", 0),
+            getattr(usage, "cache_read_input_tokens", 0)), flush=True)
+    except Exception:  # noqa: BLE001 - telemetry must never break a request
+        pass
 
 _LLM_OUTPUT_SCHEMA = {
     "type": "object",
@@ -604,7 +674,12 @@ def create_dashboards_app(
                 "config. Table controls need no tool. After all tool calls, respond "
                 "with the final JSON object only.")
 
-        system += "\n\n## The user's datasets\n" + json.dumps(catalog)
+        # The dataset catalogue changes whenever the user adds/renames/removes a
+        # dataset, so it must NOT sit inside the cached block: a prompt cache is
+        # a prefix match, and appending it here would invalidate the whole
+        # system prompt on every catalogue change. It goes in a second,
+        # uncached block after the breakpoint instead.
+        catalog_block = "## The user's datasets\n" + json.dumps(catalog)
         messages = []
         for turn in history[-12:]:
             if isinstance(turn, dict) and turn.get("role") in ("user", "assistant") \
@@ -670,12 +745,100 @@ def create_dashboards_app(
         request_kwargs = dict(
             model=model,
             max_tokens=16000,
+            # Stable prompt first with the single cache breakpoint (tools render
+            # before system, so this one breakpoint covers tools + prompt), then
+            # the volatile catalogue after it.
             system=[{"type": "text", "text": system,
-                     "cache_control": {"type": "ephemeral"}}],
+                     "cache_control": {"type": "ephemeral"}},
+                    {"type": "text", "text": catalog_block}],
         )
         if use_mcp_tools:
             request_kwargs["tools"] = _MCP_TOOLS
-        try:
+        # Real column names per dataset, so a spec that invents a measure or a
+        # dataset id is caught server-side (the browser validator has no
+        # catalogue and cannot check this).
+        known_columns = {}
+        for dataset_id, dataset in data_by_id.items():
+            try:
+                known_columns[dataset_id] = mcp_bridge.dataset_columns(dataset)[0]
+            except Exception:  # noqa: BLE001 - a shape we cannot read just skips binding checks
+                known_columns[dataset_id] = []
+
+        def parse_reply(response):
+            """Extract {reply, spec} from the model's final text block."""
+            text = "".join(b.text for b in response.content if b.type == "text")
+            try:
+                parsed = json.loads(text)
+            except ValueError:
+                match = re.search(r"\{.*\}", text, re.DOTALL)
+                try:
+                    parsed = json.loads(match.group(0)) if match else {"reply": text}
+                except ValueError:
+                    parsed = {"reply": text}
+            if not isinstance(parsed, dict):
+                parsed = {"reply": text}
+            return parsed, text
+
+        def spec_errors(spec):
+            """Structural + binding errors for a candidate spec."""
+            if not isinstance(spec, dict) or not spec.get("id"):
+                return ["spec must be an object with a non-empty string id"]
+            structural = validate_spec(spec)
+            bindings = validate_bindings(spec, known_columns)
+            return structural["errors"] + bindings["errors"]
+
+        def run_with_repair(run_turns):
+            """Generate a spec, then let the model FIX its own validation errors.
+
+            The spec was already being validated in the browser, but the errors
+            were shown to the user and discarded — the model never saw them, so
+            a malformed spec was a dead end. Here the errors go back as a normal
+            user turn (the same shape tool failures already use), giving the
+            model a bounded chance to repair before we answer.
+
+            :param run_turns: callable driving one full tool-use loop.
+            :returns: ``(spec, reply, validation)`` — spec is None for a purely
+                conversational reply or when repair never converged.
+            """
+            attempts = []
+            for attempt in range(_SPEC_REPAIR_ROUNDS + 1):
+                response = run_turns()
+                parsed, text = parse_reply(response)
+                reply = parsed.get("reply") or ""
+                spec = parsed.get("spec")
+
+                if spec is None:
+                    # A question or chit-chat: nothing to validate.
+                    return None, reply, {"ok": True, "errors": [], "attempts": attempts}
+
+                errors = spec_errors(spec)
+                attempts.append({"attempt": attempt + 1, "errors": errors})
+                if not errors:
+                    return spec, reply, {"ok": True, "errors": [], "attempts": attempts}
+
+                print("[llm] spec invalid (attempt %d/%d): %s" % (
+                    attempt + 1, _SPEC_REPAIR_ROUNDS + 1, "; ".join(errors[:4])), flush=True)
+
+                if attempt == _SPEC_REPAIR_ROUNDS:
+                    # Out of repair budget — hand back the errors, not a broken
+                    # dashboard, so the caller can say something useful.
+                    return None, reply, {"ok": False, "errors": errors, "attempts": attempts}
+
+                messages.append({"role": "assistant",
+                                 "content": [b.model_dump() for b in response.content]})
+                messages.append({"role": "user", "content": (
+                    "The spec you returned failed validation:\n- "
+                    + "\n- ".join(errors[:20])
+                    + "\n\nReturn the SAME JSON object shape again with a corrected, "
+                      "COMPLETE spec. Use only dataset ids and column names that exist "
+                      "in the catalog above. Do not explain the fix.")})
+            return None, "", {"ok": False, "errors": ["repair loop exhausted"], "attempts": attempts}
+
+        def run_turns():
+            """Drive the bounded tool-use loop until the model stops calling tools.
+
+            :returns: the final assistant response (stop_reason != "tool_use").
+            """
             for _round in range(8):   # tool-use loop (bounded)
                 if use_mcp_tools:
                     response = client.messages.create(messages=messages, **request_kwargs)
@@ -690,6 +853,7 @@ def create_dashboards_app(
                         # Structured outputs unavailable for this model/config —
                         # fall back to instructed JSON, parsed defensively below.
                         response = client.messages.create(messages=messages, **request_kwargs)
+                _log_usage(response)
                 if response.stop_reason != "tool_use":
                     break
                 # Execute every tool call in this turn; echo the full assistant
@@ -705,6 +869,10 @@ def create_dashboards_app(
                     results.append({"type": "tool_result", "tool_use_id": block.id,
                                     "content": json.dumps(payload), "is_error": is_error})
                 messages.append({"role": "user", "content": results})
+            return response
+
+        try:
+            spec, reply, validation = run_with_repair(run_turns)
         except anthropic.AuthenticationError:
             raise HTTPException(status_code=503, detail="LLM API key was rejected")
         except anthropic.RateLimitError:
@@ -714,18 +882,7 @@ def create_dashboards_app(
         except anthropic.APIConnectionError:
             raise HTTPException(status_code=502, detail="Could not reach the LLM API")
 
-        text = "".join(b.text for b in response.content if b.type == "text")
-        try:
-            parsed = json.loads(text)
-        except ValueError:
-            match = re.search(r"\{.*\}", text, re.DOTALL)
-            parsed = json.loads(match.group(0)) if match else {"reply": text}
-        if not isinstance(parsed, dict):
-            parsed = {"reply": text}
-        spec = parsed.get("spec")
-        if spec is not None and (not isinstance(spec, dict) or not spec.get("id")):
-            spec = None
-        return {"reply": parsed.get("reply") or "", "spec": spec,
+        return {"reply": reply, "spec": spec, "validation": validation,
                 "model": model + ("+mcp" if use_mcp_tools else "")}
 
     if serve_static and os.path.isdir(_STATIC_DIR):

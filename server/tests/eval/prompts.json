@@ -1,0 +1,22 @@
+[
+ {"id":"p01","datasets":["sales"],"message":"Show me revenue by region as a bar chart."},
+ {"id":"p02","datasets":["sales"],"message":"Build a dashboard with revenue and units side by side."},
+ {"id":"p03","datasets":["sales"],"message":"I want a sales overview: a bar chart of revenue, a line chart of units over quarters, and a table."},
+ {"id":"p04","datasets":["sales"],"message":"Plot margin as a scatter plot coloured by region."},
+ {"id":"p05","datasets":["sales"],"message":"Give me a pie chart of revenue split by region."},
+ {"id":"p06","datasets":["sales"],"message":"Compare North and South revenue across all quarters."},
+ {"id":"p07","datasets":["sales"],"message":"Make a dashboard showing every numeric measure in its own panel."},
+ {"id":"p08","datasets":["sales"],"message":"Add a dropdown so I can filter the dashboard by quarter."},
+ {"id":"p09","datasets":["sales"],"message":"Show revenue as a heatmap across region and quarter."},
+ {"id":"p10","datasets":["sales"],"message":"A single boxplot of margin grouped by region, nothing else."},
+ {"id":"p11","datasets":["trial"],"message":"Kaplan-Meier survival curve by treatment arm."},
+ {"id":"p12","datasets":["trial"],"message":"Show biomarker distribution between the drug and placebo arms."},
+ {"id":"p13","datasets":["trial"],"message":"Build a clinical dashboard: survival curve, biomarker boxplot, and a patient table."},
+ {"id":"p14","datasets":["trial"],"message":"Scatter biomarker against time to event, coloured by sex."},
+ {"id":"p15","datasets":["trial"],"message":"Violin plot of biomarker by arm."},
+ {"id":"p16","datasets":["sales","trial"],"message":"Make me a dashboard from the sales data showing revenue by quarter."},
+ {"id":"p17","datasets":["sales","trial"],"message":"Show the trial biomarker values by arm."},
+ {"id":"p18","datasets":["sales"],"message":"Dashboard please"},
+ {"id":"p19","datasets":["sales"],"message":"Show profit per customer segment over time."},
+ {"id":"p20","datasets":["trial"],"message":"Two panels stacked vertically: event counts on top, biomarker below."}
+]

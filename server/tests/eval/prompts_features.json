@@ -1,0 +1,90 @@
+[
+ {
+  "id": "f01",
+  "datasets": [
+   "sales"
+  ],
+  "message": "Make the other panels filter when I click a bar in the revenue chart.",
+  "expect": {
+   "has_key": "clickParam"
+  },
+  "targets": "clickParam (undocumented)"
+ },
+ {
+  "id": "f02",
+  "datasets": [
+   "sales"
+  ],
+  "message": "Add our company logo at the top right of the dashboard, using https://example.com/logo.png",
+  "expect": {
+   "panel_type": "image"
+  },
+  "targets": "image panel src/fit/alt (undocumented)"
+ },
+ {
+  "id": "f03",
+  "datasets": [
+   "sales"
+  ],
+  "message": "Add a title card at the top explaining what this dashboard shows.",
+  "expect": {
+   "panel_type": "text"
+  },
+  "targets": "text panel (undocumented)"
+ },
+ {
+  "id": "f04",
+  "datasets": [
+   "sales"
+  ],
+  "message": "Use a dark theme for this dashboard.",
+  "expect": {
+   "has_top_key": "theme"
+  },
+  "targets": "dashboard-level theme (undocumented; per-panel config.theme does not count)"
+ },
+ {
+  "id": "f05",
+  "datasets": [
+   "sales"
+  ],
+  "message": "Link the revenue and units charts so selecting in one highlights the other.",
+  "expect": {
+   "has_key": "broadcastGroup"
+  },
+  "targets": "broadcastGroup (undocumented)"
+ },
+ {
+  "id": "f06",
+  "datasets": [
+   "sales"
+  ],
+  "message": "Add buttons to switch the revenue chart between a bar and a line chart.",
+  "expect": {
+   "control_mode": "config"
+  },
+  "targets": "config-mode control (newly documented)"
+ },
+ {
+  "id": "f07",
+  "datasets": [
+   "sales"
+  ],
+  "message": "Let me type a region name to search and filter the dashboard.",
+  "expect": {
+   "control_style": "search"
+  },
+  "targets": "search-style control (newly documented; filter OR param mode is fine)"
+ },
+ {
+  "id": "f08",
+  "datasets": [
+   "trial"
+  ],
+  "message": "Make the biomarker panel twice as tall as the survival curve.",
+  "expect": {
+   "has_key": "h"
+  },
+  "targets": "layout sizing"
+ }
+]
