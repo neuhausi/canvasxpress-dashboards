@@ -50,6 +50,8 @@ os.makedirs(DATASET_DIR, exist_ok=True)
 os.environ.setdefault("SESSION_SECRET", "dev-demo-secret-not-for-production")
 os.environ.setdefault("APP_DB_PATH", DB_PATH)
 os.environ.setdefault("CXD_DATASET_STORE", DATASET_URI)
+# The app account owns the shared, locked example artifacts.
+os.environ.setdefault("CXD_EXAMPLES_OWNER", "app")
 # Bridge log: every request/response to the canvasxpress-mcp server, as JSONL.
 os.environ.setdefault("CXD_MCP_LOG", os.path.join(DATA_DIR, "mcp-bridge.log"))
 
@@ -60,7 +62,18 @@ from cxd_server.store import DashboardStore               # noqa: E402
 from fastapi import Request                               # noqa: E402
 from fastapi.staticfiles import StaticFiles               # noqa: E402
 
-DEMO_USER, DEMO_PW = "demo", "demo1234"
+# Three seeded accounts. Passwords come from env vars (with dev defaults) so they
+# can be changed without touching code — set CXD_DEMO_PASSWORD / CXD_APP_PASSWORD
+# / CXD_ADMIN_PASSWORD in the repo-root .env.
+#   demo  — the public visitor account (one-click demo login); owns nothing.
+#   app   — owns the shipped example datasets/dashboards (locked, read-only shared
+#           to everyone; survives code updates). Not meant for interactive login.
+#   admin — the maintainer: an admin who can add/edit/delete the app examples via
+#           the Admin view.
+DEMO_USER, DEMO_PW = "demo", os.environ.get("CXD_DEMO_PASSWORD", "demo1234")
+APP_USER, APP_PW = "app", os.environ.get("CXD_APP_PASSWORD", "app1234")
+ADMIN_USER, ADMIN_PW = "admin", os.environ.get("CXD_ADMIN_PASSWORD", "admin1234")
+EXAMPLES_OWNER = APP_USER  # keep in sync with CXD_EXAMPLES_OWNER (set below)
 HOST = os.environ.get("CXD_HOST", "127.0.0.1")
 PORT = int(os.environ.get("CXD_PORT", "8000"))
 
@@ -105,6 +118,10 @@ _CSV_DATASETS = [
 INVENTORY_DB = os.path.join(HERE, "data", "inventory.db")
 # SQLAlchemy read-only SQLite URI (mode=ro blocks any write at the driver).
 INVENTORY_URL = "sqlite:///file:" + INVENTORY_DB + "?mode=ro&uri=true"
+
+# The real database behind the "Sales Live" example (examples/data/sales.db —
+# regenerate with examples/data/make_sales_db.py). Opened strictly read-only.
+SALES_DB = os.path.join(HERE, "data", "sales.db")
 
 
 def _init_inventory_db():
@@ -161,6 +178,107 @@ def _query_inventory():
         return [list(header)] + [list(r) for r in rows]
 
 
+def _query_sales():
+    """Live revenue-by-region from the sales database, as a CanvasXpress data
+    object. Aggregates the sales table (opened read-only) so the "Sales Live"
+    example binds to a REAL database over /api/data?source=sales — the same
+    connector contract the fake-backend demo used to simulate."""
+    import sqlite3
+
+    conn = sqlite3.connect("file:" + SALES_DB + "?mode=ro", uri=True)
+    try:
+        rows = conn.execute(
+            "SELECT region, SUM(revenue) FROM sales GROUP BY region"
+            " ORDER BY SUM(revenue) DESC"
+        ).fetchall()
+    finally:
+        conn.close()
+    regions = [r[0] for r in rows]
+    revenue = [_live(r[1]) for r in rows]
+    return {
+        "y": {"vars": ["Revenue"], "smps": regions, "data": [revenue]},
+        "x": {"Region": regions},
+    }
+
+
+def _sales_conn():
+    """Open the sales database read-only."""
+    import sqlite3
+
+    return sqlite3.connect("file:" + SALES_DB + "?mode=ro", uri=True)
+
+
+def _live(value):
+    """Apply a small random delta (±15%) to a database base value, so the
+    auto-refreshing Sales Live panels visibly update each poll — a simulated
+    live feed layered on the (static) committed demo database."""
+    import random
+
+    return int(round(value * (0.85 + random.random() * 0.30)))
+
+
+def _query_sales_share():
+    """Revenue by region shaped for a single pie: regions are the VARIABLES and
+    there is one sample, so CanvasXpress draws one pie with a slice per region
+    (a pie is drawn per sample, sliced by variable — hence the transpose)."""
+    conn = _sales_conn()
+    try:
+        rows = conn.execute(
+            "SELECT region, SUM(revenue) FROM sales GROUP BY region"
+            " ORDER BY SUM(revenue) DESC"
+        ).fetchall()
+    finally:
+        conn.close()
+    regions = [r[0] for r in rows]
+    return {
+        "y": {"vars": regions, "smps": ["Revenue"], "data": [[_live(r[1])] for r in rows]},
+    }
+
+
+def _query_sales_regions():
+    """The distinct regions, as the choice list feeding the Region dropdown
+    (via the control's optionsFrom annotation `region`)."""
+    conn = _sales_conn()
+    try:
+        regions = [r[0] for r in conn.execute(
+            "SELECT DISTINCT region FROM sales ORDER BY region").fetchall()]
+    finally:
+        conn.close()
+    return {
+        "y": {"vars": ["n"], "smps": regions, "data": [[1] * len(regions)]},
+        "x": {"region": regions},
+    }
+
+
+def _query_sales_products(region, q):
+    """Revenue + units per product, filtered by region (when set) and
+    product-name-contains-q (when set) — the parameterized source the Live-data
+    controls re-query as the Region dropdown / Search box change."""
+    sql = "SELECT product, SUM(revenue), SUM(units) FROM sales WHERE 1=1"
+    args = []
+    if region:
+        sql += " AND region = ?"
+        args.append(region)
+    if q:
+        sql += " AND lower(product) LIKE ?"
+        args.append("%" + q.lower() + "%")
+    sql += " GROUP BY product ORDER BY product"
+    conn = _sales_conn()
+    try:
+        rows = conn.execute(sql, args).fetchall()
+    finally:
+        conn.close()
+    products = [r[0] for r in rows]
+    return {
+        "y": {
+            "vars": ["Revenue", "Units"],
+            "smps": products,
+            "data": [[r[1] for r in rows], [r[2] for r in rows]],
+        },
+        "x": {"Product": products},
+    }
+
+
 def _inventory_csv():
     """The inventory query as CSV text (for seeding the dataset store)."""
     header, rows = _read_inventory()
@@ -188,16 +306,26 @@ def _add_row_ids(csv_text):
 def _seed():
     """Create the demo user + demo datasets + shipped dashboards (idempotent)."""
     dashboards = DashboardStore(DB_PATH)
-    dashboards.create_user(DEMO_USER, DEMO_PW)  # no-op if it exists
+    # Three accounts (all no-ops if they already exist). Only admin is an admin;
+    # the example artifacts below are owned by `app`, so demo/app logins cannot
+    # delete them — only admin can. Passwords are re-applied every start so a
+    # changed CXD_*_PASSWORD takes effect on restart.
+    dashboards.create_user(DEMO_USER, DEMO_PW)
+    dashboards.create_user(APP_USER, APP_PW)
+    dashboards.create_user(ADMIN_USER, ADMIN_PW, is_admin=True)
+    dashboards.set_password(DEMO_USER, DEMO_PW)
+    dashboards.set_password(APP_USER, APP_PW)
+    dashboards.set_password(ADMIN_USER, ADMIN_PW)
+    dashboards.set_admin(ADMIN_USER, True)
     datasets = DatasetStore(open_store(DATASET_URI), store_name="local")
-    have = {d["id"] for d in datasets.list(DEMO_USER)}
+    have = {d["id"] for d in datasets.list(EXAMPLES_OWNER)}
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     def add(dataset_id, title, csv_text):
         if dataset_id in have:
             return
-        datasets.create(DEMO_USER, reshape_to_cx("csv", csv_text), now,
-                        title=title, dataset_id=dataset_id)
+        datasets.create(EXAMPLES_OWNER, reshape_to_cx("csv", csv_text), now,
+                        title=title, dataset_id=dataset_id, locked=True)
 
     # Small inline sets. Stable ids so the Builder's starting panels can bind
     # ({kind:"dataset", id:"regional-sales"}), keeping Builder + Data consistent.
@@ -237,7 +365,7 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         with open(path, encoding="utf-8") as handle:
             return json.load(handle)
 
-    saved = {d["id"] for d in dashboards.list_dashboards(DEMO_USER)}
+    saved = {d["id"] for d in dashboards.list_dashboards(EXAMPLES_OWNER)}
 
     # Reproducible Bench: generated spec carries inline data; move each inline
     # value into the dataset store and point the spec at it.
@@ -249,10 +377,11 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
                 continue
             dataset_id = "bench-" + ref
             if dataset_id not in have:
-                datasets.create(DEMO_USER, source["value"], now,
-                                title="Bench: " + ref, dataset_id=dataset_id)
+                datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                title="Bench: " + ref, dataset_id=dataset_id, locked=True)
             bench["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
-        dashboards.save_dashboard(DEMO_USER, bench, now)
+        dashboards.save_dashboard(EXAMPLES_OWNER, bench, now)
+        dashboards.set_locked(EXAMPLES_OWNER, bench["id"], True)
         print("  [seed] shipped dashboard: %s" % bench["id"])
 
     # KPI Overview: ring-card meters + region filter; its inline datasets move
@@ -265,10 +394,11 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
                 continue
             dataset_id = "kpi-" + ref
             if dataset_id not in have:
-                datasets.create(DEMO_USER, source["value"], now,
-                                title="KPI: " + ref, dataset_id=dataset_id)
+                datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                title="KPI: " + ref, dataset_id=dataset_id, locked=True)
             kpi["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
-        dashboards.save_dashboard(DEMO_USER, kpi, now)
+        dashboards.save_dashboard(EXAMPLES_OWNER, kpi, now)
+        dashboards.set_locked(EXAMPLES_OWNER, kpi["id"], True)
         print("  [seed] shipped dashboard: %s" % kpi["id"])
 
     # Genomics Oncology Cohort: six inline scientific datasets (heatmap, three
@@ -282,10 +412,11 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
                 continue
             dataset_id = "genomics-" + ref
             if dataset_id not in have:
-                datasets.create(DEMO_USER, source["value"], now,
-                                title="Genomics: " + ref, dataset_id=dataset_id)
+                datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                title="Genomics: " + ref, dataset_id=dataset_id, locked=True)
             genomics["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
-        dashboards.save_dashboard(DEMO_USER, genomics, now)
+        dashboards.save_dashboard(EXAMPLES_OWNER, genomics, now)
+        dashboards.set_locked(EXAMPLES_OWNER, genomics["id"], True)
         print("  [seed] shipped dashboard: %s" % genomics["id"])
 
     # Biomarker Cohort: 60-sample immuno-oncology board (two boxplots with
@@ -299,10 +430,11 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
                 continue
             dataset_id = "biomarker-" + ref
             if dataset_id not in have:
-                datasets.create(DEMO_USER, source["value"], now,
-                                title="Biomarker: " + ref, dataset_id=dataset_id)
+                datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                title="Biomarker: " + ref, dataset_id=dataset_id, locked=True)
             biomarker["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
-        dashboards.save_dashboard(DEMO_USER, biomarker, now)
+        dashboards.save_dashboard(EXAMPLES_OWNER, biomarker, now)
+        dashboards.set_locked(EXAMPLES_OWNER, biomarker["id"], True)
         print("  [seed] shipped dashboard: %s" % biomarker["id"])
 
     # Quality Metrics: manufacturing board (three ring meters, a per-line yield
@@ -316,17 +448,37 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
                 continue
             dataset_id = "quality-" + ref
             if dataset_id not in have:
-                datasets.create(DEMO_USER, source["value"], now,
-                                title="Quality: " + ref, dataset_id=dataset_id)
+                datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                title="Quality: " + ref, dataset_id=dataset_id, locked=True)
             quality["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
-        dashboards.save_dashboard(DEMO_USER, quality, now)
+        dashboards.save_dashboard(EXAMPLES_OWNER, quality, now)
+        dashboards.set_locked(EXAMPLES_OWNER, quality["id"], True)
         print("  [seed] shipped dashboard: %s" % quality["id"])
 
     # Sales Overview: small inline spec, shipped as-is.
     sales = load_spec("sales-overview.spec.json")
     if sales and sales["id"] not in saved:
-        dashboards.save_dashboard(DEMO_USER, sales, now)
+        dashboards.save_dashboard(EXAMPLES_OWNER, sales, now)
+        dashboards.set_locked(EXAMPLES_OWNER, sales["id"], True)
         print("  [seed] shipped dashboard: %s" % sales["id"])
+
+    # HEOR — Cost-Effectiveness & Outcomes: patient records + treatment-level
+    # cost-effectiveness / ICER / budget datasets move into the dataset store so
+    # the board opens (and edits) in the Builder like the other examples.
+    heor = load_spec("heor-overview.spec.json")
+    if heor and heor["id"] not in saved:
+        heor = copy.deepcopy(heor)
+        for ref, source in heor.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            dataset_id = "heor-" + ref
+            if dataset_id not in have:
+                datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                title="HEOR: " + ref, dataset_id=dataset_id, locked=True)
+            heor["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+        dashboards.save_dashboard(EXAMPLES_OWNER, heor, now)
+        dashboards.set_locked(EXAMPLES_OWNER, heor["id"], True)
+        print("  [seed] shipped dashboard: %s" % heor["id"])
 
     # (The old Inventory (Live SQL) shipped dashboard was retired — its
     # connector endpoint /api/data?source=inventory remains for the docs and
@@ -477,12 +629,24 @@ def _connectors_source_detail(request: Request, name: str = ""):
 
 
 @app.get("/api/data", include_in_schema=False)
-def _connector_data(source: str = ""):
-    """Connectors-style endpoint: run the SQL query live and return the result
-    as a CanvasXpress tabular data object (header row + data rows)."""
+def _connector_data(source: str = "", region: str = "", q: str = ""):
+    """Connectors-style endpoint: run the query live and return the result as a
+    CanvasXpress data object. `region`/`q` parameterize the sales-by-product
+    source (the Live-data controls re-query it as those change)."""
     from fastapi.responses import JSONResponse
+    # A null/empty parameter means "no filter" (the control is unset).
+    region = region if region and region != "null" else None
+    q = q if q and q != "null" else None
     if source == "inventory":
         return JSONResponse(_query_inventory())
+    if source == "sales":
+        return JSONResponse(_query_sales())
+    if source == "salesShare":
+        return JSONResponse(_query_sales_share())
+    if source == "salesRegions":
+        return JSONResponse(_query_sales_regions())
+    if source == "salesProducts":
+        return JSONResponse(_query_sales_products(region, q))
     return JSONResponse({"detail": "unknown source '%s'" % source}, status_code=404)
 
 

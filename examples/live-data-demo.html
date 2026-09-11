@@ -42,6 +42,7 @@
       .cxd-topnav .cxd-here { background: #23262d; }
     }
   </style>
+  <link rel="stylesheet" href="example-header.css" />
 </head>
 <body>
   <nav class="cxd-topnav">
@@ -51,17 +52,17 @@
     <span class="cxd-here">🎛️ Live-data controls</span>
   </nav>
   <header>
-    <h1>Live-data controls — parameters re-query the source</h1>
+    <h1>Live-data controls — parameters re-query a real database</h1>
     <p>
-      This page injects a <strong>fake connector backend</strong> via
-      <code>options.fetch</code> that <em>reads the query string</em>, so every
-      control below actually <strong>re-queries</strong> and the bound panels
-      refresh — no real database. In production the same spec omits
-      <code>options.fetch</code> and talks to <code>canvasxpress-connectors</code>
-      or the cxd_server dataset API over a cookie-authenticated endpoint.
+      Every control below <strong>re-queries a real SQLite database</strong>
+      (<code>examples/data/sales.db</code>) over the
+      <code>canvasxpress-connectors</code> <code>/api/data</code> contract: the
+      server runs a parameterized <code>SELECT … GROUP BY product</code> and the
+      bound panels refresh. The spec just declares the source URLs and the params
+      to pass — no client-side data.
     </p>
     <p style="margin-top:8px">
-      Try: the <strong>Region</strong> dropdown (choices themselves come from a
+      Try: the <strong>Region</strong> dropdown (choices come from a
       <code>optionsFrom</code> query) · the <strong>Search</strong> box (debounced,
       filters products by name) · <strong>click a bar</strong> in “Revenue by region”
       to cross-filter every panel to that region · watch the brief
@@ -72,108 +73,15 @@
   <div id="dashboard"></div>
 
   <script>
-    // ------------------------------------------------------------------
-    // A tiny in-memory "warehouse": one row per (region, product).
-    // ------------------------------------------------------------------
-    var ROWS = [
-      { region: 'EMEA', product: 'Alpha',   revenue: 820, units: 41 },
-      { region: 'EMEA', product: 'Beacon',  revenue: 610, units: 33 },
-      { region: 'EMEA', product: 'Comet',   revenue: 540, units: 22 },
-      { region: 'APAC', product: 'Alpha',   revenue: 930, units: 55 },
-      { region: 'APAC', product: 'Beacon',  revenue: 480, units: 27 },
-      { region: 'APAC', product: 'Delta',   revenue: 700, units: 38 },
-      { region: 'AMER', product: 'Alpha',   revenue: 1120, units: 61 },
-      { region: 'AMER', product: 'Comet',   revenue: 760, units: 40 },
-      { region: 'AMER', product: 'Delta',   revenue: 880, units: 44 }
-    ];
-
-    // Parse a query string into a plain object.
-    function params(url) {
-      var out = {};
-      var q = url.indexOf('?');
-      if (q === -1) return out;
-      url.slice(q + 1).split('&').forEach(function (pair) {
-        if (!pair) return;
-        var kv = pair.split('=');
-        out[decodeURIComponent(kv[0])] = decodeURIComponent((kv[1] || '').replace(/\+/g, ' '));
-      });
-      return out;
-    }
-
-    function response(status, bodyObj, delay) {
-      return new Promise(function (resolve) {
-        setTimeout(function () {
-          resolve({
-            ok: status >= 200 && status < 300,
-            status: status,
-            text: function () { return Promise.resolve(JSON.stringify(bodyObj)); }
-          });
-        }, delay || 300);
-      });
-    }
-
-    // GET /api/data?source=sales&region=&q=  → revenue+units per product,
-    // filtered by region (when set) and product-name-contains-q (when set).
-    function salesResponse(p) {
-      var rows = ROWS.filter(function (r) {
-        if (p.region && r.region !== p.region) return false;
-        if (p.q && r.product.toLowerCase().indexOf(p.q.toLowerCase()) === -1) return false;
-        return true;
-      });
-      // Aggregate per product across whatever regions remain.
-      var byProduct = {};
-      rows.forEach(function (r) {
-        var acc = byProduct[r.product] || (byProduct[r.product] = { revenue: 0, units: 0 });
-        acc.revenue += r.revenue; acc.units += r.units;
-      });
-      var products = Object.keys(byProduct);
-      setStatus('sales query → region="' + (p.region || 'All') + '"  q="' + (p.q || '') +
-        '"  → ' + products.length + ' product(s)');
-      return response(200, {
-        y: {
-          vars: ['Revenue', 'Units'],
-          smps: products,
-          data: [
-            products.map(function (k) { return byProduct[k].revenue; }),
-            products.map(function (k) { return byProduct[k].units; })
-          ]
-        },
-        x: { Product: products }
-      });
-    }
-
-    // GET /api/data?source=byRegion → revenue per region (all regions; the
-    // cross-filter source). Clicking a bar sets the `region` parameter.
-    function byRegionResponse() {
-      var byRegion = {};
-      ROWS.forEach(function (r) { byRegion[r.region] = (byRegion[r.region] || 0) + r.revenue; });
-      var regions = Object.keys(byRegion);
-      return response(200, {
-        y: { vars: ['Revenue'], smps: regions, data: [regions.map(function (k) { return byRegion[k]; })] },
-        x: { Region: regions }
-      });
-    }
-
-    // GET /api/data?source=regions → the distinct regions, as the choice list
-    // feeding the Region dropdown via optionsFrom.
-    function regionsResponse() {
-      var seen = {}; var regions = [];
-      ROWS.forEach(function (r) { if (!seen[r.region]) { seen[r.region] = 1; regions.push(r.region); } });
-      return response(200, {
-        y: { vars: ['n'], smps: regions, data: [regions.map(function () { return 1; })] },
-        x: { region: regions }
-      });
-    }
-
-    function fakeConnector(url) {
-      var p = params(url);
-      if (url.indexOf('source=sales') !== -1)    return salesResponse(p);
-      if (url.indexOf('source=byRegion') !== -1) return byRegionResponse();
-      if (url.indexOf('source=regions') !== -1)  return regionsResponse();
-      return response(404, { detail: 'No such source' });
-    }
-
     function setStatus(msg) { document.getElementById('status').textContent = msg; }
+
+    // The connector just forwards each request to the real server-side database
+    // endpoint (/api/data, backed by examples/data/sales.db); the query string —
+    // source, region and q — is built by the renderer from each source's params.
+    function connector(url) {
+      setStatus('query → ' + url.replace(/^.*\/api\//, '../api/'));
+      return fetch(url);
+    }
 
     // ------------------------------------------------------------------
     // The dashboard spec — the interesting bits are `params`, the source
@@ -199,11 +107,11 @@
       },
       data: {
         // Choices for the dropdown come from their own tiny query.
-        regions:  { kind: 'connector', url: '/api/data?source=regions' },
+        regions:  { kind: 'connector', url: '../api/data?source=salesRegions' },
         // Revenue by region — independent of the params (the cross-filter source).
-        byRegion: { kind: 'connector', url: '/api/data?source=byRegion' },
-        // Revenue by product — consumes BOTH params.
-        sales:    { kind: 'connector', url: '/api/data?source=sales',
+        byRegion: { kind: 'connector', url: '../api/data?source=sales' },
+        // Revenue+units by product — consumes BOTH params (region + search).
+        sales:    { kind: 'connector', url: '../api/data?source=salesProducts',
                     query: { region: '$region', q: '$q' }, ttl: 0 }
       },
       panels: {
@@ -232,7 +140,7 @@
     };
 
     CanvasXpressDashboards.renderDashboard(spec, 'dashboard', {
-      fetch: fakeConnector,
+      fetch: connector,
       cache: new Map()   // isolate this demo from the process-wide cache
     }).then(function (handle) {
       return handle.ready.then(function () {

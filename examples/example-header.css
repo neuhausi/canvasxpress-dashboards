@@ -1,0 +1,70 @@
+/*
+ * Shared intro styling for the standalone CanvasXpress Dashboards example pages
+ * (gencode-explorer.html, ccle/tcga/gtex/wp explorers, options-wall, the *-overview
+ * boards, etc.). It gives every example the same stylish, centered heading + blurb,
+ * width-matched to the dashboard below it.
+ *
+ * Linked AFTER each page's inline <style>, so these rules win on equal specificity
+ * without editing the per-page CSS. The 1400px cap + auto margins mirror the
+ * renderer's own default (spec.maxWidth defaults to 1400px, centered), so the intro
+ * lines up edge-to-edge with the dashboard grid.
+ */
+/* "Open in Builder" link in the top nav — pushed to the right, emphasised. */
+.cxd-topnav .cxd-open { margin-left: auto; font-weight: 600; }
+
+/* The top navigation bar shares the same centered 1400px column as the header,
+   status line and dashboard, so every strip lines up at the same width. Keeps the
+   page's own vertical margin; only the horizontal margins become auto (centering). */
+.cxd-topnav {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* The intro column is CENTERED on the page (max-width + auto margins, matching the
+   dashboard's own 1400px cap), but the text inside stays LEFT-aligned. */
+header {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 22px 24px 12px;
+  text-align: left;
+}
+header h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+  text-wrap: balance;
+  color: #1f242b;
+}
+header p {
+  margin: 0;
+  max-width: none;              /* span the full dashboard width */
+  font-size: 16.5px;
+  line-height: 1.55;
+  color: #5b6472;
+  text-wrap: pretty;
+}
+/* The status line under the header (e.g. "Ready — change the Gene…") shares the
+   same centered column so it lines up with the header and the dashboard. */
+#status {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 4px 24px 12px;
+  font-size: 14.5px;
+  text-align: left;
+}
+header code,
+#status code {
+  background: #e6e9ee;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 0.86em;
+}
+
+@media (prefers-color-scheme: dark) {
+  header h1 { color: #f0f2f5; }
+  header p { color: #9aa2ad; }
+  header code { background: #23262d; }
+}

@@ -39,7 +39,8 @@ class DatasetStore:
         self._store_name = store_name
 
     def create(self, owner: str, data: dict, updated_at: str, title: Optional[str] = None,
-               dataset_id: Optional[str] = None, config: Optional[dict] = None) -> dict:
+               dataset_id: Optional[str] = None, config: Optional[dict] = None,
+               locked: bool = False) -> dict:
         """Store a reshaped CanvasXpress data object; return its summary.
 
         :param owner: The owning user.
@@ -51,7 +52,9 @@ class DatasetStore:
         :param config: Optional CanvasXpress graph config associated with the
             dataset (e.g. from a dropped CanvasXpress JSON), carried in the
             summary so panels can adopt it as their initial state.
-        :returns: The stored summary ``{id, title, rows, cols, updated_at, config?}``.
+        :param locked: When True, mark the dataset protected — the API refuses to
+            delete it except for an admin caller.
+        :returns: The stored summary ``{id, title, rows, cols, updated_at, config?, locked?}``.
         """
         dataset_id = dataset_id or _new_id(title)
         meta = _summary_meta(dataset_id, title, data, updated_at)
@@ -59,9 +62,30 @@ class DatasetStore:
             meta["store"] = self._store_name
         if config:
             meta["config"] = config
+        if locked:
+            meta["locked"] = True
         blob = json.dumps(data).encode("utf-8")
         self._store.put(owner, dataset_id, blob, meta)
         return dict(meta)
+
+    def is_locked(self, owner: str, dataset_id: str) -> bool:
+        """Return True if the dataset is locked (protected from deletion)."""
+        record = self._store.get(owner, dataset_id)
+        return bool(record) and bool((record.meta or {}).get("locked"))
+
+    def set_locked(self, owner: str, dataset_id: str, locked: bool) -> Optional[dict]:
+        """Mark a dataset locked/unlocked (re-writing its meta). Returns the
+        updated summary, or None if the dataset does not exist."""
+        record = self._store.get(owner, dataset_id)
+        if record is None:
+            return None
+        meta = dict(record.meta or {})
+        if locked:
+            meta["locked"] = True
+        else:
+            meta.pop("locked", None)
+        self._store.put(owner, dataset_id, record.blob, meta)
+        return _summary_from(Summary(id=dataset_id, meta=meta), self._store_name)
 
     def get(self, owner: str, dataset_id: str) -> Optional[dict]:
         """Return the owner's CanvasXpress data object for ``dataset_id``, or None."""

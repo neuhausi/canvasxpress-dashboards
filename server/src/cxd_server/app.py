@@ -227,6 +227,7 @@ def create_dashboards_app(
     allow_signup: Optional[bool] = None,
     https_only: Optional[bool] = None,
     admins: Optional[set] = None,
+    examples_owner: Optional[str] = None,
     serve_static: bool = True,
     dataset_store: Optional[DatasetStore] = None,
     dataset_store_uri: Optional[str] = None,
@@ -249,6 +250,10 @@ def create_dashboards_app(
         ``CXD_HTTPS_ONLY`` (default off).
     :param admins: Usernames granted the user-management API; falls back to the
         comma-separated ``CXD_ADMINS`` env var (default none).
+    :param examples_owner: Username whose datasets/dashboards are the shared,
+        read-only "examples" merged into every user's lists; falls back to
+        ``CXD_EXAMPLES_OWNER`` (default ``"app"``). Only an admin may edit/delete
+        them; set to empty/None to disable the read-merge.
     :param serve_static: Mount the bundled viewer at ``/``.
     :param dataset_store: A single default DatasetStore (overrides the registry's
         default dataset store; kept for back-compat / tests).
@@ -298,6 +303,12 @@ def create_dashboards_app(
         admins = {u.strip() for u in os.getenv("CXD_ADMINS", "").split(",") if u.strip()}
     else:
         admins = set(admins)
+    # The "examples" account owns the shipped default datasets/dashboards. Its
+    # artifacts are read-merged into every user's lists (read-only for non-admins)
+    # so demo users see the examples without owning them, and only an admin can
+    # edit or delete them. Config-only; falls back to CXD_EXAMPLES_OWNER ("app").
+    if examples_owner is None:
+        examples_owner = (os.getenv("CXD_EXAMPLES_OWNER", "app") or "").strip() or None
     # Dashboards: stdlib SQLite by default (zero-dep), or Postgres/SQLite via
     # SQLAlchemy when CXD_DASHBOARD_STORE names a postgres:// URL.
     store = store or open_dashboard_store(os.getenv("CXD_DASHBOARD_STORE"), db_path=db_path)
@@ -446,31 +457,80 @@ def create_dashboards_app(
             raise HTTPException(status_code=404, detail="No such user")
         return {"users": store.list_users()}
 
-    # ---- dashboard CRUD (owner-isolated) ----
+    def resolve_write_owner(user: str, owner: Optional[str]) -> str:
+        """The owner a write targets: the caller, unless an admin names another
+        owner via ``?owner=`` (403 for non-admins). Used to let an admin maintain
+        the shared example artifacts owned by ``examples_owner``."""
+        if owner and owner != user:
+            if not user_is_admin(user):
+                raise HTTPException(status_code=403, detail="Admin access required")
+            return owner
+        return user
+
+    # ---- dashboard CRUD (owner-isolated; examples read-merged) ----
     @app.get("/api/dashboards")
     def list_dashboards(request: Request):
-        return {"dashboards": store.list_dashboards(require_user(request))}
+        user = require_user(request)
+        rows = [dict(d, owner=user) for d in store.list_dashboards(user)]
+        # Merge the shared example dashboards (read-only unless the viewer is admin).
+        if examples_owner and examples_owner != user:
+            own_ids = {d["id"] for d in rows}
+            editable = user_is_admin(user)
+            for d in store.list_dashboards(examples_owner):
+                if d["id"] in own_ids:
+                    continue
+                rows.append(dict(d, owner=examples_owner, example=True, readOnly=not editable))
+        return {"dashboards": rows}
 
     @app.post("/api/dashboards")
-    async def save_dashboard(request: Request):
+    async def save_dashboard(request: Request, owner: Optional[str] = None, lock: Optional[int] = None):
         user = require_user(request)
         spec = await request.json()
         if not isinstance(spec, dict) or not spec.get("id"):
             raise HTTPException(status_code=400, detail="Body must be a dashboard spec with an id")
-        return {"dashboard": store.save_dashboard(user, spec, _now_iso())}
+        target = resolve_write_owner(user, owner)
+        saved = store.save_dashboard(target, spec, _now_iso())
+        # An admin may lock/unlock in the same call (e.g. saving a new example).
+        if lock is not None and user_is_admin(user):
+            store.set_locked(target, spec["id"], bool(lock))
+            saved = store.get_summary(target, spec["id"])
+        return {"dashboard": saved}
 
     @app.get("/api/dashboards/{dashboard_id}")
     def get_dashboard(request: Request, dashboard_id: str):
         user = require_user(request)
         spec = store.get_dashboard(user, dashboard_id)
+        # Fall back to the shared example owner so viewers can open examples.
+        if spec is None and examples_owner and examples_owner != user:
+            spec = store.get_dashboard(examples_owner, dashboard_id)
         if spec is None:
             raise HTTPException(status_code=404, detail="No such dashboard")
         return spec
 
+    @app.post("/api/dashboards/{dashboard_id}/lock")
+    async def lock_dashboard(request: Request, dashboard_id: str, owner: Optional[str] = None):
+        """Lock/unlock a dashboard (admin only). Defaults to the examples owner."""
+        admin = require_admin(request)
+        target = owner or examples_owner or admin
+        body = await request.json() if _has_body(request) else {}
+        summary = store.set_locked(target, dashboard_id, bool(body.get("locked", True)))
+        if summary is None:
+            raise HTTPException(status_code=404, detail="No such dashboard")
+        return {"dashboard": summary}
+
     @app.delete("/api/dashboards/{dashboard_id}")
-    def delete_dashboard(request: Request, dashboard_id: str):
+    def delete_dashboard(request: Request, dashboard_id: str, owner: Optional[str] = None):
         user = require_user(request)
-        store.delete_dashboard(user, dashboard_id)
+        # Owner-only delete; an admin may target another user's dashboard via ?owner=.
+        target = user
+        if owner and owner != user:
+            if not user_is_admin(user):
+                raise HTTPException(status_code=403, detail="Admin access required")
+            target = owner
+        # Locked dashboards are protected; only an admin may delete them.
+        if store.is_locked(target, dashboard_id) and not user_is_admin(user):
+            raise HTTPException(status_code=403, detail="Dashboard is locked")
+        store.delete_dashboard(target, dashboard_id)
         return {"dashboards": store.list_dashboards(user)}
 
     # ---- sharing ----
@@ -535,8 +595,23 @@ def create_dashboards_app(
         # Aggregate across every configured dataset store; each summary is tagged
         # with its store name so the client knows where to fetch it back from.
         datasets = []
+        seen = set()
         for name in dataset_store_names():
-            datasets.extend(dataset_store_for(name).list(user))
+            for d in dataset_store_for(name).list(user):
+                d["owner"] = user
+                datasets.append(d)
+                seen.add((d.get("store") or name, d["id"]))
+        # Merge the shared example datasets (read-only unless the viewer is admin).
+        if examples_owner and examples_owner != user:
+            editable = user_is_admin(user)
+            for name in dataset_store_names():
+                for d in dataset_store_for(name).list(examples_owner):
+                    if (d.get("store") or name, d["id"]) in seen:
+                        continue
+                    d["owner"] = examples_owner
+                    d["example"] = True
+                    d["readOnly"] = not editable
+                    datasets.append(d)
         datasets.sort(key=lambda d: d.get("updated_at") or "", reverse=True)
         return {"datasets": datasets}
 
@@ -558,17 +633,25 @@ def create_dashboards_app(
         config = body.get("config")
         if config is not None and not isinstance(config, dict):
             raise HTTPException(status_code=400, detail="'config' must be an object")
+        # An admin may create/overwrite a dataset under another owner (e.g. adding
+        # a shared example under examples_owner) and mark it locked.
+        owner = resolve_write_owner(user, body.get("owner"))
+        locked = bool(body.get("locked")) and user_is_admin(user)
         summary = target.create(
-            user, data, _now_iso(), title=body.get("title"), dataset_id=body.get("id"),
-            config=config,
+            owner, data, _now_iso(), title=body.get("title"), dataset_id=body.get("id"),
+            config=config, locked=locked,
         )
-        summary["url"] = target.url_for(user, summary["id"])
+        summary["url"] = target.url_for(owner, summary["id"])
         return {"dataset": summary}
 
     @app.get("/api/datasets/{dataset_id}")
     def get_dataset(request: Request, dataset_id: str, store: Optional[str] = None):
         user = require_user(request)
-        data = resolve_dataset_store(store).get(user, dataset_id)
+        ds_store = resolve_dataset_store(store)
+        data = ds_store.get(user, dataset_id)
+        # Fall back to the shared example owner so viewers can read example data.
+        if data is None and examples_owner and examples_owner != user:
+            data = ds_store.get(examples_owner, dataset_id)
         if data is None:
             raise HTTPException(status_code=404, detail="No such dataset")
         # Any extra query params are sample-annotation filters (the parameterized
@@ -581,13 +664,35 @@ def create_dashboards_app(
         return data
 
     @app.delete("/api/datasets/{dataset_id}")
-    def delete_dataset(request: Request, dataset_id: str, store: Optional[str] = None):
+    def delete_dataset(request: Request, dataset_id: str, store: Optional[str] = None, owner: Optional[str] = None):
         user = require_user(request)
-        resolve_dataset_store(store).delete(user, dataset_id)
+        # Owner-only delete; an admin may target another user's dataset via ?owner=.
+        target = user
+        if owner and owner != user:
+            if not user_is_admin(user):
+                raise HTTPException(status_code=403, detail="Admin access required")
+            target = owner
+        ds_store = resolve_dataset_store(store)
+        # Locked datasets are protected; only an admin may delete them.
+        if ds_store.is_locked(target, dataset_id) and not user_is_admin(user):
+            raise HTTPException(status_code=403, detail="Dataset is locked")
+        ds_store.delete(target, dataset_id)
         datasets = []
         for name in dataset_store_names():
             datasets.extend(dataset_store_for(name).list(user))
         return {"datasets": datasets}
+
+    @app.post("/api/datasets/{dataset_id}/lock")
+    async def lock_dataset(request: Request, dataset_id: str, store: Optional[str] = None,
+                           owner: Optional[str] = None):
+        """Lock/unlock a dataset (admin only). Defaults to the examples owner."""
+        admin = require_admin(request)
+        target = owner or examples_owner or admin
+        body = await request.json() if _has_body(request) else {}
+        summary = resolve_dataset_store(store).set_locked(target, dataset_id, bool(body.get("locked", True)))
+        if summary is None:
+            raise HTTPException(status_code=404, detail="No such dataset")
+        return {"dataset": summary}
 
     @app.get("/api/llm/status")
     def llm_status(request: Request):

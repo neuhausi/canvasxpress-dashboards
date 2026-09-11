@@ -18,6 +18,15 @@ make it available in the app) a seed entry in `examples/serve.py`.
    examples exist to demonstrate. Generate datasets programmatically with a
    small node script when they are large; write the fully materialized JSON
    into the spec (`"kind": "inline"`), never a generator reference.
+   **ALWAYS start the dashboard with a full-width intro text panel** (the house
+   default): the FIRST layout item is a `{"type":"text"}` panel spanning all
+   columns (`"w": cols`) that shows the dashboard **title** (bold, 25px) with a
+   **one-to-three-line description** underneath (18px, muted `#5b6472`) — see the
+   spec format. Height `h`: `2` when `rowHeight` is ~40, `1` when it is ~130
+   (keep it short — no big gap before the graphs). Only `color`, `font-size`,
+   `font-weight`, `font-style`, `text-decoration`, `text-align`, `font-family`
+   survive the HTML sanitizer, so style the intro with those (no `margin`/
+   `padding`/`line-height`). Place every other panel below it (shift their `y`).
 2. **Page** — copy the structure of `examples/kpi-overview.html`: canvasXpress
    CSS+JS from `https://www.canvasxpress.org/dist/`, the local UMD bundle
    `../dist/canvasxpress-dashboards.umd.js`, the shared topnav, a header, and a
@@ -59,7 +68,10 @@ make it available in the app) a seed entry in `examples/serve.py`.
     "cols": 12,
     "rowHeight": 40,               // KEEP SMALL (30-44): it is the resize/height granularity;
     "gap": 12,                     // a control at h:1 is then a true single line
-    "items": [ { "panel": "p1", "x": 0, "y": 0, "w": 12, "h": 1 } ]
+    "items": [
+      { "panel": "intro", "x": 0, "y": 0, "w": 12, "h": 2 },   // REQUIRED full-width intro (h:1 when rowHeight ~130)
+      { "panel": "p1", "x": 0, "y": 2, "w": 12, "h": 1 }
+    ]
   },
   "data": {
     // REQUIRED: at least two distinct datasets per example.
@@ -68,6 +80,8 @@ make it available in the app) a seed entry in `examples/serve.py`.
     // other kinds: {"kind":"dataset","id":...,"store":"local"}, {"kind":"connector","url":...,"refresh":30}
   },
   "panels": {
+    "intro": { "type": "text",                                  // REQUIRED: title + 1-3 line description
+               "html": "<div style=\"font-weight: 700; font-size: 25px\">My Example</div><div style=\"font-size: 18px; color: #5b6472\">One to three lines describing what this dashboard shows and how to use it.</div>" },
     "p1":  { "type": "control", "title": "Region", "dataRef": "ref1",
              "annotation": "Region", "style": "dropdown" },   // or radio | buttons | auto
     "p2":  { "title": "Chart", "dataRef": "ref1", "config": { "graphType": "Bar", "title": false } }

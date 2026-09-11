@@ -43,6 +43,7 @@
       .cxd-topnav .cxd-here { background: #23262d; }
     }
   </style>
+  <link rel="stylesheet" href="example-header.css" />
 </head>
 <body>
   <nav class="cxd-topnav">
@@ -52,73 +53,30 @@
     <span class="cxd-here">📡 Sales Live</span>
   </nav>
   <header>
-    <h1>Phase 2 — authenticated connector binding (demo)</h1>
+    <h1>Sales Live — real database connection</h1>
     <p>
-      This page injects a <strong>fake connector backend</strong> via
-      <code>options.fetch</code> so you can see the full data-binding flow with no
-      real database. In production the same spec talks to
-      <code>canvasxpress-connectors</code> over a cookie-authenticated
-      <code>/api/data</code> endpoint — the only difference is you omit
-      <code>options.fetch</code> and let the browser use the real one.
-    </p>
-    <p style="margin-top:8px">
-      Watch for: a brief <strong>Loading…</strong> overlay per panel · the
-      <strong>Live sales</strong> bar &amp; pie <strong>share one request</strong> and
-      <strong>auto-refresh every 3s</strong> (values change) · an
-      <strong>empty</strong> source shows “No data” · a <strong>failing</strong> source
-      shows the connector’s error <code>detail</code>.
+      This dashboard binds to a <strong>real SQLite database</strong>
+      (<code>examples/data/sales.db</code>) over the
+      <code>canvasxpress-connectors</code> <code>/api/data</code> contract: a
+      <strong>bar</strong> of revenue by region, a <strong>pie</strong> of each
+      region’s share of total revenue, and a detail table — all re-querying the
+      database <strong>every 3s</strong> (the server layers a small live delta on
+      the base figures, so the numbers move like a live feed).
     </p>
   </header>
   <div id="status">starting…</div>
   <div id="dashboard"></div>
 
   <script>
-    // ------------------------------------------------------------------
-    // A fake canvasxpress-connectors backend.
-    // Returns CanvasXpress {y:{vars,smps,data}} payloads, mimicking the real
-    // GET /api/data?source=… contract (JSON body, {detail} on error), with a
-    // short delay so the loading overlay is visible. Each poll of "sales"
-    // returns fresh numbers so the refresh poller is observable.
-    // ------------------------------------------------------------------
+    // The connector forwards every request to the real server-side database
+    // endpoint (/api/data, backed by examples/data/sales.db).
     var pollCount = 0;
 
-    function jitter(base) {
-      return Math.round(base * (0.75 + Math.random() * 0.5));
-    }
-
-    function response(status, bodyObj, delay) {
-      return new Promise(function (resolve) {
-        setTimeout(function () {
-          resolve({
-            ok: status >= 200 && status < 300,
-            status: status,
-            text: function () { return Promise.resolve(JSON.stringify(bodyObj)); }
-          });
-        }, delay || 350);
-      });
-    }
-
-    function fakeConnector(url) {
-      if (url.indexOf('source=sales') !== -1) {
-        pollCount++;
-        setStatus('sales fetched ' + pollCount + '×  (shared by bar + pie; refresh every 3s)');
-        return response(200, {
-          y: {
-            vars: ['Revenue'],
-            smps: ['North', 'South', 'East', 'West', 'Central'],
-            data: [[jitter(820), jitter(640), jitter(910), jitter(730), jitter(560)]]
-          },
-          x: { Region: ['North', 'South', 'East', 'West', 'Central'] }
-        });
-      }
-      if (url.indexOf('source=empty') !== -1) {
-        // Real connectors returns 422 "Query returned no rows" for empty results.
-        return response(422, { detail: 'Query returned no rows' });
-      }
-      if (url.indexOf('source=broken') !== -1) {
-        return response(502, { detail: 'Database error: connection refused' });
-      }
-      return response(404, { detail: 'No such source' });
+    function connector(url) {
+      pollCount++;
+      setStatus('re-queried the database ' + pollCount + '× (' +
+        url.replace(/^.*\/api\//, '../api/') + ')');
+      return fetch(url);
     }
 
     function setStatus(msg) {
@@ -136,25 +94,21 @@
         rowHeight: 130,
         items: [
           { panel: 'revenue-bar', x: 0, y: 0, w: 6, h: 3 },
-          { panel: 'region-pie',  x: 6, y: 0, w: 6, h: 3 },
-          { panel: 'empty-demo',  x: 0, y: 3, w: 6, h: 2 },
-          { panel: 'error-demo',  x: 6, y: 3, w: 6, h: 2 }
+          { panel: 'region-pie',  x: 6, y: 0, w: 6, h: 3 }
         ]
       },
       data: {
-        sales:  { kind: 'connector', url: '/api/data?source=sales', refresh: 3 },
-        empty:  { kind: 'connector', url: '/api/data?source=empty' },
-        broken: { kind: 'connector', url: '/api/data?source=broken' }
+        // Revenue by region (bar): regions are samples, colored by Region.
+        sales: { kind: 'connector', url: '../api/data?source=sales', refresh: 3 },
+        // Revenue SHARE (pie): regions are variables + one sample, so CanvasXpress
+        // draws a single pie with a slice per region.
+        share: { kind: 'connector', url: '../api/data?source=salesShare', refresh: 3 }
       },
       panels: {
-        'revenue-bar': { title: 'Live sales — Revenue (auto-refresh 3s)', dataRef: 'sales',
+        'revenue-bar': { title: 'Live sales — Revenue by region', dataRef: 'sales',
                          config: { graphType: 'Bar', colorBy: 'Region', showLegend: false, title: false } },
-        'region-pie':  { title: 'Live sales — Share (same one request)', dataRef: 'sales',
-                         config: { graphType: 'Pie', colorBy: 'Region', title: false } },
-        'empty-demo':  { title: 'Empty source → “No data”', dataRef: 'empty',
-                         config: { graphType: 'Bar', title: false } },
-        'error-demo':  { title: 'Failing source → error detail', dataRef: 'broken',
-                         config: { graphType: 'Bar', title: false } }
+        'region-pie':  { title: 'Live sales — Share of revenue by region', dataRef: 'share',
+                         config: { graphType: 'Pie', title: false } }
       },
       controls: [
         { kind: 'table', dataRef: 'sales', title: 'Live sales table' }
@@ -162,7 +116,7 @@
     };
 
     CanvasXpressDashboards.renderDashboard(spec, 'dashboard', {
-      fetch: fakeConnector,
+      fetch: connector,
       cache: new Map()   // isolate this demo from the process-wide cache
     }).then(function (handle) {
       return handle.ready.then(function () {

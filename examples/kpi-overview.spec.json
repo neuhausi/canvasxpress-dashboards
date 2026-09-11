@@ -10,44 +10,51 @@
     "gap": 12,
     "items": [
       {
-        "panel": "region-control",
+        "panel": "intro",
         "x": 0,
         "y": 0,
+        "w": 12,
+        "h": 2
+      },
+      {
+        "panel": "region-control",
+        "x": 0,
+        "y": 2,
         "w": 12,
         "h": 1
       },
       {
         "panel": "revenue-meter",
         "x": 0,
-        "y": 1,
+        "y": 3,
         "w": 4,
         "h": 8
       },
       {
         "panel": "satisfaction-meter",
         "x": 4,
-        "y": 1,
+        "y": 3,
         "w": 4,
         "h": 8
       },
       {
         "panel": "uptime-meter",
         "x": 8,
-        "y": 1,
+        "y": 3,
         "w": 4,
         "h": 8
       },
       {
         "panel": "orders-bar",
         "x": 0,
-        "y": 9,
+        "y": 11,
         "w": 6,
         "h": 8
       },
       {
         "panel": "revenue-line",
         "x": 6,
-        "y": 9,
+        "y": 11,
         "w": 6,
         "h": 8
       }
@@ -1096,6 +1103,10 @@
     }
   },
   "panels": {
+    "intro": {
+      "type": "text",
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">KPI Overview</div><div style=\"font-size: 18px; color: #5b6472\">A backend-free KPI board: three ring-card meters summarize raw records into headline metrics, alongside a grouped orders bar and a 24-month revenue trend. Use the Region control to filter every panel.</div>"
+    },
     "region-control": {
       "type": "control",
       "title": "Region",

@@ -16,6 +16,10 @@
     h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em;
          color: var(--muted); margin: 36px 0 14px; }
     .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .ex-search { width: 100%; max-width: 440px; padding: 10px 12px; margin: 6px 0 4px;
+      font: inherit; font-size: 15px; border: 1px solid var(--border); border-radius: 8px;
+      background: #fff; color: inherit; box-sizing: border-box; }
+    .ex-empty { color: var(--muted); font-size: 14px; margin: 10px 0; }
     .card { background: #fff; border: 1px solid var(--border); border-radius: 12px;
             padding: 18px 18px 16px; text-decoration: none; color: inherit; display: block;
             transition: box-shadow .15s, transform .15s; }
@@ -27,6 +31,12 @@
     .card .tags { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
     .tag { font-size: 11.5px; padding: 2px 8px; border-radius: 99px;
            background: #eaf3fb; color: var(--accent); }
+    /* "Open in Builder" action inside a dashboard card (a span so it can live
+       inside the card's anchor; JS handles the click and stops navigation). */
+    .open-builder { display: inline-block; margin-top: 12px; font-size: 12.5px; font-weight: 600;
+           color: var(--accent); background: #eaf3fb; border: 1px solid #d3e5f7;
+           border-radius: 7px; padding: 5px 10px; cursor: pointer; }
+    .open-builder:hover { background: #dcecfb; }
     footer { margin-top: 44px; font-size: 13px; color: var(--muted); }
     footer code { background: #e9ecf1; padding: 1px 5px; border-radius: 4px; }
     .cxd-topnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -41,6 +51,9 @@
     @media (prefers-color-scheme: dark) {
       body { background: #14161a; color: #e6e6e6; }
       .card { background: #1b1e24; border-color: #2a2e36; }
+      .ex-search { background: #1b1e24; border-color: #2a2e36; }
+      .open-builder { background: #12283a; border-color: #24405c; }
+      .open-builder:hover { background: #163149; }
       .tag { background: #12283a; }
       footer code { background: #23262d; }
       .cxd-topnav { background: #1b1e24; border-color: #2a2e36; }
@@ -64,6 +77,9 @@
          See the <a href="https://github.com/neuhausi/canvasxpress-dashboards">repository README</a>
          for the library API.</p>
     </header>
+
+    <input id="ex-search" class="ex-search" type="search" placeholder="Search examples…" autocomplete="off" aria-label="Search examples"/>
+    <div id="ex-empty" class="ex-empty" hidden>No examples match your search.</div>
 
     <h2>The app</h2>
     <div class="cards">
@@ -136,6 +152,7 @@
            inspection records, a 500-point yield run chart per line, and a
            500-bar defect-rate chart. Line and Shift controls filter every panel.</p>
         <div class="tags"><span class="tag">meters</span><span class="tag">line</span><span class="tag">bar</span><span class="tag">controls</span></div>
+        <span class="open-builder" data-open="quality-metrics">✏️ Open in Builder</span>
       </a>
       <a class="card" href="./biomarker-cohort.html">
         <div class="ic">🧪</div>
@@ -145,6 +162,7 @@
            and a 24-gene inflammation heatmap. Treatment-group and response filter
            controls drive every panel.</p>
         <div class="tags"><span class="tag">boxplot</span><span class="tag">scatter</span><span class="tag">heatmap</span><span class="tag">controls</span></div>
+        <span class="open-builder" data-open="biomarker-cohort">✏️ Open in Builder</span>
       </a>
       <a class="card" href="./genomics-oncology.html">
         <div class="ic">🧬</div>
@@ -155,6 +173,7 @@
            sample-count ring meter, a response-by-stage stacked bar, and a
            Kaplan-Meier survival curve.</p>
         <div class="tags"><span class="tag">genomics</span><span class="tag">heatmap</span><span class="tag">volcano</span><span class="tag">kaplan-meier</span></div>
+        <span class="open-builder" data-open="genomics-oncology">✏️ Open in Builder</span>
       </a>
       <a class="card" href="./sales-overview.html">
         <div class="ic">📊</div>
@@ -163,6 +182,7 @@
            broadcast-aware data table. Click anything — selection coordinates
            across the board.</p>
         <div class="tags"><span class="tag">inline data</span><span class="tag">broadcast</span></div>
+        <span class="open-builder" data-open="sales-overview">✏️ Open in Builder</span>
       </a>
       <a class="card" href="./kpi-overview.html">
         <div class="ic">🎯</div>
@@ -171,21 +191,33 @@
            meters that summarize raw records into headline metrics, a grouped
            bar chart, and a 24-month trend line.</p>
         <div class="tags"><span class="tag">inline data</span><span class="tag">meters</span></div>
+        <span class="open-builder" data-open="kpi-overview">✏️ Open in Builder</span>
+      </a>
+      <a class="card" href="./heor-overview.html">
+        <div class="ic">💊</div>
+        <h3>HEOR Cost-Effectiveness <span>→</span></h3>
+        <p>Health-economics board over 600 patient records across five indications:
+           cost per patient, cost per QALY and cohort size (filtered by indication),
+           a cost-effectiveness plane, the ICER vs standard of care, and a 12-month
+           budget-impact trend.</p>
+        <div class="tags"><span class="tag">heor</span><span class="tag">meters</span><span class="tag">scatter</span><span class="tag">controls</span></div>
+        <span class="open-builder" data-open="heor-overview">✏️ Open in Builder</span>
       </a>
       <a class="card" href="./sales-live-demo.html">
         <div class="ic">📡</div>
         <h3>Sales Live <span>→</span></h3>
-        <p>Connector-backed dashboard: data fetched from the server API with
-           caching, TTL, and live refresh into bound panels.</p>
-        <div class="tags"><span class="tag">connector</span><span class="tag">live refresh</span></div>
+        <p>Real database connection: revenue by region read live from a SQLite DB
+           (<code>examples/data/sales.db</code>) over <code>/api/data</code> into a
+           bar and a share pie, with caching and a 3s refresh.</p>
+        <div class="tags"><span class="tag">database</span><span class="tag">sqlite</span><span class="tag">connector</span><span class="tag">live refresh</span></div>
       </a>
       <a class="card" href="./live-data-demo.html">
         <div class="ic">🎛️</div>
         <h3>Live-data controls <span>→</span></h3>
-        <p>Parameterized dashboard: a Region dropdown and a debounced product
-           Search re-query the source, and clicking a “Revenue by region” bar
-           cross-filters every panel. Fake connector reads the query string.</p>
-        <div class="tags"><span class="tag">parameters</span><span class="tag">cross-filter</span></div>
+        <p>Parameterized dashboard over a real SQLite database: a Region dropdown
+           and a debounced product Search re-query <code>/api/data?source=salesProducts</code>
+           server-side, and clicking a “Revenue by region” bar cross-filters every panel.</p>
+        <div class="tags"><span class="tag">database</span><span class="tag">parameters</span><span class="tag">cross-filter</span></div>
       </a>
       <a class="card" href="./reproducible-bench/bench.html">
         <div class="ic">🧬</div>
@@ -210,5 +242,43 @@
       serves its own bundled viewer at <code>/</code>.
     </footer>
   </div>
+  <script>
+    // A dashboard card links to its example page; the "Open in Builder"
+    // action instead deep-links to the app (../?open=<id>). It is a span
+    // inside the card anchor, so stop the click from following the card.
+    document.querySelectorAll(".open-builder").forEach(function (el) {
+      el.addEventListener("click", function (e) {
+        e.preventDefault(); e.stopPropagation();
+        location.href = "../?open=" + encodeURIComponent(el.getAttribute("data-open"));
+      });
+    });
+
+    // Search box: filter the cards by their text; hide sections that go empty.
+    (function () {
+      var input = document.getElementById("ex-search");
+      if (!input) return;
+      var grids = Array.prototype.slice.call(document.querySelectorAll(".cards"));
+      var empty = document.getElementById("ex-empty");
+      function apply() {
+        var q = input.value.trim().toLowerCase();
+        var anyVisible = false;
+        grids.forEach(function (grid) {
+          var cards = Array.prototype.slice.call(grid.querySelectorAll(".card"));
+          var shown = 0;
+          cards.forEach(function (card) {
+            var match = !q || card.textContent.toLowerCase().indexOf(q) !== -1;
+            card.style.display = match ? "" : "none";
+            if (match) shown++;
+          });
+          grid.style.display = shown ? "" : "none";
+          var prev = grid.previousElementSibling;   // the section's <h2>
+          if (prev && prev.tagName === "H2") prev.style.display = shown ? "" : "none";
+          if (shown) anyVisible = true;
+        });
+        empty.hidden = anyVisible || !q;
+      }
+      input.addEventListener("input", apply);
+    })();
+  </script>
 </body>
 </html>

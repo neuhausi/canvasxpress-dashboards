@@ -10,23 +10,30 @@
     "gap": 12,
     "items": [
       {
-        "panel": "heatmap",
+        "panel": "intro",
         "x": 0,
         "y": 0,
+        "w": 12,
+        "h": 1
+      },
+      {
+        "panel": "heatmap",
+        "x": 0,
+        "y": 1,
         "w": 7,
         "h": 4
       },
       {
         "panel": "survival",
         "x": 7,
-        "y": 0,
+        "y": 1,
         "w": 5,
         "h": 4
       },
       {
         "panel": "oncoprint",
         "x": 0,
-        "y": 4,
+        "y": 5,
         "w": 12,
         "h": 3
       }
@@ -5643,8 +5650,12 @@
     }
   },
   "panels": {
+    "intro": {
+      "type": "text",
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">The Reproducible Bench</div><div style=\"font-size: 18px; color: #5b6472\">Distilled figure tables packaged into one reproducible spec: a clustered expression heatmap, an oncoprint of recurrently altered genes, and a Kaplan–Meier survival curve — clustering and the curve are recomputed live in the browser.</div>"
+    },
     "heatmap": {
-      "title": "Expression \u2014 top 50 variable genes",
+      "title": "Expression — top 50 variable genes",
       "dataRef": "expression",
       "config": {
         "graphType": "Heatmap",
@@ -5664,7 +5675,7 @@
       }
     },
     "oncoprint": {
-      "title": "Oncoprint \u2014 top 20 recurrently altered genes",
+      "title": "Oncoprint — top 20 recurrently altered genes",
       "dataRef": "variants",
       "config": {
         "graphType": "Heatmap",

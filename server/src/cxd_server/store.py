@@ -62,6 +62,7 @@ class DashboardStore:
                 spec        TEXT NOT NULL,
                 visibility  TEXT NOT NULL DEFAULT 'private',
                 share_token TEXT UNIQUE,
+                locked      INTEGER NOT NULL DEFAULT 0,
                 updated_at  TEXT NOT NULL,
                 PRIMARY KEY (owner, id)
             );
@@ -70,6 +71,11 @@ class DashboardStore:
         # Migrate DBs created before is_admin existed (no-op if already present).
         try:
             self._conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+        # Migrate DBs created before the dashboards.locked column existed.
+        try:
+            self._conn.execute("ALTER TABLE dashboards ADD COLUMN locked INTEGER NOT NULL DEFAULT 0")
         except sqlite3.OperationalError:
             pass
         self._conn.commit()
@@ -177,7 +183,7 @@ class DashboardStore:
         """List an owner's dashboards (summaries, newest first)."""
         with self._lock:
             rows = self._conn.execute(
-                "SELECT id, title, visibility, share_token, updated_at "
+                "SELECT id, title, visibility, share_token, locked, updated_at "
                 "FROM dashboards WHERE owner = ? ORDER BY updated_at DESC",
                 (owner,),
             ).fetchall()
@@ -187,7 +193,7 @@ class DashboardStore:
         """Return an owner's dashboard summary (no spec body), or None."""
         with self._lock:
             row = self._conn.execute(
-                "SELECT id, title, visibility, share_token, updated_at "
+                "SELECT id, title, visibility, share_token, locked, updated_at "
                 "FROM dashboards WHERE owner = ? AND id = ?",
                 (owner, dashboard_id),
             ).fetchone()
@@ -202,8 +208,34 @@ class DashboardStore:
             ).fetchone()
         return json.loads(row[0]) if row else None
 
+    def is_locked(self, owner: str, dashboard_id: str) -> bool:
+        """Return True if the dashboard is locked (protected from deletion)."""
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT locked FROM dashboards WHERE owner = ? AND id = ?",
+                (owner, dashboard_id),
+            ).fetchone()
+        return bool(row) and bool(row[0])
+
+    def set_locked(self, owner: str, dashboard_id: str, locked: bool) -> Optional[dict]:
+        """Mark a dashboard locked/unlocked. Locked dashboards cannot be deleted
+        via the API except by an admin. Returns the updated summary, or None."""
+        if self.get_summary(owner, dashboard_id) is None:
+            return None
+        with self._lock:
+            self._conn.execute(
+                "UPDATE dashboards SET locked = ? WHERE owner = ? AND id = ?",
+                (1 if locked else 0, owner, dashboard_id),
+            )
+            self._conn.commit()
+        return self.get_summary(owner, dashboard_id)
+
     def delete_dashboard(self, owner: str, dashboard_id: str) -> None:
-        """Delete an owner's dashboard (no-op if absent)."""
+        """Delete an owner's dashboard (no-op if absent).
+
+        Lock enforcement lives in the API layer (see ``is_locked``): this method
+        deletes unconditionally so an admin override can still remove a locked row.
+        """
         with self._lock:
             self._conn.execute(
                 "DELETE FROM dashboards WHERE owner = ? AND id = ?", (owner, dashboard_id)
@@ -274,5 +306,6 @@ class DashboardStore:
             "title": row[1],
             "visibility": row[2],
             "share_token": row[3],
-            "updated_at": row[4],
+            "locked": bool(row[4]),
+            "updated_at": row[5],
         }
