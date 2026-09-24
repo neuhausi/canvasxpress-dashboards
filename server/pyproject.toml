@@ -25,7 +25,11 @@ sql = ["SQLAlchemy>=2.0"]
 postgres = ["SQLAlchemy>=2.0", "psycopg2-binary>=2.9"]
 # Google Drive store (gdrive://folderId). OAuth reuses canvasxpress-connectors.
 gdrive = ["google-api-python-client>=2.0", "google-auth>=2.0"]
-dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6"]
+# Python reference runtime for kind:"function" (/api/functions/run). The snippet
+# harness runs each input through a pandas DataFrame, so the Python language is
+# only offered when pandas is importable (functions_status gates on it).
+functions = ["pandas>=2.0"]
+dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6", "pandas>=2.0"]
 
 [project.urls]
 Homepage = "https://github.com/neuhausi/canvasxpress-dashboards"

@@ -1,9 +1,17 @@
 """Data functions: the reference runtime (Python + R) and its gated endpoint."""
 
+import importlib.util
 import shutil
 
 import pytest
 from fastapi.testclient import TestClient
+
+# The Python reference runtime runs each input through a pandas DataFrame, so it
+# is only offered when pandas is importable (mirrors functions_status, and the
+# `functions`/`dev` extras that install it). Skip the Python path otherwise, the
+# same way the R path is gated on a working Rscript.
+HAS_PANDAS = importlib.util.find_spec("pandas") is not None
+requires_pandas = pytest.mark.skipif(not HAS_PANDAS, reason="pandas not installed")
 
 from cxd_server.app import create_dashboards_app
 from cxd_server.functions import FunctionError, FunctionsConfig, functions_status, run_function
@@ -14,7 +22,7 @@ CLIN = {"y": {"vars": ["Age"], "smps": ["c1", "c2", "c3", "c4"], "data": [[61, 5
 GENES = {"y": {"vars": ["TP53", "EGFR"], "smps": ["logFC", "P"], "data": [[1.5, 0.01], [-2, 0.2]]},
          "z": {"Chr": ["17", "7"]}}
 
-LANGS = ["python"] + (["r"] if shutil.which("Rscript") else [])
+LANGS = (["python"] if HAS_PANDAS else []) + (["r"] if shutil.which("Rscript") else [])
 AGGREGATE = {
     "python": "result = clin.groupby('Arm', as_index=False)['Age'].mean()",
     "r": "result <- aggregate(Age ~ Arm, data = clin, FUN = mean)",
@@ -74,6 +82,7 @@ def test_errors_are_reported(config, language):
         _run(config, language, "x = 1" if language == "python" else "x <- 1")
 
 
+@requires_pandas
 def test_contract_validation_and_limits(config):
     with pytest.raises(FunctionError, match="language"):
         run_function({"language": "julia", "code": "x"}, config)
@@ -88,6 +97,7 @@ def test_contract_validation_and_limits(config):
     assert slow.value.status == 504
 
 
+@requires_pandas
 def test_status_reports_languages_and_isolation(config):
     status = functions_status(config)
     assert status["enabled"] is True
@@ -121,6 +131,7 @@ def test_endpoint_is_off_by_default(tmp_path):
     assert client.get("/api/functions/status").json()["enabled"] is False
 
 
+@requires_pandas
 def test_admin_mode_limits_to_admins(tmp_path):
     app = _app(tmp_path, "admin")
     admin = TestClient(app)
@@ -131,6 +142,7 @@ def test_admin_mode_limits_to_admins(tmp_path):
     assert other.post("/api/functions/run", json=BODY).status_code == 403
 
 
+@requires_pandas
 def test_users_mode_runs_and_reports_snippet_errors(tmp_path):
     client = TestClient(_app(tmp_path, "users"))
     _login(client, "alice")
