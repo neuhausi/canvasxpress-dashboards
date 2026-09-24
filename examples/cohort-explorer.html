@@ -66,7 +66,10 @@
     fetch('./cohort-explorer.spec.json')
       .then(function (res) { return res.json(); })
       .then(function (spec) {
-        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard');
+        // Resolve server APIs (the R data function) against the app's mount
+        // point, e.g. /dashboards when this page is served under that prefix.
+        var base = location.pathname.replace(/\/examples\/[^\/]*$/, '');
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard', { baseUrl: base });
       })
       .then(function (handle) {
         console.log('Dashboard rendered:', handle.instances.length, 'instances in group', handle.broadcastGroup);
