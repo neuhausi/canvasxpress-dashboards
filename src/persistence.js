@@ -125,8 +125,17 @@ export function createDashboardClient(options) {
     signup: function (username, password) {
       return request('POST', '/auth/signup', { username: username, password: password });
     },
-    /** @returns {Promise<object>} `{ user }`. */
+    /**
+     * Sign out. After a single sign-on session, `logout_url` ends the provider's
+     * session too (navigate to it).
+     * @returns {Promise<object>} `{ user: null, logout_url }`.
+     */
     logout: function () { return request('POST', '/auth/logout'); },
+    /**
+     * How users sign in on this server (public).
+     * @returns {Promise<object>} `{ password, signup, oidc: { enabled, name } }`.
+     */
+    authConfig: function () { return request('GET', '/auth/config'); },
     /** @returns {Promise<object>} `{ user, is_admin }` (user null when logged out). */
     me: function () { return request('GET', '/auth/me'); },
 

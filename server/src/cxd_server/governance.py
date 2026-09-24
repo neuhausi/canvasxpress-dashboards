@@ -71,7 +71,7 @@ EVERYONE = "*"
 
 _SCHEMA = [
     "CREATE TABLE IF NOT EXISTS cxd_groups ("
-    " name TEXT PRIMARY KEY, description TEXT, created_at TEXT)",
+    " name TEXT PRIMARY KEY, description TEXT, created_at TEXT, managed TEXT)",
     "CREATE TABLE IF NOT EXISTS cxd_group_members ("
     " grp TEXT NOT NULL, username TEXT NOT NULL, PRIMARY KEY (grp, username))",
     "CREATE TABLE IF NOT EXISTS cxd_roles ("
@@ -156,6 +156,10 @@ class Governance:
         self._db = db
         self.default_role = default_role if default_role else "editor"
         self._db.run([(sql, {}) for sql in _SCHEMA])
+        try:   # groups created before single sign-on had no `managed` column
+            self._db.run([("ALTER TABLE cxd_groups ADD COLUMN managed TEXT", {})])
+        except Exception:  # noqa: BLE001 - already there
+            pass
 
     # ---- groups ----------------------------------------------------------
     def list_groups(self) -> List[Dict[str, Any]]:
@@ -166,7 +170,8 @@ class Governance:
         roles = self.assignments()
         return [{"name": g["name"], "description": g["description"] or "",
                  "members": members.get(g["name"], []),
-                 "role": roles.get("group:" + g["name"])}
+                 "role": roles.get("group:" + g["name"]),
+                 "managed": g.get("managed") or None}
                 for g in self._db.query("SELECT * FROM cxd_groups ORDER BY name")]
 
     def group_names(self) -> List[str]:
@@ -200,6 +205,45 @@ class Governance:
             ("DELETE FROM cxd_grants WHERE principal = :p", {"p": principal}),
         ])
         return True
+
+    def sync_managed_groups(self, username: str, names: Iterable[str], managed_by: str,
+                            created_at: Optional[str] = None) -> List[str]:
+        """Make ``username`` a member of exactly ``names`` among the groups an
+        identity provider manages (``managed_by``).
+
+        Groups that do not exist yet are created, marked as managed. The user is
+        added to same-named groups created by hand but never removed from them:
+        only managed groups lose members. Returns the groups the user is now in.
+        """
+        wanted = []
+        for raw in names:
+            try:
+                name = _check_name("Group", raw)
+            except GovernanceError:
+                continue              # a provider group name we cannot use as-is
+            if name not in wanted:
+                wanted.append(name)
+        existing = {g["name"]: g for g in self.list_groups()}
+        statements = []
+        for name in wanted:
+            if name not in existing:
+                statements.append((
+                    "INSERT INTO cxd_groups (name, description, created_at, managed)"
+                    " VALUES (:n, :d, :c, :m)",
+                    {"n": name, "d": "Synced from single sign-on", "c": created_at,
+                     "m": managed_by}))
+            if name not in (existing.get(name) or {}).get("members", []):
+                statements.append((
+                    "INSERT INTO cxd_group_members (grp, username) VALUES (:n, :u)"
+                    " ON CONFLICT (grp, username) DO NOTHING", {"n": name, "u": username}))
+        for name, g in existing.items():
+            if g.get("managed") == managed_by and name not in wanted \
+                    and username in g["members"]:
+                statements.append(("DELETE FROM cxd_group_members WHERE grp = :n"
+                                   " AND username = :u", {"n": name, "u": username}))
+        if statements:
+            self._db.run(statements)
+        return self.groups_of(username)
 
     def groups_of(self, username: Optional[str]) -> List[str]:
         if not username:

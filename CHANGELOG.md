@@ -8,6 +8,22 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 Server features, live on the demo; the client additions ship in the next npm
 release.
 
+### Single sign-on ([docs/sso.md](docs/sso.md))
+- **OpenID Connect sign-in** (authorization code + PKCE) with ID tokens verified
+  against the provider's keys (signature, iss, aud, exp, nonce; no `none` / HMAC).
+  Needs the `sso` extra (PyJWT).
+- **Accounts:** created on first sign-in and linked by `sub`. A same-named local
+  account is never taken over (`CXD_OIDC_LINK_EXISTING` to allow), and a linked
+  account cannot use a password.
+- **From the provider:** groups sync into dashboards groups (marked SSO; hand-made
+  groups are never emptied); admin rights follow `CXD_OIDC_ADMIN_GROUPS`; a
+  verified email becomes the confirmed notification address; `CXD_OIDC_ALLOWED_DOMAINS`.
+- **`CXD_OIDC_ONLY`** hides passwords and sign-up, keeping break-glass password
+  sign-in for `CXD_ADMINS`.
+- **Sign-out** ends the provider session. `/auth/config` tells the login page
+  what to show. Sign-ins are audited as `auth.sso`.
+- The login page's secondary buttons are readable again.
+
 ### Large data ([docs/large-data.md](docs/large-data.md))
 - **Pushdown on connector sources.** A `kind:"connector"` source's `pushdown` block
   (groupBy, measures, where, columns, orderBy, limit) is sent as `_q`, and the

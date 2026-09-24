@@ -29,7 +29,7 @@ import warnings
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
@@ -43,6 +43,8 @@ from .governance import (PERMISSIONS, Governance, GovernanceError, apply_policy,
                          open_governance, spec_sources)
 from .jobs import Jobs
 from .mailer import SmtpMailer
+from .oidc import (IdentityStore, OidcClient, OidcConfig, OidcError, groups_from, pkce_pair,
+                   username_from)
 from .scheduler import Cron, ScheduleError, ScheduleStore, Scheduler
 from .snapshot import SnapshotRenderer
 from .sqldashboard import open_dashboard_store
@@ -366,6 +368,7 @@ def create_dashboards_app(
     snapshots: Optional[SnapshotRenderer] = None,
     origin_fetchers: Optional[dict] = None,
     scheduler_enabled: Optional[bool] = None,
+    oidc: Optional[OidcClient] = None,
 ) -> FastAPI:
     """Build the dashboards FastAPI app.
 
@@ -420,6 +423,8 @@ def create_dashboards_app(
     :param origin_fetchers: Extra dataset origins for scheduled refresh, as
         ``kind -> fetch(owner, source_name) -> data`` (e.g. ``"connector"``).
         Also reachable as ``app.state.origin_fetchers`` to register later.
+    :param oidc: Single sign-on (OpenID Connect); built from ``CXD_OIDC_*`` if
+        omitted (off without ``CXD_OIDC_ISSUER``).
     :param scheduler_enabled: Run due schedules in a background thread while
         the app runs; falls back to ``CXD_SCHEDULER`` (default on).
     :returns: The configured FastAPI application.
@@ -529,6 +534,12 @@ def create_dashboards_app(
     app.state.schedules = schedules
     app.state.mailer = mailer
     app.state.origin_fetchers = origin_fetchers
+    # Single sign-on (OpenID Connect): off unless configured.
+    if oidc is None:
+        oidc_config = OidcConfig.from_env()
+        oidc = OidcClient(oidc_config) if oidc_config else None
+    identities = IdentityStore(governance._db)
+    app.state.oidc = oidc
 
     # Registered BEFORE the session middleware so it runs inside it: the session
     # (who is signed in) is readable before and after the handler.
@@ -626,9 +637,16 @@ def create_dashboards_app(
         raise HTTPException(status_code=400, detail="No such user or group: %s" % principal)
 
     # ---- auth (mirrors canvasxpress-connectors) ----
+    @app.get("/auth/config")
+    def auth_config():
+        """How users sign in here (the login page adapts to it)."""
+        return {"password": not (oidc and oidc.config.only),
+                "signup": bool(allow_signup) and not (oidc and oidc.config.only),
+                "oidc": {"enabled": bool(oidc), "name": oidc.config.name if oidc else None}}
+
     @app.post("/auth/signup")
     async def signup(request: Request):
-        if not allow_signup:
+        if not allow_signup or (oidc and oidc.config.only):
             raise HTTPException(status_code=403, detail="Signup disabled")
         body = await request.json()
         username, password = body.get("username", ""), body.get("password", "")
@@ -648,6 +666,12 @@ def create_dashboards_app(
         body = await request.json()
         username, password = body.get("username", ""), body.get("password", "")
         note(request, target=username)   # also recorded when the attempt fails
+        # With single sign-on only, passwords are for the break-glass admins in CXD_ADMINS.
+        if oidc and oidc.config.only and username not in admins:
+            raise HTTPException(status_code=403, detail="Sign in with %s" % oidc.config.name)
+        if identities.is_linked(username):
+            raise HTTPException(status_code=401, detail="This account signs in with %s"
+                                % (oidc.config.name if oidc else "single sign-on"))
         if not store.check_user(username, password):
             raise HTTPException(status_code=401, detail="Invalid username or password")
         request.session["user"] = username
@@ -655,13 +679,117 @@ def create_dashboards_app(
 
     @app.post("/auth/logout")
     async def logout(request: Request):
+        id_token = request.session.get("id_token")
+        sso = request.session.get("sso")
         request.session.clear()
-        return {"user": None}
+        logout_url = None
+        if oidc and sso:
+            try:
+                logout_url = await run_in_threadpool(
+                    oidc.logout_url, id_token, app_url(request))
+            except OidcError:
+                logout_url = None
+        return {"user": None, "logout_url": logout_url}
+
+    def app_url(request: Request) -> str:
+        return (publish_base_url or str(request.base_url)).rstrip("/") + "/"
+
+    def oidc_redirect_uri(request: Request) -> str:
+        return oidc.config.redirect_url or app_url(request) + "auth/oidc/callback"
+
+    def sso_error(message: str, status: int = 401) -> HTMLResponse:
+        return HTMLResponse(
+            "<!doctype html><meta charset='utf-8'><title>Sign-in failed</title>"
+            "<body style='font-family:system-ui;max-width:560px;margin:10vh auto'>"
+            "<h2>Sign-in failed</h2><p>%s</p><p><a href='%s'>Try again</a></p></body>"
+            % (html.escape(message), html.escape(app_url_for_errors)), status_code=status)
+    app_url_for_errors = (publish_base_url or "").rstrip("/") + "/"
+
+    @app.get("/auth/oidc/login")
+    def oidc_login(request: Request):
+        """Start single sign-on: send the browser to the identity provider."""
+        if not oidc:
+            raise HTTPException(status_code=404, detail="Single sign-on is not configured")
+        verifier, challenge = pkce_pair()
+        state, nonce = secrets.token_urlsafe(24), secrets.token_urlsafe(24)
+        request.session["oidc"] = {"state": state, "nonce": nonce, "verifier": verifier,
+                                   "at": int(time.time())}
+        try:
+            url = oidc.authorize_url(oidc_redirect_uri(request), state, nonce, challenge)
+        except OidcError as exc:
+            return sso_error(str(exc), 502)
+        return RedirectResponse(url, status_code=302)
+
+    @app.get("/auth/oidc/callback")
+    def oidc_callback(request: Request, code: str = "", state: str = "", error: str = "",
+                      error_description: str = ""):
+        """Finish single sign-on: verify the provider's answer and sign the user in."""
+        if not oidc:
+            raise HTTPException(status_code=404, detail="Single sign-on is not configured")
+        pending = request.session.pop("oidc", None) or {}
+        if error:
+            note(request, error=error)
+            return sso_error("The identity provider said: %s" % (error_description or error))
+        if not code or not state or not pending or not secrets.compare_digest(
+                state, pending.get("state", "")) or time.time() - pending.get("at", 0) > 600:
+            note(request, error="state")
+            return sso_error("This sign-in link expired or was not started here. Try again.")
+        try:
+            tokens = oidc.exchange(code, oidc_redirect_uri(request), pending["verifier"])
+            claims = oidc.verify_id_token(tokens["id_token"], pending["nonce"])
+            cfg = oidc.config
+            info = claims
+            wants_more = ("email" not in claims
+                          or (cfg.groups_claim and cfg.groups_claim not in claims))
+            if wants_more:
+                extra = oidc.userinfo(tokens.get("access_token"))
+                if extra.get("sub") == claims["sub"]:
+                    info = dict(extra, **claims)
+            if cfg.allowed_domains:
+                domain = str(info.get("email") or "").rsplit("@", 1)[-1].lower()
+                if domain not in cfg.allowed_domains or not info.get("email_verified", True):
+                    raise OidcError("Accounts from this email domain cannot sign in here")
+            issuer = claims["iss"]
+            username = identities.username_for(issuer, claims["sub"])
+            created = False
+            if username is None:
+                username = username_from(info, cfg.username_claim)
+                if username in store.list_users():
+                    if identities.is_linked(username) or not cfg.link_existing:
+                        raise OidcError("An account named '%s' already exists here. Ask an "
+                                        "administrator to link it." % username)
+                else:
+                    store.create_user(username, secrets.token_urlsafe(32))
+                    created = True
+            identities.link(issuer, claims["sub"], username, _now_iso())
+        except OidcError as exc:
+            note(request, error=str(exc)[:200])
+            return sso_error(str(exc))
+        groups = groups_from(info, cfg.groups_claim)
+        if groups is not None:
+            governance.sync_managed_groups(username, groups, "oidc", _now_iso())
+        if cfg.admin_groups and username not in admins:
+            store.set_admin(username, bool(set(groups or []) & set(cfg.admin_groups)))
+        email = info.get("email")
+        if isinstance(email, str) and email and info.get("email_verified") is True:
+            try:
+                if schedules.profile(username)["email"] != email:
+                    schedules.set_email(username, email, verified=True)
+            except ScheduleError:
+                pass
+        request.session.clear()   # a fresh session for the signed-in user
+        request.session["user"] = username
+        request.session["sso"] = issuer
+        request.session["id_token"] = tokens["id_token"]
+        note(request, target=username, issuer=issuer, created=created or None,
+             groups=len(groups) if groups is not None else None)
+        return RedirectResponse(app_url(request), status_code=302)
 
     @app.get("/auth/me")
     def me(request: Request):
         user = request.session.get("user")
         return {"user": user, "is_admin": user_is_admin(user),
+                "sso": bool(request.session.get("sso")),
                 "permissions": sorted(permissions_of(user)),
                 "groups": governance.groups_of(user),
                 "roles": governance.roles_of(user) if user else []}
@@ -731,6 +859,7 @@ def create_dashboards_app(
             raise HTTPException(status_code=404, detail="No such user")
         governance.forget_user(username)
         schedules.forget_user(username)
+        identities.forget_user(username)
         return {"users": store.list_users()}
 
     def resolve_write_owner(user: str, owner: Optional[str],

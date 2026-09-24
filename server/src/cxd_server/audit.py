@@ -45,6 +45,7 @@ _ACTIONS = {
     ("POST", "/auth/signup"): "auth.signup",
     ("POST", "/auth/login"): "auth.login",
     ("POST", "/auth/logout"): "auth.logout",
+    ("GET", "/auth/oidc/callback"): "auth.sso",
     ("GET", "/api/admin/users"): "admin.users.list",
     ("POST", "/api/admin/users"): "admin.user.create",
     ("POST", "/api/admin/users/{username}/password"): "admin.user.password",

@@ -13,7 +13,7 @@ This package adds the missing layer: a **spec**, a **grid layout**, a
 re-implement chart rendering or coordination.
 
 **Guides:** [governance and audit](docs/governance.md) (roles, sharing, row/column
-security, lineage, audit log) · [scheduling](docs/scheduling.md) (refresh, alerts,
+security, lineage, audit log) · [single sign-on](docs/sso.md) (OpenID Connect) · [scheduling](docs/scheduling.md) (refresh, alerts,
 emailed dashboards) · [large data](docs/large-data.md) (aggregate, filter and join in the
 database) · [live-data controls](docs/live-data-controls.md) ·
 [server](server/README.md) · [changelog](CHANGELOG.md)
@@ -474,6 +474,11 @@ records what happened. The full guide is **[docs/governance.md](docs/governance.
   them wherever it hands out the dataset: in the app, through shared dashboards,
   and on share links. They fail closed.
 - **Lineage.** Which dashboards read which datasets and connectors.
+- **Single sign-on.** Users sign in through Okta, Entra ID, Google Workspace,
+  Keycloak or any OpenID Connect provider (authorization code + PKCE, verified ID
+  tokens). Provider groups become dashboards groups and admin rights follow a
+  provider group, so roles, sharing and row security follow the identity
+  provider. Guide: [docs/sso.md](docs/sso.md).
 
 ```jsonc
 // PUT /api/datasets/trial/policy

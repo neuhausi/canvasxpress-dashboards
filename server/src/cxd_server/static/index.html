@@ -770,8 +770,11 @@
     }
 
     function doLogout() {
-      client.logout().catch(function () {}).then(function () {
-        currentUser = null; isAdmin = false; renderUserChip(); activate('Home');
+      client.logout().catch(function () {}).then(function (r) {
+        currentUser = null; isAdmin = false; renderUserChip();
+        // Signed in with single sign-on: end the provider's session too.
+        if (r && r.logout_url) { location.href = r.logout_url; return; }
+        activate('Home');
       });
     }
 
@@ -786,16 +789,41 @@
           '<h1 style="font-size:22px">Sign in to CanvasXpress Dashboards</h1>' +
           '<p style="color:var(--muted)">Save, load, and share dashboards on this server.</p>' +
           '<div id="login-err" style="color:#d64545;min-height:18px;font-size:16px;margin:6px 0"></div>' +
+          '<button class="cta" id="login-sso" style="width:100%;margin:4px 0 12px;display:none"></button>' +
+          '<div id="login-sso-or" style="display:none;text-align:center;color:var(--muted);font-size:14px;margin-bottom:6px">or with a password</div>' +
+          '<div id="login-password">' +
           '<input id="login-user" placeholder="Username" autocomplete="username" ' +
             'style="width:100%;padding:9px;margin:4px 0;box-sizing:border-box"/>' +
           '<input id="login-pass" type="password" placeholder="Password" autocomplete="current-password" ' +
             'style="width:100%;padding:9px;margin:4px 0;box-sizing:border-box"/>' +
           '<div style="display:flex;gap:8px;margin-top:10px">' +
             '<button class="cta" id="login-go" style="flex:1">Sign in</button>' +
-            '<button class="cta" id="login-signup" style="flex:1;background:transparent;border:1px solid var(--rail-border)">Create account</button>' +
+            '<button class="cta" id="login-signup" style="flex:1;background:transparent;border:1px solid var(--rail-border);color:inherit">Create account</button>' +
           '</div>' +
-          '<button class="cta" id="login-demo" style="width:100%;margin-top:8px;background:transparent;border:1px dashed var(--rail-border)">Use demo account (demo / demo1234)</button>' +
+          '<button class="cta" id="login-demo" style="width:100%;margin-top:8px;background:transparent;border:1px dashed var(--rail-border);color:inherit">Use demo account (demo / demo1234)</button>' +
+          '</div>' +
+          '<a href="#" id="login-breakglass" style="display:none;font-size:13px;color:var(--muted)">Administrator password sign-in</a>' +
         '</div>';
+      // Single sign-on and the password form follow the server's /auth/config.
+      fetch(API_BASE + '/auth/config', { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (cfg) {
+        var sso = document.getElementById('login-sso');
+        if (cfg.oidc && cfg.oidc.enabled) {
+          sso.textContent = 'Sign in with ' + cfg.oidc.name;
+          sso.style.display = '';
+          sso.onclick = function () { location.href = API_BASE + '/auth/oidc/login'; };
+          if (cfg.password) document.getElementById('login-sso-or').style.display = '';
+        }
+        if (!cfg.signup) document.getElementById('login-signup').style.display = 'none';
+        if (!cfg.password) {
+          // Single sign-on only: the password form is for break-glass administrators.
+          var form = document.getElementById('login-password');
+          var link = document.getElementById('login-breakglass');
+          form.style.display = 'none';
+          document.getElementById('login-demo').style.display = 'none';
+          link.style.display = '';
+          link.onclick = function (e) { e.preventDefault(); form.style.display = ''; link.style.display = 'none'; };
+        }
+      }).catch(function () { /* older server: password only */ });
 
       var userEl = document.getElementById('login-user');
       var passEl = document.getElementById('login-pass');
@@ -1084,6 +1112,7 @@
           row.className = 'data-item';
           row.style.cssText = 'display:flex;align-items:center;gap:10px';
           row.innerHTML = '<div style="flex:1"><div class="data-item-title">👥 ' + esc(g.name) +
+            (g.managed ? ' <span style="font-size:13px;color:#6b4fbb" title="Members are set by the identity provider at each sign-in">SSO</span>' : '') +
             (g.role ? ' <span style="font-size:13px;color:var(--accent)">role: ' + esc(g.role) + '</span>' : '') + '</div>' +
             '<div class="data-item-meta">' + (g.description ? esc(g.description) + ' · ' : '') +
             (g.members.length ? esc(g.members.join(', ')) : 'no members') + '</div></div>';
