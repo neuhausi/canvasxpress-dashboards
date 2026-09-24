@@ -32,7 +32,13 @@ vars: `SESSION_SECRET` (auto-generated if unset), `CXD_HOST`/`CXD_PORT`,
 `APP_DB_PATH`, `CXD_DASHBOARD_STORE`, `CXD_DATASET_STORE`, `ALLOW_SIGNUP`,
 `CXD_HTTPS_ONLY`, `CXD_ADMINS`, `CXD_PUBLISH_BASE_URL`, `CXD_CANVASXPRESS_URL`,
 `CXD_CANVASXPRESS_LICENSE`, `CXD_LLM_API_KEY`, `CXD_LLM_MODEL`, `CXD_FUNCTIONS*`,
-`CXD_AUDIT`, `CXD_AUDIT_RETENTION_DAYS`, `CXD_DEFAULT_ROLE`.
+`CXD_AUDIT`, `CXD_AUDIT_RETENTION_DAYS`, `CXD_DEFAULT_ROLE`, `CXD_SCHEDULER*`,
+`CXD_SMTP_*`, `CXD_SNAPSHOTS`, `CXD_INTERNAL_URL`, `CXD_DASHBOARD_URL`.
+
+**Scheduling.** Dataset refresh (from a URL or a database source), alerts on
+dataset values, and emailed dashboards with a PNG snapshot run on cron schedules,
+each with the rights of the people involved. See
+[docs/scheduling.md](../docs/scheduling.md) for setup (SMTP, snapshots) and the API.
 
 **Audit log.** The server records who did what: sign-ins (including failed
 attempts), dashboard and dataset changes, shares, share-link views, data-function
@@ -126,6 +132,14 @@ uvicorn cxd_server.app:create_dashboards_app --factory --reload
 | `POST`·`DELETE` | `/api/admin/roles` · `/api/admin/roles/{name}` | Admin: create/update a custom role (`{name, permissions}`) / delete it |
 | `POST` | `/api/admin/roles/assign` | Admin: give `user:<name>` or `group:<name>` a role (`role: null` clears it) |
 | `GET` | `/api/admin/lineage` | Admin: lineage across every user's dashboards |
+| `GET` | `/api/schedules/status` | What scheduling can do here (`email`, `snapshots`, `origins`, …) |
+| `GET`·`POST` | `/api/schedules` | Your schedules (`?all=1` admin) / create or update `{id?, kind, name, cron, tz, enabled, config}` |
+| `DELETE` | `/api/schedules/{id}` | Delete a schedule |
+| `POST` | `/api/schedules/{id}/run` | Run now |
+| `GET` | `/api/schedules/{id}/runs` | Recent runs |
+| `GET` | `/api/cron/preview` | Read a cron expression and list its next runs |
+| `GET`·`PUT` | `/api/me/profile` | Your email address for alerts and subscriptions |
+| `POST` | `/api/admin/users/{name}/email` | Admin: set a user's email address |
 | `GET` | `/api/llm/status` | Whether the NL builder is configured (`{enabled, model}`; no key) |
 | `GET` | `/api/admin/audit` | Admin: audit events, newest first (`actor`, `action` (a trailing `.` matches a prefix), `target`, `outcome`, `since`, `until`, `before`, `limit`) |
 | `GET` | `/api/admin/audit/export` | Admin: the same filters as a CSV (default) or `format=jsonl` download |

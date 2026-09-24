@@ -306,6 +306,80 @@ export function createDashboardClient(options) {
      */
     lineage: function (opts) { return request('GET', opts && opts.all ? '/api/admin/lineage' : '/api/lineage'); },
 
+    // ---- scheduling: dataset refresh, alerts, dashboard subscriptions ----
+    /**
+     * What scheduling can do on this server.
+     * @returns {Promise<object>} `{ enabled, scheduler, email, snapshots, links,
+     *   origins, can_create, email_address }`.
+     */
+    scheduleStatus: function () { return request('GET', '/api/schedules/status'); },
+    /**
+     * The user's schedules (admins: `{all: true}` for everyone's).
+     * @param {object} [opts] - `{all}`.
+     * @returns {Promise<object[]>} Schedules `{ id, owner, kind, name, cron, tz,
+     *   description, config, enabled, next_run, last_run, last_status, last_message }`.
+     */
+    listSchedules: function (opts) {
+      return request('GET', '/api/schedules' + queryString({ all: opts && opts.all ? 1 : undefined }))
+        .then(function (r) { return r.schedules; });
+    },
+    /**
+     * Create or update a schedule.
+     * @param {object} schedule - `{id?, kind: 'refresh'|'alert'|'subscription', name,
+     *   cron, tz, enabled, config}`.
+     * @returns {Promise<object>} The stored schedule.
+     */
+    saveSchedule: function (schedule) {
+      return request('POST', '/api/schedules', schedule).then(function (r) { return r.schedule; });
+    },
+    /**
+     * @param {string} id - Schedule id.
+     * @returns {Promise<object[]>} The user's remaining schedules.
+     */
+    deleteSchedule: function (id) {
+      return request('DELETE', '/api/schedules/' + encodeURIComponent(id)).then(function (r) { return r.schedules; });
+    },
+    /**
+     * Run a schedule now (its next scheduled run is unchanged).
+     * @param {string} id - Schedule id.
+     * @returns {Promise<object>} `{ run, schedule }`.
+     */
+    runSchedule: function (id) { return request('POST', '/api/schedules/' + encodeURIComponent(id) + '/run'); },
+    /**
+     * A schedule's recent runs, newest first.
+     * @param {string} id - Schedule id.
+     * @returns {Promise<object[]>} `[{ started, finished, status, message, detail, cause }]`.
+     */
+    scheduleRuns: function (id) {
+      return request('GET', '/api/schedules/' + encodeURIComponent(id) + '/runs').then(function (r) { return r.runs; });
+    },
+    /**
+     * Read a cron expression and list its next run times.
+     * @param {string} cron - Five-field cron (or `@daily` etc.).
+     * @param {string} [tz='UTC'] - IANA time zone.
+     * @returns {Promise<object>} `{ description, next }` (next: ISO UTC times).
+     */
+    cronPreview: function (cron, tz) {
+      return request('GET', '/api/cron/preview' + queryString({ cron: cron, tz: tz || 'UTC' }));
+    },
+    /** @returns {Promise<object>} `{ user, email }`. */
+    getProfile: function () { return request('GET', '/api/me/profile'); },
+    /**
+     * Set the address alerts and subscriptions are sent to.
+     * @param {object} profile - `{email}` (empty clears it).
+     * @returns {Promise<object>} `{ user, email }`.
+     */
+    setProfile: function (profile) { return request('PUT', '/api/me/profile', profile); },
+    /**
+     * Admin: set a user's email address.
+     * @param {string} username - Target user.
+     * @param {string} email - Address (empty clears it).
+     * @returns {Promise<object>} `{ user, email }`.
+     */
+    setUserEmail: function (username, email) {
+      return request('POST', '/api/admin/users/' + encodeURIComponent(username) + '/email', { email: email || '' });
+    },
+
     // ---- admin: roles and groups ----
     /** @returns {Promise<object>} `{ permissions, roles, groups, assignments, default_role }`. */
     governance: function () { return request('GET', '/api/admin/governance'); },

@@ -54,6 +54,7 @@ PERMISSIONS = OrderedDict([
     ("share.public", "Publish share links"),
     ("function.run", "Run R/Python data functions (when the server allows it)"),
     ("llm.use", "Use the AI dashboard builder"),
+    ("schedule.create", "Schedule dataset refreshes, alerts and email subscriptions"),
 ])
 
 BUILTIN_ROLES = OrderedDict([
@@ -114,6 +115,11 @@ class _SqliteDb:
         with self._lock:
             return [dict(r) for r in self._conn.execute(sql, params or {}).fetchall()]
 
+    def execute(self, sql: str, params: Optional[Dict[str, Any]] = None) -> int:
+        """Run one write statement in its own transaction; returns the rowcount."""
+        with self._lock:
+            return self._conn.execute(sql, params or {}).rowcount
+
 
 class _SqlDb:
     def __init__(self, engine):
@@ -129,6 +135,11 @@ class _SqlDb:
     def query(self, sql: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         with self._engine.connect() as conn:
             return [dict(r._mapping) for r in conn.execute(self._sa.text(sql), params or {})]
+
+    def execute(self, sql: str, params: Optional[Dict[str, Any]] = None) -> int:
+        """Run one write statement in its own transaction; returns the rowcount."""
+        with self._engine.begin() as conn:
+            return conn.execute(self._sa.text(sql), params or {}).rowcount
 
 
 def _check_name(kind: str, name: Any) -> str:

@@ -13,7 +13,8 @@ This package adds the missing layer: a **spec**, a **grid layout**, a
 re-implement chart rendering or coordination.
 
 **Guides:** [governance and audit](docs/governance.md) (roles, sharing, row/column
-security, lineage, audit log) · [live-data controls](docs/live-data-controls.md) ·
+security, lineage, audit log) · [scheduling](docs/scheduling.md) (refresh, alerts,
+emailed dashboards) · [live-data controls](docs/live-data-controls.md) ·
 [server](server/README.md) · [changelog](CHANGELOG.md)
 
 ---
@@ -456,6 +457,24 @@ records what happened. The full guide is **[docs/governance.md](docs/governance.
     "columns": [{ "hide": ["name"], "except": ["group:clinicians"] }] } }
 ```
 
+## Scheduling: refresh, alerts, emailed dashboards (server)
+
+The server runs three kinds of schedule, created in the app's **Schedules** view
+(guide: **[docs/scheduling.md](docs/scheduling.md)**):
+
+- **Refresh** re-pulls a stored dataset from a URL (CSV/JSON) or one of your
+  database sources, keeping its title, config and lock. Dashboards bound to it
+  show the new data.
+- **Alert** emails people when a value crosses a threshold, for example "mean CRP
+  at site A above 12". It is checked **per recipient on the rows they may see**
+  and sent when the condition becomes true, not on every check.
+- **Subscription** emails a dashboard on a schedule: a link plus a **PNG snapshot
+  rendered as each recipient** (needs Playwright on the server; link only
+  otherwise).
+
+Schedules use cron plus a time zone (presets in the app). Every run is kept in a
+history and recorded in the audit log. Email goes out over SMTP (`CXD_SMTP_*`).
+
 ## Authenticated data binding (connectors)
 
 A `kind: "connector"` data source fetches live from a
@@ -607,7 +626,9 @@ const imported = await importSpecFromFile(file); // parse + validate a File
     `deleteDataset`, `listStores`
   - sharing and security: `directory`, `grants`, `setGrant`, `getPolicy`,
     `setPolicy`, `lineage`
-  - admin: `listUsers`, `createUser`, `setUserPassword`, `setUserAdmin`,
+  - scheduling: `scheduleStatus`, `listSchedules`, `saveSchedule`, `deleteSchedule`,
+    `runSchedule`, `scheduleRuns`, `cronPreview`, `getProfile`, `setProfile`
+  - admin: `listUsers`, `createUser`, `setUserPassword`, `setUserAdmin`, `setUserEmail`,
     `deleteUser`, `governance`, `saveGroup`, `deleteGroup`, `saveRole`,
     `deleteRole`, `assignRole`, `auditLog`, `auditExportUrl`, `auditVerify`
 

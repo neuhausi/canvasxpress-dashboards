@@ -562,6 +562,29 @@ try:
                                   os.environ["ENCRYPTION_KEY"])
     app.mount("/connectors", create_byo_app(store=_connectors_store, serve_static=False))
     print("  [connectors] BYO-database app mounted at /connectors")
+
+    def _refresh_from_connector(owner, name):
+        """Scheduled refresh from a user's database source, run with THEIR stored
+        credentials, the same way /connectors/api/data reads it (SQL bind
+        parameters are passed as NULL; SaaS sources go through their reader)."""
+        from cx_connectors.reshape import rows_to_cx
+        from cx_connectors.sources.sql import SqlSource, bind_param_names
+        from cx_connectors.web.byo_app import _read_saas_source
+
+        record = _connectors_store.get_source(owner, name)
+        if not record:
+            raise ValueError("No database source named %r" % name)
+        if record.get("kind") == "packed":
+            raise ValueError("Matrix sources need a gene list and cannot be refreshed on a schedule")
+        if record.get("kind") in ("salesforce", "servicenow"):
+            header, rows = _read_saas_source(record)
+        else:
+            sql = record["sql"]
+            params = {n: None for n in bind_param_names(sql)}
+            header, rows = SqlSource(record["conn_url"], sql, params).read()
+        return rows_to_cx(header, rows)
+
+    app.state.origin_fetchers["connector"] = _refresh_from_connector
 except Exception as exc:  # noqa: BLE001 — missing extra just disables the feature
     print("  [connectors] NOTE: connectors web app not mounted (%s)" % exc)
 

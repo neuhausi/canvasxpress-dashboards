@@ -99,6 +99,8 @@
     var UMD_URL = './canvasxpress-dashboards.umd.js';
 
     var id = new URLSearchParams(location.search).get('id');
+    // ?owner= opens a dashboard someone shared with you (e.g. from an emailed link).
+    var owner = new URLSearchParams(location.search).get('owner');
     var base = location.pathname.replace(/\/(examples\/)?[^/]*$/, '');
     var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: base });
 
@@ -158,7 +160,7 @@
     if (!id) {
       fail('No dashboard id in the URL (expected ?id=…).');
     } else {
-      client.load(id).then(function (spec) {
+      client.load(id, owner ? { owner: owner } : undefined).then(function (spec) {
         document.title = (spec.title || spec.id) + ' · CanvasXpress Dashboards';
         document.getElementById('message').style.display = 'none';
         return CanvasXpressDashboards.renderDashboard(spec, 'dashboard', { baseUrl: base })

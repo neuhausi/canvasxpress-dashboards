@@ -8,10 +8,35 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 Server features, live on the demo; the client additions ship in the next npm
 release.
 
+### Scheduling ([docs/scheduling.md](docs/scheduling.md))
+- **Refresh** a stored dataset on a schedule from a URL (CSV/JSON; private
+  addresses refused) or a database source (a host-registered fetcher; the demo
+  wires canvasxpress-connectors). Title, config and lock are kept.
+- **Alerts** on a dataset value (mean/sum/min/max of a column or a row count, an
+  optional `where`, a comparison and a threshold).
+  - Evaluated per recipient on their row/column-secured view.
+  - Edge-triggered: emailed when the condition becomes true.
+  - Also checked right after the dataset refreshes.
+- **Subscriptions** email a dashboard: a link plus a PNG snapshot rendered as
+  each recipient (Playwright, optional), and link only otherwise. Only
+  recipients who can open the dashboard get it.
+- **When:** cron with a time zone, including daylight saving.
+- **Runner:** a background runner (`CXD_SCHEDULER`, `CXD_SCHEDULER_TICK`) that
+  claims due jobs atomically, so several processes never run one twice.
+- **Run history:** Run now, and the last 50 runs per schedule.
+- **Email:** SMTP (`CXD_SMTP_*`); addresses live on user profiles
+  (`/api/me/profile`).
+- **Permission:** new `schedule.create`, held by the `editor` role.
+- **Audit:** schedule changes and runs are audited.
+- **UI:** a Schedules view with presets and a next-run preview, a Subscribe
+  action on dashboards, ⏱ on datasets, and email addresses in Admin.
+- **Links:** `view.html` accepts `?owner=`, so emailed links open a shared
+  dashboard.
+
 ### Governance ([docs/governance.md](docs/governance.md))
-- **Roles and permissions.** Six permissions: create dashboards, upload datasets,
-  share with people, publish share links, run data functions, use the AI
-  builder.
+- **Roles and permissions.** Permissions: create dashboards, upload datasets,
+  share with people, publish share links, run data functions, use the AI builder
+  (and `schedule.create`, below).
   - `viewer` and `editor` are built in; admins create custom roles.
   - Roles are given to users or groups, and a user holds every permission of
     their own and their groups' roles.
@@ -58,7 +83,7 @@ release.
 
 ### Other
 - The Home page has cards for blending and linking, R/Python functions,
-  governance and the audit log.
+  governance, the audit log and scheduling.
 - Fixed: `DashboardStore.create_user` left its transaction open after a
   duplicate username, locking the database for other writers.
 

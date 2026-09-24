@@ -189,3 +189,25 @@ test('client governance methods: owner-aware load/save, grants, policy, lineage,
   assert.equal((await client.assignRole('group:a', 'viewer'))['group:a'], 'viewer');
   assert.deepEqual(await client.deleteGroup('a b'), []);
 });
+
+test('client scheduling methods', async function () {
+  var fetchStub = routedFetch({
+    'GET /api/schedules/status': { status: 200, body: { email: true } },
+    'GET /api/schedules?all=1': { status: 200, body: { schedules: [{ id: 's1' }] } },
+    'POST /api/schedules': { status: 200, body: { schedule: { id: 's2' } } },
+    'POST /api/schedules/s2/run': { status: 200, body: { run: { status: 'ok' } } },
+    'GET /api/schedules/s2/runs': { status: 200, body: { runs: [{ status: 'ok' }] } },
+    'GET /api/cron/preview?cron=0%207%20*%20*%20*&tz=Europe%2FParis': { status: 200, body: { description: 'every day at 07:00' } },
+    'PUT /api/me/profile': { status: 200, body: { email: 'a@b.c' } },
+    'DELETE /api/schedules/s2': { status: 200, body: { schedules: [] } }
+  });
+  var client = createDashboardClient({ fetch: fetchStub, baseUrl: 'http://x' });
+  assert.equal((await client.scheduleStatus()).email, true);
+  assert.equal((await client.listSchedules({ all: true }))[0].id, 's1');
+  assert.equal((await client.saveSchedule({ kind: 'alert' })).id, 's2');
+  assert.equal((await client.runSchedule('s2')).run.status, 'ok');
+  assert.equal((await client.scheduleRuns('s2'))[0].status, 'ok');
+  assert.equal((await client.cronPreview('0 7 * * *', 'Europe/Paris')).description, 'every day at 07:00');
+  assert.equal((await client.setProfile({ email: 'a@b.c' })).email, 'a@b.c');
+  assert.deepEqual(await client.deleteSchedule('s2'), []);
+});

@@ -197,6 +197,7 @@
         <a class="nav-item" data-view="Builder"><span class="ic">🧩</span> Builder</a>
         <a class="nav-item" data-view="Dashboards"><span class="ic">📊</span> Dashboards</a>
         <a class="nav-item" data-view="Data"><span class="ic">🗂️</span> Data</a>
+        <a class="nav-item" data-view="Schedules"><span class="ic">⏰</span> Schedules</a>
         <a class="nav-item" data-view="Settings"><span class="ic">⚙️</span> Settings</a>
         <a class="nav-item" data-view="Admin" id="nav-admin" style="display:none"><span class="ic">🛡️</span> Admin</a>
         <a class="nav-item" data-view="Logs" id="nav-logs" style="display:none"><span class="ic">🧾</span> Logs</a>
@@ -324,8 +325,9 @@
           notice('🧪', 'R and Python functions', 'A data source can be a short R or Python snippet over your other sources — rank genes against survival, fit a model — and its result feeds panels like any dataset. Runs on the server in a sandbox, when an admin enables it.', 'n-md') +
           notice('🛡️', 'Governance', 'Roles decide who can build, upload and share. Share a dashboard or dataset with people and groups, to view or to edit. Row- and column-level security decides who sees which rows and columns — site A sees site A; only clinicians see names — in the app, in shared dashboards and on share links. Lineage shows which dashboards read which data. <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/governance.md" target="_blank" rel="noopener">How it works</a>.', 'n-lg') +
           notice('🧾', 'Audit log', 'Who did what, when: sign-ins, changes, shares, share-link views and function runs. Tamper-evident, filterable and exportable from the Admin view.', 'n-sm') +
-          notice('🔗', 'Sharing', 'Share with people and groups from the Dashboards view (<b>People</b>), or publish a read-only link — a live, always-current dashboard, straight into an email.', 'n-sm') +
-          notice('📖', 'The product story', 'Why recipes beat screenshots: a dashboard is a reproducible recipe — data plus spec — so its figures regenerate as the data changes. Hand someone the recipe instead of an image and they rerun it on current data to get the same figures. <a href="' + API_BASE + '/examples/reproducible-bench/narrative.html">Read the Reproducible Bench narrative</a>, illustrated with the live dashboards it describes.', 'n-lg') +
+          notice('⏰', 'Scheduling', 'Refresh datasets from a URL or a database every night, get an email when a value crosses a threshold, and send dashboards to people every Monday — with a PNG snapshot of what each of them may see. Set it up in <b>Schedules</b>.', 'n-md') +
+          notice('🔗', 'Sharing', 'Share with people and groups from the Dashboards view (<b>People</b>), or publish a read-only link — a live, always-current dashboard, straight into an email.', 'n-md') +
+          notice('📖', 'The product story', 'Why recipes beat screenshots: a dashboard is a reproducible recipe — data plus spec — so its figures regenerate as the data changes. Hand someone the recipe instead of an image and they rerun it on current data to get the same figures. <a href="' + API_BASE + '/examples/reproducible-bench/narrative.html">Read the Reproducible Bench narrative</a>, illustrated with the live dashboards it describes.', 'n-feature') +
         '</div>' +
         '</div>';
       var create = document.getElementById('home-create');
@@ -953,7 +955,8 @@
               '<div class="data-item-title">' + esc(u.username) + badge + '</div>' +
               '<div class="data-item-meta">' + u.dashboards + ' dashboard' + (u.dashboards === 1 ? '' : 's') +
                 (u.groups && u.groups.length ? ' · groups: ' + esc(u.groups.join(', ')) : '') +
-                (!u.is_admin && u.roles ? ' · acts as ' + esc(u.roles.join(' + ')) : '') + '</div>' +
+                (!u.is_admin && u.roles ? ' · acts as ' + esc(u.roles.join(' + ')) : '') +
+                ' · ' + (u.email ? esc(u.email) : 'no email') + '</div>' +
             '</div>';
           // The user's own role ('' = none: their groups' roles, else the default).
           if (!u.is_admin && govRoles.length) {
@@ -988,6 +991,17 @@
             tag.style.cssText = 'font-size:14px;color:var(--muted)';
             row.appendChild(tag);
           }
+          var mail = document.createElement('button');
+          mail.textContent = 'Email…';
+          mail.title = 'The address alerts and subscriptions go to';
+          mail.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer';
+          mail.onclick = function () {
+            var next = window.prompt('Email address for "' + u.username + '" (empty clears it):', u.email || '');
+            if (next === null) return;
+            errEl.textContent = '';
+            client.setUserEmail(u.username, next.trim()).then(load, fail);
+          };
+          row.appendChild(mail);
           var reset = document.createElement('button');
           reset.textContent = 'Reset password';
           reset.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer';
@@ -1637,6 +1651,15 @@
             people.title = 'Share with people and groups';
             item.appendChild(people);
           }
+          if (!d.shared && !d.example && hasPerm('schedule.create')) {
+            var timer = smallButton('⏱', function () {
+              pendingSchedule = { kind: 'refresh', name: 'Refresh ' + (d.title || d.id),
+                config: { dataset: d.id, store: d.store || null } };
+              activate('Schedules');
+            }, 'border:none;background:transparent;padding:0 2px');
+            timer.title = 'Refresh on a schedule';
+            item.appendChild(timer);
+          }
           if (ownsIt) {
             var lock = smallButton('🔒', function () {
               showSecurity({ id: d.id, title: d.title, store: d.store, owner: d.owner });
@@ -2012,6 +2035,390 @@
         }
         draw();
       }, function (e) { body.textContent = 'Could not load the security rules: ' + e.message; });
+    }
+
+    // --- Schedules view: dataset refresh, alerts and emailed dashboards ---------
+    // The server runs them (cron + time zone) with the rights of the people
+    // involved; this view lists, edits, runs and shows the history of the
+    // user's schedules. pendingSchedule pre-fills the editor when another view
+    // (Dashboards → Subscribe, Data → ⏱) sends the user here.
+    var pendingSchedule = null;
+    var SCHEDULE_KINDS = {
+      refresh: { icon: '🔄', label: 'Refresh a dataset' },
+      alert: { icon: '🔔', label: 'Alert on a value' },
+      subscription: { icon: '📧', label: 'Email a dashboard' }
+    };
+    var WHEN_PRESETS = [
+      ['*/15 * * * *', 'Every 15 minutes'],
+      ['0 * * * *', 'Every hour'],
+      ['daily', 'Every day at…'],
+      ['weekdays', 'Weekdays at…'],
+      ['weekly', 'Every week on…'],
+      ['custom', 'Custom (cron)']
+    ];
+    function localZone() {
+      try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; }
+    }
+    function whenText(iso) {
+      if (!iso) return '—';
+      var d = new Date(iso);
+      return isNaN(d) ? iso : d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+    }
+    function statusBadge(status) {
+      var colour = status === 'ok' ? '#2e7d32' : status === 'warning' ? '#b26a00' : status === 'error' ? '#d64545' : 'var(--muted)';
+      return '<span style="font-weight:600;color:' + colour + '">' + esc(status || 'not run yet') + '</span>';
+    }
+
+    function showSchedules() {
+      teardown();
+      toolbarEl.innerHTML =
+        '<div style="display:flex;align-items:center;gap:8px;width:100%">' +
+          '<h2 class="view-title">Schedules</h2>' +
+          '<span id="sched-new-host" style="margin-left:auto;display:flex;gap:6px"></span>' +
+        '</div>';
+      viewEl.innerHTML =
+        '<div style="max-width:1100px">' +
+          '<p style="color:var(--muted);margin:0 0 10px;font-size:15px">Refresh datasets from their source, get an email when a value ' +
+            'crosses a threshold, and send dashboards to people on a schedule. Everything runs on the server with the ' +
+            'rights of the people involved: alerts and snapshots respect each recipient’s access and row/column security.</p>' +
+          '<div id="sched-status" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;font-size:15px"></div>' +
+          '<div id="sched-list"><div class="placeholder">Loading…</div></div>' +
+        '</div>';
+      var status = null;
+      function renderStatus() {
+        var host = document.getElementById('sched-status');
+        if (!host) return;
+        function chip(on, text, off) {
+          return '<span style="font-size:13px;border:1px solid var(--rail-border);border-radius:99px;padding:2px 10px;color:' +
+            (on ? '#2e7d32' : 'var(--muted)') + '">' + (on ? '✓ ' + text : '✗ ' + (off || text)) + '</span>';
+        }
+        host.innerHTML =
+          '<label style="display:flex;gap:6px;align-items:center">Your email for alerts and subscriptions ' +
+            '<input id="sched-email" type="email" placeholder="you@example.org" style="font-size:15px;padding:4px 8px;width:240px"/></label>' +
+          '<button id="sched-email-save" style="font-size:14px;padding:4px 10px">Save</button>' +
+          '<span id="sched-email-msg" style="font-size:14px"></span>' +
+          '<span style="flex:1"></span>' +
+          chip(status.enabled, 'Scheduler on', 'Scheduler off (CXD_SCHEDULER)') +
+          chip(status.email, 'Email', 'Email not configured') +
+          chip(status.snapshots, 'PNG snapshots', 'Snapshots: link only');
+        var input = document.getElementById('sched-email');
+        input.value = status.email_address || '';
+        document.getElementById('sched-email-save').onclick = function () {
+          var msg = document.getElementById('sched-email-msg');
+          client.setProfile({ email: input.value.trim() }).then(function (r) {
+            status.email_address = r.email;
+            msg.style.color = '#2e7d32'; msg.textContent = r.email ? 'Saved.' : 'Cleared.';
+          }, function (e) { msg.style.color = '#d64545'; msg.textContent = e.message; });
+        };
+        var newHost = document.getElementById('sched-new-host');
+        newHost.innerHTML = '';
+        if (status.can_create) {
+          Object.keys(SCHEDULE_KINDS).forEach(function (kind) {
+            newHost.appendChild(smallButton('+ ' + SCHEDULE_KINDS[kind].label, function () {
+              editSchedule({ kind: kind }, status, load);
+            }, 'border-radius:6px'));
+          });
+        }
+      }
+      function load() {
+        var listEl = document.getElementById('sched-list');
+        if (!listEl) return;
+        client.listSchedules({ all: isAdmin }).then(function (rows) {
+          listEl.innerHTML = rows.length ? '' : '<div class="placeholder">No schedules yet. Use the buttons above to create one' +
+            (status.can_create ? '' : ' (your role does not allow creating schedules)') + '.</div>';
+          rows.forEach(function (sc) { listEl.appendChild(scheduleCard(sc)); });
+        }, function (e) { listEl.innerHTML = '<div class="placeholder">' + esc(e.message) + '</div>'; });
+      }
+      function scheduleCard(sc) {
+        var kind = SCHEDULE_KINDS[sc.kind] || { icon: '⏰', label: sc.kind };
+        var cfg = sc.config || {};
+        var what = sc.kind === 'refresh'
+          ? 'Dataset <b>' + esc(cfg.dataset) + '</b> from ' + (cfg.origin && cfg.origin.kind === 'connector'
+              ? 'database source <b>' + esc(cfg.origin.source) + '</b>' : '<code>' + esc(cfg.origin && cfg.origin.url) + '</code>')
+          : sc.kind === 'alert'
+            ? (cfg.aggregate === 'count' ? 'Number of rows' : esc(cfg.aggregate) + ' of <b>' + esc(cfg.measure) + '</b>') +
+              (cfg.where && Object.keys(cfg.where).length ? ' where ' + Object.keys(cfg.where).map(function (k) { return esc(k) + ' = ' + esc(cfg.where[k]); }).join(', ') : '') +
+              ' ' + esc(cfg.op) + ' ' + esc(cfg.threshold) + ' in <b>' + esc(cfg.dataset) + '</b> → ' + esc((cfg.recipients || []).map(principalLabel).join(', '))
+            : 'Dashboard <b>' + esc(cfg.dashboard) + '</b> → ' + esc((cfg.recipients || []).map(principalLabel).join(', ')) +
+              (cfg.snapshot === false ? ' (link only)' : '');
+        var card = document.createElement('div');
+        card.className = 'data-item';
+        card.style.cssText = 'padding:10px 12px;border:1px solid var(--rail-border);border-radius:10px;margin-bottom:8px;cursor:default';
+        card.innerHTML =
+          '<div style="display:flex;gap:10px;align-items:flex-start">' +
+            '<div style="font-size:22px;line-height:1">' + kind.icon + '</div>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div style="font-weight:600">' + esc(sc.name) + (sc.enabled ? '' : ' <span style="color:var(--muted);font-weight:400">(paused)</span>') +
+                (sc.owner !== currentUser ? ' <span style="color:var(--muted);font-weight:400;font-size:14px">· ' + esc(sc.owner) + '</span>' : '') + '</div>' +
+              '<div style="font-size:14px;margin:2px 0">' + what + '</div>' +
+              '<div style="font-size:14px;color:var(--muted)">' + esc(sc.description) + (sc.tz && sc.tz !== 'UTC' ? ' (' + esc(sc.tz) + ')' : ' (UTC)') +
+                ' · next: ' + (sc.enabled ? esc(whenText(sc.next_run)) : 'paused') +
+                ' · last: ' + statusBadge(sc.last_status) + (sc.last_run ? ' ' + esc(whenText(sc.last_run)) : '') + '</div>' +
+              (sc.last_message ? '<div style="font-size:14px;margin-top:2px">' + esc(sc.last_message) + '</div>' : '') +
+            '</div>' +
+          '</div>';
+        var actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;margin-left:32px';
+        var mine = sc.owner === currentUser;
+        var runBtn = smallButton('Run now', function () {
+          runBtn.disabled = true; runBtn.textContent = 'Running…';
+          client.runSchedule(sc.id).then(load, function (e) { alert(e.message); load(); });
+        });
+        actions.appendChild(runBtn);
+        if (mine && status.can_create) {
+          actions.appendChild(smallButton('Edit', function () { editSchedule(sc, status, load); }));
+          actions.appendChild(smallButton(sc.enabled ? 'Pause' : 'Resume', function () {
+            client.saveSchedule({ id: sc.id, kind: sc.kind, name: sc.name, cron: sc.cron, tz: sc.tz,
+              enabled: !sc.enabled, config: sc.config }).then(load, function (e) { alert(e.message); });
+          }));
+        }
+        actions.appendChild(smallButton('History', function () { showScheduleRuns(sc); }));
+        actions.appendChild(smallButton('Delete', function () {
+          if (!confirm('Delete the schedule “' + sc.name + '”?')) return;
+          client.deleteSchedule(sc.id).then(load, function (e) { alert(e.message); });
+        }, 'color:#d64545'));
+        card.appendChild(actions);
+        return card;
+      }
+      client.scheduleStatus().then(function (st) {
+        status = st;
+        renderStatus();
+        load();
+        if (pendingSchedule) { var p = pendingSchedule; pendingSchedule = null; if (status.can_create) editSchedule(p, status, load); }
+      }, function (e) {
+        document.getElementById('sched-list').innerHTML = '<div class="placeholder">' + esc(e.message) + '</div>';
+      });
+    }
+
+    function showScheduleRuns(sc) {
+      var body = openModal('History of “' + sc.name + '”');
+      body.textContent = 'Loading…';
+      client.scheduleRuns(sc.id).then(function (runs) {
+        if (!runs.length) { body.innerHTML = '<div class="placeholder">It has not run yet.</div>'; return; }
+        body.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="text-align:left">' +
+          '<th style="padding:4px 6px">When</th><th style="padding:4px 6px">Why</th><th style="padding:4px 6px">Result</th><th style="padding:4px 6px">Details</th></tr></thead><tbody>' +
+          runs.map(function (r) {
+            return '<tr><td style="padding:4px 6px;border-top:1px solid var(--rail-border);white-space:nowrap">' + esc(whenText(r.started)) + '</td>' +
+              '<td style="padding:4px 6px;border-top:1px solid var(--rail-border)">' + esc(r.cause) + '</td>' +
+              '<td style="padding:4px 6px;border-top:1px solid var(--rail-border)">' + statusBadge(r.status) + '</td>' +
+              '<td style="padding:4px 6px;border-top:1px solid var(--rail-border)">' + esc(r.message) + '</td></tr>';
+          }).join('') + '</tbody></table>';
+      }, function (e) { body.textContent = e.message; });
+    }
+
+    // The schedule editor (a modal). sc = an existing schedule, or {kind, config?} for a new one.
+    function editSchedule(sc, status, onSaved) {
+      var kind = sc.kind;
+      var cfg = JSON.parse(JSON.stringify(sc.config || {}));
+      var body = openModal((sc.id ? 'Edit: ' : '') + SCHEDULE_KINDS[kind].label);
+      var S = 'font-size:15px;padding:5px 8px';
+      function row(label, control, hint) {
+        var r = document.createElement('div');
+        r.style.cssText = 'display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin:8px 0';
+        var l = document.createElement('div'); l.textContent = label; l.style.fontWeight = '600';
+        var c = document.createElement('div'); c.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap';
+        (Array.isArray(control) ? control : [control]).forEach(function (x) { c.appendChild(x); });
+        if (hint) { var h = document.createElement('div'); h.style.cssText = 'grid-column:2;font-size:13px;color:var(--muted);margin-top:-4px'; h.innerHTML = hint; r.appendChild(l); r.appendChild(c); r.appendChild(h); return r; }
+        r.appendChild(l); r.appendChild(c); return r;
+      }
+      function input(value, placeholder, type) {
+        var i = document.createElement('input'); i.type = type || 'text'; i.value = value == null ? '' : value;
+        if (placeholder) i.placeholder = placeholder; i.style.cssText = S; return i;
+      }
+      function select(options, value) {
+        var sel = document.createElement('select'); sel.style.cssText = S;
+        options.forEach(function (o) { var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op); });
+        if (value != null) sel.value = value;
+        return sel;
+      }
+      var err = document.createElement('div'); err.style.cssText = 'color:#d64545;min-height:18px;font-size:14px;margin-top:8px';
+      var fields = document.createElement('div');
+      var name = input(sc.name || '', 'A name you will recognise');
+      name.style.width = '100%';
+      fields.appendChild(row('Name', name));
+      var getConfig = null;   // kind-specific: returns the config object
+
+      // ---- when (preset → cron) ----
+      var cron = sc.cron || (kind === 'alert' ? '*/15 * * * *' : kind === 'refresh' ? '0 6 * * *' : '0 8 * * 1');
+      var parts = cron.split(' ');
+      var presetValue = 'custom';
+      if (cron === '*/15 * * * *' || cron === '0 * * * *') presetValue = cron;
+      else if (/^\d+ \d+ \* \* \*$/.test(cron)) presetValue = 'daily';
+      else if (/^\d+ \d+ \* \* 1-5$/.test(cron)) presetValue = 'weekdays';
+      else if (/^\d+ \d+ \* \* [0-6]$/.test(cron)) presetValue = 'weekly';
+      var preset = select(WHEN_PRESETS, presetValue);
+      var time = input(/^\d+$/.test(parts[1]) && /^\d+$/.test(parts[0]) ? ('0' + parts[1]).slice(-2) + ':' + ('0' + parts[0]).slice(-2) : '08:00', '', 'time');
+      var day = select([['1', 'Monday'], ['2', 'Tuesday'], ['3', 'Wednesday'], ['4', 'Thursday'], ['5', 'Friday'], ['6', 'Saturday'], ['0', 'Sunday']],
+        /^[0-6]$/.test(parts[4]) ? parts[4] : '1');
+      var custom = input(cron, 'minute hour day month weekday');
+      var tz = input(sc.tz || localZone(), 'IANA time zone, e.g. Europe/Paris');
+      tz.style.width = '200px';
+      var preview = document.createElement('div');
+      preview.style.cssText = 'font-size:13px;color:var(--muted)';
+      function cronValue() {
+        var p = preset.value;
+        if (p === 'custom') return custom.value.trim();
+        if (p.indexOf('*') !== -1) return p;
+        var hm = (time.value || '08:00').split(':');
+        var base = String(+hm[1]) + ' ' + String(+hm[0]) + ' * * ';
+        return base + (p === 'daily' ? '*' : p === 'weekdays' ? '1-5' : day.value);
+      }
+      var previewTimer = null;
+      function syncWhen() {
+        var p = preset.value;
+        time.style.display = (p === 'daily' || p === 'weekdays' || p === 'weekly') ? '' : 'none';
+        day.style.display = p === 'weekly' ? '' : 'none';
+        custom.style.display = p === 'custom' ? '' : 'none';
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(function () {
+          client.cronPreview(cronValue(), tz.value.trim() || 'UTC').then(function (r) {
+            preview.style.color = 'var(--muted)';
+            preview.textContent = 'Runs ' + r.description + '. Next: ' + r.next.map(whenText).join(' · ');
+          }, function (e) { preview.style.color = '#d64545'; preview.textContent = e.message; });
+        }, 250);
+      }
+      [preset, time, day, custom, tz].forEach(function (el) { el.onchange = syncWhen; el.oninput = syncWhen; });
+      fields.appendChild(row('When', [preset, day, time, custom]));
+      fields.appendChild(row('Time zone', tz));
+      var previewRow = document.createElement('div'); previewRow.style.cssText = 'margin:-4px 0 8px 160px';
+      previewRow.appendChild(preview); fields.appendChild(previewRow);
+
+      // ---- recipients (alerts, subscriptions) ----
+      function recipientsEditor(dir, initial) {
+        var chosen = (initial && initial.length ? initial : ['user:' + currentUser]).slice();
+        var wrap = document.createElement('span');
+        wrap.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;align-items:center';
+        function draw() {
+          wrap.innerHTML = '';
+          chosen.forEach(function (p, i) {
+            wrap.appendChild(smallButton(principalLabel(p) + ' ✕', function () { chosen.splice(i, 1); draw(); }));
+          });
+          var pick = document.createElement('select');
+          pick.style.cssText = 'font-size:14px;padding:3px 4px';
+          pick.innerHTML = '<option value="">+ add a person or group…</option>' +
+            (dir.groups || []).map(function (g) { return '<option value="group:' + esc(g) + '">' + esc(principalLabel('group:' + g)) + '</option>'; }).join('') +
+            (dir.users || []).map(function (u) { return '<option value="user:' + esc(u) + '">' + esc(principalLabel('user:' + u)) + '</option>'; }).join('');
+          pick.onchange = function () { if (pick.value && chosen.indexOf(pick.value) === -1) chosen.push(pick.value); draw(); };
+          wrap.appendChild(pick);
+        }
+        draw();
+        wrap.value = function () { return chosen.slice(); };
+        return wrap;
+      }
+
+      var specific = document.createElement('div');
+      fields.appendChild(specific);
+      Promise.all([client.listDatasets(), client.list(), loadDirectory()]).then(function (r) {
+        var datasets = r[0] || [], dashboards = r[1] || [], dir = r[2];
+        if (kind === 'refresh') {
+          var mineDs = datasets.filter(function (d) { return !d.shared && !d.example; });
+          var dsSel = select([['', '— a new dataset —']].concat(mineDs.map(function (d) { return [d.id, (d.title || d.id) + '  (' + d.id + ')']; })), cfg.dataset || '');
+          var newId = input(cfg.dataset && !mineDs.some(function (d) { return d.id === cfg.dataset; }) ? cfg.dataset : '', 'new dataset id, e.g. stock-levels');
+          var newTitle = input(cfg.title || '', 'title');
+          function syncDs() { newId.style.display = newTitle.style.display = dsSel.value ? 'none' : ''; }
+          dsSel.onchange = syncDs; syncDs();
+          specific.appendChild(row('Dataset', [dsSel, newId, newTitle], 'Each run replaces its data; the title, graph config and lock are kept.'));
+          var origin = cfg.origin || { kind: 'url' };
+          var originKinds = [['url', 'A URL (CSV or JSON)']];
+          if ((status.origins || []).indexOf('connector') !== -1) originKinds.push(['connector', 'A database source']);
+          var oKind = select(originKinds, origin.kind);
+          var url = input(origin.url || '', 'https://example.org/data.csv'); url.style.width = '360px';
+          var fmt = select([['', 'Format: from the URL'], ['csv', 'CSV'], ['json', 'JSON rows'], ['cx', 'CanvasXpress JSON']], origin.format || '');
+          var source = input(origin.source || '', 'database source name');
+          function syncOrigin() {
+            var isUrl = oKind.value === 'url';
+            url.style.display = fmt.style.display = isUrl ? '' : 'none';
+            source.style.display = isUrl ? 'none' : '';
+          }
+          oKind.onchange = syncOrigin; syncOrigin();
+          specific.appendChild(row('From', [oKind, url, fmt, source],
+            'Database sources are the ones you added under Data → Database sources; they run with your credentials.'));
+          getConfig = function () {
+            var picked = mineDs.filter(function (d) { return d.id === dsSel.value; })[0];
+            return { dataset: dsSel.value || newId.value.trim(), title: dsSel.value ? undefined : newTitle.value.trim(),
+              store: picked ? picked.store || null : cfg.store || null,
+              origin: oKind.value === 'url' ? { kind: 'url', url: url.value.trim(), format: fmt.value || null }
+                : { kind: 'connector', source: source.value.trim() } };
+          };
+        } else if (kind === 'alert') {
+          var dsKey = function (d) { return [d.owner || currentUser, d.store || '', d.id].join('|'); };
+          var readable = datasets;
+          var current = cfg.dataset ? [cfg.dataset_owner || currentUser, cfg.store || '', cfg.dataset].join('|') : '';
+          var dsSel2 = select([['', '— pick a dataset —']].concat(readable.map(function (d) {
+            return [dsKey(d), (d.title || d.id) + (d.owner && d.owner !== currentUser ? '  (from ' + d.owner + ')' : '')];
+          })), current);
+          var agg = select([['mean', 'Mean'], ['sum', 'Sum'], ['min', 'Minimum'], ['max', 'Maximum'], ['count', 'Number of rows']], cfg.aggregate || 'mean');
+          var measure = select([], null);
+          var whereField = select([], null), whereValue = input(cfg.where ? cfg.where[Object.keys(cfg.where)[0]] || '' : '', 'value');
+          var op = select([['>', 'is above'], ['>=', 'is at or above'], ['<', 'is below'], ['<=', 'is at or below'], ['==', 'equals'], ['!=', 'differs from']], cfg.op || '>');
+          var threshold = input(cfg.threshold != null ? cfg.threshold : '', 'number', 'number'); threshold.style.width = '120px';
+          function loadColumns() {
+            var bits = dsSel2.value.split('|');
+            measure.innerHTML = ''; whereField.innerHTML = '<option value="">— any row —</option>';
+            if (!dsSel2.value) return;
+            client.getDataset(bits[2], { store: bits[1] || undefined, owner: bits[0] !== currentUser ? bits[0] : undefined }).then(function (data) {
+              datasetColumns(data).forEach(function (c) {
+                measure.appendChild(new Option(c, c));
+                whereField.appendChild(new Option(c, c));
+              });
+              if (cfg.measure) measure.value = cfg.measure;
+              if (cfg.where && Object.keys(cfg.where).length) whereField.value = Object.keys(cfg.where)[0];
+            }, function (e) { err.textContent = e.message; });
+          }
+          dsSel2.onchange = loadColumns; loadColumns();
+          agg.onchange = function () { measure.style.display = agg.value === 'count' ? 'none' : ''; };
+          agg.onchange();
+          specific.appendChild(row('Dataset', dsSel2));
+          specific.appendChild(row('Value', [agg, measure]));
+          specific.appendChild(row('Only rows where', [whereField, whereValue], 'Optional. Each recipient is checked on the rows they may see.'));
+          specific.appendChild(row('Alert when it', [op, threshold], 'Recipients are emailed when it becomes true, and again only after it clears.'));
+          var rec = recipientsEditor(dir, cfg.recipients);
+          specific.appendChild(row('Email', rec));
+          getConfig = function () {
+            var bits = dsSel2.value.split('|');
+            var where = {};
+            if (whereField.value) where[whereField.value] = whereValue.value;
+            return { dataset: bits[2], dataset_owner: bits[0], store: bits[1] || null, aggregate: agg.value,
+              measure: agg.value === 'count' ? null : measure.value, where: where, op: op.value,
+              threshold: threshold.value === '' ? null : Number(threshold.value), recipients: rec.value() };
+          };
+        } else {
+          var current2 = cfg.dashboard ? (cfg.dashboard_owner || currentUser) + '|' + cfg.dashboard : '';
+          var dashSel = select([['', '— pick a dashboard —']].concat(dashboards.map(function (d) {
+            return [(d.owner || currentUser) + '|' + d.id, (d.title || d.id) + (d.owner && d.owner !== currentUser ? '  (' + d.owner + ')' : '')];
+          })), current2);
+          specific.appendChild(row('Dashboard', dashSel));
+          var rec2 = recipientsEditor(dir, cfg.recipients);
+          specific.appendChild(row('Email to', rec2, 'Only people who can open the dashboard get it; each sees their own data.'));
+          var snap = document.createElement('input'); snap.type = 'checkbox'; snap.checked = cfg.snapshot !== false;
+          var snapLabel = document.createElement('span');
+          snapLabel.textContent = status.snapshots ? 'Include a PNG snapshot' : 'Include a PNG snapshot (not available on this server: link only)';
+          specific.appendChild(row('Snapshot', [snap, snapLabel]));
+          getConfig = function () {
+            var bits = dashSel.value.split('|');
+            return { dashboard: bits[1], dashboard_owner: bits[0], recipients: rec2.value(), snapshot: snap.checked };
+          };
+        }
+        if (!status.email && kind !== 'refresh') {
+          var warn = document.createElement('div');
+          warn.style.cssText = 'font-size:14px;color:#b26a00;margin:6px 0';
+          warn.textContent = 'Email is not configured on this server (CXD_SMTP_HOST), so runs are recorded but nothing is sent.';
+          specific.appendChild(warn);
+        }
+      }, function (e) { err.textContent = e.message; });
+
+      var actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;gap:8px;margin-top:12px';
+      actions.appendChild(smallButton(sc.id ? 'Save' : 'Create', function () {
+        if (!getConfig) return;
+        err.textContent = '';
+        client.saveSchedule({ id: sc.id, kind: kind, name: name.value.trim() || SCHEDULE_KINDS[kind].label,
+          cron: cronValue(), tz: tz.value.trim() || 'UTC', enabled: sc.enabled !== false, config: getConfig() })
+          .then(function () { body.close(); if (onSaved) onSaved(); }, function (e) { err.textContent = e.message; });
+      }, 'background:var(--accent);color:#fff;border:none;border-radius:6px'));
+      actions.appendChild(smallButton('Cancel', function () { body.close(); }));
+      body.appendChild(fields); body.appendChild(actions); body.appendChild(err);
+      syncWhen();
     }
 
     // --- Settings view: edit the dashboard's presentation, with a live preview ---
@@ -2457,6 +2864,9 @@
               (mine && isShared
                 ? '<button class="cta" data-act="unshare" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Unshare</button>'
                 : '') +
+              (hasPerm('schedule.create')
+                ? '<button class="cta" data-act="subscribe" title="Email this dashboard on a schedule" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Subscribe</button>'
+                : '') +
               (mine
                 ? '<button class="cta" data-act="del" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Delete</button>'
                 : '') +
@@ -2478,6 +2888,10 @@
               });
             } else if (act === 'people') {
               showPeople({ kind: 'dashboard', id: d.id, title: d.title });
+            } else if (act === 'subscribe') {
+              pendingSchedule = { kind: 'subscription', name: (d.title || d.id) + ' by email',
+                config: { dashboard: d.id, dashboard_owner: d.owner || currentUser } };
+              activate('Schedules');
             } else if (act === 'share') {
               shareDashboard(d, item.querySelector('.dash-share'));
             } else if (act === 'unshare') {
@@ -2953,7 +3367,7 @@
 
     // Views that touch per-user state require a session; visiting one while
     // signed out routes to Login and resumes the intended view after sign-in.
-    var PROTECTED = { Builder: 1, Data: 1, Dashboards: 1, Settings: 1, Admin: 1, Logs: 1 };
+    var PROTECTED = { Builder: 1, Data: 1, Dashboards: 1, Schedules: 1, Settings: 1, Admin: 1, Logs: 1 };
     var pendingView = null;
 
     function activate(name) {
@@ -2967,6 +3381,7 @@
       else if (name === 'Logs') showLogs();
       else if (name === 'Data') showData();
       else if (name === 'Settings') showSettings();
+      else if (name === 'Schedules') showSchedules();
       else if (name === 'Admin') showAdmin();
       else showPlaceholder(name);
     }

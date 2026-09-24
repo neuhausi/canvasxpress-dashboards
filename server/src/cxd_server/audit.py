@@ -75,10 +75,16 @@ _ACTIONS = {
     ("DELETE", "/api/admin/roles/{role_name}"): "admin.role.delete",
     ("POST", "/api/admin/roles/assign"): "admin.role.assign",
     ("GET", "/api/admin/lineage"): "admin.lineage",
+    ("POST", "/api/schedules"): "schedule.save",
+    ("DELETE", "/api/schedules/{schedule_id}"): "schedule.delete",
+    ("POST", "/api/schedules/{schedule_id}/run"): "schedule.run",
+    ("PUT", "/api/me/profile"): "profile.save",
+    ("POST", "/api/admin/users/{username}/email"): "admin.user.email",
 }
 
 # Path parameters that name the event's target, in order of preference.
-_TARGET_PARAMS = ("dashboard_id", "dataset_id", "username", "group_name", "role_name")
+_TARGET_PARAMS = ("dashboard_id", "dataset_id", "schedule_id", "username", "group_name",
+                  "role_name")
 
 _FIELDS = ("seq", "ts", "actor", "action", "target", "owner", "outcome", "status", "ip",
            "detail", "prev_hash", "hash")

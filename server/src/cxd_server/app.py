@@ -16,6 +16,7 @@ permissions — this service only stores and serves the spec.
 
 from __future__ import annotations
 
+import contextlib
 import datetime
 import hashlib
 import html
@@ -40,6 +41,10 @@ from .audit import (AuditLog, NullAuditLog, SqlAuditLog, SqliteAuditLog, action_
 from .functions import FunctionError, FunctionsConfig, functions_status, run_function
 from .governance import (PERMISSIONS, Governance, GovernanceError, apply_policy, build_lineage,
                          open_governance, spec_sources)
+from .jobs import Jobs
+from .mailer import SmtpMailer
+from .scheduler import Cron, ScheduleError, ScheduleStore, Scheduler
+from .snapshot import SnapshotRenderer
 from .sqldashboard import open_dashboard_store
 from .store import DashboardStore
 from .stores import StoreRegistry
@@ -357,6 +362,10 @@ def create_dashboards_app(
     functions: Optional[FunctionsConfig] = None,
     audit: Optional[AuditLog] = None,
     governance: Optional[Governance] = None,
+    mailer=None,
+    snapshots: Optional[SnapshotRenderer] = None,
+    origin_fetchers: Optional[dict] = None,
+    scheduler_enabled: Optional[bool] = None,
 ) -> FastAPI:
     """Build the dashboards FastAPI app.
 
@@ -404,6 +413,15 @@ def create_dashboards_app(
         policies; built next to the dashboard store if omitted.
         ``CXD_DEFAULT_ROLE`` names the role of users with none assigned
         (default ``editor``).
+    :param mailer: Sends alert and subscription email; built from ``CXD_SMTP_*``
+        if omitted (email is off without ``CXD_SMTP_HOST``).
+    :param snapshots: Renders dashboard PNGs for subscriptions; built from
+        ``CXD_INTERNAL_URL`` / ``CXD_SNAPSHOTS`` if omitted (needs Playwright).
+    :param origin_fetchers: Extra dataset origins for scheduled refresh, as
+        ``kind -> fetch(owner, source_name) -> data`` (e.g. ``"connector"``).
+        Also reachable as ``app.state.origin_fetchers`` to register later.
+    :param scheduler_enabled: Run due schedules in a background thread while
+        the app runs; falls back to ``CXD_SCHEDULER`` (default on).
     :returns: The configured FastAPI application.
     """
     session_secret = session_secret or os.getenv("SESSION_SECRET")
@@ -474,9 +492,38 @@ def create_dashboards_app(
         """All configured dataset store names (default first)."""
         return [s["name"] for s in registry.named("dataset")]
 
-    app = FastAPI(title="canvasxpress-dashboards · persistence & sharing")
+    # Scheduling: refresh, alerts and subscriptions (see scheduler.py / jobs.py).
+    schedules = ScheduleStore(governance._db)
+    if mailer is None:
+        mailer = SmtpMailer.from_env()
+    if snapshots is None:
+        snapshots = SnapshotRenderer(
+            os.getenv("CXD_INTERNAL_URL")
+            or "http://127.0.0.1:%s" % (os.getenv("CXD_PORT") or 8000),
+            session_secret, canvasxpress_url, canvasxpress_license,
+            enabled=os.getenv("CXD_SNAPSHOTS", "on").lower() not in ("off", "0", "false", "no"))
+    origin_fetchers = dict(origin_fetchers or {})
+    if scheduler_enabled is None:
+        scheduler_enabled = os.getenv("CXD_SCHEDULER", "on").lower() not in ("off", "0", "false",
+                                                                           "no")
+    dashboard_url = os.getenv("CXD_DASHBOARD_URL") or "{base}/view.html?id={id}&owner={owner}"
+    jobs_holder = {}
+
+    @contextlib.asynccontextmanager
+    async def lifespan(_app):
+        if scheduler_enabled:
+            jobs_holder["scheduler"].start()
+        try:
+            yield
+        finally:
+            jobs_holder["scheduler"].stop()
+
+    app = FastAPI(title="canvasxpress-dashboards · persistence & sharing", lifespan=lifespan)
     app.state.audit = audit
     app.state.governance = governance
+    app.state.schedules = schedules
+    app.state.mailer = mailer
+    app.state.origin_fetchers = origin_fetchers
 
     # Registered BEFORE the session middleware so it runs inside it: the session
     # (who is signed in) is readable before and after the handler.
@@ -619,11 +666,13 @@ def create_dashboards_app(
     def admin_list_users(request: Request):
         require_admin(request)
         assigned = governance.assignments()
+        emails = schedules.emails()
         return {"users": [
             {"username": name, "is_admin": user_is_admin(name),
              "via_config": name in admins,
              "dashboards": len(store.list_dashboards(name)),
              "role": assigned.get("user:" + name),
+             "email": emails.get(name),
              "roles": governance.roles_of(name),
              "groups": governance.groups_of(name)}
             for name in store.list_users()
@@ -675,6 +724,7 @@ def create_dashboards_app(
         if not store.delete_user(username):
             raise HTTPException(status_code=404, detail="No such user")
         governance.forget_user(username)
+        schedules.forget_user(username)
         return {"users": store.list_users()}
 
     def resolve_write_owner(user: str, owner: Optional[str],
@@ -1213,6 +1263,155 @@ def create_dashboards_app(
         except GovernanceError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
         return {"assignments": governance.assignments()}
+
+    # ---- scheduling: dataset refresh, alerts, dashboard subscriptions ----
+    def dashboard_access(user: Optional[str], owner: str, dashboard_id: str) -> bool:
+        if not user:
+            return False
+        return (user == owner or user_is_admin(user) or (examples_owner and owner == examples_owner)
+                or bool(governance.access_level(user, "dashboard", owner, dashboard_id)))
+
+    def dashboard_link(owner: str, dashboard_id: str) -> Optional[str]:
+        if not publish_base_url:
+            return None
+        from urllib.parse import quote
+        return dashboard_url.format(base=publish_base_url.rstrip("/"), id=quote(dashboard_id),
+                                    owner=quote(owner))
+
+    class _JobContext:
+        pass
+    ctx = _JobContext()
+    ctx.schedules, ctx.governance, ctx.dashboards, ctx.audit = schedules, governance, store, audit
+    ctx.mailer, ctx.snapshots, ctx.origin_fetchers = mailer, snapshots, origin_fetchers
+    ctx.dataset_store_for = lambda name: dataset_store_for(name or None)
+    ctx.store_key, ctx.dataset_access, ctx.secured = store_key, dataset_access, secured
+    ctx.dashboard_access, ctx.dashboard_link = dashboard_access, dashboard_link
+    ctx.app_link = lambda: publish_base_url.rstrip("/") + "/" if publish_base_url else None
+    ctx.list_users, ctx.now_iso = store.list_users, _now_iso
+    ctx.allow_private = os.getenv("CXD_FETCH_ALLOW_PRIVATE", "0") == "1"
+    jobs = Jobs(ctx)
+    try:
+        tick = float(os.getenv("CXD_SCHEDULER_TICK", "30") or 30)
+    except ValueError:
+        tick = 30.0
+    scheduler = Scheduler(schedules, jobs, tick=tick)
+    jobs.run_related = scheduler.run_now
+    jobs_holder["scheduler"] = scheduler
+    app.state.scheduler = scheduler
+
+    def own_schedule(request: Request, schedule_id: str) -> dict:
+        user = require_user(request)
+        found = schedules.get(schedule_id)
+        if found is None or (found["owner"] != user and not user_is_admin(user)):
+            raise HTTPException(status_code=404, detail="No such schedule")
+        note(request, owner=found["owner"], kind=found["kind"])
+        return found
+
+    @app.get("/api/schedules/status")
+    def schedules_status(request: Request):
+        """What scheduling can do on this server (the UI adapts to it)."""
+        user = require_user(request)
+        return {"scheduler": scheduler.running if scheduler_enabled else False,
+                "enabled": bool(scheduler_enabled),
+                "email": mailer is not None,
+                "snapshots": bool(snapshots and snapshots.available()),
+                "links": bool(publish_base_url),
+                "origins": ["url"] + sorted(k for k in origin_fetchers if k != "url"),
+                "can_create": "schedule.create" in permissions_of(user),
+                "email_address": schedules.email_of(user)}
+
+    @app.get("/api/schedules")
+    def list_schedules(request: Request, all: bool = False):
+        """The user's schedules (``?all=1``: an admin sees everyone's)."""
+        user = require_user(request)
+        return {"schedules": schedules.list(None if all and user_is_admin(user) else user)}
+
+    @app.post("/api/schedules")
+    async def save_schedule(request: Request):
+        """Create or update a schedule: ``{id?, kind, name, cron, tz, enabled, config}``."""
+        user = require_permission(request, "schedule.create")
+        body = await request.json()
+        if not isinstance(body, dict):
+            raise HTTPException(status_code=400, detail="Body must be a JSON object")
+        schedule_id = body.get("id") or None
+        if schedule_id:
+            existing = schedules.get(schedule_id)
+            if existing is None or existing["owner"] != user:
+                raise HTTPException(status_code=404, detail="No such schedule")
+        note(request, target=schedule_id, kind=body.get("kind"), cron=body.get("cron"))
+        try:
+            config = jobs.validate(user, body.get("kind"), body.get("config"))
+            saved = schedules.save(user, body.get("kind"), body.get("name") or "",
+                                   body.get("cron") or "", body.get("tz") or "UTC", config,
+                                   enabled=body.get("enabled", True) is not False,
+                                   schedule_id=schedule_id)
+        except ScheduleError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        note(request, target=saved["id"])
+        return {"schedule": saved}
+
+    @app.delete("/api/schedules/{schedule_id}")
+    def delete_schedule(request: Request, schedule_id: str):
+        user = require_user(request)
+        own_schedule(request, schedule_id)
+        schedules.delete(schedule_id)
+        return {"schedules": schedules.list(user)}
+
+    @app.post("/api/schedules/{schedule_id}/run")
+    async def run_schedule(request: Request, schedule_id: str):
+        """Run a schedule now (its next scheduled run is unchanged)."""
+        found = own_schedule(request, schedule_id)
+        run = await run_in_threadpool(scheduler.run_now, found, "manual")
+        note(request, status=run["status"])
+        return {"run": run, "schedule": schedules.get(schedule_id)}
+
+    @app.get("/api/schedules/{schedule_id}/runs")
+    def schedule_runs(request: Request, schedule_id: str, limit: int = 20):
+        own_schedule(request, schedule_id)
+        return {"runs": schedules.runs(schedule_id, limit)}
+
+    @app.get("/api/cron/preview")
+    def cron_preview(request: Request, cron: str, tz: str = "UTC", count: int = 3):
+        """Check a cron expression: its reading and the next few run times (UTC)."""
+        require_user(request)
+        try:
+            parsed = Cron(cron)
+            times, when = [], datetime.datetime.now(datetime.timezone.utc)
+            for _ in range(max(1, min(count, 10))):
+                when = parsed.next_after(when, tz)
+                times.append(when.isoformat(timespec="seconds"))
+        except ScheduleError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        return {"description": parsed.describe(), "next": times}
+
+    # ---- profile (the address alerts and subscriptions go to) ----
+    @app.get("/api/me/profile")
+    def my_profile(request: Request):
+        user = require_user(request)
+        return {"user": user, "email": schedules.email_of(user)}
+
+    @app.put("/api/me/profile")
+    async def set_my_profile(request: Request):
+        user = require_user(request)
+        body = await request.json()
+        try:
+            email = schedules.set_email(user, (body or {}).get("email"))
+        except ScheduleError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        note(request, email_set=bool(email))
+        return {"user": user, "email": email}
+
+    @app.post("/api/admin/users/{username}/email")
+    async def admin_set_email(request: Request, username: str):
+        require_admin(request)
+        if username not in store.list_users():
+            raise HTTPException(status_code=404, detail="No such user")
+        body = await request.json()
+        try:
+            email = schedules.set_email(username, (body or {}).get("email"))
+        except ScheduleError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        return {"user": username, "email": email}
 
     # ---- data functions (kind:"function" sources) ----
     def require_function_user(request: Request) -> str:
