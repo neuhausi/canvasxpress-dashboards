@@ -6,7 +6,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDataStore, DataError, isEmptyData, clearSharedCache } from '../src/dataStore.js';
+import { createDataStore, DataError, isEmptyData, clearSharedCache, pushdownQuery } from '../src/dataStore.js';
 
 var CX_DATA = { y: { vars: ['R'], smps: ['A', 'B'], data: [[1, 2]] } };
 
@@ -341,4 +341,59 @@ test('a dataset source pinned to another owner fetches with ?owner=', async func
   var store = createDataStore({ fetch: fetchStub, cache: new Map(), baseUrl: 'http://x' });
   await store.resolve('sales', { kind: 'dataset', id: 'sales', store: 's3', owner: 'bob' });
   assert.equal(fetchStub.calls[0].url, 'http://x/api/datasets/sales?store=s3&owner=bob');
+});
+
+test('pushdownQuery resolves $params, drops unset ones, adds extra filters, canonical JSON', function () {
+  var pd = { limit: 10, where: [{ column: 'region', op: 'in', value: '$r' }, { column: 'y', op: 'is_null' },
+    { column: 'amount', op: '>=', value: '$min' }], measures: [{ fn: 'count' }], groupBy: ['region'] };
+  assert.equal(pushdownQuery(pd, { r: 'EMEA' }, [{ column: 's', op: '=', value: 'won' }]),
+    '{"groupBy":["region"],"measures":[{"fn":"count"}],"where":[{"column":"region","op":"in","value":["EMEA"]},' +
+    '{"column":"y","op":"is_null"},{"column":"s","op":"=","value":"won"}],"limit":10}');
+  assert.equal(pushdownQuery({ columns: ['a'] }, {}), '{"columns":["a"]}');
+});
+
+test('a connector source with pushdown sends it as _q (and keys the cache on it)', async function () {
+  var fetchStub = fakeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map(), baseUrl: 'http://x' });
+  var src = { kind: 'connector', url: '/c/api/data?source=o', pushdown: { groupBy: ['r'], measures: [{ fn: 'count' }] } };
+  await store.resolve('o', src, { where: function () { return [{ column: 'r', op: 'in', value: ['A'] }]; } });
+  var url = decodeURIComponent(fetchStub.calls[0].url);
+  assert.ok(url.indexOf('/c/api/data?source=o&_q={"groupBy":["r"],"measures":[{"fn":"count"}],"where":[{"column":"r","op":"in","value":["A"]}]}') === 0, url);
+});
+
+test('a join with pushdown asks the connector to join in the database, else joins here', async function () {
+  var sources = {
+    o: { kind: 'connector', url: '/c/api/data?source=orders', query: { region: '$r' } },
+    k: { kind: 'connector', url: '/c/api/data?source=customers' },
+    j: { kind: 'join', left: 'o', right: 'k', on: 'cust', how: 'left',
+      pushdown: { groupBy: ['segment'], measures: [{ fn: 'count' }] } }
+  };
+  var ORD = { y: { vars: ['amount'], smps: ['o1'], data: [[10]] }, x: { cust: ['c1'] } };
+  var CUS = { y: { vars: ['size'], smps: ['c1'], data: [[3]] }, x: { cust: ['c1'], segment: ['retail'] } };
+  function stub(refuse) {
+    var fn = function (url) {
+      fn.urls.push(decodeURIComponent(url));
+      var status = 200, body;
+      if (url.indexOf('/api/join') !== -1) {
+        if (refuse) { status = 400; body = { detail: 'different databases' }; }
+        else body = { y: { vars: ['count'], smps: ['retail'], data: [[1]] } };
+      } else body = url.indexOf('orders') !== -1 ? ORD : CUS;
+      return Promise.resolve({ ok: status === 200, status: status,
+        text: function () { return Promise.resolve(JSON.stringify(body)); } });
+    };
+    fn.urls = [];
+    return fn;
+  }
+  var inDb = stub(false);
+  var store = createDataStore({ fetch: inDb, cache: new Map() });
+  var data = await store.resolve('j', sources.j, { sources: sources, params: { r: 'EMEA' } });
+  assert.deepEqual(data.y.smps, ['retail']);
+  assert.deepEqual(inDb.urls, ['/c/api/join?_q={"groupBy":["segment"],"measures":[{"fn":"count"}]}' +
+    '&how=left&left=orders&on="cust"&region=EMEA&right=customers&right_name=k']);
+
+  var refused = stub(true);
+  var store2 = createDataStore({ fetch: refused, cache: new Map() });
+  var joined = await store2.resolve('j', sources.j, { sources: sources, params: { r: 'EMEA' } });
+  assert.equal(refused.urls.length, 3, 'the join request, then both inputs');
+  assert.deepEqual(joined.y.vars, ['amount', 'size'], 'joined in the browser');
 });

@@ -155,6 +155,45 @@
           "type": "string",
           "description": "The dataset's owner when it is not the viewer (kind:dataset). Set by the server on a dashboard opened from another owner; access is checked on every read."
         },
+        "pushdown": {
+          "type": ["object", "boolean"],
+          "additionalProperties": false,
+          "description": "kind:connector: aggregate, filter and limit IN THE DATABASE (canvasxpress-connectors 0.6+, SQL sources). Sent as the `_q` request parameter; the connector wraps the source's own SELECT, checks column names against it and binds every value. kind:join: true joins the two connector inputs in their database (same connection; otherwise the browser joins them), and an object is also run over the joined rows.",
+          "properties": {
+            "columns": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Rows mode: only these columns (with where / orderBy / limit)." },
+            "groupBy": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Group by these columns; each result row's id joins their values." },
+            "measures": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["fn"],
+                "properties": {
+                  "fn": { "enum": ["count", "count_distinct", "sum", "avg", "mean", "min", "max"] },
+                  "column": { "type": "string" },
+                  "as": { "type": "string", "description": "Output name (default fn_column, or count)." }
+                }
+              }
+            },
+            "where": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["column"],
+                "properties": {
+                  "column": { "type": "string" },
+                  "op": { "enum": ["=", "!=", "<", "<=", ">", ">=", "in", "not_in", "between", "is_null", "not_null"] },
+                  "value": { "description": "A literal, a list (in / not_in / between), or \"$param\" (an unset param drops the filter)." }
+                }
+              }
+            },
+            "orderBy": {
+              "type": "array",
+              "items": { "anyOf": [ { "type": "string" }, { "type": "object", "required": ["column"], "properties": { "column": { "type": "string" }, "desc": { "type": "boolean" } } } ] }
+            },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+            "filters": { "type": "boolean", "description": "Send Filters-panel picks on this source to the database (default true)." }
+          }
+        },
         "url": {
           "type": "string",
           "description": "Connector endpoint, e.g. /api/data?source=sales, or a signed dataset URL. Fetched with credentials (cookie auth)."

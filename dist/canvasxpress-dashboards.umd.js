@@ -1724,9 +1724,9 @@ function createDataStore(options) {
    * @param {object} sourceSpec - The data source spec.
    * @returns {string} A cache key.
    */
-  function keyFor(ref, sourceSpec, params) {
+  function keyFor(ref, sourceSpec, params, where) {
     if (sourceSpec && sourceSpec.kind === 'connector') {
-      return 'connector:' + appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, params));
+      return 'connector:' + appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, params, where));
     }
     if (sourceSpec && sourceSpec.kind === 'dataset') return 'dataset:' + datasetUrl(sourceSpec, params);
     return 'ref:' + ref;
@@ -1743,9 +1743,14 @@ function createDataStore(options) {
    * @returns {object} Concrete query params, ready to encode.
    * @private
    */
-  function resolvedQuery(sourceSpec, params) {
+  function resolvedQuery(sourceSpec, params, where) {
     var template = sourceSpec && sourceSpec.query;
     var out = {};
+    // A pushdown query rides along as `_q` (JSON): the connector aggregates,
+    // filters and limits in the database.
+    if (sourceSpec && sourceSpec.kind === 'connector' && sourceSpec.pushdown) {
+      out._q = pushdownQuery(sourceSpec.pushdown, params, where);
+    }
     if (!template) return out;
     params = params || {};
     for (var name in template) {
@@ -1827,6 +1832,48 @@ function createDataStore(options) {
     });
   }
 
+  /**
+   * The connector URL that joins a `kind:"join"` source in the database, or
+   * null when it must be joined in the browser. It applies when the join has
+   * `pushdown` (true, or a pushdown query run over the joined rows), both
+   * inputs are plain connector sources on one connectors server
+   * (`<base>/api/data?source=<name>`, no pushdown of their own), both are
+   * row-oriented, and no custom `suffix` is set. The inputs' `query` params
+   * ride along (they fill the SQL's bind parameters).
+   * @param {object} join - The join source spec.
+   * @param {object} sources - The spec's data map.
+   * @param {object} [params] - Current param values.
+   * @returns {(string|null)} The URL.
+   * @private
+   */
+  function sqlJoinUrl(join, sources, params) {
+    if (!join.pushdown || join.suffix != null) return null;
+    if ((join.axis && join.axis !== 'smps') || (join.leftAxis && join.leftAxis !== 'smps') ||
+        (join.rightAxis && join.rightAxis !== 'smps')) return null;
+    var parts = [];
+    var sides = [join.left, join.right];
+    for (var i = 0; i < 2; i++) {
+      var src = sources[sides[i]];
+      if (!src || src.kind !== 'connector' || src.pushdown || typeof src.url !== 'string') return null;
+      if (src.axis && src.axis !== 'smps') return null;
+      var m = /^(.*)\/api\/data\?source=([^&]+)(?:&.*)?$/.exec(src.url);
+      if (!m) return null;
+      parts.push({ base: m[1], name: decodeURIComponent(m[2]), query: resolvedQuery(src, params) });
+    }
+    if (parts[0].base !== parts[1].base) return null;
+    var query = {};
+    [parts[0].query, parts[1].query].forEach(function (q) {
+      for (var k in q) if (Object.prototype.hasOwnProperty.call(q, k)) query[k] = q[k];
+    });
+    query.left = parts[0].name;
+    query.right = parts[1].name;
+    query.on = JSON.stringify(join.on == null ? 'smps' : join.on);
+    query.how = join.how || 'inner';
+    query.right_name = join.right;
+    if (typeof join.pushdown === 'object') query._q = pushdownQuery(join.pushdown, params);
+    return appendQuery(parts[0].base + '/api/join', query);
+  }
+
   return {
     cache: cache,
 
@@ -1842,6 +1889,8 @@ function createDataStore(options) {
      *   cache so different parameter values are distinct fetches.
      * @param {object} [opts.sources] - The spec's `data` map; a `kind:"join"`
      *   source looks its `left`/`right` refs up here.
+     * @param {function} [opts.where] - `function(ref)` returning extra pushdown
+     *   filters (`[{column, op, value}]`) for a connector source with `pushdown`.
      * @param {function} [opts.resolveInput] - `function(ref)` returning a
      *   Promise of a join input's data. The renderer passes its per-render memo
      *   so a join shares the fetch of an input panels already use. Defaults to
@@ -1856,6 +1905,15 @@ function createDataStore(options) {
         return Promise.resolve(sourceSpec.value);
       }
       if (sourceSpec.kind === 'join') {
+        var self = this;
+        var sqlJoin = sqlJoinUrl(sourceSpec, opts.sources || {}, opts.params);
+        if (sqlJoin) {
+          // Both inputs are tables of one connector database: join (and
+          // aggregate) there. Anything it refuses is joined here instead.
+          return fetchUrl(sqlJoin).then(null, function () {
+            return resolveJoin(self, ref, sourceSpec, opts);
+          });
+        }
         return resolveJoin(this, ref, sourceSpec, opts);
       }
       if (sourceSpec.kind === 'function') {
@@ -1867,11 +1925,13 @@ function createDataStore(options) {
         return Promise.reject(new Error('unknown data source kind "' + sourceSpec.kind + '"'));
       }
 
-      var key = keyFor(ref, sourceSpec, opts.params);
+      // Extra pushdown filters for this source (the renderer's Filters panel).
+      var where = typeof opts.where === 'function' ? opts.where(ref) : null;
+      var key = keyFor(ref, sourceSpec, opts.params, where);
       var ttl = sourceSpec.ttl != null ? sourceSpec.ttl : defaultTtl;
       var url = sourceSpec.kind === 'dataset'
         ? datasetUrl(sourceSpec, opts.params)
-        : appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, opts.params));
+        : appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, opts.params, where));
 
       if (!opts.force) {
         var hit = cache.get(key);
@@ -2111,6 +2171,46 @@ function parseJson(text) {
  */
 function clearSharedCache() {
   sharedCache.clear();
+}
+
+/**
+ * The pushdown query a connector source sends as `_q`: its `pushdown` block
+ * with `$name` tokens in filter values replaced by the current params. A filter
+ * whose param is unset is dropped (like an unset `query` param, it widens back
+ * to everything); a scalar param on an `in`/`not_in` filter becomes a
+ * one-value list. `extraWhere` filters (e.g. from a Filters panel) are
+ * appended. Returns canonical JSON (fixed key order), so equal queries share a
+ * cache entry.
+ * @param {object} pushdown - `{columns?, groupBy?, measures?, where?, orderBy?, limit?}`.
+ * @param {object} [params] - Current param values.
+ * @param {object[]} [extraWhere] - More `{column, op, value}` filters.
+ * @returns {string} The JSON query.
+ * @public
+ */
+function pushdownQuery(pushdown, params, extraWhere) {
+  params = params || {};
+  var where = [];
+  (pushdown.where || []).concat(extraWhere || []).forEach(function (clause) {
+    if (!clause || typeof clause.column !== 'string') return;
+    var op = clause.op || '=';
+    var value = clause.value;
+    if (typeof value === 'string' && value.charAt(0) === '$') {
+      value = params[value.slice(1)];
+      if (value == null) return;               // unset param: no filter
+    }
+    if ((op === 'in' || op === 'not_in') && !Array.isArray(value)) value = [value];
+    var out = { column: clause.column, op: op };
+    if (op !== 'is_null' && op !== 'not_null') out.value = value;
+    where.push(out);
+  });
+  var q = {};
+  ['columns', 'groupBy', 'measures'].forEach(function (k) {
+    if (Array.isArray(pushdown[k]) && pushdown[k].length) q[k] = pushdown[k];
+  });
+  if (where.length) q.where = where;
+  if (Array.isArray(pushdown.orderBy) && pushdown.orderBy.length) q.orderBy = pushdown.orderBy;
+  if (typeof pushdown.limit === 'number') q.limit = pushdown.limit;
+  return JSON.stringify(q);
 }
 
 /* ==== src/exportDashboard.js ==== */
@@ -2757,6 +2857,7 @@ function validateSpec(spec) {
           errors.push(at + '.axis must be "smps" or "vars"');
         }
         if (src.kind === 'function') checkFunction(src, at, spec, errors);
+        if (src.pushdown != null) checkPushdown(src, at, spec, errors);
         // A `query` template maps request keys to literals or "$param" tokens;
         // every token must name a declared parameter.
         if (src.query != null) {
@@ -2903,6 +3004,78 @@ function checkJoin(src, at, data, errors) {
  * @returns {void}
  * @private
  */
+var PUSHDOWN_KEYS = ['columns', 'groupBy', 'measures', 'where', 'orderBy', 'limit', 'filters'];
+var PUSHDOWN_FNS = ['count', 'count_distinct', 'sum', 'avg', 'mean', 'min', 'max'];
+var PUSHDOWN_OPS = ['=', '!=', '<', '<=', '>', '>=', 'in', 'not_in', 'between', 'is_null', 'not_null'];
+
+/**
+ * Check a connector source's `pushdown` block (aggregation, filters and
+ * limits run by the database); `$param` filter values must name declared params.
+ * @param {object} src - The data source.
+ * @param {string} at - Its path for messages.
+ * @param {object} spec - The spec (for `params`).
+ * @param {string[]} errors - Collected errors.
+ * @returns {void}
+ * @private
+ */
+function checkPushdown(src, at, spec, errors) {
+  var p = src.pushdown;
+  var here = at + '.pushdown';
+  // A join takes `true` (join in the database) or a query run over the joined rows.
+  if (src.kind === 'join' && typeof p === 'boolean') return;
+  if (src.kind !== 'connector' && src.kind !== 'join') {
+    errors.push(here + ' is only for kind "connector" or "join"');
+    return;
+  }
+  if (typeof p !== 'object' || Array.isArray(p)) { errors.push(here + ' must be an object'); return; }
+  Object.keys(p).forEach(function (k) {
+    if (PUSHDOWN_KEYS.indexOf(k) === -1) errors.push(here + ' has an unknown key "' + k + '"');
+  });
+  ['columns', 'groupBy'].forEach(function (k) {
+    if (p[k] != null && !(Array.isArray(p[k]) && p[k].every(function (c) { return typeof c === 'string' && c.length > 0; }))) {
+      errors.push(here + '.' + k + ' must be a list of column names');
+    }
+  });
+  if (p.measures != null) {
+    if (!Array.isArray(p.measures)) errors.push(here + '.measures must be a list');
+    else p.measures.forEach(function (m, i) {
+      var mat = here + '.measures[' + i + ']';
+      if (!m || typeof m !== 'object' || PUSHDOWN_FNS.indexOf(m.fn) === -1) {
+        errors.push(mat + '.fn must be one of: ' + PUSHDOWN_FNS.join(', '));
+      } else if (m.fn !== 'count' && typeof m.column !== 'string') {
+        errors.push(mat + ' needs a column');
+      }
+    });
+  }
+  if (p.where != null) {
+    if (!Array.isArray(p.where)) errors.push(here + '.where must be a list');
+    else p.where.forEach(function (w, i) {
+      var wat = here + '.where[' + i + ']';
+      if (!w || typeof w !== 'object' || typeof w.column !== 'string') { errors.push(wat + ' needs a column'); return; }
+      if (w.op != null && PUSHDOWN_OPS.indexOf(w.op) === -1) errors.push(wat + '.op must be one of: ' + PUSHDOWN_OPS.join(' '));
+      if (typeof w.value === 'string' && w.value.charAt(0) === '$') {
+        var name = w.value.slice(1);
+        if (spec.params == null || !hasOwn(spec.params, name)) {
+          errors.push(wat + '.value references undeclared param "' + name + '"');
+        }
+      }
+    });
+  }
+  if (p.orderBy != null && !(Array.isArray(p.orderBy) && p.orderBy.every(function (o) {
+    return typeof o === 'string' || (o && typeof o === 'object' && typeof o.column === 'string');
+  }))) {
+    errors.push(here + '.orderBy must be a list of names or {column, desc}');
+  }
+  if (p.limit != null && !(Number.isInteger(p.limit) && p.limit >= 1 && p.limit <= 1000000)) {
+    errors.push(here + '.limit must be a whole number from 1 to 1000000');
+  }
+  if (p.filters != null && typeof p.filters !== 'boolean') errors.push(here + '.filters must be true or false');
+  var grouped = (Array.isArray(p.groupBy) && p.groupBy.length) || (Array.isArray(p.measures) && p.measures.length);
+  if (Array.isArray(p.columns) && p.columns.length && grouped) {
+    errors.push(here + ' uses columns (rows) or groupBy/measures (aggregates), not both');
+  }
+}
+
 function checkFunction(src, at, spec, errors) {
   if (FUNCTION_LANGUAGES.indexOf(src.language) === -1) {
     errors.push(at + ' of kind "function" requires language "python" or "r"');
@@ -3336,8 +3509,25 @@ function renderDashboard(spec, target, options) {
     refs.forEach(function (from) {
       var data = refData[from];
       if (!data) return;
-      var rows = rowsPassing(filterState, from, data, sourceAxis(from, sources));
-      if (rows === null) return;
+      var state = filterState;
+      var pushed = false;
+      if (pushesFilters(from)) {
+        // The database already applied the value lists and ranges; only text
+        // search is left to the browser.
+        state = [];
+        filterState.forEach(function (p) {
+          if (p.dataRef !== from) { state.push(p); return; }
+          if (Array.isArray(p.values) || typeof p.min === 'number' || typeof p.max === 'number') pushed = true;
+          if (typeof p.text === 'string') state.push({ dataRef: p.dataRef, field: p.field, text: p.text });
+        });
+      }
+      var rows = rowsPassing(state, from, data, sourceAxis(from, sources));
+      if (rows === null) {
+        // Rows the database kept still narrow the sources related to it.
+        if (!pushed || from === targetRef) return;
+        var idColumn = tableColumn(data, sourceAxis(from, sources), sourceAxis(from, sources));
+        rows = idColumn ? idColumn.ids : [];
+      }
       var set = rows;
       if (from !== targetRef) {
         if (!markingGraph) return;
@@ -3417,7 +3607,7 @@ function renderDashboard(spec, target, options) {
       activeScheme = null;
       renderFilterPanels();
     }
-    applyControlFilters();
+    applyFilterChange();
   }
   var doc = container.ownerDocument || (typeof document !== 'undefined' ? document : null);
   var escListener = null;
@@ -3428,6 +3618,8 @@ function renderDashboard(spec, target, options) {
   var pending = [];        // per-cell settle promises (feed handle.ready)
   var refMemo = {};        // dataRef -> Promise<data> (one resolve per render)
   var refData = {};        // dataRef -> latest resolved data (for marking translation)
+  var refDomain = {};      // pushdown dataRef -> its unfiltered data (Filters panel values)
+  var pushedWhere = {};    // pushdown dataRef -> JSON of the filters it was last fetched with
   var refBindings = {};    // dataRef -> [{ instance }] (for scheduled refresh)
   var timers = [];         // refresh interval handles
   var observers = [];      // ResizeObservers keeping canvases sized to their cells
@@ -3442,9 +3634,57 @@ function renderDashboard(spec, target, options) {
     var promise = store.resolve(ref, (spec.data || {})[ref], resolveOptions(false));
     refMemo[ref] = promise;
     promise.then(function (data) {
-      if (refMemo[ref] === promise) refData[ref] = data;
+      if (refMemo[ref] === promise) {
+        refData[ref] = data;
+        noteDomain(ref, data);
+      }
     }, function () { /* surfaced by the panels that render it */ });
     return promise;
+  }
+
+  /**
+   * Whether a source sends Filters-panel picks to the database: a connector
+   * source with a `pushdown` block (unless `pushdown.filters` is false).
+   * @param {string} ref - Source ref.
+   * @returns {boolean} True when its filters are pushed down.
+   */
+  function pushesFilters(ref) {
+    var source = (spec.data || {})[ref];
+    return !!(source && source.kind === 'connector' && source.pushdown &&
+      source.pushdown.filters !== false);
+  }
+
+  /**
+   * The Filters-panel picks on a pushdown source, as database filters: a
+   * value list becomes `in`, a range `>=` / `<=`. Text search stays in the
+   * browser.
+   * @param {string} ref - Source ref.
+   * @returns {(object[]|null)} Filters, or null when the source does not push them.
+   */
+  function pushdownWhere(ref) {
+    if (!pushesFilters(ref)) return null;
+    var clauses = [];
+    filterState.forEach(function (p) {
+      if (p.dataRef !== ref) return;
+      if (Array.isArray(p.values)) clauses.push({ column: p.field, op: 'in', value: p.values });
+      if (typeof p.min === 'number') clauses.push({ column: p.field, op: '>=', value: p.min });
+      if (typeof p.max === 'number') clauses.push({ column: p.field, op: '<=', value: p.max });
+    });
+    return clauses;
+  }
+
+  /**
+   * Remember a pushdown source's unfiltered data: the Filters panel lists its
+   * values from it, so picking one does not hide the others.
+   * @param {string} ref - Source ref.
+   * @param {object} data - Freshly resolved data.
+   * @returns {void}
+   */
+  function noteDomain(ref, data) {
+    if (!pushesFilters(ref)) return;
+    var where = pushdownWhere(ref);
+    pushedWhere[ref] = JSON.stringify(where);
+    if (!where.length) refDomain[ref] = data;
   }
 
   /**
@@ -3455,7 +3695,8 @@ function renderDashboard(spec, target, options) {
    * @returns {object} Resolve options.
    */
   function resolveOptions(force) {
-    return { params: paramState, force: force, sources: spec.data || {}, resolveInput: resolveRef };
+    return { params: paramState, force: force, sources: spec.data || {}, resolveInput: resolveRef,
+      where: pushdownWhere };
   }
 
   /**
@@ -3467,6 +3708,7 @@ function renderDashboard(spec, target, options) {
    */
   function updateBound(ref, data) {
     refData[ref] = data;
+    noteDomain(ref, data);
     (refBindings[ref] || []).forEach(function (b) {
       if (b.cell && b.cell.setState) b.cell.setState('ready');
       if (b.rebuild) {
@@ -3762,6 +4004,12 @@ function renderDashboard(spec, target, options) {
       for (var qk in query) {
         if (query[qk] === '$' + param) { uses = true; break; }
       }
+      // A pushdown filter reads a param through its value ("$name").
+      var clauses = source.kind === 'connector' && source.pushdown && Array.isArray(source.pushdown.where)
+        ? source.pushdown.where : [];
+      for (var wi = 0; wi < clauses.length; wi++) {
+        if (clauses[wi] && clauses[wi].value === '$' + param) { uses = true; break; }
+      }
       // A data function's `args` template reads params the same way.
       var args = source.kind === 'function' ? (source.args || {}) : {};
       for (var ak in args) {
@@ -3783,7 +4031,17 @@ function renderDashboard(spec, target, options) {
    */
   function applyParamChange(param, value) {
     paramState[param] = value;
-    var refs = refsForParam(param);
+    return refetchRefs(refsForParam(param));
+  }
+
+  /**
+   * Re-fetch sources (inputs first) and live-update the panels bound to them.
+   * Bound cells show a loading state while in flight and keep their prior
+   * data on error.
+   * @param {string[]} refs - Source refs, inputs before the sources derived from them.
+   * @returns {Promise<void>} Resolves once all affected panels have updated.
+   */
+  function refetchRefs(refs) {
     // Refs come inputs-first, so a join's memoized inputs are already the
     // fresh fetches by the time it resolves them.
     var work = refs.map(function (ref) {
@@ -4054,7 +4312,25 @@ function renderDashboard(spec, target, options) {
     filterState = normalizeState(state);
     activeScheme = scheme;
     renderFilterPanels();
-    applyControlFilters();
+    applyFilterChange();
+  }
+
+  /**
+   * Apply a Filters-panel change: re-query the pushdown sources whose database
+   * filters changed (and what derives from them), then filter in the browser.
+   * @returns {Promise<void>} Resolves once panels are updated.
+   */
+  function applyFilterChange() {
+    var changed = [];
+    Object.keys(spec.data || {}).forEach(function (ref) {
+      if (!pushesFilters(ref) || !Object.prototype.hasOwnProperty.call(pushedWhere, ref)) return;
+      if (pushedWhere[ref] !== JSON.stringify(pushdownWhere(ref))) changed.push(ref);
+    });
+    if (!changed.length) {
+      applyControlFilters();
+      return Promise.resolve();
+    }
+    return refetchRefs(changed.concat(dependentSources(changed))).then(applyControlFilters);
   }
 
   /**
@@ -4080,7 +4356,7 @@ function renderDashboard(spec, target, options) {
       activeScheme = null;
       filterPanelViews.forEach(function (v) { v.syncScheme(); });
     }
-    applyControlFilters();
+    applyFilterChange();
   }
 
   /**
@@ -4125,7 +4401,7 @@ function renderDashboard(spec, target, options) {
       return resolveRef(ref).then(null, function () { return null; });
     })).then(function () {
       var fields = resolveFields(panel,
-        function (ref) { return refData[ref] || null; },
+        function (ref) { return refDomain[ref] || refData[ref] || null; },
         function (ref) { return sourceAxis(ref, sources); });
       var schemeSelect = null;
       var view = {
@@ -4257,7 +4533,9 @@ function renderDashboard(spec, target, options) {
           });
           boxes.push(box);
           var text = document.createElement('span');
-          text.textContent = entry.value + ' (' + entry.count + ')';
+          // A pushdown source's rows are groups the database made, so a row
+          // count per value would mislead; show the value alone.
+          text.textContent = pushesFilters(f.dataRef) ? String(entry.value) : entry.value + ' (' + entry.count + ')';
           row.appendChild(box);
           row.appendChild(text);
           list.appendChild(row);

@@ -14,7 +14,8 @@ re-implement chart rendering or coordination.
 
 **Guides:** [governance and audit](docs/governance.md) (roles, sharing, row/column
 security, lineage, audit log) · [scheduling](docs/scheduling.md) (refresh, alerts,
-emailed dashboards) · [live-data controls](docs/live-data-controls.md) ·
+emailed dashboards) · [large data](docs/large-data.md) (aggregate, filter and join in the
+database) · [live-data controls](docs/live-data-controls.md) ·
 [server](server/README.md) · [changelog](CHANGELOG.md)
 
 ---
@@ -424,6 +425,30 @@ npx cxd-spec diff old.spec.json new.spec.json  # "changed panels.bar.config.grap
 git config diff.cxd.textconv "npx cxd-spec format"
 echo '*.spec.json diff=cxd' >> .gitattributes
 ```
+
+## Large data: aggregate, filter and join in the database
+
+A connector source can ask its database for the answer instead of the table
+(guide: **[docs/large-data.md](docs/large-data.md)**; needs canvasxpress-connectors
+0.6+ and a SQL source):
+
+```jsonc
+"orders": { "kind": "connector", "url": "/connectors/api/data?source=orders",
+  "pushdown": { "groupBy": ["region"], "measures": [{ "fn": "sum", "column": "amount" }],
+                "where": [{ "column": "status", "op": "in", "value": "$status" }], "limit": 1000 } }
+```
+
+- The database filters, groups, sorts and limits; only the result travels. Chart
+  the measures by name (`sum_amount`).
+- `$param` filter values re-query when a param control changes.
+- A **Filters panel** over the source sends its picks to the database and
+  re-queries. Its value lists keep every option.
+- A `kind:"join"` of two connector sources with `pushdown` runs as one SQL join
+  (aggregated there too, if given a query). It falls back to the browser join
+  when the sources are in different databases.
+
+The browser never writes SQL: column names are checked against the source's own
+query, and values are bound.
 
 ## Governance and audit (server)
 

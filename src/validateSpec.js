@@ -234,6 +234,7 @@ export function validateSpec(spec) {
           errors.push(at + '.axis must be "smps" or "vars"');
         }
         if (src.kind === 'function') checkFunction(src, at, spec, errors);
+        if (src.pushdown != null) checkPushdown(src, at, spec, errors);
         // A `query` template maps request keys to literals or "$param" tokens;
         // every token must name a declared parameter.
         if (src.query != null) {
@@ -380,6 +381,78 @@ function checkJoin(src, at, data, errors) {
  * @returns {void}
  * @private
  */
+var PUSHDOWN_KEYS = ['columns', 'groupBy', 'measures', 'where', 'orderBy', 'limit', 'filters'];
+var PUSHDOWN_FNS = ['count', 'count_distinct', 'sum', 'avg', 'mean', 'min', 'max'];
+var PUSHDOWN_OPS = ['=', '!=', '<', '<=', '>', '>=', 'in', 'not_in', 'between', 'is_null', 'not_null'];
+
+/**
+ * Check a connector source's `pushdown` block (aggregation, filters and
+ * limits run by the database); `$param` filter values must name declared params.
+ * @param {object} src - The data source.
+ * @param {string} at - Its path for messages.
+ * @param {object} spec - The spec (for `params`).
+ * @param {string[]} errors - Collected errors.
+ * @returns {void}
+ * @private
+ */
+function checkPushdown(src, at, spec, errors) {
+  var p = src.pushdown;
+  var here = at + '.pushdown';
+  // A join takes `true` (join in the database) or a query run over the joined rows.
+  if (src.kind === 'join' && typeof p === 'boolean') return;
+  if (src.kind !== 'connector' && src.kind !== 'join') {
+    errors.push(here + ' is only for kind "connector" or "join"');
+    return;
+  }
+  if (typeof p !== 'object' || Array.isArray(p)) { errors.push(here + ' must be an object'); return; }
+  Object.keys(p).forEach(function (k) {
+    if (PUSHDOWN_KEYS.indexOf(k) === -1) errors.push(here + ' has an unknown key "' + k + '"');
+  });
+  ['columns', 'groupBy'].forEach(function (k) {
+    if (p[k] != null && !(Array.isArray(p[k]) && p[k].every(function (c) { return typeof c === 'string' && c.length > 0; }))) {
+      errors.push(here + '.' + k + ' must be a list of column names');
+    }
+  });
+  if (p.measures != null) {
+    if (!Array.isArray(p.measures)) errors.push(here + '.measures must be a list');
+    else p.measures.forEach(function (m, i) {
+      var mat = here + '.measures[' + i + ']';
+      if (!m || typeof m !== 'object' || PUSHDOWN_FNS.indexOf(m.fn) === -1) {
+        errors.push(mat + '.fn must be one of: ' + PUSHDOWN_FNS.join(', '));
+      } else if (m.fn !== 'count' && typeof m.column !== 'string') {
+        errors.push(mat + ' needs a column');
+      }
+    });
+  }
+  if (p.where != null) {
+    if (!Array.isArray(p.where)) errors.push(here + '.where must be a list');
+    else p.where.forEach(function (w, i) {
+      var wat = here + '.where[' + i + ']';
+      if (!w || typeof w !== 'object' || typeof w.column !== 'string') { errors.push(wat + ' needs a column'); return; }
+      if (w.op != null && PUSHDOWN_OPS.indexOf(w.op) === -1) errors.push(wat + '.op must be one of: ' + PUSHDOWN_OPS.join(' '));
+      if (typeof w.value === 'string' && w.value.charAt(0) === '$') {
+        var name = w.value.slice(1);
+        if (spec.params == null || !hasOwn(spec.params, name)) {
+          errors.push(wat + '.value references undeclared param "' + name + '"');
+        }
+      }
+    });
+  }
+  if (p.orderBy != null && !(Array.isArray(p.orderBy) && p.orderBy.every(function (o) {
+    return typeof o === 'string' || (o && typeof o === 'object' && typeof o.column === 'string');
+  }))) {
+    errors.push(here + '.orderBy must be a list of names or {column, desc}');
+  }
+  if (p.limit != null && !(Number.isInteger(p.limit) && p.limit >= 1 && p.limit <= 1000000)) {
+    errors.push(here + '.limit must be a whole number from 1 to 1000000');
+  }
+  if (p.filters != null && typeof p.filters !== 'boolean') errors.push(here + '.filters must be true or false');
+  var grouped = (Array.isArray(p.groupBy) && p.groupBy.length) || (Array.isArray(p.measures) && p.measures.length);
+  if (Array.isArray(p.columns) && p.columns.length && grouped) {
+    errors.push(here + ' uses columns (rows) or groupBy/measures (aggregates), not both');
+  }
+}
+
 function checkFunction(src, at, spec, errors) {
   if (FUNCTION_LANGUAGES.indexOf(src.language) === -1) {
     errors.push(at + ' of kind "function" requires language "python" or "r"');

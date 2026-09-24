@@ -12,7 +12,7 @@ export {
   parseSchemaVersion, DASHBOARD_SCHEMA_VERSION, DASHBOARD_SCHEMA_URL, MIGRATIONS
 } from './spec.js';
 export { dashboardCss, injectStyles } from './styles.js';
-export { createDataStore, isEmptyData, DataError, clearSharedCache } from './dataStore.js';
+export { createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuery } from './dataStore.js';
 export { joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES } from './join.js';
 export { resolveFields, summarizeField, rowsPassing, normalizeState } from './filters.js';
 export { hasRelationships, relationGraph, translateMarks } from './marking.js';

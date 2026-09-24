@@ -17,7 +17,7 @@ import { injectStyles } from './styles.js';
 import { createDataStore, isEmptyData } from './dataStore.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
 import { hasRelationships, relationGraph, translateMarks } from './marking.js';
-import { sourceAxis, sourceInputs, transposeCxData } from './join.js';
+import { sourceAxis, sourceInputs, tableColumn, transposeCxData } from './join.js';
 import { resolveFields, rowsPassing, normalizeState, isActive, fieldKey } from './filters.js';
 
 /**
@@ -265,8 +265,25 @@ export function renderDashboard(spec, target, options) {
     refs.forEach(function (from) {
       var data = refData[from];
       if (!data) return;
-      var rows = rowsPassing(filterState, from, data, sourceAxis(from, sources));
-      if (rows === null) return;
+      var state = filterState;
+      var pushed = false;
+      if (pushesFilters(from)) {
+        // The database already applied the value lists and ranges; only text
+        // search is left to the browser.
+        state = [];
+        filterState.forEach(function (p) {
+          if (p.dataRef !== from) { state.push(p); return; }
+          if (Array.isArray(p.values) || typeof p.min === 'number' || typeof p.max === 'number') pushed = true;
+          if (typeof p.text === 'string') state.push({ dataRef: p.dataRef, field: p.field, text: p.text });
+        });
+      }
+      var rows = rowsPassing(state, from, data, sourceAxis(from, sources));
+      if (rows === null) {
+        // Rows the database kept still narrow the sources related to it.
+        if (!pushed || from === targetRef) return;
+        var idColumn = tableColumn(data, sourceAxis(from, sources), sourceAxis(from, sources));
+        rows = idColumn ? idColumn.ids : [];
+      }
       var set = rows;
       if (from !== targetRef) {
         if (!markingGraph) return;
@@ -346,7 +363,7 @@ export function renderDashboard(spec, target, options) {
       activeScheme = null;
       renderFilterPanels();
     }
-    applyControlFilters();
+    applyFilterChange();
   }
   var doc = container.ownerDocument || (typeof document !== 'undefined' ? document : null);
   var escListener = null;
@@ -357,6 +374,8 @@ export function renderDashboard(spec, target, options) {
   var pending = [];        // per-cell settle promises (feed handle.ready)
   var refMemo = {};        // dataRef -> Promise<data> (one resolve per render)
   var refData = {};        // dataRef -> latest resolved data (for marking translation)
+  var refDomain = {};      // pushdown dataRef -> its unfiltered data (Filters panel values)
+  var pushedWhere = {};    // pushdown dataRef -> JSON of the filters it was last fetched with
   var refBindings = {};    // dataRef -> [{ instance }] (for scheduled refresh)
   var timers = [];         // refresh interval handles
   var observers = [];      // ResizeObservers keeping canvases sized to their cells
@@ -371,9 +390,57 @@ export function renderDashboard(spec, target, options) {
     var promise = store.resolve(ref, (spec.data || {})[ref], resolveOptions(false));
     refMemo[ref] = promise;
     promise.then(function (data) {
-      if (refMemo[ref] === promise) refData[ref] = data;
+      if (refMemo[ref] === promise) {
+        refData[ref] = data;
+        noteDomain(ref, data);
+      }
     }, function () { /* surfaced by the panels that render it */ });
     return promise;
+  }
+
+  /**
+   * Whether a source sends Filters-panel picks to the database: a connector
+   * source with a `pushdown` block (unless `pushdown.filters` is false).
+   * @param {string} ref - Source ref.
+   * @returns {boolean} True when its filters are pushed down.
+   */
+  function pushesFilters(ref) {
+    var source = (spec.data || {})[ref];
+    return !!(source && source.kind === 'connector' && source.pushdown &&
+      source.pushdown.filters !== false);
+  }
+
+  /**
+   * The Filters-panel picks on a pushdown source, as database filters: a
+   * value list becomes `in`, a range `>=` / `<=`. Text search stays in the
+   * browser.
+   * @param {string} ref - Source ref.
+   * @returns {(object[]|null)} Filters, or null when the source does not push them.
+   */
+  function pushdownWhere(ref) {
+    if (!pushesFilters(ref)) return null;
+    var clauses = [];
+    filterState.forEach(function (p) {
+      if (p.dataRef !== ref) return;
+      if (Array.isArray(p.values)) clauses.push({ column: p.field, op: 'in', value: p.values });
+      if (typeof p.min === 'number') clauses.push({ column: p.field, op: '>=', value: p.min });
+      if (typeof p.max === 'number') clauses.push({ column: p.field, op: '<=', value: p.max });
+    });
+    return clauses;
+  }
+
+  /**
+   * Remember a pushdown source's unfiltered data: the Filters panel lists its
+   * values from it, so picking one does not hide the others.
+   * @param {string} ref - Source ref.
+   * @param {object} data - Freshly resolved data.
+   * @returns {void}
+   */
+  function noteDomain(ref, data) {
+    if (!pushesFilters(ref)) return;
+    var where = pushdownWhere(ref);
+    pushedWhere[ref] = JSON.stringify(where);
+    if (!where.length) refDomain[ref] = data;
   }
 
   /**
@@ -384,7 +451,8 @@ export function renderDashboard(spec, target, options) {
    * @returns {object} Resolve options.
    */
   function resolveOptions(force) {
-    return { params: paramState, force: force, sources: spec.data || {}, resolveInput: resolveRef };
+    return { params: paramState, force: force, sources: spec.data || {}, resolveInput: resolveRef,
+      where: pushdownWhere };
   }
 
   /**
@@ -396,6 +464,7 @@ export function renderDashboard(spec, target, options) {
    */
   function updateBound(ref, data) {
     refData[ref] = data;
+    noteDomain(ref, data);
     (refBindings[ref] || []).forEach(function (b) {
       if (b.cell && b.cell.setState) b.cell.setState('ready');
       if (b.rebuild) {
@@ -691,6 +760,12 @@ export function renderDashboard(spec, target, options) {
       for (var qk in query) {
         if (query[qk] === '$' + param) { uses = true; break; }
       }
+      // A pushdown filter reads a param through its value ("$name").
+      var clauses = source.kind === 'connector' && source.pushdown && Array.isArray(source.pushdown.where)
+        ? source.pushdown.where : [];
+      for (var wi = 0; wi < clauses.length; wi++) {
+        if (clauses[wi] && clauses[wi].value === '$' + param) { uses = true; break; }
+      }
       // A data function's `args` template reads params the same way.
       var args = source.kind === 'function' ? (source.args || {}) : {};
       for (var ak in args) {
@@ -712,7 +787,17 @@ export function renderDashboard(spec, target, options) {
    */
   function applyParamChange(param, value) {
     paramState[param] = value;
-    var refs = refsForParam(param);
+    return refetchRefs(refsForParam(param));
+  }
+
+  /**
+   * Re-fetch sources (inputs first) and live-update the panels bound to them.
+   * Bound cells show a loading state while in flight and keep their prior
+   * data on error.
+   * @param {string[]} refs - Source refs, inputs before the sources derived from them.
+   * @returns {Promise<void>} Resolves once all affected panels have updated.
+   */
+  function refetchRefs(refs) {
     // Refs come inputs-first, so a join's memoized inputs are already the
     // fresh fetches by the time it resolves them.
     var work = refs.map(function (ref) {
@@ -983,7 +1068,25 @@ export function renderDashboard(spec, target, options) {
     filterState = normalizeState(state);
     activeScheme = scheme;
     renderFilterPanels();
-    applyControlFilters();
+    applyFilterChange();
+  }
+
+  /**
+   * Apply a Filters-panel change: re-query the pushdown sources whose database
+   * filters changed (and what derives from them), then filter in the browser.
+   * @returns {Promise<void>} Resolves once panels are updated.
+   */
+  function applyFilterChange() {
+    var changed = [];
+    Object.keys(spec.data || {}).forEach(function (ref) {
+      if (!pushesFilters(ref) || !Object.prototype.hasOwnProperty.call(pushedWhere, ref)) return;
+      if (pushedWhere[ref] !== JSON.stringify(pushdownWhere(ref))) changed.push(ref);
+    });
+    if (!changed.length) {
+      applyControlFilters();
+      return Promise.resolve();
+    }
+    return refetchRefs(changed.concat(dependentSources(changed))).then(applyControlFilters);
   }
 
   /**
@@ -1009,7 +1112,7 @@ export function renderDashboard(spec, target, options) {
       activeScheme = null;
       filterPanelViews.forEach(function (v) { v.syncScheme(); });
     }
-    applyControlFilters();
+    applyFilterChange();
   }
 
   /**
@@ -1054,7 +1157,7 @@ export function renderDashboard(spec, target, options) {
       return resolveRef(ref).then(null, function () { return null; });
     })).then(function () {
       var fields = resolveFields(panel,
-        function (ref) { return refData[ref] || null; },
+        function (ref) { return refDomain[ref] || refData[ref] || null; },
         function (ref) { return sourceAxis(ref, sources); });
       var schemeSelect = null;
       var view = {
@@ -1186,7 +1289,9 @@ export function renderDashboard(spec, target, options) {
           });
           boxes.push(box);
           var text = document.createElement('span');
-          text.textContent = entry.value + ' (' + entry.count + ')';
+          // A pushdown source's rows are groups the database made, so a row
+          // count per value would mislead; show the value alone.
+          text.textContent = pushesFilters(f.dataRef) ? String(entry.value) : entry.value + ' (' + entry.count + ')';
           row.appendChild(box);
           row.appendChild(text);
           list.appendChild(row);

@@ -8,6 +8,22 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 Server features, live on the demo; the client additions ship in the next npm
 release.
 
+### Large data ([docs/large-data.md](docs/large-data.md))
+- **Pushdown on connector sources.** A `kind:"connector"` source's `pushdown` block
+  (groupBy, measures, where, columns, orderBy, limit) is sent as `_q`, and the
+  connector (canvasxpress-connectors 0.6+) aggregates, filters and limits in the
+  database. `$param` filter values re-query when a param control changes; an unset
+  one drops its filter.
+- **Filters on demand.** A Filters panel over a pushdown source sends value lists
+  and ranges to the database and re-queries (text search stays in the browser).
+  Its value lists come from the unfiltered answer; per-value counts are hidden.
+- **Joins in the database.** A `kind:"join"` with `pushdown` (`true`, or a query
+  over the joined rows) of two connector sources on one database runs as one SQL
+  join via `/api/join`, named like the browser join. Otherwise it falls back to
+  the browser join.
+- `pushdownQuery()` is exported. The schema and both validators know `pushdown`,
+  and their messages match.
+
 ### Scheduling ([docs/scheduling.md](docs/scheduling.md))
 - **Refresh** a stored dataset on a schedule from a URL (CSV/JSON; private
   addresses refused) or a database source (a host-registered fetcher; the demo

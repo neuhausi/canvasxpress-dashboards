@@ -301,6 +301,8 @@ def _check_data(data: Any, params: Any, errors: list, lenient: Optional[list] = 
             errors.append(at + '.axis must be "smps" or "vars"')
         if kind == "function":
             _check_function(src, at, data, params, errors)
+        if src.get("pushdown") is not None:
+            _check_pushdown(src, at, params, errors)
 
         # A `query` template maps request keys to literals or "$param" tokens;
         # every token must name a declared parameter.
@@ -404,6 +406,75 @@ def join_cycle(ref: str, data: dict) -> Optional[list]:
         return None
 
     return visit(ref)
+
+
+_PUSHDOWN_KEYS = ("columns", "groupBy", "measures", "where", "orderBy", "limit", "filters")
+_PUSHDOWN_FNS = ("count", "count_distinct", "sum", "avg", "mean", "min", "max")
+_PUSHDOWN_OPS = ("=", "!=", "<", "<=", ">", ">=", "in", "not_in", "between", "is_null",
+                 "not_null")
+
+
+def _check_pushdown(src: dict, at: str, params: Any, errors: list) -> None:
+    """Check a connector source's ``pushdown`` block (mirrors validateSpec.js)."""
+    p = src.get("pushdown")
+    here = at + ".pushdown"
+    # A join takes `true` (join in the database) or a query run over the joined rows.
+    if src.get("kind") == "join" and isinstance(p, bool):
+        return
+    if src.get("kind") not in ("connector", "join"):
+        errors.append(here + ' is only for kind "connector" or "join"')
+        return
+    if not _is_obj(p):
+        errors.append(here + " must be an object")
+        return
+    for k in p:
+        if k not in _PUSHDOWN_KEYS:
+            errors.append(here + ' has an unknown key "%s"' % k)
+    for k in ("columns", "groupBy"):
+        v = p.get(k)
+        if v is not None and not (isinstance(v, list) and all(_is_str(c) and c for c in v)):
+            errors.append(here + "." + k + " must be a list of column names")
+    measures = p.get("measures")
+    if measures is not None:
+        if not isinstance(measures, list):
+            errors.append(here + ".measures must be a list")
+        else:
+            for i, m in enumerate(measures):
+                mat = here + ".measures[%d]" % i
+                if not _is_obj(m) or m.get("fn") not in _PUSHDOWN_FNS:
+                    errors.append(mat + ".fn must be one of: " + ", ".join(_PUSHDOWN_FNS))
+                elif m.get("fn") != "count" and not _is_str(m.get("column")):
+                    errors.append(mat + " needs a column")
+    where = p.get("where")
+    if where is not None:
+        if not isinstance(where, list):
+            errors.append(here + ".where must be a list")
+        else:
+            for i, w in enumerate(where):
+                wat = here + ".where[%d]" % i
+                if not _is_obj(w) or not _is_str(w.get("column")):
+                    errors.append(wat + " needs a column")
+                    continue
+                if w.get("op") is not None and w.get("op") not in _PUSHDOWN_OPS:
+                    errors.append(wat + ".op must be one of: " + " ".join(_PUSHDOWN_OPS))
+                value = w.get("value")
+                if _is_str(value) and value.startswith("$"):
+                    name = value[1:]
+                    if not _is_obj(params) or name not in params:
+                        errors.append(wat + '.value references undeclared param "%s"' % name)
+    order = p.get("orderBy")
+    if order is not None and not (isinstance(order, list) and all(
+            _is_str(o) or (_is_obj(o) and _is_str(o.get("column"))) for o in order)):
+        errors.append(here + ".orderBy must be a list of names or {column, desc}")
+    limit = p.get("limit")
+    if limit is not None and not (_is_int(limit) and 1 <= limit <= 1000000):
+        errors.append(here + ".limit must be a whole number from 1 to 1000000")
+    if p.get("filters") is not None and not isinstance(p.get("filters"), bool):
+        errors.append(here + ".filters must be true or false")
+    grouped = bool((isinstance(p.get("groupBy"), list) and p.get("groupBy"))
+                   or (isinstance(measures, list) and measures))
+    if isinstance(p.get("columns"), list) and p.get("columns") and grouped:
+        errors.append(here + " uses columns (rows) or groupBy/measures (aggregates), not both")
 
 
 def _check_function(src: dict, at: str, data: dict, params: Any, errors: list) -> None:

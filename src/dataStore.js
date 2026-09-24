@@ -62,9 +62,9 @@ export function createDataStore(options) {
    * @param {object} sourceSpec - The data source spec.
    * @returns {string} A cache key.
    */
-  function keyFor(ref, sourceSpec, params) {
+  function keyFor(ref, sourceSpec, params, where) {
     if (sourceSpec && sourceSpec.kind === 'connector') {
-      return 'connector:' + appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, params));
+      return 'connector:' + appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, params, where));
     }
     if (sourceSpec && sourceSpec.kind === 'dataset') return 'dataset:' + datasetUrl(sourceSpec, params);
     return 'ref:' + ref;
@@ -81,9 +81,14 @@ export function createDataStore(options) {
    * @returns {object} Concrete query params, ready to encode.
    * @private
    */
-  function resolvedQuery(sourceSpec, params) {
+  function resolvedQuery(sourceSpec, params, where) {
     var template = sourceSpec && sourceSpec.query;
     var out = {};
+    // A pushdown query rides along as `_q` (JSON): the connector aggregates,
+    // filters and limits in the database.
+    if (sourceSpec && sourceSpec.kind === 'connector' && sourceSpec.pushdown) {
+      out._q = pushdownQuery(sourceSpec.pushdown, params, where);
+    }
     if (!template) return out;
     params = params || {};
     for (var name in template) {
@@ -165,6 +170,48 @@ export function createDataStore(options) {
     });
   }
 
+  /**
+   * The connector URL that joins a `kind:"join"` source in the database, or
+   * null when it must be joined in the browser. It applies when the join has
+   * `pushdown` (true, or a pushdown query run over the joined rows), both
+   * inputs are plain connector sources on one connectors server
+   * (`<base>/api/data?source=<name>`, no pushdown of their own), both are
+   * row-oriented, and no custom `suffix` is set. The inputs' `query` params
+   * ride along (they fill the SQL's bind parameters).
+   * @param {object} join - The join source spec.
+   * @param {object} sources - The spec's data map.
+   * @param {object} [params] - Current param values.
+   * @returns {(string|null)} The URL.
+   * @private
+   */
+  function sqlJoinUrl(join, sources, params) {
+    if (!join.pushdown || join.suffix != null) return null;
+    if ((join.axis && join.axis !== 'smps') || (join.leftAxis && join.leftAxis !== 'smps') ||
+        (join.rightAxis && join.rightAxis !== 'smps')) return null;
+    var parts = [];
+    var sides = [join.left, join.right];
+    for (var i = 0; i < 2; i++) {
+      var src = sources[sides[i]];
+      if (!src || src.kind !== 'connector' || src.pushdown || typeof src.url !== 'string') return null;
+      if (src.axis && src.axis !== 'smps') return null;
+      var m = /^(.*)\/api\/data\?source=([^&]+)(?:&.*)?$/.exec(src.url);
+      if (!m) return null;
+      parts.push({ base: m[1], name: decodeURIComponent(m[2]), query: resolvedQuery(src, params) });
+    }
+    if (parts[0].base !== parts[1].base) return null;
+    var query = {};
+    [parts[0].query, parts[1].query].forEach(function (q) {
+      for (var k in q) if (Object.prototype.hasOwnProperty.call(q, k)) query[k] = q[k];
+    });
+    query.left = parts[0].name;
+    query.right = parts[1].name;
+    query.on = JSON.stringify(join.on == null ? 'smps' : join.on);
+    query.how = join.how || 'inner';
+    query.right_name = join.right;
+    if (typeof join.pushdown === 'object') query._q = pushdownQuery(join.pushdown, params);
+    return appendQuery(parts[0].base + '/api/join', query);
+  }
+
   return {
     cache: cache,
 
@@ -180,6 +227,8 @@ export function createDataStore(options) {
      *   cache so different parameter values are distinct fetches.
      * @param {object} [opts.sources] - The spec's `data` map; a `kind:"join"`
      *   source looks its `left`/`right` refs up here.
+     * @param {function} [opts.where] - `function(ref)` returning extra pushdown
+     *   filters (`[{column, op, value}]`) for a connector source with `pushdown`.
      * @param {function} [opts.resolveInput] - `function(ref)` returning a
      *   Promise of a join input's data. The renderer passes its per-render memo
      *   so a join shares the fetch of an input panels already use. Defaults to
@@ -194,6 +243,15 @@ export function createDataStore(options) {
         return Promise.resolve(sourceSpec.value);
       }
       if (sourceSpec.kind === 'join') {
+        var self = this;
+        var sqlJoin = sqlJoinUrl(sourceSpec, opts.sources || {}, opts.params);
+        if (sqlJoin) {
+          // Both inputs are tables of one connector database: join (and
+          // aggregate) there. Anything it refuses is joined here instead.
+          return fetchUrl(sqlJoin).then(null, function () {
+            return resolveJoin(self, ref, sourceSpec, opts);
+          });
+        }
         return resolveJoin(this, ref, sourceSpec, opts);
       }
       if (sourceSpec.kind === 'function') {
@@ -205,11 +263,13 @@ export function createDataStore(options) {
         return Promise.reject(new Error('unknown data source kind "' + sourceSpec.kind + '"'));
       }
 
-      var key = keyFor(ref, sourceSpec, opts.params);
+      // Extra pushdown filters for this source (the renderer's Filters panel).
+      var where = typeof opts.where === 'function' ? opts.where(ref) : null;
+      var key = keyFor(ref, sourceSpec, opts.params, where);
       var ttl = sourceSpec.ttl != null ? sourceSpec.ttl : defaultTtl;
       var url = sourceSpec.kind === 'dataset'
         ? datasetUrl(sourceSpec, opts.params)
-        : appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, opts.params));
+        : appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, opts.params, where));
 
       if (!opts.force) {
         var hit = cache.get(key);
@@ -449,4 +509,44 @@ function parseJson(text) {
  */
 export function clearSharedCache() {
   sharedCache.clear();
+}
+
+/**
+ * The pushdown query a connector source sends as `_q`: its `pushdown` block
+ * with `$name` tokens in filter values replaced by the current params. A filter
+ * whose param is unset is dropped (like an unset `query` param, it widens back
+ * to everything); a scalar param on an `in`/`not_in` filter becomes a
+ * one-value list. `extraWhere` filters (e.g. from a Filters panel) are
+ * appended. Returns canonical JSON (fixed key order), so equal queries share a
+ * cache entry.
+ * @param {object} pushdown - `{columns?, groupBy?, measures?, where?, orderBy?, limit?}`.
+ * @param {object} [params] - Current param values.
+ * @param {object[]} [extraWhere] - More `{column, op, value}` filters.
+ * @returns {string} The JSON query.
+ * @public
+ */
+export function pushdownQuery(pushdown, params, extraWhere) {
+  params = params || {};
+  var where = [];
+  (pushdown.where || []).concat(extraWhere || []).forEach(function (clause) {
+    if (!clause || typeof clause.column !== 'string') return;
+    var op = clause.op || '=';
+    var value = clause.value;
+    if (typeof value === 'string' && value.charAt(0) === '$') {
+      value = params[value.slice(1)];
+      if (value == null) return;               // unset param: no filter
+    }
+    if ((op === 'in' || op === 'not_in') && !Array.isArray(value)) value = [value];
+    var out = { column: clause.column, op: op };
+    if (op !== 'is_null' && op !== 'not_null') out.value = value;
+    where.push(out);
+  });
+  var q = {};
+  ['columns', 'groupBy', 'measures'].forEach(function (k) {
+    if (Array.isArray(pushdown[k]) && pushdown[k].length) q[k] = pushdown[k];
+  });
+  if (where.length) q.where = where;
+  if (Array.isArray(pushdown.orderBy) && pushdown.orderBy.length) q.orderBy = pushdown.orderBy;
+  if (typeof pushdown.limit === 'number') q.limit = pushdown.limit;
+  return JSON.stringify(q);
 }

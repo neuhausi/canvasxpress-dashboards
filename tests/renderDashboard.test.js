@@ -1113,3 +1113,84 @@ test('a transposed panel gets transposed data at render and on live updates, and
   assert.deepEqual(bar.highlightSmp, ['L2']);
   handle.destroy();
 });
+
+// --- pushdown: aggregation and Filters-panel picks run in the database ---
+
+var ORDERS = [
+  { region: 'EMEA', status: 'won', amount: 100 }, { region: 'EMEA', status: 'open', amount: 50 },
+  { region: 'APAC', status: 'won', amount: 70 }, { region: 'AMER', status: 'won', amount: 200 }
+];
+
+/**
+ * A fake connector that answers pushdown queries (`_q`) the way the database
+ * would: filter, group by region, sum amount. Records every query it gets.
+ * @returns {function} fetch stub with `.queries`.
+ */
+function pushdownFetch() {
+  var fn = function (url) {
+    var q = JSON.parse(decodeURIComponent(url.split('_q=')[1].split('&')[0]));
+    fn.queries.push(q);
+    var rows = ORDERS.filter(function (o) {
+      return (q.where || []).every(function (w) {
+        if (w.op === 'in') return w.value.indexOf(o[w.column]) !== -1;
+        if (w.op === '>=') return o[w.column] >= w.value;
+        return o[w.column] === w.value;
+      });
+    });
+    var sums = {};
+    rows.forEach(function (o) { sums[o.region] = (sums[o.region] || 0) + o.amount; });
+    var regions = Object.keys(sums).sort();
+    var body = { y: { vars: ['sum_amount'], smps: regions, data: [regions.map(function (r) { return sums[r]; })] },
+      x: { region: regions } };
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(JSON.stringify(body)); } });
+  };
+  fn.queries = [];
+  return fn;
+}
+
+var PUSHDOWN_SPEC = {
+  id: 'pd',
+  params: { status: { value: null } },
+  layout: { cols: 12, items: [{ panel: 'bar', x: 0, y: 0, w: 8, h: 4 }, { panel: 'f', x: 8, y: 0, w: 4, h: 4 }] },
+  data: { orders: { kind: 'connector', url: '/connectors/api/data?source=orders',
+    pushdown: { groupBy: ['region'], measures: [{ fn: 'sum', column: 'amount' }],
+      where: [{ column: 'status', op: 'in', value: '$status' }] } } },
+  panels: {
+    bar: { dataRef: 'orders', config: { graphType: 'Bar' } },
+    f: { type: 'filters', dataRef: 'orders', fields: ['region'] }
+  }
+};
+
+test('pushdown: Filters-panel picks and params re-query the database; the panel keeps every value', async function () {
+  var live = [];
+  var fetchStub = pushdownFetch();
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var handle = await renderDashboard(PUSHDOWN_SPEC, container, {
+    CanvasXpress: recordingCX(live), fetch: fetchStub, cache: new Map()
+  });
+  await handle.ready;
+  assert.deepEqual(fetchStub.queries, [{ groupBy: ['region'], measures: [{ fn: 'sum', column: 'amount' }] }],
+    'one query; the unset $status param drops its filter');
+  var bar = live.filter(function (i) { return i.config.graphType === 'Bar'; })[0];
+  assert.deepEqual(bar.data.y.smps, ['AMER', 'APAC', 'EMEA']);
+
+  // Unticking AMER sends the pick to the database instead of filtering rows here.
+  var amer = valueBox(container, 'AMER');
+  amer.checked = false;
+  amer.dispatchEvent('change');
+  await delay(0);
+  await delay(0);
+  assert.deepEqual(fetchStub.queries[1].where, [{ column: 'region', op: 'in', value: ['APAC', 'EMEA'] }]);
+  var latest = bar.updates[bar.updates.length - 1];
+  assert.deepEqual(latest.y.smps, ['APAC', 'EMEA']);
+  assert.ok(valueBox(container, 'AMER'), 'the value list still offers AMER');
+
+  // A param in the pushdown filter re-queries too, combined with the pick.
+  await handle.setParam('status', 'won');
+  var last = fetchStub.queries[fetchStub.queries.length - 1];
+  assert.deepEqual(last.where, [{ column: 'status', op: 'in', value: ['won'] },
+    { column: 'region', op: 'in', value: ['APAC', 'EMEA'] }]);
+  assert.deepEqual(bar.updates[bar.updates.length - 1].y.data, [[70, 100]]);
+  handle.destroy();
+});
