@@ -146,8 +146,22 @@ alert on a dataset shared with you, add `"dataset_owner"` the same way.
 ## Email addresses
 
 Alerts and subscriptions go to the address on each user's profile. Users set
-theirs at the top of the **Schedules** view (`PUT /api/me/profile`). Admins can
-set anyone's (`POST /api/admin/users/{name}/email`).
+theirs at the top of the **Schedules** view (`PUT /api/me/profile`).
+
+**Confirmation.** A new address first gets a confirmation link, and **nothing
+else is sent to it until the link is clicked**. So nobody can point the server's
+email at someone else's inbox; this matters on a server with open sign-up.
+
+- The view shows whether the address is confirmed and offers **Resend link**.
+  The link can be re-sent at most once every 10 minutes.
+- Changing the address needs a new confirmation.
+- An address an admin sets (`POST /api/admin/users/{name}/email`) is trusted.
+- `CXD_EMAIL_VERIFY=off` skips confirmation, for a private server.
+
+**Daily cap.** Each person receives at most `CXD_EMAIL_DAILY_CAP` emails a day
+(default 50; `0` = no cap), across all alerts and subscriptions. Anything over the
+cap is skipped and counted in the run's message. The cap also keeps a shared
+sending account under its provider's limits.
 
 ## Server setup
 
@@ -158,6 +172,7 @@ set anyone's (`POST /api/admin/users/{name}/email`).
 | `CXD_SMTP_HOST` | (none: email off) | SMTP server |
 | `CXD_SMTP_PORT` | `587` | |
 | `CXD_SMTP_USER`, `CXD_SMTP_PASSWORD` | | Login, if the server needs one |
+| `CXD_SMTP_PASSWORD_FILE` | | A file holding the password (keeps it out of `.env`, e.g. a chmod-600 app-password file) |
 | `CXD_SMTP_FROM` | the user | Sender address |
 | `CXD_SMTP_SECURITY` | `starttls` | `starttls`, `ssl` (port 465) or `none` |
 | `CXD_PUBLISH_BASE_URL` | (none) | Public base URL, for links in emails (and share links) |
@@ -165,6 +180,13 @@ set anyone's (`POST /api/admin/users/{name}/email`).
 | `CXD_SNAPSHOTS` | `on` | `off` sends links only |
 | `CXD_INTERNAL_URL` | `http://127.0.0.1:<CXD_PORT>` | How the server reaches itself to render snapshots |
 | `CXD_FETCH_ALLOW_PRIVATE` | `0` | `1` lets URL refreshes reach private addresses |
+| `CXD_EMAIL_VERIFY` | `on` | `off`: addresses need no confirmation (private servers) |
+| `CXD_EMAIL_DAILY_CAP` | `50` | Emails per person per day (`0` = no cap) |
+
+**Gmail.** Use an app password (Google Account → Security → 2-Step Verification →
+App passwords) with `CXD_SMTP_HOST=smtp.gmail.com`, `CXD_SMTP_PORT=465`,
+`CXD_SMTP_SECURITY=ssl`, and the account as both `CXD_SMTP_USER` and
+`CXD_SMTP_FROM`; Gmail requires the sender to be the signed-in account.
 
 **Snapshots** need Playwright and Chromium on the server:
 
@@ -219,9 +241,11 @@ app.state.origin_fetchers["connector"] = my_fetch
 | `POST` | `/api/schedules/{id}/run` | Run now → `{run, schedule}` |
 | `GET` | `/api/schedules/{id}/runs` | Recent runs |
 | `GET` | `/api/cron/preview?cron=&tz=&count=` | `{description, next}`: check an expression |
-| `GET`·`PUT` | `/api/me/profile` | Your email address `{email}` |
+| `GET`·`PUT` | `/api/me/profile` | Your email address `{email}` → `{email, verified, confirmation_sent}` |
+| `POST` | `/api/me/profile/confirm` | Re-send the confirmation link |
+| `GET` | `/api/me/verify-email?token=` | The confirmation link |
 | `POST` | `/api/admin/users/{name}/email` | Admin: set a user's address |
 
 Client methods (`createDashboardClient`): `scheduleStatus`, `listSchedules`,
 `saveSchedule`, `deleteSchedule`, `runSchedule`, `scheduleRuns`, `cronPreview`,
-`getProfile`, `setProfile`, `setUserEmail`.
+`getProfile`, `setProfile`, `resendConfirmation`, `setUserEmail`.

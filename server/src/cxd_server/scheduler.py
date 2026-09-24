@@ -50,8 +50,20 @@ _SCHEMA = [
     " schedule_id TEXT NOT NULL, recipient TEXT NOT NULL, active INTEGER NOT NULL,"
     " PRIMARY KEY (schedule_id, recipient))",
     "CREATE TABLE IF NOT EXISTS cxd_profiles ("
-    " username TEXT PRIMARY KEY, email TEXT)",
+    " username TEXT PRIMARY KEY, email TEXT, verified INTEGER NOT NULL DEFAULT 0,"
+    " token TEXT, token_sent TEXT)",
+    "CREATE TABLE IF NOT EXISTS cxd_email_log ("
+    " username TEXT NOT NULL, day TEXT NOT NULL, sent INTEGER NOT NULL,"
+    " PRIMARY KEY (username, day))",
 ]
+
+# Columns added after cxd_profiles first shipped (migrated on start).
+_PROFILE_COLUMNS = [
+    "ALTER TABLE cxd_profiles ADD COLUMN verified INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE cxd_profiles ADD COLUMN token TEXT",
+    "ALTER TABLE cxd_profiles ADD COLUMN token_sent TEXT",
+]
+RESEND_SECONDS = 600
 
 ALIASES = {
     "@hourly": "0 * * * *",
@@ -218,9 +230,15 @@ def parse_iso(text: Optional[str]) -> Optional[datetime.datetime]:
 class ScheduleStore:
     """Schedules, their run history, alert state, and user email addresses."""
 
-    def __init__(self, db):
+    def __init__(self, db, verify_emails: bool = True):
         self._db = db
+        self.verify_emails = verify_emails
         self._db.run([(sql, {}) for sql in _SCHEMA])
+        for sql in _PROFILE_COLUMNS:
+            try:
+                self._db.run([(sql, {})])
+            except Exception:  # noqa: BLE001 - the column already exists
+                pass
 
     # schedules
     def list(self, owner: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -276,7 +294,8 @@ class ScheduleStore:
     def forget_user(self, username: str) -> None:
         for s in self.list(username):
             self.delete(s["id"])
-        self._db.run([("DELETE FROM cxd_profiles WHERE username = :u", {"u": username})])
+        self._db.run([("DELETE FROM cxd_profiles WHERE username = :u", {"u": username}),
+                      ("DELETE FROM cxd_email_log WHERE username = :u", {"u": username})])
 
     def due(self, now: datetime.datetime) -> List[Dict[str, Any]]:
         rows = self._db.query(
@@ -332,26 +351,89 @@ class ScheduleStore:
             " ON CONFLICT (schedule_id, recipient) DO UPDATE SET active = excluded.active",
             {"i": schedule_id, "r": recipient, "a": 1 if active else 0})])
 
-    # profiles
-    def email_of(self, username: str) -> Optional[str]:
-        rows = self._db.query("SELECT email FROM cxd_profiles WHERE username = :u",
+    # profiles (the addresses alerts and subscriptions go to)
+    def profile(self, username: str) -> Dict[str, Any]:
+        rows = self._db.query("SELECT email, verified FROM cxd_profiles WHERE username = :u",
                               {"u": username})
-        return rows[0]["email"] if rows and rows[0]["email"] else None
+        email = rows[0]["email"] if rows and rows[0]["email"] else None
+        return {"email": email, "verified": bool(email and rows[0]["verified"])}
+
+    def email_of(self, username: str) -> Optional[str]:
+        """The address to send to: set, and verified unless verification is off."""
+        p = self.profile(username)
+        if p["email"] and (p["verified"] or not self.verify_emails):
+            return p["email"]
+        return None
+
+    def profiles(self) -> Dict[str, Dict[str, Any]]:
+        return {r["username"]: {"email": r["email"], "verified": bool(r["verified"])}
+                for r in self._db.query("SELECT username, email, verified FROM cxd_profiles")
+                if r["email"]}
 
     def emails(self) -> Dict[str, str]:
-        return {r["username"]: r["email"] for r in
-                self._db.query("SELECT username, email FROM cxd_profiles") if r["email"]}
+        return {u: p["email"] for u, p in self.profiles().items()}
 
-    def set_email(self, username: str, email: Optional[str]) -> Optional[str]:
+    def set_email(self, username: str, email: Optional[str], verified: bool = False
+                  ) -> Optional[str]:
+        """Set (or clear) an address. An unverified one gets a fresh confirmation token."""
         email = (email or "").strip()
         if email and (len(email) > 254 or "@" not in email or " " in email
                       or email.startswith("@") or email.endswith("@")):
             raise ScheduleError("That does not look like an email address")
+        current = self.profile(username)
+        if email and email == current["email"] and current["verified"]:
+            return email                      # unchanged and already confirmed
         self._db.run([(
-            "INSERT INTO cxd_profiles (username, email) VALUES (:u, :e)"
-            " ON CONFLICT (username) DO UPDATE SET email = excluded.email",
-            {"u": username, "e": email or None})])
+            "INSERT INTO cxd_profiles (username, email, verified, token, token_sent)"
+            " VALUES (:u, :e, :v, :t, NULL) ON CONFLICT (username) DO UPDATE SET"
+            " email = excluded.email, verified = excluded.verified, token = excluded.token,"
+            " token_sent = NULL",
+            {"u": username, "e": email or None, "v": 1 if (email and verified) else 0,
+             "t": None if (not email or verified) else secrets.token_urlsafe(24)})])
         return email or None
+
+    def confirmation_token(self, username: str, now: datetime.datetime) -> Optional[str]:
+        """The token to email for confirming the user's address, at most once every
+        ten minutes; None when there is nothing to confirm or it is too soon."""
+        rows = self._db.query("SELECT email, verified, token, token_sent FROM cxd_profiles"
+                              " WHERE username = :u", {"u": username})
+        if not rows or not rows[0]["email"] or rows[0]["verified"] or not rows[0]["token"]:
+            return None
+        last = parse_iso(rows[0]["token_sent"])
+        if last and (now - last).total_seconds() < RESEND_SECONDS:
+            return None
+        self._db.run([("UPDATE cxd_profiles SET token_sent = :t WHERE username = :u",
+                       {"t": iso(now), "u": username})])
+        return rows[0]["token"]
+
+    def verify_token(self, token: str) -> Optional[str]:
+        """Confirm the address a token was sent to; returns its user (None if unknown)."""
+        if not token:
+            return None
+        rows = self._db.query("SELECT username FROM cxd_profiles WHERE token = :t",
+                              {"t": token})
+        if not rows:
+            return None
+        self._db.run([("UPDATE cxd_profiles SET verified = 1, token = NULL WHERE token = :t",
+                       {"t": token})])
+        return rows[0]["username"]
+
+    def allow_send(self, username: str, cap: int, now: Optional[datetime.datetime] = None
+                   ) -> bool:
+        """Count one email to ``username`` today; False once the daily cap is reached."""
+        if cap <= 0:
+            return True
+        day = (now or now_utc()).strftime("%Y-%m-%d")
+        rows = self._db.query("SELECT sent FROM cxd_email_log WHERE username = :u AND day = :d",
+                              {"u": username, "d": day})
+        sent = rows[0]["sent"] if rows else 0
+        if sent >= cap:
+            return False
+        self._db.run([(
+            "INSERT INTO cxd_email_log (username, day, sent) VALUES (:u, :d, 1)"
+            " ON CONFLICT (username, day) DO UPDATE SET sent = cxd_email_log.sent + 1",
+            {"u": username, "d": day})])
+        return True
 
 
 def _public(row: Dict[str, Any]) -> Dict[str, Any]:

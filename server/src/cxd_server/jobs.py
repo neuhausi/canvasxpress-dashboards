@@ -361,6 +361,9 @@ class Jobs:
             if not email:
                 counts["no_email"] += 1
                 continue
+            if not ctx.schedules.allow_send(user, getattr(ctx, "email_cap", 0)):
+                counts["capped"] = counts.get("capped", 0) + 1
+                continue
             outgoing.append(self._alert_email(schedule, email, user, title, value))
             pending.append(user)
         if outgoing:
@@ -374,7 +377,9 @@ class Jobs:
             counts["recipients"], "person" if counts["recipients"] == 1 else "people",
             counts["true"], counts["emailed"])
         if counts["no_email"]:
-            message += ", %d without an email address" % counts["no_email"]
+            message += ", %d without a confirmed email address" % counts["no_email"]
+        if counts.get("capped"):
+            message += ", %d over today's email limit" % counts["capped"]
         if counts["no_access"]:
             message += ", %d cannot read the dataset" % counts["no_access"]
         return "ok", message, counts
@@ -423,6 +428,9 @@ class Jobs:
             if not email:
                 counts["no_email"] += 1
                 continue
+            if not ctx.schedules.allow_send(user, getattr(ctx, "email_cap", 0)):
+                counts["capped"] = counts.get("capped", 0) + 1
+                continue
             png = None
             if use_snapshot:
                 try:
@@ -452,7 +460,9 @@ class Jobs:
             extras.append("link only (snapshots unavailable)" if not use_snapshot
                           else "link only (snapshot failed: %s)" % (errors[0] if errors else "?"))
         if counts["no_email"]:
-            extras.append("%d without an email address" % counts["no_email"])
+            extras.append("%d without a confirmed email address" % counts["no_email"])
+        if counts.get("capped"):
+            extras.append("%d over today's email limit" % counts["capped"])
         if counts["no_access"]:
             extras.append("%d cannot open it" % counts["no_access"])
         if not link:

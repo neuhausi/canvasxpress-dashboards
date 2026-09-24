@@ -493,7 +493,12 @@ def create_dashboards_app(
         return [s["name"] for s in registry.named("dataset")]
 
     # Scheduling: refresh, alerts and subscriptions (see scheduler.py / jobs.py).
-    schedules = ScheduleStore(governance._db)
+    verify_emails = os.getenv("CXD_EMAIL_VERIFY", "on").lower() not in ("off", "0", "false", "no")
+    schedules = ScheduleStore(governance._db, verify_emails=verify_emails)
+    try:
+        email_cap = int(os.getenv("CXD_EMAIL_DAILY_CAP", "50") or 50)
+    except ValueError:
+        email_cap = 50
     if mailer is None:
         mailer = SmtpMailer.from_env()
     if snapshots is None:
@@ -666,13 +671,14 @@ def create_dashboards_app(
     def admin_list_users(request: Request):
         require_admin(request)
         assigned = governance.assignments()
-        emails = schedules.emails()
+        profiles = schedules.profiles()
         return {"users": [
             {"username": name, "is_admin": user_is_admin(name),
              "via_config": name in admins,
              "dashboards": len(store.list_dashboards(name)),
              "role": assigned.get("user:" + name),
-             "email": emails.get(name),
+             "email": (profiles.get(name) or {}).get("email"),
+             "email_verified": bool((profiles.get(name) or {}).get("verified")),
              "roles": governance.roles_of(name),
              "groups": governance.groups_of(name)}
             for name in store.list_users()
@@ -1289,6 +1295,7 @@ def create_dashboards_app(
     ctx.app_link = lambda: publish_base_url.rstrip("/") + "/" if publish_base_url else None
     ctx.list_users, ctx.now_iso = store.list_users, _now_iso
     ctx.allow_private = os.getenv("CXD_FETCH_ALLOW_PRIVATE", "0") == "1"
+    ctx.email_cap = email_cap
     jobs = Jobs(ctx)
     try:
         tick = float(os.getenv("CXD_SCHEDULER_TICK", "30") or 30)
@@ -1318,7 +1325,9 @@ def create_dashboards_app(
                 "links": bool(publish_base_url),
                 "origins": ["url"] + sorted(k for k in origin_fetchers if k != "url"),
                 "can_create": "schedule.create" in permissions_of(user),
-                "email_address": schedules.email_of(user)}
+                "email_address": schedules.profile(user)["email"],
+                "email_verified": schedules.profile(user)["verified"] or not verify_emails,
+                "email_daily_cap": email_cap}
 
     @app.get("/api/schedules")
     def list_schedules(request: Request, all: bool = False):
@@ -1385,21 +1394,84 @@ def create_dashboards_app(
         return {"description": parsed.describe(), "next": times}
 
     # ---- profile (the address alerts and subscriptions go to) ----
+    # A new address must be confirmed (a link emailed to it) before anything else
+    # is sent there, so nobody can point the server's email at someone else.
+    def profile_body(user: str, sent: Optional[bool] = None) -> dict:
+        p = schedules.profile(user)
+        out = {"user": user, "email": p["email"], "verified": p["verified"] or not verify_emails}
+        if sent is not None:
+            out["confirmation_sent"] = sent
+        return out
+
+    def send_confirmation(request: Request, user: str) -> bool:
+        if not verify_emails or mailer is None:
+            return False
+        token = schedules.confirmation_token(user, datetime.datetime.now(datetime.timezone.utc))
+        email = schedules.profile(user)["email"]
+        if not token or not email:
+            return False
+        from urllib.parse import quote
+        base = (publish_base_url or str(request.base_url)).rstrip("/")
+        link = "%s/api/me/verify-email?token=%s" % (base, quote(token))
+        text = ("Confirm this address for CanvasXpress Dashboards (user %s):\n\n%s\n\n"
+                "Alerts and emailed dashboards are sent here only after you confirm. If you did "
+                "not ask for this, ignore this email." % (user, link))
+        body = ("<p>Confirm this address for CanvasXpress Dashboards (user <b>%s</b>):</p>"
+                "<p><a href='%s'>Confirm my email address</a></p><p style='color:#777;"
+                "font-size:12px'>Alerts and emailed dashboards are sent here only after you "
+                "confirm. If you did not ask for this, ignore this email.</p>"
+                % (html.escape(user), html.escape(link)))
+        mailer.send([(email, "Confirm your email address", text, body, [])])
+        return True
+
     @app.get("/api/me/profile")
     def my_profile(request: Request):
-        user = require_user(request)
-        return {"user": user, "email": schedules.email_of(user)}
+        return profile_body(require_user(request))
 
     @app.put("/api/me/profile")
     async def set_my_profile(request: Request):
         user = require_user(request)
         body = await request.json()
         try:
-            email = schedules.set_email(user, (body or {}).get("email"))
+            email = schedules.set_email(user, (body or {}).get("email"),
+                                        verified=not verify_emails)
         except ScheduleError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
-        note(request, email_set=bool(email))
-        return {"user": user, "email": email}
+        sent = False
+        if email and not schedules.profile(user)["verified"]:
+            try:
+                sent = await run_in_threadpool(send_confirmation, request, user)
+            except Exception as exc:  # noqa: BLE001 - report, keep the address
+                raise HTTPException(status_code=502, detail="Could not send the confirmation "
+                                    "email: %s" % exc)
+        note(request, email_set=bool(email), confirmation_sent=sent or None)
+        return profile_body(user, sent)
+
+    @app.post("/api/me/profile/confirm")
+    async def resend_confirmation(request: Request):
+        """Send the confirmation link again (at most once every ten minutes)."""
+        user = require_user(request)
+        try:
+            sent = await run_in_threadpool(send_confirmation, request, user)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=502, detail="Could not send the email: %s" % exc)
+        return profile_body(user, sent)
+
+    @app.get("/api/me/verify-email", response_class=HTMLResponse)
+    def verify_email(request: Request, token: str = ""):
+        """The link in the confirmation email (the token is the credential)."""
+        user = schedules.verify_token(token)
+        note(request, target=user, verified=bool(user))
+        base = (publish_base_url or "").rstrip("/") + "/"
+        message = ("Your email address is confirmed. Alerts and emailed dashboards will "
+                   "reach it." if user else "This confirmation link is not valid (it was "
+                   "already used, or the address changed since).")
+        return HTMLResponse("<!doctype html><meta charset='utf-8'><title>Email address</title>"
+                            "<body style='font-family:system-ui;max-width:560px;margin:10vh auto'>"
+                            "<h2>%s</h2><p>%s</p><p><a href='%s'>Open CanvasXpress Dashboards</a>"
+                            "</p></body>" % ("Confirmed" if user else "Link not valid", message,
+                                             html.escape(base)),
+                            status_code=200 if user else 400)
 
     @app.post("/api/admin/users/{username}/email")
     async def admin_set_email(request: Request, username: str):
@@ -1408,7 +1480,8 @@ def create_dashboards_app(
             raise HTTPException(status_code=404, detail="No such user")
         body = await request.json()
         try:
-            email = schedules.set_email(username, (body or {}).get("email"))
+            # An address an admin sets is trusted (no confirmation email).
+            email = schedules.set_email(username, (body or {}).get("email"), verified=True)
         except ScheduleError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
         return {"user": username, "email": email}

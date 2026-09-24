@@ -33,7 +33,8 @@ vars: `SESSION_SECRET` (auto-generated if unset), `CXD_HOST`/`CXD_PORT`,
 `CXD_HTTPS_ONLY`, `CXD_ADMINS`, `CXD_PUBLISH_BASE_URL`, `CXD_CANVASXPRESS_URL`,
 `CXD_CANVASXPRESS_LICENSE`, `CXD_LLM_API_KEY`, `CXD_LLM_MODEL`, `CXD_FUNCTIONS*`,
 `CXD_AUDIT`, `CXD_AUDIT_RETENTION_DAYS`, `CXD_DEFAULT_ROLE`, `CXD_SCHEDULER*`,
-`CXD_SMTP_*`, `CXD_SNAPSHOTS`, `CXD_INTERNAL_URL`, `CXD_DASHBOARD_URL`.
+`CXD_SMTP_*` (incl. `CXD_SMTP_PASSWORD_FILE`), `CXD_EMAIL_VERIFY`, `CXD_EMAIL_DAILY_CAP`,
+`CXD_SNAPSHOTS`, `CXD_INTERNAL_URL`, `CXD_DASHBOARD_URL`.
 
 **Scheduling.** Dataset refresh (from a URL or a database source), alerts on
 dataset values, and emailed dashboards with a PNG snapshot run on cron schedules,
@@ -138,7 +139,9 @@ uvicorn cxd_server.app:create_dashboards_app --factory --reload
 | `POST` | `/api/schedules/{id}/run` | Run now |
 | `GET` | `/api/schedules/{id}/runs` | Recent runs |
 | `GET` | `/api/cron/preview` | Read a cron expression and list its next runs |
-| `GET`·`PUT` | `/api/me/profile` | Your email address for alerts and subscriptions |
+| `GET`·`PUT` | `/api/me/profile` | Your email address for alerts and subscriptions (a new one gets a confirmation link) |
+| `POST` | `/api/me/profile/confirm` | Re-send the confirmation link |
+| `GET` | `/api/me/verify-email` | Confirm an address (the emailed link) |
 | `POST` | `/api/admin/users/{name}/email` | Admin: set a user's email address |
 | `GET` | `/api/llm/status` | Whether the NL builder is configured (`{enabled, model}`; no key) |
 | `GET` | `/api/admin/audit` | Admin: audit events, newest first (`actor`, `action` (a trailing `.` matches a prefix), `target`, `outcome`, `since`, `until`, `before`, `limit`) |

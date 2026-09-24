@@ -79,6 +79,8 @@ _ACTIONS = {
     ("DELETE", "/api/schedules/{schedule_id}"): "schedule.delete",
     ("POST", "/api/schedules/{schedule_id}/run"): "schedule.run",
     ("PUT", "/api/me/profile"): "profile.save",
+    ("POST", "/api/me/profile/confirm"): "profile.confirm",
+    ("GET", "/api/me/verify-email"): "profile.verify",
     ("POST", "/api/admin/users/{username}/email"): "admin.user.email",
 }
 

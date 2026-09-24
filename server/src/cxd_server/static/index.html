@@ -950,7 +950,7 @@
               '<div class="data-item-meta">' + u.dashboards + ' dashboard' + (u.dashboards === 1 ? '' : 's') +
                 (u.groups && u.groups.length ? ' · groups: ' + esc(u.groups.join(', ')) : '') +
                 (!u.is_admin && u.roles ? ' · acts as ' + esc(u.roles.join(' + ')) : '') +
-                ' · ' + (u.email ? esc(u.email) : 'no email') + '</div>' +
+                ' · ' + (u.email ? esc(u.email) + (u.email_verified ? '' : ' (unconfirmed)') : 'no email') + '</div>' +
             '</div>';
           // The user's own role ('' = none: their groups' roles, else the default).
           if (!u.is_admin && govRoles.length) {
@@ -2091,17 +2091,35 @@
             '<input id="sched-email" type="email" placeholder="you@example.org" style="font-size:15px;padding:4px 8px;width:240px"/></label>' +
           '<button id="sched-email-save" style="font-size:14px;padding:4px 10px">Save</button>' +
           '<span id="sched-email-msg" style="font-size:14px"></span>' +
+          '<button id="sched-email-resend" style="font-size:14px;padding:4px 10px;display:none">Resend link</button>' +
           '<span style="flex:1"></span>' +
           chip(status.enabled, 'Scheduler on', 'Scheduler off (CXD_SCHEDULER)') +
           chip(status.email, 'Email', 'Email not configured') +
           chip(status.snapshots, 'PNG snapshots', 'Snapshots: link only');
         var input = document.getElementById('sched-email');
         input.value = status.email_address || '';
+        var msg = document.getElementById('sched-email-msg');
+        var resend = document.getElementById('sched-email-resend');
+        // Nothing is sent to a new address until its owner clicks the emailed link.
+        function showVerified(email, verified, sent) {
+          resend.style.display = email && !verified && status.email ? '' : 'none';
+          if (!email) { msg.style.color = 'var(--muted)'; msg.textContent = ''; return; }
+          if (verified) { msg.style.color = '#2e7d32'; msg.textContent = '✓ confirmed'; return; }
+          msg.style.color = '#b26a00';
+          msg.textContent = sent ? 'Check your inbox: click the link we sent to confirm it.'
+            : 'Not confirmed yet: nothing is sent there until you click the emailed link.';
+        }
+        showVerified(status.email_address, status.email_verified, false);
         document.getElementById('sched-email-save').onclick = function () {
-          var msg = document.getElementById('sched-email-msg');
           client.setProfile({ email: input.value.trim() }).then(function (r) {
-            status.email_address = r.email;
-            msg.style.color = '#2e7d32'; msg.textContent = r.email ? 'Saved.' : 'Cleared.';
+            status.email_address = r.email; status.email_verified = r.verified;
+            showVerified(r.email, r.verified, r.confirmation_sent);
+          }, function (e) { msg.style.color = '#d64545'; msg.textContent = e.message; });
+        };
+        resend.onclick = function () {
+          client.resendConfirmation().then(function (r) {
+            showVerified(r.email, r.verified, r.confirmation_sent);
+            if (!r.confirmation_sent && !r.verified) msg.textContent = 'A link was sent in the last 10 minutes; check your inbox.';
           }, function (e) { msg.style.color = '#d64545'; msg.textContent = e.message; });
         };
         var newHost = document.getElementById('sched-new-host');

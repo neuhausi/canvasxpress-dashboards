@@ -40,8 +40,12 @@ release.
 - **Runner:** a background runner (`CXD_SCHEDULER`, `CXD_SCHEDULER_TICK`) that
   claims due jobs atomically, so several processes never run one twice.
 - **Run history:** Run now, and the last 50 runs per schedule.
-- **Email:** SMTP (`CXD_SMTP_*`); addresses live on user profiles
-  (`/api/me/profile`).
+- **Email:** SMTP (`CXD_SMTP_*`, or `CXD_SMTP_PASSWORD_FILE`); addresses live on user
+  profiles (`/api/me/profile`).
+  - A new address must be **confirmed** through an emailed link before anything
+    else is sent to it (`CXD_EMAIL_VERIFY`; admin-set addresses are trusted).
+  - Each person gets at most `CXD_EMAIL_DAILY_CAP` (default 50) emails a day, so
+    an open-sign-up server cannot be used to flood an inbox.
 - **Permission:** new `schedule.create`, held by the `editor` role.
 - **Audit:** schedule changes and runs are audited.
 - **UI:** a Schedules view with presets and a next-run preview, a Subscribe

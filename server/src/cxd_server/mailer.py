@@ -2,7 +2,8 @@
 
 Configured with environment variables (all optional; email is off without a host):
 
-``CXD_SMTP_HOST``, ``CXD_SMTP_PORT`` (587), ``CXD_SMTP_USER``, ``CXD_SMTP_PASSWORD``,
+``CXD_SMTP_HOST``, ``CXD_SMTP_PORT`` (587), ``CXD_SMTP_USER``, ``CXD_SMTP_PASSWORD`` (or
+``CXD_SMTP_PASSWORD_FILE``, a file holding it),
 ``CXD_SMTP_FROM`` (defaults to the user), and ``CXD_SMTP_SECURITY``: ``starttls``
 (default), ``ssl`` or ``none``.
 """
@@ -68,8 +69,14 @@ class SmtpMailer:
         host = os.getenv("CXD_SMTP_HOST")
         if not host:
             return None
+        password = os.getenv("CXD_SMTP_PASSWORD") or None
+        password_file = os.getenv("CXD_SMTP_PASSWORD_FILE")
+        if not password and password_file:
+            # Keeps the secret out of .env (e.g. an app password in a chmod-600 file).
+            with open(os.path.expanduser(password_file), encoding="utf-8") as fh:
+                password = fh.read().strip() or None
         return cls(host, int(os.getenv("CXD_SMTP_PORT", "587") or 587),
-                   os.getenv("CXD_SMTP_USER") or None, os.getenv("CXD_SMTP_PASSWORD") or None,
+                   os.getenv("CXD_SMTP_USER") or None, password,
                    os.getenv("CXD_SMTP_FROM") or None, os.getenv("CXD_SMTP_SECURITY", "starttls"))
 
     def send(self, messages: List[Tuple[str, str, str, Optional[str],

@@ -6686,16 +6686,23 @@ function createDashboardClient(options) {
     cronPreview: function (cron, tz) {
       return request('GET', '/api/cron/preview' + queryString({ cron: cron, tz: tz || 'UTC' }));
     },
-    /** @returns {Promise<object>} `{ user, email }`. */
+    /** @returns {Promise<object>} `{ user, email, verified }`. */
     getProfile: function () { return request('GET', '/api/me/profile'); },
     /**
-     * Set the address alerts and subscriptions are sent to.
+     * Set the address alerts and subscriptions are sent to. A new address gets
+     * a confirmation link and receives nothing else until it is confirmed.
      * @param {object} profile - `{email}` (empty clears it).
-     * @returns {Promise<object>} `{ user, email }`.
+     * @returns {Promise<object>} `{ user, email, verified, confirmation_sent }`.
      */
     setProfile: function (profile) { return request('PUT', '/api/me/profile', profile); },
     /**
-     * Admin: set a user's email address.
+     * Email the confirmation link for the user's address again (at most once
+     * every ten minutes). Nothing is sent to an address until it is confirmed.
+     * @returns {Promise<object>} `{ user, email, verified, confirmation_sent }`.
+     */
+    resendConfirmation: function () { return request('POST', '/api/me/profile/confirm'); },
+    /**
+     * Admin: set a user's email address (trusted: no confirmation needed).
      * @param {string} username - Target user.
      * @param {string} email - Address (empty clears it).
      * @returns {Promise<object>} `{ user, email }`.

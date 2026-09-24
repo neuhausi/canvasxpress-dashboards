@@ -96,13 +96,23 @@ def app(tmp_path, mailer, monkeypatch):
     return app
 
 
+def _confirm_link(mailer):
+    """The confirmation link in the newest confirmation email (then forget it)."""
+    msg = mailer.sent.pop()
+    assert msg["Subject"] == "Confirm your email address"
+    text = msg.get_body(("plain",)).get_content()
+    return next(w for w in text.split() if "/api/me/verify-email?token=" in w)
+
+
 def _user(app, name, email=True):
     client = TestClient(app)
     assert client.post("/auth/signup", json={"username": name, "password": "secret1"}
                        ).status_code == 200
     if email:
-        assert client.put("/api/me/profile", json={"email": name + "@example.test"}
-                          ).status_code == 200
+        r = client.put("/api/me/profile", json={"email": name + "@example.test"})
+        assert r.status_code == 200 and r.json()["confirmation_sent"] is True
+        link = _confirm_link(app.state.mailer)
+        assert client.get(link.split("example.test/dashboards", 1)[1]).status_code == 200
     return client
 
 
@@ -355,3 +365,58 @@ def test_smtp_mailer_sends_multipart_with_an_inline_snapshot():
     assert "text/plain" in parts and "text/html" in parts and "image/png" in parts
     image = next(p for p in msg.walk() if p.get_content_type() == "image/png")
     assert image["Content-ID"] == "<shot>" and image.get_payload(decode=True) == png
+
+
+def test_email_addresses_must_be_confirmed_and_sends_are_capped(tmp_path, monkeypatch):
+    monkeypatch.setenv("CXD_EMAIL_DAILY_CAP", "2")
+    mailer = MemoryMailer()
+    app = create_dashboards_app(store=DashboardStore(str(tmp_path / "d.db")), session_secret="s",
+                                serve_static=False, mailer=mailer, scheduler_enabled=False,
+                                publish_base_url="https://example.test/dashboards",
+                                dataset_store_uri="file://" + str(tmp_path / "ds"))
+    owner = TestClient(app)
+    owner.post("/auth/signup", json={"username": "owner", "password": "secret1"})
+    owner.post("/api/datasets", json={"id": "labs", "format": "json", "data": LABS})
+    r = owner.put("/api/me/profile", json={"email": "victim@example.test"})
+    assert r.json() == {"user": "owner", "email": "victim@example.test", "verified": False,
+                        "confirmation_sent": True}
+    link = _confirm_link(mailer)
+    # Unconfirmed: an alert sends nothing to that address.
+    s = _save(owner, kind="alert", name="rows", cron="@hourly",
+              config={"dataset": "labs", "aggregate": "count", "op": ">", "threshold": 0,
+                      "recipients": ["user:owner"]})
+    run = _run(owner, s["id"])
+    assert run["detail"]["no_email"] == 1 and mailer.sent == []
+    assert "without a confirmed email address" in run["message"]
+    # Resending is throttled; a wrong token does nothing.
+    assert owner.post("/api/me/profile/confirm").json()["confirmation_sent"] is False
+    assert owner.get("/api/me/verify-email", params={"token": "nope"}).status_code == 400
+    # Confirming unlocks sending; the daily cap then limits it.
+    anonymous = TestClient(app)
+    assert anonymous.get(link.split("example.test/dashboards", 1)[1]).status_code == 200
+    assert owner.get("/api/me/profile").json()["verified"] is True
+    owner.post("/api/dashboards", json={"id": "d1", "title": "B", "layout": {"items": []},
+                                        "panels": {}})
+    sub = _save(owner, kind="subscription", name="board", cron="@daily",
+                config={"dashboard": "d1", "recipients": ["user:owner"]})
+    assert _run(owner, sub["id"])["detail"]["emailed"] == 1
+    assert _run(owner, sub["id"])["detail"]["emailed"] == 1
+    third = _run(owner, sub["id"])
+    assert third["detail"]["emailed"] == 0 and third["detail"]["capped"] == 1
+    assert "over today's email limit" in third["message"]
+    # Changing the address needs a new confirmation; an admin-set one does not.
+    owner.put("/api/me/profile", json={"email": "other@example.test"})
+    assert owner.get("/api/me/profile").json()["verified"] is False
+    owner.post("/api/admin/users/owner/email", json={"email": "ops@example.test"})
+    assert owner.get("/api/me/profile").json() == {"user": "owner", "email": "ops@example.test",
+                                                   "verified": True}
+
+
+def test_smtp_password_can_come_from_a_file(tmp_path, monkeypatch):
+    from cxd_server.mailer import SmtpMailer
+    secret = tmp_path / "pass"
+    secret.write_text("app pass word\n")
+    monkeypatch.setenv("CXD_SMTP_HOST", "smtp.example.test")
+    monkeypatch.delenv("CXD_SMTP_PASSWORD", raising=False)
+    monkeypatch.setenv("CXD_SMTP_PASSWORD_FILE", str(secret))
+    assert SmtpMailer.from_env().password == "app pass word"
