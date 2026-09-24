@@ -151,6 +151,10 @@
           "type": "string",
           "description": "Optional named dataset store to resolve the id against (server-configured; Phase 5.2)."
         },
+        "owner": {
+          "type": "string",
+          "description": "The dataset's owner when it is not the viewer (kind:dataset). Set by the server on a dashboard opened from another owner; access is checked on every read."
+        },
         "url": {
           "type": "string",
           "description": "Connector endpoint, e.g. /api/data?source=sales, or a signed dataset URL. Fetched with credentials (cookie auth)."

@@ -213,7 +213,9 @@ def admin_app(tmp_path):
 def test_me_reports_admin_flag(admin_app):
     client = _client(admin_app)
     client.post("/auth/login", json={"username": "root", "password": "secret1"})
-    assert client.get("/auth/me").json() == {"user": "root", "is_admin": True}
+    me = client.get("/auth/me").json()
+    assert (me["user"], me["is_admin"]) == ("root", True)
+    assert "share.grant" in me["permissions"]      # admins hold every permission
 
 
 def test_non_admin_forbidden(admin_app):

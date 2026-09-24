@@ -386,6 +386,7 @@
         // per-panel Data dropdown offers exactly that set (spec.data).
         limitDatasetsToSpec: true,
         emptyHint: false,   // the Assistant's help box covers the empty state
+        owner: currentOwner || undefined,   // editing a dashboard shared with edit access
         onChange: function (spec) { currentSpec = spec; syncChatChecks(spec); }
       });
       window.builder = currentBuilder;
@@ -712,6 +713,8 @@
     // the signed-in username (null when signed out) and drives the footer + guards.
     var currentUser = null;
     var isAdmin = false;
+    var currentPermissions = [];   // from /auth/me (the server enforces them)
+    var currentOwner = null;       // owner of a shared dashboard open for editing
     var DEMO_USER = 'demo', DEMO_PASS = 'demo1234';
 
     // Sync the sidebar footer + admin nav to the current auth state.
@@ -752,6 +755,8 @@
       return client.me().then(function (r) {
         currentUser = (r && r.user) || null;
         isAdmin = !!(r && r.is_admin);
+        currentPermissions = (r && r.permissions) || [];
+        directoryCache = null;
         renderUserChip();
         return currentUser;
       }, function () { currentUser = null; isAdmin = false; renderUserChip(); return null; });
@@ -840,6 +845,41 @@
             '</div></div>' +
           '</div>' +
         '</div>' +
+        '<h3 style="margin:24px 0 4px">Roles</h3>' +
+        '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">A role is a set of permissions. Give one to a user ' +
+          '(above) or a group (below); a user gets every permission of their own and their groups’ roles. ' +
+          'Users with no role anywhere get the default role. Admins can do everything.</p>' +
+        '<div id="gov-err" style="color:#d64545;min-height:16px;font-size:15px"></div>' +
+        '<div class="settings">' +
+          '<div class="settings-form" style="flex:0 0 280px">' +
+            '<h3>Custom role</h3>' +
+            '<label>Name<input id="role-name" autocomplete="off"/></label>' +
+            '<div id="role-perms" style="display:flex;flex-direction:column;gap:4px;margin:6px 0 10px;font-size:14px"></div>' +
+            '<button class="cta" id="role-save">Save role</button>' +
+          '</div>' +
+          '<div class="settings-preview" style="flex:1 1 420px"><div class="data-list" style="width:auto">' +
+            '<div id="gov-roles"><div class="placeholder">Loading…</div></div></div></div>' +
+        '</div>' +
+        '<h3 style="margin:24px 0 4px">Groups</h3>' +
+        '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">Share dashboards and datasets with a group, ' +
+          'give it a role, and use it in dataset security rules.</p>' +
+        '<div class="settings">' +
+          '<div class="settings-form" style="flex:0 0 280px">' +
+            '<h3 id="group-form-title">New group</h3>' +
+            '<label>Name<input id="group-name" autocomplete="off"/></label>' +
+            '<label>Description<input id="group-desc" autocomplete="off"/></label>' +
+            '<label>Role<select id="group-role"></select></label>' +
+            '<div style="font-size:14px;margin:6px 0 2px">Members</div>' +
+            '<div id="group-members" style="display:flex;flex-direction:column;gap:3px;max-height:180px;overflow:auto;font-size:14px;margin-bottom:10px"></div>' +
+            '<button class="cta" id="group-save">Save group</button>' +
+          '</div>' +
+          '<div class="settings-preview" style="flex:1 1 420px"><div class="data-list" style="width:auto">' +
+            '<div id="gov-groups"><div class="placeholder">Loading…</div></div></div></div>' +
+        '</div>' +
+        '<h3 style="margin:24px 0 4px">Lineage</h3>' +
+        '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">Which dashboards read which stored datasets and ' +
+          'database connectors, across every user.</p>' +
+        '<div id="gov-lineage" style="font-size:14px"><div class="placeholder">Loading…</div></div>' +
         '<h3 style="margin:24px 0 4px">Default examples</h3>' +
         '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">Datasets and dashboards owned by the <b>app</b> account. ' +
           'They are shared read-only to every user and are locked so they survive code updates. ' +
@@ -900,8 +940,26 @@
           row.innerHTML =
             '<div style="flex:1">' +
               '<div class="data-item-title">' + esc(u.username) + badge + '</div>' +
-              '<div class="data-item-meta">' + u.dashboards + ' dashboard' + (u.dashboards === 1 ? '' : 's') + '</div>' +
+              '<div class="data-item-meta">' + u.dashboards + ' dashboard' + (u.dashboards === 1 ? '' : 's') +
+                (u.groups && u.groups.length ? ' · groups: ' + esc(u.groups.join(', ')) : '') +
+                (!u.is_admin && u.roles ? ' · acts as ' + esc(u.roles.join(' + ')) : '') + '</div>' +
             '</div>';
+          // The user's own role ('' = none: their groups' roles, else the default).
+          if (!u.is_admin && govRoles.length) {
+            var roleSel = document.createElement('select');
+            roleSel.style.cssText = 'font-size:14px;padding:3px 4px';
+            roleSel.title = 'Role';
+            [''].concat(govRoles.map(function (r) { return r.name; })).forEach(function (name) {
+              var o = document.createElement('option'); o.value = name;
+              o.textContent = name ? 'Role: ' + name : 'Role: (groups / default)'; roleSel.appendChild(o);
+            });
+            roleSel.value = u.role || '';
+            roleSel.onchange = function () {
+              errEl.textContent = '';
+              client.assignRole('user:' + u.username, roleSel.value || null).then(load, fail);
+            };
+            row.appendChild(roleSel);
+          }
           // Grant/revoke admin — not for yourself, and not for config-admins
           // (those are governed by CXD_ADMINS, not the stored flag).
           if (!u.via_config && u.username !== currentUser) {
@@ -946,9 +1004,148 @@
         });
       }
 
+      // ---- Roles, groups and lineage -----------------------------------------
+      var govRoles = [];
+      var govUsers = [];
+      // Checkbox rows inside .settings-form, undoing its uppercase block-label style.
+      var CHECK_LABEL = 'display:flex;flex-direction:row;gap:8px;align-items:flex-start;margin:0;' +
+        'font-weight:400;font-size:14px;text-transform:none;letter-spacing:0;color:inherit';
+      var CHECK_INPUT = 'width:auto;margin:2px 0 0;padding:0;flex:none';
+      var govErr = document.getElementById('gov-err');
+      function govFail(err) { govErr.textContent = (err && err.message) || String(err); }
+      function renderRoles(gov) {
+        var permsEl = document.getElementById('role-perms');
+        permsEl.innerHTML = '';
+        gov.permissions.forEach(function (p) {
+          var lab = document.createElement('label');
+          lab.style.cssText = CHECK_LABEL;
+          lab.innerHTML = '<input type="checkbox" style="' + CHECK_INPUT + '" value="' + esc(p.name) + '"/><span>' + esc(p.description) + '</span>';
+          permsEl.appendChild(lab);
+        });
+        var host = document.getElementById('gov-roles');
+        host.innerHTML = '';
+        gov.roles.forEach(function (r) {
+          var row = document.createElement('div');
+          row.className = 'data-item';
+          row.style.cssText = 'display:flex;align-items:center;gap:10px';
+          var perms = r.permissions.length
+            ? r.permissions.map(function (n) { return esc(n); }).join(', ') : 'no permissions (view only)';
+          row.innerHTML = '<div style="flex:1"><div class="data-item-title">' + esc(r.name) +
+            (r.builtin ? ' <span style="font-size:13px;color:var(--muted)">built-in</span>' : '') +
+            (r.name === gov.default_role ? ' <span style="font-size:13px;color:var(--accent)">default</span>' : '') +
+            '</div><div class="data-item-meta">' + perms + '</div></div>';
+          if (!r.builtin) {
+            row.appendChild(smallButton('Edit', function () {
+              document.getElementById('role-name').value = r.name;
+              Array.prototype.forEach.call(permsEl.querySelectorAll('input'), function (cb) {
+                cb.checked = r.permissions.indexOf(cb.value) !== -1;
+              });
+            }));
+            row.appendChild(smallButton('Delete', function () {
+              if (!window.confirm('Delete role "' + r.name + '"? Users and groups with it fall back to their other roles.')) return;
+              client.deleteRole(r.name).then(loadGovernance, govFail);
+            }, 'color:#d64545'));
+          }
+          host.appendChild(row);
+        });
+      }
+      function renderGroups(gov) {
+        var roleSel = document.getElementById('group-role');
+        roleSel.innerHTML = '<option value="">(no role)</option>' + gov.roles.map(function (r) {
+          return '<option value="' + esc(r.name) + '">' + esc(r.name) + '</option>';
+        }).join('');
+        var membersEl = document.getElementById('group-members');
+        membersEl.innerHTML = govUsers.map(function (u) {
+          return '<label style="' + CHECK_LABEL + '"><input type="checkbox" style="' + CHECK_INPUT + '" value="' + esc(u) + '"/><span>' + esc(u) + '</span></label>';
+        }).join('') || '<span style="color:var(--muted)">No users.</span>';
+        var host = document.getElementById('gov-groups');
+        host.innerHTML = gov.groups.length ? '' : '<div class="placeholder">No groups yet.</div>';
+        gov.groups.forEach(function (g) {
+          var row = document.createElement('div');
+          row.className = 'data-item';
+          row.style.cssText = 'display:flex;align-items:center;gap:10px';
+          row.innerHTML = '<div style="flex:1"><div class="data-item-title">👥 ' + esc(g.name) +
+            (g.role ? ' <span style="font-size:13px;color:var(--accent)">role: ' + esc(g.role) + '</span>' : '') + '</div>' +
+            '<div class="data-item-meta">' + (g.description ? esc(g.description) + ' · ' : '') +
+            (g.members.length ? esc(g.members.join(', ')) : 'no members') + '</div></div>';
+          row.appendChild(smallButton('Edit', function () {
+            document.getElementById('group-form-title').textContent = 'Edit group';
+            document.getElementById('group-name').value = g.name;
+            document.getElementById('group-desc').value = g.description;
+            roleSel.value = g.role || '';
+            Array.prototype.forEach.call(membersEl.querySelectorAll('input'), function (cb) {
+              cb.checked = g.members.indexOf(cb.value) !== -1;
+            });
+          }));
+          row.appendChild(smallButton('Delete', function () {
+            if (!window.confirm('Delete group "' + g.name + '"? Its shares and role go with it.')) return;
+            client.deleteGroup(g.name).then(loadGovernance, govFail);
+          }, 'color:#d64545'));
+          host.appendChild(row);
+        });
+      }
+      function renderLineage(lin) {
+        var host = document.getElementById('gov-lineage');
+        var rows = lin.datasets.map(function (d) {
+          return { what: '🗄️ ' + esc(d.id) + ' <span style="color:var(--muted)">(' + esc(d.owner) + (d.store ? ', ' + esc(d.store) : '') + ')</span>', used: d.used_by };
+        }).concat(lin.connectors.map(function (c) {
+          return { what: '🔌 <code>' + esc(c.url) + '</code>', used: c.used_by };
+        }));
+        if (!rows.length) { host.innerHTML = '<div class="placeholder">No dashboard reads a stored dataset or connector yet.</div>'; return; }
+        host.innerHTML = '<table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left">' +
+          '<th style="padding:5px 8px">Source</th><th style="padding:5px 8px">Used by</th></tr></thead><tbody>' +
+          rows.map(function (r) {
+            return '<tr><td style="padding:5px 8px;border-top:1px solid var(--rail-border);vertical-align:top">' + r.what + '</td>' +
+              '<td style="padding:5px 8px;border-top:1px solid var(--rail-border)">' + r.used.map(function (u) {
+                return esc(u.title) + ' <span style="color:var(--muted)">(' + esc(u.owner) + ')</span>';
+              }).join('<br>') + '</td></tr>';
+          }).join('') + '</tbody></table>';
+      }
+      function loadGovernance() {
+        govErr.textContent = '';
+        return Promise.all([client.governance(), client.listUsers()]).then(function (r) {
+          var gov = r[0];
+          govRoles = gov.roles;
+          govUsers = (r[1] || []).map(function (u) { return u.username; });
+          renderRoles(gov);
+          renderGroups(gov);
+          renderUsers(r[1]);
+          client.lineage({ all: true }).then(renderLineage, govFail);
+        }, govFail);
+      }
+      document.getElementById('role-save').onclick = function () {
+        var perms = Array.prototype.filter.call(document.querySelectorAll('#role-perms input'), function (cb) { return cb.checked; })
+          .map(function (cb) { return cb.value; });
+        govErr.textContent = '';
+        client.saveRole({ name: document.getElementById('role-name').value.trim(), permissions: perms }).then(function () {
+          document.getElementById('role-name').value = '';
+          loadGovernance();
+        }, govFail);
+      };
+      document.getElementById('group-save').onclick = function () {
+        var members = Array.prototype.filter.call(document.querySelectorAll('#group-members input'), function (cb) { return cb.checked; })
+          .map(function (cb) { return cb.value; });
+        govErr.textContent = '';
+        client.saveGroup({
+          name: document.getElementById('group-name').value.trim(),
+          description: document.getElementById('group-desc').value.trim(),
+          members: members,
+          role: document.getElementById('group-role').value || null
+        }).then(function () {
+          document.getElementById('group-form-title').textContent = 'New group';
+          document.getElementById('group-name').value = '';
+          document.getElementById('group-desc').value = '';
+          directoryCache = null;
+          loadGovernance();
+        }, govFail);
+      };
+
       function load() {
         errEl.style.color = '#d64545';
-        client.listUsers().then(renderUsers, function (err) {
+        client.listUsers().then(function (users) {
+          govUsers = (users || []).map(function (u) { return u.username; });
+          renderUsers(users);
+        }, function (err) {
           document.getElementById('admin-users').innerHTML =
             '<div class="placeholder">' + esc((err && err.message) || 'Failed to load users.') + '</div>';
         });
@@ -1110,7 +1307,7 @@
         }, exFail);
       }
 
-      load();
+      loadGovernance();
       loadExamples();
     }
 
@@ -1408,6 +1605,7 @@
           if (d.rows != null && d.cols != null) meta.push(Math.max(d.rows, d.cols) + '×' + Math.min(d.rows, d.cols));
           else if (d.rows != null) meta.push(d.rows + '×?');
           if (d.store) meta.push(d.store);
+          if (d.shared) meta.push('from ' + d.owner);
           if (d.updated_at) meta.push(String(d.updated_at).slice(0, 10));
           var item = document.createElement('div');
           item.className = 'data-item';
@@ -1419,8 +1617,24 @@
             '<div class="data-item-title">' + esc(d.title || d.id) + '</div>' +
             '<div class="data-item-meta">' + esc(meta.join(' · ')) + '</div></div>';
           item.addEventListener('click', function () { selectItem(item, d); });
+          // Your own datasets can be shared and secured (admins: every dataset).
+          var ownsIt = !d.shared && (!d.example || isAdmin);
+          if (ownsIt && hasPerm('share.grant')) {
+            var people = smallButton('👥', function () {
+              showPeople({ kind: 'dataset', id: d.id, title: d.title, store: d.store, owner: d.owner });
+            }, 'border:none;background:transparent;padding:0 2px');
+            people.title = 'Share with people and groups';
+            item.appendChild(people);
+          }
+          if (ownsIt) {
+            var lock = smallButton('🔒', function () {
+              showSecurity({ id: d.id, title: d.title, store: d.store, owner: d.owner });
+            }, 'border:none;background:transparent;padding:0 2px');
+            lock.title = 'Row and column security';
+            item.appendChild(lock);
+          }
           // Uploaded datasets can be deleted; the seeded sample ones are protected.
-          if (!SAMPLE_IDS[d.id]) {
+          if (!SAMPLE_IDS[d.id] && !d.shared) {
             var del = document.createElement('button');
             del.textContent = '×';
             del.title = 'Delete dataset';
@@ -1478,7 +1692,7 @@
       if (titleEl) titleEl.textContent = (d.title || d.id) + (d.store ? '  ·  ' + d.store : '');
       destroyDataPreview();
       host.innerHTML = '<div class="placeholder">Loading…</div>';
-      client.getDataset(d.id, { store: d.store }).then(function (data) {
+      client.getDataset(d.id, { store: d.store, owner: d.shared ? d.owner : undefined }).then(function (data) {
         host.innerHTML = '';
         requestAnimationFrame(function () {
           if (document.getElementById('data-title') == null) return;  // navigated away
@@ -1523,6 +1737,270 @@
       return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
       });
+    }
+
+    // ---- governance: sharing with people/groups and dataset security ----------
+    // The server enforces every rule; these panels only edit grants and policies.
+    var directoryCache = null;
+    function loadDirectory() {
+      if (!directoryCache) {
+        directoryCache = client.directory().catch(function () { directoryCache = null; return { users: [], groups: [] }; });
+      }
+      return directoryCache;
+    }
+    function hasPerm(permission) { return isAdmin || currentPermissions.indexOf(permission) !== -1; }
+    function principalLabel(p) {
+      if (p === '*') return 'Everyone signed in';
+      if (p === 'anonymous') return 'Share-link viewers (not signed in)';
+      if (p.indexOf('group:') === 0) return '👥 ' + p.slice(6);
+      if (p.indexOf('user:') === 0) return '👤 ' + p.slice(5);
+      return p;
+    }
+    // A <select> of principals: users, groups, everyone (and optionally anonymous).
+    function principalSelect(dir, opts) {
+      opts = opts || {};
+      var sel = document.createElement('select');
+      sel.style.cssText = 'font-size:14px;padding:3px 4px;max-width:220px';
+      var add = function (value, label) {
+        var o = document.createElement('option'); o.value = value; o.textContent = label; sel.appendChild(o);
+      };
+      if (opts.placeholder) add('', opts.placeholder);
+      (dir.groups || []).forEach(function (g) { add('group:' + g, principalLabel('group:' + g)); });
+      (dir.users || []).forEach(function (u) {
+        if (u !== opts.exclude) add('user:' + u, principalLabel('user:' + u));
+      });
+      add('*', principalLabel('*'));
+      if (opts.anonymous) add('anonymous', principalLabel('anonymous'));
+      if (opts.value != null) sel.value = opts.value;
+      return sel;
+    }
+    function smallButton(text, onclick, extra) {
+      var b = document.createElement('button');
+      b.textContent = text;
+      b.style.cssText = 'font-size:14px;padding:3px 10px;cursor:pointer;' + (extra || '');
+      b.onclick = function (e) { e.stopPropagation(); onclick(e); };
+      return b;
+    }
+    // A simple modal; returns its body element. Esc or the ✕ closes it.
+    function openModal(title, onClose) {
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:2147483647;display:flex;align-items:flex-start;justify-content:center;padding-top:8vh';
+      var card = document.createElement('div');
+      card.style.cssText = 'background:var(--rail-bg,#fff);color:inherit;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.25);width:min(720px,92vw);max-height:80vh;display:flex;flex-direction:column';
+      var head = document.createElement('div');
+      head.style.cssText = 'display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--rail-border)';
+      head.innerHTML = '<div style="font-weight:700;font-size:17px;flex:1">' + esc(title) + '</div>';
+      var body = document.createElement('div');
+      body.style.cssText = 'padding:14px 16px;overflow:auto;font-size:15px';
+      function close() {
+        document.removeEventListener('keydown', onKey);
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        if (onClose) onClose();
+      }
+      function onKey(e) { if (e.key === 'Escape') close(); }
+      head.appendChild(smallButton('✕', close, 'border:none;background:transparent;font-size:18px'));
+      card.appendChild(head); card.appendChild(body); overlay.appendChild(card);
+      overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+      document.addEventListener('keydown', onKey);
+      document.body.appendChild(overlay);
+      body.close = close;
+      return body;
+    }
+
+    // "People" panel: who a dashboard/dataset is shared with, and at what level.
+    // res = {kind: 'dashboard'|'dataset', id, title, store?, owner?}
+    function showPeople(res, onChanged) {
+      var body = openModal('Share “' + (res.title || res.id) + '” with people and groups', onChanged);
+      var opts = { store: res.store, owner: res.owner !== currentUser ? res.owner : undefined };
+      var levels = res.kind === 'dataset' ? ['view'] : ['view', 'edit'];
+      function levelSelect(value) {
+        var sel = document.createElement('select');
+        sel.style.cssText = 'font-size:14px;padding:3px 4px';
+        levels.forEach(function (l) {
+          var o = document.createElement('option'); o.value = l;
+          o.textContent = l === 'edit' ? 'Can edit' : 'Can view'; sel.appendChild(o);
+        });
+        sel.value = value || 'view';
+        return sel;
+      }
+      function draw(grants, dir) {
+        body.innerHTML =
+          '<p style="margin:0 0 10px;color:var(--muted);font-size:14px">' +
+          (res.kind === 'dashboard'
+            ? 'People you share with see it under Dashboards. They read its stored datasets through it, subject to each dataset’s security policy.'
+            : 'People you share with see it under Data, subject to its security policy.') + '</p>';
+        var err = document.createElement('div');
+        err.style.cssText = 'color:#d64545;min-height:18px;font-size:14px';
+        var list = document.createElement('div');
+        function apply(principal, level) {
+          err.textContent = '';
+          client.setGrant(res.kind, res.id, principal, level, opts).then(function (g) { draw(g, dir); },
+            function (e) { err.textContent = e.message; });
+        }
+        if (!grants.length) list.innerHTML = '<div class="placeholder" style="padding:6px 0">Only you (and admins) can open it.</div>';
+        grants.forEach(function (g) {
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--rail-border)';
+          row.innerHTML = '<div style="flex:1">' + esc(principalLabel(g.principal)) + '</div>';
+          var lvl = levelSelect(g.level);
+          lvl.onchange = function () { apply(g.principal, lvl.value); };
+          row.appendChild(lvl);
+          row.appendChild(smallButton('Remove', function () { apply(g.principal, null); }));
+          list.appendChild(row);
+        });
+        var addRow = document.createElement('div');
+        addRow.style.cssText = 'display:flex;gap:8px;align-items:center;margin-top:12px';
+        var who = principalSelect(dir, { exclude: res.owner || currentUser, placeholder: 'Add a person or group…' });
+        var lvl = levelSelect('view');
+        addRow.appendChild(who); addRow.appendChild(lvl);
+        addRow.appendChild(smallButton('Share', function () {
+          if (!who.value) { err.textContent = 'Pick a person or group.'; return; }
+          apply(who.value, lvl.value);
+        }, 'background:var(--accent);color:#fff;border:none;border-radius:6px'));
+        body.appendChild(list); body.appendChild(addRow); body.appendChild(err);
+      }
+      body.textContent = 'Loading…';
+      Promise.all([client.grants(res.kind, res.id, opts), loadDirectory()]).then(function (r) { draw(r[0], r[1]); },
+        function (e) { body.textContent = 'Could not load sharing: ' + e.message; });
+    }
+
+    // The column names a dataset exposes (2D table header, or CX vars + annotations).
+    function datasetColumns(data) {
+      if (Array.isArray(data) && Array.isArray(data[0])) return data[0].map(String);
+      var cols = [];
+      if (data && data.y && data.y.vars) cols = cols.concat(data.y.vars);
+      if (data && data.x) cols = cols.concat(Object.keys(data.x));
+      if (data && data.z) cols = cols.concat(Object.keys(data.z));
+      return cols;
+    }
+
+    // "Security" panel: row- and column-level rules for a stored dataset.
+    function showSecurity(res) {
+      var body = openModal('Security for “' + (res.title || res.id) + '”');
+      var opts = { store: res.store, owner: res.owner !== currentUser ? res.owner : undefined };
+      body.textContent = 'Loading…';
+      Promise.all([client.getPolicy(res.id, opts), client.getDataset(res.id, opts), loadDirectory()]).then(function (r) {
+        var policy = r[0] || {};
+        var columns = datasetColumns(r[1]);
+        var dir = r[2];
+        var rows = (policy.rows || []).map(function (rule) {
+          return { field: rule.field, entries: Object.keys(rule.allow).map(function (p) {
+            var v = rule.allow[p];
+            return { principal: p, values: v === '*' ? '*' : v.join(', ') };
+          }) };
+        });
+        var hides = (policy.columns || []).map(function (rule) {
+          return { hide: rule.hide.slice(), except: (rule.except || []).slice() };
+        });
+        function draw() {
+          body.innerHTML =
+            '<p style="margin:0 0 10px;color:var(--muted);font-size:14px">Rules apply to everyone except you and admins, ' +
+            'wherever the server hands out this dataset: in the app, through shared dashboards, and on share links ' +
+            '(as “share-link viewers”). Anyone no rule allows sees no rows.</p>' +
+            '<h4 style="margin:6px 0">Rows</h4>';
+          rows.forEach(function (rule, ri) {
+            var box = document.createElement('div');
+            box.style.cssText = 'border:1px solid var(--rail-border);border-radius:8px;padding:8px 10px;margin-bottom:8px';
+            var head = document.createElement('div');
+            head.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px';
+            head.innerHTML = '<span>Show only rows whose</span>';
+            var field = document.createElement('select');
+            columns.forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c; field.appendChild(o); });
+            if (rule.field && columns.indexOf(rule.field) === -1) {
+              var o = document.createElement('option'); o.value = rule.field; o.textContent = rule.field + ' (missing)'; field.appendChild(o);
+            }
+            field.value = rule.field || columns[0] || '';
+            rule.field = field.value;
+            field.onchange = function () { rule.field = field.value; };
+            head.appendChild(field);
+            var is = document.createElement('span'); is.textContent = 'is allowed for the viewer:'; head.appendChild(is);
+            head.appendChild(smallButton('Remove rule', function () { rows.splice(ri, 1); draw(); }, 'margin-left:auto'));
+            box.appendChild(head);
+            rule.entries.forEach(function (entry, ei) {
+              var line = document.createElement('div');
+              line.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0';
+              var who = principalSelect(dir, { anonymous: true, value: entry.principal });
+              who.onchange = function () { entry.principal = who.value; };
+              entry.principal = who.value;
+              var values = document.createElement('input');
+              values.value = entry.values; values.placeholder = 'values, comma-separated (* = all)';
+              values.style.cssText = 'flex:1;font-size:14px;padding:3px 6px';
+              values.oninput = function () { entry.values = values.value; };
+              line.appendChild(who); line.appendChild(values);
+              line.appendChild(smallButton('✕', function () { rule.entries.splice(ei, 1); draw(); }));
+              box.appendChild(line);
+            });
+            box.appendChild(smallButton('+ Who can see what', function () {
+              rule.entries.push({ principal: '*', values: '' }); draw();
+            }));
+            body.appendChild(box);
+          });
+          body.appendChild(smallButton('+ Row rule', function () {
+            rows.push({ field: columns[0] || '', entries: [{ principal: '*', values: '' }] }); draw();
+          }));
+          var colHead = document.createElement('h4'); colHead.style.margin = '16px 0 6px'; colHead.textContent = 'Columns';
+          body.appendChild(colHead);
+          hides.forEach(function (rule, hi) {
+            var box = document.createElement('div');
+            box.style.cssText = 'border:1px solid var(--rail-border);border-radius:8px;padding:8px 10px;margin-bottom:8px';
+            box.innerHTML = '<div style="margin-bottom:4px">Hide these columns…</div>';
+            var checks = document.createElement('div');
+            checks.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px 12px;max-height:120px;overflow:auto';
+            columns.forEach(function (c) {
+              var lab = document.createElement('label');
+              lab.style.cssText = 'font-size:14px;display:flex;gap:4px;align-items:center';
+              var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = rule.hide.indexOf(c) !== -1;
+              cb.onchange = function () {
+                var i = rule.hide.indexOf(c);
+                if (cb.checked && i === -1) rule.hide.push(c);
+                if (!cb.checked && i !== -1) rule.hide.splice(i, 1);
+              };
+              lab.appendChild(cb); lab.appendChild(document.createTextNode(c)); checks.appendChild(lab);
+            });
+            box.appendChild(checks);
+            var except = document.createElement('div');
+            except.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px';
+            except.innerHTML = '<span>…except from:</span>';
+            rule.except.forEach(function (p, pi) {
+              except.appendChild(smallButton(principalLabel(p) + ' ✕', function () { rule.except.splice(pi, 1); draw(); }));
+            });
+            var pick = principalSelect(dir, { placeholder: 'add…' });
+            pick.onchange = function () { if (pick.value && rule.except.indexOf(pick.value) === -1) rule.except.push(pick.value); draw(); };
+            except.appendChild(pick);
+            box.appendChild(except);
+            box.appendChild(smallButton('Remove rule', function () { hides.splice(hi, 1); draw(); }, 'margin-top:8px'));
+            body.appendChild(box);
+          });
+          body.appendChild(smallButton('+ Column rule', function () { hides.push({ hide: [], except: [] }); draw(); }));
+          var err = document.createElement('div');
+          err.style.cssText = 'min-height:18px;font-size:14px;margin-top:12px';
+          var actions = document.createElement('div');
+          actions.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+          actions.appendChild(smallButton('Save rules', function () {
+            var out = {
+              rows: rows.map(function (rule) {
+                var allow = {};
+                rule.entries.forEach(function (e) {
+                  var v = String(e.values || '').trim();
+                  allow[e.principal] = v === '*' ? '*' : v.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+                });
+                return { field: rule.field, allow: allow };
+              }),
+              columns: hides.filter(function (h) { return h.hide.length; })
+            };
+            err.style.color = 'inherit'; err.textContent = 'Saving…';
+            client.setPolicy(res.id, out.rows.length || out.columns.length ? out : null, opts).then(function () {
+              err.style.color = '#2e7d32'; err.textContent = 'Saved.';
+            }, function (e) { err.style.color = '#d64545'; err.textContent = e.message; });
+          }, 'background:var(--accent);color:#fff;border:none;border-radius:6px'));
+          actions.appendChild(smallButton('Remove all rules', function () {
+            rows = []; hides = [];
+            client.setPolicy(res.id, null, opts).then(draw, function (e) { err.textContent = e.message; });
+          }));
+          body.appendChild(actions); body.appendChild(err);
+        }
+        draw();
+      }, function (e) { body.textContent = 'Could not load the security rules: ' + e.message; });
     }
 
     // --- Settings view: edit the dashboard's presentation, with a live preview ---
@@ -1941,10 +2419,17 @@
           item.style.cssText = 'padding:10px 12px;border:1px solid var(--rail-border);border-radius:10px;margin-bottom:8px;cursor:pointer';
           var when = (d.updated_at || '').replace('T', ' ').slice(0, 16);
           var isShared = d.visibility === 'public' || d.visibility === 'auth';
-          var sharedBadge = isShared
+          // Shared WITH me (by another owner) vs mine: only the owner manages it.
+          var fromOther = !!d.shared;
+          var mine = !fromOther && !d.example;
+          var sharedBadge = isShared && mine
             ? ' <span style="font-size:13px;font-weight:600;color:var(--accent);background:#eaf3fb;border-radius:99px;padding:1px 8px;vertical-align:middle">🔗 shared' +
               (d.visibility === 'auth' ? ' (sign-in)' : '') + '</span>'
             : '';
+          if (fromOther) {
+            sharedBadge += ' <span style="font-size:13px;font-weight:600;color:#6b4fbb;background:#f1ecfb;border-radius:99px;padding:1px 8px;vertical-align:middle">👥 from ' +
+              esc(d.owner) + ' · ' + (d.access === 'edit' ? 'can edit' : 'view only') + '</span>';
+          }
           item.innerHTML =
             '<div style="font-weight:600">' + (d.title || d.id) + sharedBadge + '</div>' +
             '<div style="font-size:14px;color:var(--muted)">' + d.id + (when ? ' · ' + when : '') + '</div>' +
@@ -1952,11 +2437,18 @@
               '<button class="cta" data-act="view" style="padding:4px 10px;font-size:14px">View</button>' +
               '<button class="cta" data-act="preview" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:var(--accent)">Preview</button>' +
               '<button class="cta" data-act="open" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:var(--accent)">Open in Builder</button>' +
-              '<button class="cta" data-act="share" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Share</button>' +
-              (isShared
+              (mine && hasPerm('share.grant')
+                ? '<button class="cta" data-act="people" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">People</button>'
+                : '') +
+              (mine && hasPerm('share.public')
+                ? '<button class="cta" data-act="share" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Share link</button>'
+                : '') +
+              (mine && isShared
                 ? '<button class="cta" data-act="unshare" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Unshare</button>'
                 : '') +
-              '<button class="cta" data-act="del" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Delete</button>' +
+              (mine
+                ? '<button class="cta" data-act="del" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Delete</button>'
+                : '') +
             '</div>' +
             '<div class="dash-share" style="display:none;margin-top:8px;font-size:14px"></div>';
           item.onclick = function (e) {
@@ -1967,7 +2459,14 @@
               // Full-page render in a new tab — like opening an example page.
               window.open(API_BASE + '/examples/view.html?id=' + encodeURIComponent(d.id), '_blank');
             } else if (act === 'open') {
-              client.load(d.id).then(function (spec) { currentSpec = spec; activate('Builder'); });
+              // Edit access saves back to the owner; view access saves your own copy.
+              client.load(d.id, fromOther ? { owner: d.owner } : undefined).then(function (spec) {
+                currentSpec = spec;
+                currentOwner = fromOther && d.access === 'edit' ? d.owner : null;
+                activate('Builder');
+              });
+            } else if (act === 'people') {
+              showPeople({ kind: 'dashboard', id: d.id, title: d.title });
             } else if (act === 'share') {
               shareDashboard(d, item.querySelector('.dash-share'));
             } else if (act === 'unshare') {
@@ -1979,7 +2478,7 @@
               previewDashboard(d);
             }
           };
-          item.setAttribute('data-search', ((d.title || '') + ' ' + d.id).toLowerCase());
+          item.setAttribute('data-search', ((d.title || '') + ' ' + d.id + ' ' + (fromOther ? d.owner : '')).toLowerCase());
           item.setAttribute('data-dash-id', d.id);
           listEl.appendChild(item);
         });
@@ -2055,7 +2554,7 @@
       // "click View…" hint line instead of printing the title over it.
       var titleEl = document.getElementById('dash-title');
       if (titleEl) titleEl.style.display = 'none';
-      client.load(summary.id).then(function (spec) {
+      client.load(summary.id, summary.shared ? { owner: summary.owner } : undefined).then(function (spec) {
         currentPreview = Promise.resolve(currentPreview).then(function (h) {
           if (h && h.destroy) { try { h.destroy(); } catch (e) {} }
           var host = document.getElementById('dash-host');
@@ -2485,6 +2984,7 @@
     function openInBuilder(id) {
       return client.load(id).then(function (spec) {
         currentSpec = spec;
+        currentOwner = null;
         activate('Builder');
       }, function () { activate('Dashboards'); });
     }

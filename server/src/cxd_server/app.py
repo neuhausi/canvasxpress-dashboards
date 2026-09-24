@@ -38,6 +38,8 @@ from .datasets import DatasetStore, reshape_to_cx, filter_cx_data
 from .audit import (AuditLog, NullAuditLog, SqlAuditLog, SqliteAuditLog, action_for, iter_actions,
                     open_audit_log, target_from)
 from .functions import FunctionError, FunctionsConfig, functions_status, run_function
+from .governance import (PERMISSIONS, Governance, GovernanceError, apply_policy, build_lineage,
+                         open_governance, spec_sources)
 from .sqldashboard import open_dashboard_store
 from .store import DashboardStore
 from .stores import StoreRegistry
@@ -354,6 +356,7 @@ def create_dashboards_app(
     llm_model: Optional[str] = None,
     functions: Optional[FunctionsConfig] = None,
     audit: Optional[AuditLog] = None,
+    governance: Optional[Governance] = None,
 ) -> FastAPI:
     """Build the dashboards FastAPI app.
 
@@ -397,6 +400,10 @@ def create_dashboards_app(
     :param audit: The audit log; built next to the dashboard store if omitted
         (the same SQLite file or SQL database). ``CXD_AUDIT=off`` disables it and
         ``CXD_AUDIT_RETENTION_DAYS`` prunes old events (default: keep all).
+    :param governance: Roles, groups, sharing grants and dataset security
+        policies; built next to the dashboard store if omitted.
+        ``CXD_DEFAULT_ROLE`` names the role of users with none assigned
+        (default ``editor``).
     :returns: The configured FastAPI application.
     """
     session_secret = session_secret or os.getenv("SESSION_SECRET")
@@ -452,6 +459,9 @@ def create_dashboards_app(
     if audit is None:
         audit = _default_audit_log(store, db_path)
     audit.prune()
+    # Governance: roles, groups, grants and row/column security, next to the store.
+    if governance is None:
+        governance = open_governance(store, db_path, os.getenv("CXD_DEFAULT_ROLE"))
 
     def dataset_store_for(name: Optional[str]) -> DatasetStore:
         """Resolve the DatasetStore for a named dataset store (default when None)."""
@@ -466,6 +476,7 @@ def create_dashboards_app(
 
     app = FastAPI(title="canvasxpress-dashboards · persistence & sharing")
     app.state.audit = audit
+    app.state.governance = governance
 
     # Registered BEFORE the session middleware so it runs inside it: the session
     # (who is signed in) is readable before and after the handler.
@@ -505,6 +516,63 @@ def create_dashboards_app(
             raise HTTPException(status_code=403, detail="Admin access required")
         return user
 
+    def permissions_of(user: Optional[str]) -> set:
+        return governance.permissions_for(user, user_is_admin(user))
+
+    def require_permission(request: Request, permission: str) -> str:
+        """The caller, if their role grants ``permission`` (403 otherwise)."""
+        user = require_user(request)
+        if permission not in permissions_of(user):
+            raise HTTPException(status_code=403, detail="Your role does not allow this: %s"
+                                % PERMISSIONS[permission].lower())
+        return user
+
+    def store_key(name: Optional[str]) -> str:
+        """A dataset store name as grants and policies key it (default resolved)."""
+        return name or registry.default_name("dataset") or ""
+
+    def dataset_access(user: Optional[str], owner: str, store_name: Optional[str],
+                       dataset_id: str) -> bool:
+        """May ``user`` read dataset (owner, store, id)? The owner, admins, the
+        shared examples, a dataset grant, or a dashboard shared with the user
+        that reads this dataset."""
+        if not user:
+            return False
+        if user == owner or user_is_admin(user) or (examples_owner and owner == examples_owner):
+            return True
+        key = store_key(store_name)
+        if governance.access_level(user, "dataset", owner, dataset_id, key):
+            return True
+        for g in governance.shared_with(user, "dashboard"):
+            if g["owner"] != owner:
+                continue
+            spec = store.get_dashboard(owner, g["id"]) or {}
+            for s in spec_sources(spec):
+                if (s["kind"] == "dataset" and s.get("id") == dataset_id
+                        and store_key(s.get("store")) == key
+                        and (s.get("owner") or owner) == owner):
+                    return True
+        return False
+
+    def secured(data, viewer: Optional[str], owner: str, store_name: Optional[str],
+                dataset_id: str):
+        """Apply the dataset's row/column policy for a viewer who is neither the
+        owner nor an admin (None when the policy withholds the whole dataset)."""
+        if viewer and (viewer == owner or user_is_admin(viewer)):
+            return data
+        policy = governance.get_policy(owner, dataset_id, store_key(store_name))
+        return apply_policy(data, policy, governance.principals_for(viewer))
+
+    def check_principal(principal: str) -> str:
+        """Validate a ``user:``/``group:``/``*`` principal against real users/groups."""
+        if principal == "*":
+            return principal
+        if principal.startswith("user:") and principal[5:] in store.list_users():
+            return principal
+        if principal.startswith("group:") and principal[6:] in governance.group_names():
+            return principal
+        raise HTTPException(status_code=400, detail="No such user or group: %s" % principal)
+
     # ---- auth (mirrors canvasxpress-connectors) ----
     @app.post("/auth/signup")
     async def signup(request: Request):
@@ -541,16 +609,23 @@ def create_dashboards_app(
     @app.get("/auth/me")
     def me(request: Request):
         user = request.session.get("user")
-        return {"user": user, "is_admin": user_is_admin(user)}
+        return {"user": user, "is_admin": user_is_admin(user),
+                "permissions": sorted(permissions_of(user)),
+                "groups": governance.groups_of(user),
+                "roles": governance.roles_of(user) if user else []}
 
     # ---- admin: user management (gated by CXD_ADMINS) ----
     @app.get("/api/admin/users")
     def admin_list_users(request: Request):
         require_admin(request)
+        assigned = governance.assignments()
         return {"users": [
             {"username": name, "is_admin": user_is_admin(name),
              "via_config": name in admins,
-             "dashboards": len(store.list_dashboards(name))}
+             "dashboards": len(store.list_dashboards(name)),
+             "role": assigned.get("user:" + name),
+             "roles": governance.roles_of(name),
+             "groups": governance.groups_of(name)}
             for name in store.list_users()
         ]}
 
@@ -599,16 +674,24 @@ def create_dashboards_app(
             raise HTTPException(status_code=400, detail="Cannot delete another admin (revoke their admin rights first)")
         if not store.delete_user(username):
             raise HTTPException(status_code=404, detail="No such user")
+        governance.forget_user(username)
         return {"users": store.list_users()}
 
-    def resolve_write_owner(user: str, owner: Optional[str]) -> str:
-        """The owner a write targets: the caller, unless an admin names another
-        owner via ``?owner=`` (403 for non-admins). Used to let an admin maintain
-        the shared example artifacts owned by ``examples_owner``."""
+    def resolve_write_owner(user: str, owner: Optional[str],
+                            dashboard_id: Optional[str] = None) -> str:
+        """The owner a write targets: the caller, unless ``?owner=`` names
+        another owner. An admin may (to maintain the shared examples owned by
+        ``examples_owner``); so may a user with an ``edit`` grant on that
+        dashboard, unless it is locked. 403 otherwise."""
         if owner and owner != user:
-            if not user_is_admin(user):
-                raise HTTPException(status_code=403, detail="Admin access required")
-            return owner
+            if user_is_admin(user):
+                return owner
+            if dashboard_id and governance.access_level(
+                    user, "dashboard", owner, dashboard_id) == "edit":
+                if store.is_locked(owner, dashboard_id):
+                    raise HTTPException(status_code=403, detail="Dashboard is locked")
+                return owner
+            raise HTTPException(status_code=403, detail="Admin access required")
         return user
 
     # ---- dashboard CRUD (owner-isolated; examples read-merged) ----
@@ -624,6 +707,15 @@ def create_dashboards_app(
                 if d["id"] in own_ids:
                     continue
                 rows.append(dict(d, owner=examples_owner, example=True, readOnly=not editable))
+        # Dashboards shared with the user, a group of theirs, or everyone.
+        seen = {(d["owner"], d["id"]) for d in rows}
+        for g in governance.shared_with(user, "dashboard"):
+            if (g["owner"], g["id"]) in seen:
+                continue
+            summary = store.get_summary(g["owner"], g["id"])
+            if summary is not None:
+                rows.append(dict(summary, owner=g["owner"], shared=True, access=g["level"],
+                                 readOnly=g["level"] != "edit"))
         return {"dashboards": rows}
 
     @app.post("/api/dashboards")
@@ -632,7 +724,11 @@ def create_dashboards_app(
         spec = await request.json()
         if not isinstance(spec, dict) or not spec.get("id"):
             raise HTTPException(status_code=400, detail="Body must be a dashboard spec with an id")
-        target = resolve_write_owner(user, owner)
+        target = resolve_write_owner(user, owner, spec["id"])
+        if target == user and "dashboard.create" not in permissions_of(user):
+            raise HTTPException(status_code=403, detail="Your role does not allow this: "
+                                + PERMISSIONS["dashboard.create"].lower())
+        _unpin_dataset_owners(spec, target)
         note(request, target=spec["id"], owner=target,
              created=store.get_summary(target, spec["id"]) is None, lock=lock)
         saved = store.save_dashboard(target, spec, _now_iso())
@@ -643,16 +739,33 @@ def create_dashboards_app(
         return {"dashboard": saved}
 
     @app.get("/api/dashboards/{dashboard_id}")
-    def get_dashboard(request: Request, dashboard_id: str):
+    def get_dashboard(request: Request, dashboard_id: str, owner: Optional[str] = None):
         user = require_user(request)
-        spec = store.get_dashboard(user, dashboard_id)
-        # Fall back to the shared example owner so viewers can open examples.
-        spec_owner = user
-        if spec is None and examples_owner and examples_owner != user:
-            spec = store.get_dashboard(examples_owner, dashboard_id)
-            spec_owner = examples_owner
+        spec, spec_owner = None, user
+        if owner and owner != user:
+            # Another owner's dashboard: admins, the examples, or a grant.
+            spec_owner = owner
+            if (user_is_admin(user) or owner == examples_owner
+                    or governance.access_level(user, "dashboard", owner, dashboard_id)):
+                spec = store.get_dashboard(owner, dashboard_id)
+        else:
+            spec = store.get_dashboard(user, dashboard_id)
+            # Fall back to the shared example owner so viewers can open examples,
+            # then to dashboards shared with the user.
+            if spec is None and examples_owner and examples_owner != user:
+                spec = store.get_dashboard(examples_owner, dashboard_id)
+                spec_owner = examples_owner
+            if spec is None:
+                for g in governance.shared_with(user, "dashboard"):
+                    if g["id"] == dashboard_id:
+                        spec = store.get_dashboard(g["owner"], dashboard_id)
+                        spec_owner = g["owner"]
+                        break
         if spec is None:
             raise HTTPException(status_code=404, detail="No such dashboard")
+        if spec_owner != user:
+            # Stored datasets resolve against the dashboard's owner, not the viewer.
+            _pin_dataset_owners(spec, spec_owner)
         note(request, owner=spec_owner)
         return spec
 
@@ -682,6 +795,7 @@ def create_dashboards_app(
         if store.is_locked(target, dashboard_id) and not user_is_admin(user):
             raise HTTPException(status_code=403, detail="Dashboard is locked")
         store.delete_dashboard(target, dashboard_id)
+        governance.forget_resource("dashboard", target, dashboard_id)
         return {"dashboards": store.list_dashboards(user)}
 
     # ---- sharing ----
@@ -691,6 +805,9 @@ def create_dashboards_app(
         body = await request.json() if _has_body(request) else {}
         visibility = (body or {}).get("visibility", "public")
         note(request, owner=user, visibility=visibility)
+        if visibility != "private" and "share.public" not in permissions_of(user):
+            raise HTTPException(status_code=403, detail="Your role does not allow this: "
+                                + PERMISSIONS["share.public"].lower())
         try:
             summary = store.set_visibility(user, dashboard_id, visibility)
         except ValueError as exc:
@@ -714,15 +831,24 @@ def create_dashboards_app(
         # datasets: the viewer has no session that could fetch /api/datasets/*,
         # and sharing means sharing the (read-only) data the spec binds to. The
         # snapshot is taken per request, so re-opening the link shows current data.
+        # Row/column security applies with the viewer's principals (anonymous
+        # when not signed in); a source pinned to another owner resolves only
+        # if the sharing owner may read it.
         spec = shared["spec"]
+        viewer = request.session.get("user")
         for ref, source in list((spec.get("data") or {}).items()):
             if not (isinstance(source, dict) and source.get("kind") == "dataset"):
                 continue
+            data_owner = source.get("owner") or shared["owner"]
+            if data_owner != shared["owner"] and not dataset_access(
+                    shared["owner"], data_owner, source.get("store"), source.get("id")):
+                continue
             try:
-                data = dataset_store_for(source.get("store")).get(
-                    shared["owner"], source.get("id"))
+                data = dataset_store_for(source.get("store")).get(data_owner, source.get("id"))
             except KeyError:
                 data = None
+            if data is not None:
+                data = secured(data, viewer, data_owner, source.get("store"), source.get("id"))
             if data is not None:
                 spec["data"][ref] = {"kind": "inline", "value": data}
         return {"spec": spec, "readOnly": True, "owner": shared["owner"]}
@@ -766,6 +892,20 @@ def create_dashboards_app(
                     d["example"] = True
                     d["readOnly"] = not editable
                     datasets.append(d)
+        # Datasets shared with the user directly (dashboard grants reach the
+        # data through the dashboard instead).
+        listed = {(d["owner"], store_key(d.get("store")), d["id"]) for d in datasets}
+        for g in governance.shared_with(user, "dataset"):
+            if (g["owner"], g["store"], g["id"]) in listed:
+                continue
+            try:
+                summaries = dataset_store_for(g["store"] or None).list(g["owner"])
+            except KeyError:
+                continue
+            for d in summaries:
+                if d["id"] == g["id"]:
+                    datasets.append(dict(d, owner=g["owner"], shared=True, access=g["level"],
+                                         readOnly=True))
         datasets.sort(key=lambda d: d.get("updated_at") or "", reverse=True)
         return {"datasets": datasets}
 
@@ -790,6 +930,9 @@ def create_dashboards_app(
         # An admin may create/overwrite a dataset under another owner (e.g. adding
         # a shared example under examples_owner) and mark it locked.
         owner = resolve_write_owner(user, body.get("owner"))
+        if "dataset.create" not in permissions_of(user):
+            raise HTTPException(status_code=403, detail="Your role does not allow this: "
+                                + PERMISSIONS["dataset.create"].lower())
         locked = bool(body.get("locked")) and user_is_admin(user)
         summary = target.create(
             owner, data, _now_iso(), title=body.get("title"), dataset_id=body.get("id"),
@@ -801,23 +944,34 @@ def create_dashboards_app(
         return {"dataset": summary}
 
     @app.get("/api/datasets/{dataset_id}")
-    def get_dataset(request: Request, dataset_id: str, store: Optional[str] = None):
+    def get_dataset(request: Request, dataset_id: str, store: Optional[str] = None,
+                    owner: Optional[str] = None):
         user = require_user(request)
         ds_store = resolve_dataset_store(store)
-        data = ds_store.get(user, dataset_id)
-        data_owner = user
-        # Fall back to the shared example owner so viewers can read example data.
-        if data is None and examples_owner and examples_owner != user:
-            data = ds_store.get(examples_owner, dataset_id)
-            data_owner = examples_owner
+        data, data_owner = None, user
+        if owner and owner != user:
+            # Another owner's dataset (a source pinned by a shared dashboard, or a
+            # dataset grant): only with access; 404 hides whether it exists.
+            data_owner = owner
+            if dataset_access(user, owner, store, dataset_id):
+                data = ds_store.get(owner, dataset_id)
+        else:
+            data = ds_store.get(user, dataset_id)
+            # Fall back to the shared example owner so viewers can read example data.
+            if data is None and examples_owner and examples_owner != user:
+                data = ds_store.get(examples_owner, dataset_id)
+                data_owner = examples_owner
         if data is None:
             raise HTTPException(status_code=404, detail="No such dataset")
         note(request, owner=data_owner, store=store)
+        data = secured(data, user, data_owner, store, dataset_id)
+        if data is None:
+            raise HTTPException(status_code=403, detail="Withheld by the dataset's security policy")
         # Any extra query params are sample-annotation filters (the parameterized
         # dataset path for live-data controls): keep only matching samples. Only
         # keys that name a real annotation participate, so nothing here executes
         # a query or trusts the key/value beyond an equality mask.
-        filters = {k: v for k, v in request.query_params.items() if k != "store"}
+        filters = {k: v for k, v in request.query_params.items() if k not in ("store", "owner")}
         if filters:
             data = filter_cx_data(data, filters)
         return data
@@ -837,6 +991,7 @@ def create_dashboards_app(
         if ds_store.is_locked(target, dataset_id) and not user_is_admin(user):
             raise HTTPException(status_code=403, detail="Dataset is locked")
         ds_store.delete(target, dataset_id)
+        governance.forget_resource("dataset", target, dataset_id, store_key(store))
         datasets = []
         for name in dataset_store_names():
             datasets.extend(dataset_store_for(name).list(user))
@@ -855,6 +1010,210 @@ def create_dashboards_app(
             raise HTTPException(status_code=404, detail="No such dataset")
         return {"dataset": summary}
 
+    # ---- governance: sharing with users/groups, dataset security, lineage ----
+    def owned_resource(request: Request, resource: str, rid: str, owner: Optional[str],
+                       store_name: Optional[str]) -> tuple:
+        """``(user, owner)`` when the caller owns (or, as admin, may manage) an
+        existing dashboard/dataset; 403/404 otherwise."""
+        user = require_user(request)
+        owner = owner or user
+        if owner != user and not user_is_admin(user):
+            raise HTTPException(status_code=403, detail="Only the owner can manage this")
+        if resource == "dashboard":
+            exists = store.get_summary(owner, rid) is not None
+        else:
+            exists = any(d["id"] == rid for d in resolve_dataset_store(store_name).list(owner))
+        if not exists:
+            raise HTTPException(status_code=404, detail="No such %s" % resource)
+        return user, owner
+
+    async def change_grant(request: Request, resource: str, rid: str, owner: Optional[str],
+                           store_name: Optional[str]) -> dict:
+        require_permission(request, "share.grant")
+        _, owner = owned_resource(request, resource, rid, owner, store_name)
+        body = await request.json()
+        if not isinstance(body, dict) or not isinstance(body.get("principal"), str):
+            raise HTTPException(status_code=400, detail="Body must be {principal, level}")
+        principal = body["principal"].strip()
+        level = body.get("level") or None
+        if level is not None:
+            check_principal(principal)
+        if principal == "user:" + owner:
+            raise HTTPException(status_code=400, detail="The owner already has full access")
+        key = store_key(store_name) if resource == "dataset" else ""
+        note(request, owner=owner, principal=principal, level=level or "revoked")
+        try:
+            governance.set_grant(resource, owner, rid, principal, level, key)
+        except GovernanceError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        return {"grants": governance.grants_on(resource, owner, rid, key)}
+
+    @app.get("/api/directory")
+    def directory(request: Request):
+        """Users and groups a dashboard/dataset can be shared with."""
+        require_user(request)
+        return {"users": store.list_users(), "groups": governance.group_names()}
+
+    @app.get("/api/dashboards/{dashboard_id}/grants")
+    def dashboard_grants(request: Request, dashboard_id: str, owner: Optional[str] = None):
+        _, owner = owned_resource(request, "dashboard", dashboard_id, owner, None)
+        return {"grants": governance.grants_on("dashboard", owner, dashboard_id)}
+
+    @app.post("/api/dashboards/{dashboard_id}/grants")
+    async def dashboard_grant(request: Request, dashboard_id: str, owner: Optional[str] = None):
+        return await change_grant(request, "dashboard", dashboard_id, owner, None)
+
+    @app.get("/api/datasets/{dataset_id}/grants")
+    def dataset_grants(request: Request, dataset_id: str, store: Optional[str] = None,
+                       owner: Optional[str] = None):
+        _, owner = owned_resource(request, "dataset", dataset_id, owner, store)
+        return {"grants": governance.grants_on("dataset", owner, dataset_id, store_key(store))}
+
+    @app.post("/api/datasets/{dataset_id}/grants")
+    async def dataset_grant(request: Request, dataset_id: str, store: Optional[str] = None,
+                            owner: Optional[str] = None):
+        return await change_grant(request, "dataset", dataset_id, owner, store)
+
+    @app.get("/api/datasets/{dataset_id}/policy")
+    def dataset_policy(request: Request, dataset_id: str, store: Optional[str] = None,
+                       owner: Optional[str] = None):
+        _, owner = owned_resource(request, "dataset", dataset_id, owner, store)
+        return {"policy": governance.get_policy(owner, dataset_id, store_key(store))}
+
+    @app.put("/api/datasets/{dataset_id}/policy")
+    async def set_dataset_policy(request: Request, dataset_id: str, store: Optional[str] = None,
+                                 owner: Optional[str] = None):
+        """Set (or with ``{"policy": null}``, clear) a dataset's row/column security."""
+        _, owner = owned_resource(request, "dataset", dataset_id, owner, store)
+        body = await request.json()
+        if not isinstance(body, dict) or "policy" not in body:
+            raise HTTPException(status_code=400, detail="Body must be {policy}")
+        try:
+            policy = governance.set_policy(owner, dataset_id, body["policy"], store_key(store),
+                                           _now_iso())
+        except GovernanceError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        note(request, owner=owner, store=store,
+             rows=len((policy or {}).get("rows") or []),
+             columns=len((policy or {}).get("columns") or []))
+        return {"policy": policy}
+
+    def lineage_for(owners_and_ids) -> dict:
+        def dataset_owner(dash_owner: str, store_name: str, dataset_id: str) -> str:
+            # An unpinned source reads the dashboard owner's dataset, else the example.
+            try:
+                ds = dataset_store_for(store_name or None)
+                if (examples_owner and dash_owner != examples_owner
+                        and ds.get(dash_owner, dataset_id) is None
+                        and ds.get(examples_owner, dataset_id) is not None):
+                    return examples_owner
+            except KeyError:
+                pass
+            return dash_owner
+        specs = []
+        for owner, dashboard_id in owners_and_ids:
+            spec = store.get_dashboard(owner, dashboard_id)
+            if spec is not None:
+                specs.append((owner, spec))
+        return build_lineage(specs, dataset_owner)
+
+    @app.get("/api/lineage")
+    def lineage(request: Request):
+        """Where the data of the dashboards the user can open comes from."""
+        user = require_user(request)
+        pairs = [(user, d["id"]) for d in store.list_dashboards(user)]
+        pairs += [(g["owner"], g["id"]) for g in governance.shared_with(user, "dashboard")]
+        return lineage_for(pairs)
+
+    @app.get("/api/admin/lineage")
+    def admin_lineage(request: Request):
+        """Lineage across every user's dashboards."""
+        require_admin(request)
+        owners = list(store.list_users())
+        if examples_owner and examples_owner not in owners:
+            owners.append(examples_owner)
+        return lineage_for([(o, d["id"]) for o in owners for d in store.list_dashboards(o)])
+
+    # ---- admin: roles and groups ----
+    @app.get("/api/admin/governance")
+    def admin_governance(request: Request):
+        require_admin(request)
+        return {"permissions": [{"name": k, "description": v} for k, v in PERMISSIONS.items()],
+                "roles": governance.list_roles(), "groups": governance.list_groups(),
+                "assignments": governance.assignments(),
+                "default_role": governance.default_role}
+
+    @app.post("/api/admin/groups")
+    async def admin_save_group(request: Request):
+        require_admin(request)
+        body = await request.json()
+        if not isinstance(body, dict):
+            raise HTTPException(status_code=400, detail="Body must be a JSON object")
+        members = body.get("members")
+        if members is not None:
+            users = set(store.list_users())
+            unknown = [m for m in members if m not in users] if isinstance(members, list) else [1]
+            if unknown:
+                raise HTTPException(status_code=400, detail="Unknown member(s): %s"
+                                    % ", ".join(str(m) for m in unknown))
+        note(request, target=body.get("name"), members=len(members or []) if members else None,
+             role=body.get("role"))
+        try:
+            group = governance.save_group(body.get("name"), body.get("description") or "",
+                                          members, _now_iso())
+            if "role" in body:
+                governance.assign_role("group:" + group["name"], body.get("role") or None)
+        except GovernanceError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        return {"groups": governance.list_groups()}
+
+    @app.delete("/api/admin/groups/{group_name}")
+    def admin_delete_group(request: Request, group_name: str):
+        require_admin(request)
+        if not governance.delete_group(group_name):
+            raise HTTPException(status_code=404, detail="No such group")
+        return {"groups": governance.list_groups()}
+
+    @app.post("/api/admin/roles")
+    async def admin_save_role(request: Request):
+        require_admin(request)
+        body = await request.json()
+        if not isinstance(body, dict) or not isinstance(body.get("permissions", []), list):
+            raise HTTPException(status_code=400, detail="Body must be {name, permissions}")
+        note(request, target=body.get("name"), permissions=body.get("permissions"))
+        try:
+            governance.save_role(body.get("name"), body.get("permissions") or [],
+                                 body.get("description") or "")
+        except GovernanceError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        return {"roles": governance.list_roles()}
+
+    @app.delete("/api/admin/roles/{role_name}")
+    def admin_delete_role(request: Request, role_name: str):
+        require_admin(request)
+        try:
+            if not governance.delete_role(role_name):
+                raise HTTPException(status_code=404, detail="No such role")
+        except GovernanceError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        return {"roles": governance.list_roles()}
+
+    @app.post("/api/admin/roles/assign")
+    async def admin_assign_role(request: Request):
+        """Assign a role to ``user:<name>`` / ``group:<name>`` (``role: null`` clears it)."""
+        require_admin(request)
+        body = await request.json()
+        principal = (body or {}).get("principal") if isinstance(body, dict) else None
+        if not isinstance(principal, str) or principal == "*":
+            raise HTTPException(status_code=400, detail="Body must be {principal, role}")
+        check_principal(principal)
+        note(request, target=principal, role=body.get("role"))
+        try:
+            governance.assign_role(principal, body.get("role") or None)
+        except GovernanceError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        return {"assignments": governance.assignments()}
+
     # ---- data functions (kind:"function" sources) ----
     def require_function_user(request: Request) -> str:
         """The caller, if this server lets them run data functions."""
@@ -866,6 +1225,9 @@ def create_dashboards_app(
         if functions.mode == "admin" and not user_is_admin(user):
             raise HTTPException(status_code=403,
                                 detail="Data functions are limited to administrators")
+        if "function.run" not in permissions_of(user):
+            raise HTTPException(status_code=403, detail="Your role does not allow this: "
+                                + PERMISSIONS["function.run"].lower())
         return user
 
     @app.get("/api/functions/status")
@@ -967,7 +1329,7 @@ def create_dashboards_app(
         replies. The LLM only ever emits a declarative spec — it never touches
         the data (mirrors the "recipe" model: NL in, auditable JSON out).
         """
-        user = require_user(request)
+        user = require_permission(request, "llm.use")
         body = await request.json()
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="Body must be a JSON object")
@@ -1385,6 +1747,22 @@ def _render_index(canvasxpress_url: str, canvasxpress_license: Optional[str],
         template,
         flags=re.S,
     )
+
+
+def _pin_dataset_owners(spec: dict, owner: str) -> None:
+    """Name the owner on a spec's stored-dataset sources (in place), so a viewer
+    who is not the owner fetches the owner's data (``?owner=``, access-checked)."""
+    for source in (spec.get("data") or {}).values():
+        if isinstance(source, dict) and source.get("kind") == "dataset" and not source.get("owner"):
+            source["owner"] = owner
+
+
+def _unpin_dataset_owners(spec: dict, owner: str) -> None:
+    """Drop owner pins that name the spec's own owner (they are the default)."""
+    for source in (spec.get("data") or {}).values():
+        if (isinstance(source, dict) and source.get("kind") == "dataset"
+                and source.get("owner") == owner):
+            del source["owner"]
 
 
 def _has_body(request: Request) -> bool:

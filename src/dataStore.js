@@ -119,8 +119,10 @@ export function createDataStore(options) {
   /**
    * Build the fetch URL for a stored dataset source. A source may carry an
    * explicit `url` (e.g. a signed `url_for` the server handed back); otherwise
-   * it resolves to the owner-scoped `GET /api/datasets/{id}` endpoint.
-   * @param {object} sourceSpec - Dataset source spec (has `id`, optional `url`).
+   * it resolves to the owner-scoped `GET /api/datasets/{id}` endpoint (with
+   * `?owner=` when the source is pinned to another owner).
+   * @param {object} sourceSpec - Dataset source spec (has `id`, optional `url`,
+   *   `store`, `owner`).
    * @returns {string} The URL to fetch the CanvasXpress data object from.
    */
   function datasetUrl(sourceSpec, params) {
@@ -129,7 +131,11 @@ export function createDataStore(options) {
       url = sourceSpec.url;
     } else {
       url = baseUrl + '/api/datasets/' + encodeURIComponent(sourceSpec.id);
-      if (sourceSpec.store) url += '?store=' + encodeURIComponent(sourceSpec.store);
+      var query = [];
+      if (sourceSpec.store) query.push('store=' + encodeURIComponent(sourceSpec.store));
+      // A dashboard opened from another owner pins its datasets to that owner.
+      if (sourceSpec.owner) query.push('owner=' + encodeURIComponent(sourceSpec.owner));
+      if (query.length) url += '?' + query.join('&');
     }
     return appendQuery(url, resolvedQuery(sourceSpec, params));
   }

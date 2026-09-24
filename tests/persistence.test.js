@@ -160,3 +160,32 @@ test('client audit methods: filtered page, export URL, verify', async function (
     'http://x/api/admin/audit/export?actor=alice&format=jsonl');
   assert.equal((await client.auditVerify()).ok, true);
 });
+
+test('client governance methods: owner-aware load/save, grants, policy, lineage, admin', async function () {
+  var POLICY = { rows: [{ field: 'site', allow: { 'group:a': ['A'] } }] };
+  var fetchStub = routedFetch({
+    'GET /api/dashboards/d1?owner=bob': { status: 200, body: SPEC },
+    'POST /api/dashboards?owner=bob': { status: 200, body: { dashboard: { id: 'd1' } } },
+    'GET /api/directory': { status: 200, body: { users: ['bob'], groups: ['a'] } },
+    'POST /api/dashboards/d1/grants': { status: 200, body: { grants: [{ principal: 'group:a', level: 'view' }] } },
+    'GET /api/datasets/t/grants?store=s3&owner=bob': { status: 200, body: { grants: [] } },
+    'PUT /api/datasets/t/policy?store=s3': { status: 200, body: { policy: POLICY } },
+    'GET /api/datasets/t?owner=bob': { status: 200, body: [['a'], [1]] },
+    'GET /api/admin/lineage': { status: 200, body: { dashboards: [] } },
+    'POST /api/admin/roles/assign': { status: 200, body: { assignments: { 'group:a': 'viewer' } } },
+    'DELETE /api/admin/groups/a%20b': { status: 200, body: { groups: [] } }
+  });
+  var client = createDashboardClient({ fetch: fetchStub, baseUrl: 'http://x' });
+  assert.deepEqual(await client.load('d1', { owner: 'bob' }), SPEC);
+  assert.equal((await client.save(SPEC, { owner: 'bob' })).id, 'd1');
+  assert.deepEqual((await client.directory()).groups, ['a']);
+  var grants = await client.setGrant('dashboard', 'd1', 'group:a', 'view');
+  assert.equal(grants[0].level, 'view');
+  assert.deepEqual(JSON.parse(fetchStub.calls[3].init.body), { principal: 'group:a', level: 'view' });
+  assert.deepEqual(await client.grants('dataset', 't', { store: 's3', owner: 'bob' }), []);
+  assert.deepEqual(await client.setPolicy('t', POLICY, { store: 's3' }), POLICY);
+  assert.deepEqual(await client.getDataset('t', { owner: 'bob' }), [['a'], [1]]);
+  assert.deepEqual((await client.lineage({ all: true })).dashboards, []);
+  assert.equal((await client.assignRole('group:a', 'viewer'))['group:a'], 'viewer');
+  assert.deepEqual(await client.deleteGroup('a b'), []);
+});

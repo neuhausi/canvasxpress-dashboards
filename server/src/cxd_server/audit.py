@@ -66,10 +66,19 @@ _ACTIONS = {
     ("GET", "/api/admin/audit"): "audit.view",
     ("GET", "/api/admin/audit/export"): "audit.export",
     ("GET", "/api/admin/audit/verify"): "audit.verify",
+    ("POST", "/api/dashboards/{dashboard_id}/grants"): "dashboard.grant",
+    ("POST", "/api/datasets/{dataset_id}/grants"): "dataset.grant",
+    ("PUT", "/api/datasets/{dataset_id}/policy"): "dataset.policy",
+    ("POST", "/api/admin/groups"): "admin.group.save",
+    ("DELETE", "/api/admin/groups/{group_name}"): "admin.group.delete",
+    ("POST", "/api/admin/roles"): "admin.role.save",
+    ("DELETE", "/api/admin/roles/{role_name}"): "admin.role.delete",
+    ("POST", "/api/admin/roles/assign"): "admin.role.assign",
+    ("GET", "/api/admin/lineage"): "admin.lineage",
 }
 
 # Path parameters that name the event's target, in order of preference.
-_TARGET_PARAMS = ("dashboard_id", "dataset_id", "username")
+_TARGET_PARAMS = ("dashboard_id", "dataset_id", "username", "group_name", "role_name")
 
 _FIELDS = ("seq", "ts", "actor", "action", "target", "owner", "outcome", "status", "ip",
            "detail", "prev_hash", "hash")

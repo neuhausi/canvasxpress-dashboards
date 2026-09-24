@@ -32,7 +32,7 @@ vars: `SESSION_SECRET` (auto-generated if unset), `CXD_HOST`/`CXD_PORT`,
 `APP_DB_PATH`, `CXD_DASHBOARD_STORE`, `CXD_DATASET_STORE`, `ALLOW_SIGNUP`,
 `CXD_HTTPS_ONLY`, `CXD_ADMINS`, `CXD_PUBLISH_BASE_URL`, `CXD_CANVASXPRESS_URL`,
 `CXD_CANVASXPRESS_LICENSE`, `CXD_LLM_API_KEY`, `CXD_LLM_MODEL`, `CXD_FUNCTIONS*`,
-`CXD_AUDIT`, `CXD_AUDIT_RETENTION_DAYS`.
+`CXD_AUDIT`, `CXD_AUDIT_RETENTION_DAYS`, `CXD_DEFAULT_ROLE`.
 
 **Audit log.** The server records who did what: sign-ins (including failed
 attempts), dashboard and dataset changes, shares, share-link views, data-function
@@ -48,6 +48,28 @@ Administrators browse, filter and export them in the app's Admin view.
 `CXD_AUDIT=off` disables it; `CXD_AUDIT_RETENTION_DAYS=N` prunes older events
 (default: keep everything). A failure to write an event is reported on stderr and
 never fails the request.
+
+**Roles, groups and sharing.** Administrators create groups of users and roles:
+named sets of permissions (create dashboards, upload datasets, share with people,
+publish share links, run data functions, use the AI builder). `viewer` (no
+permissions: opens what is shared with them) and `editor` (every permission) are
+built in. A role is given to a user or a group, and a user holds every permission
+of their own and their groups' roles. Users with no role anywhere get
+`CXD_DEFAULT_ROLE` (default `editor`, which is how a server without roles
+behaves). Owners share a dashboard with a user, a group or everyone signed in, to
+view or to edit; people it is shared with read its stored datasets through it.
+Datasets can be shared on their own too.
+
+**Row- and column-level security.** A dataset's owner can restrict what everyone
+else receives from it: row rules keep only the rows whose value in a column is
+allowed for the viewer's user or groups, and column rules hide columns except
+from named users or groups. A viewer no rule allows gets no rows. The rules are
+applied by the server wherever it hands out the dataset: in the app, through a
+shared dashboard, and on share links (where the viewer is `anonymous` unless
+signed in). Owners and administrators see everything. The rules protect stored
+datasets only; data written into a spec travels with the spec. **Lineage**
+(`GET /api/lineage`, and across every user for admins) lists which dashboards
+read which datasets and connectors.
 
 **Data functions** (`kind:"function"` sources — R / Python snippets) run in
 this server only when `CXD_FUNCTIONS=admin` (administrators) or `users` (any
@@ -90,7 +112,17 @@ uvicorn cxd_server.app:create_dashboards_app --factory --reload
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/auth/signup` · `/auth/login` · `/auth/logout` | Session auth (cookie) |
-| `GET` | `/auth/me` | Current user (`{user, is_admin}`) |
+| `GET` | `/auth/me` | Current user (`{user, is_admin, permissions, groups, roles}`) |
+| `GET` | `/api/directory` | Users and groups a dashboard or dataset can be shared with |
+| `GET`·`POST` | `/api/dashboards/{id}/grants` | Owner: who it is shared with / share (`{principal, level}`, `level: null` revokes). Principals: `user:<name>`, `group:<name>`, `*` |
+| `GET`·`POST` | `/api/datasets/{id}/grants` | Owner: the same for a dataset (`?store=`) |
+| `GET`·`PUT` | `/api/datasets/{id}/policy` | Owner: row/column security `{policy: {rows: [{field, allow}], columns: [{hide, except}]}}` (`null` clears) |
+| `GET` | `/api/lineage` | Dashboards the user can open → their data sources, and datasets/connectors → the dashboards that read them |
+| `GET` | `/api/admin/governance` | Admin: permissions, roles, groups, role assignments, default role |
+| `POST`·`DELETE` | `/api/admin/groups` · `/api/admin/groups/{name}` | Admin: create/update a group (`{name, description, members, role}`) / delete it |
+| `POST`·`DELETE` | `/api/admin/roles` · `/api/admin/roles/{name}` | Admin: create/update a custom role (`{name, permissions}`) / delete it |
+| `POST` | `/api/admin/roles/assign` | Admin: give `user:<name>` or `group:<name>` a role (`role: null` clears it) |
+| `GET` | `/api/admin/lineage` | Admin: lineage across every user's dashboards |
 | `GET` | `/api/llm/status` | Whether the NL builder is configured (`{enabled, model}`; no key) |
 | `GET` | `/api/admin/audit` | Admin: audit events, newest first (`actor`, `action` (a trailing `.` matches a prefix), `target`, `outcome`, `since`, `until`, `before`, `limit`) |
 | `GET` | `/api/admin/audit/export` | Admin: the same filters as a CSV (default) or `format=jsonl` download |
@@ -102,14 +134,14 @@ uvicorn cxd_server.app:create_dashboards_app --factory --reload
 | `DELETE` | `/api/admin/users/{u}` | Admin: delete a user + their dashboards |
 | `GET` | `/api/dashboards` | List the user's dashboards (summaries) |
 | `POST` | `/api/dashboards` | Create/update a spec (keyed by `spec.id`) |
-| `GET` | `/api/dashboards/{id}` | Load one of the user's specs |
+| `GET` | `/api/dashboards/{id}` | Load one of the user's specs, an example, or one shared with them (`?owner=`); another owner's stored-dataset sources come back with `owner` set |
 | `DELETE` | `/api/dashboards/{id}` | Delete |
 | `POST` | `/api/dashboards/{id}/share` | Set visibility (`public` / `auth` / `private`); returns `share_token` + `share_url` |
 | `GET` | `/api/shared/{token}` | Read-only spec for a share link (public: open; `auth`: any logged-in viewer) |
 | `GET` | `/api/stores` | List configured named stores the user may target (`[{name, capability, default}]`, optional `?capability=`) — names only, never URIs/credentials |
 | `GET` | `/api/datasets` | List the user's datasets across all stores (each tagged with its `store`) |
 | `POST` | `/api/datasets` | Upload `{format:"csv"\|"json"\|"cx", data, title?, id?, store?}`; reshaped and stored; returns `{id, rows, cols, store, url}` |
-| `GET` | `/api/datasets/{id}` | Fetch the CanvasXpress data object (owner-scoped; `?store=` selects a non-default store) |
+| `GET` | `/api/datasets/{id}` | Fetch the CanvasXpress data object (owner-scoped; `?store=` selects a non-default store; `?owner=` another owner's dataset shared with the user, after its row/column security) |
 | `DELETE` | `/api/datasets/{id}` | Delete (`?store=`) |
 
 The bundled read-only viewer is served at `/shared.html?token=…`.

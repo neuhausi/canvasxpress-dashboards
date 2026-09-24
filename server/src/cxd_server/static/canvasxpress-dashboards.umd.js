@@ -1781,8 +1781,10 @@ function createDataStore(options) {
   /**
    * Build the fetch URL for a stored dataset source. A source may carry an
    * explicit `url` (e.g. a signed `url_for` the server handed back); otherwise
-   * it resolves to the owner-scoped `GET /api/datasets/{id}` endpoint.
-   * @param {object} sourceSpec - Dataset source spec (has `id`, optional `url`).
+   * it resolves to the owner-scoped `GET /api/datasets/{id}` endpoint (with
+   * `?owner=` when the source is pinned to another owner).
+   * @param {object} sourceSpec - Dataset source spec (has `id`, optional `url`,
+   *   `store`, `owner`).
    * @returns {string} The URL to fetch the CanvasXpress data object from.
    */
   function datasetUrl(sourceSpec, params) {
@@ -1791,7 +1793,11 @@ function createDataStore(options) {
       url = sourceSpec.url;
     } else {
       url = baseUrl + '/api/datasets/' + encodeURIComponent(sourceSpec.id);
-      if (sourceSpec.store) url += '?store=' + encodeURIComponent(sourceSpec.store);
+      var query = [];
+      if (sourceSpec.store) query.push('store=' + encodeURIComponent(sourceSpec.store));
+      // A dashboard opened from another owner pins its datasets to that owner.
+      if (sourceSpec.owner) query.push('owner=' + encodeURIComponent(sourceSpec.owner));
+      if (query.length) url += '?' + query.join('&');
     }
     return appendQuery(url, resolvedQuery(sourceSpec, params));
   }
@@ -6240,20 +6246,36 @@ function createDashboardClient(options) {
      */
     auditVerify: function () { return request('GET', '/api/admin/audit/verify'); },
 
-    /** @returns {Promise<object[]>} The current user's dashboard summaries. */
+    /**
+     * The dashboards the user can open: their own, the shared examples, and
+     * those shared with them (`shared: true`, `owner`, `access`, `readOnly`).
+     * @returns {Promise<object[]>} Dashboard summaries.
+     */
     list: function () { return request('GET', '/api/dashboards').then(function (r) { return r.dashboards; }); },
     /**
      * Save (create or update) a dashboard spec.
      * @param {object} spec - The spec to persist.
+     * @param {object} [opts] - Options.
+     * @param {string} [opts.owner] - Save to another owner's dashboard (needs an
+     *   `edit` grant on it, or admin rights).
      * @returns {Promise<object>} The stored summary.
      */
-    save: function (spec) { return request('POST', '/api/dashboards', spec).then(function (r) { return r.dashboard; }); },
+    save: function (spec, opts) {
+      var path = '/api/dashboards' + queryString({ owner: opts && opts.owner });
+      return request('POST', path, spec).then(function (r) { return r.dashboard; });
+    },
     /**
-     * Load one of the user's dashboards by id.
+     * Load a dashboard by id: the user's own, else a shared example or one shared
+     * with them. Stored-dataset sources of another owner's dashboard come back
+     * pinned to that owner (`owner` on the source).
      * @param {string} id - Dashboard id.
+     * @param {object} [opts] - Options.
+     * @param {string} [opts.owner] - The owner, for a dashboard shared with the user.
      * @returns {Promise<object>} The spec.
      */
-    load: function (id) { return request('GET', '/api/dashboards/' + encodeURIComponent(id)); },
+    load: function (id, opts) {
+      return request('GET', '/api/dashboards/' + encodeURIComponent(id) + queryString({ owner: opts && opts.owner }));
+    },
     /**
      * Delete a dashboard by id.
      * @param {string} id - Dashboard id.
@@ -6277,6 +6299,99 @@ function createDashboardClient(options) {
      */
     loadShared: function (token) { return request('GET', '/api/shared/' + encodeURIComponent(token)); },
 
+    // ---- sharing with users and groups, dataset security, lineage ----
+    /** @returns {Promise<object>} `{ users, groups }` a resource can be shared with. */
+    directory: function () { return request('GET', '/api/directory'); },
+    /**
+     * Who a dashboard or dataset is shared with (owner, or admin).
+     * @param {('dashboard'|'dataset')} kind - Resource kind.
+     * @param {string} id - Its id.
+     * @param {object} [opts] - `{store, owner}` (store: datasets only).
+     * @returns {Promise<object[]>} `[{ principal, level }]`.
+     */
+    grants: function (kind, id, opts) {
+      return request('GET', resourcePath(kind, id, '/grants', opts)).then(function (r) { return r.grants; });
+    },
+    /**
+     * Share a dashboard or dataset with a user, a group, or everyone signed in.
+     * @param {('dashboard'|'dataset')} kind - Resource kind.
+     * @param {string} id - Its id.
+     * @param {string} principal - `user:<name>`, `group:<name>`, or `*`.
+     * @param {?('view'|'edit')} level - Access level; null revokes.
+     * @param {object} [opts] - `{store, owner}`.
+     * @returns {Promise<object[]>} The updated grants.
+     */
+    setGrant: function (kind, id, principal, level, opts) {
+      return request('POST', resourcePath(kind, id, '/grants', opts), { principal: principal, level: level || null })
+        .then(function (r) { return r.grants; });
+    },
+    /**
+     * A dataset's row/column security policy (owner, or admin).
+     * @param {string} id - Dataset id.
+     * @param {object} [opts] - `{store, owner}`.
+     * @returns {Promise<?object>} `{rows, columns}` or null.
+     */
+    getPolicy: function (id, opts) {
+      return request('GET', resourcePath('dataset', id, '/policy', opts)).then(function (r) { return r.policy; });
+    },
+    /**
+     * Set (or with null, clear) a dataset's row/column security policy.
+     * @param {string} id - Dataset id.
+     * @param {?object} policy - `{rows:[{field, allow}], columns:[{hide, except}]}`.
+     * @param {object} [opts] - `{store, owner}`.
+     * @returns {Promise<?object>} The stored policy.
+     */
+    setPolicy: function (id, policy, opts) {
+      return request('PUT', resourcePath('dataset', id, '/policy', opts), { policy: policy || null })
+        .then(function (r) { return r.policy; });
+    },
+    /**
+     * Lineage of the dashboards the user can open (admins: `{all: true}` for everyone's).
+     * @param {object} [opts] - `{all}`.
+     * @returns {Promise<object>} `{ dashboards, datasets, connectors }`.
+     */
+    lineage: function (opts) { return request('GET', opts && opts.all ? '/api/admin/lineage' : '/api/lineage'); },
+
+    // ---- admin: roles and groups ----
+    /** @returns {Promise<object>} `{ permissions, roles, groups, assignments, default_role }`. */
+    governance: function () { return request('GET', '/api/admin/governance'); },
+    /**
+     * Create or update a group.
+     * @param {object} group - `{name, description?, members?, role?}` (members replaces the list).
+     * @returns {Promise<object[]>} Every group.
+     */
+    saveGroup: function (group) { return request('POST', '/api/admin/groups', group).then(function (r) { return r.groups; }); },
+    /**
+     * @param {string} name - Group name.
+     * @returns {Promise<object[]>} The remaining groups.
+     */
+    deleteGroup: function (name) {
+      return request('DELETE', '/api/admin/groups/' + encodeURIComponent(name)).then(function (r) { return r.groups; });
+    },
+    /**
+     * Create or update a custom role.
+     * @param {object} role - `{name, permissions, description?}`.
+     * @returns {Promise<object[]>} Every role.
+     */
+    saveRole: function (role) { return request('POST', '/api/admin/roles', role).then(function (r) { return r.roles; }); },
+    /**
+     * @param {string} name - Custom role name.
+     * @returns {Promise<object[]>} The remaining roles.
+     */
+    deleteRole: function (name) {
+      return request('DELETE', '/api/admin/roles/' + encodeURIComponent(name)).then(function (r) { return r.roles; });
+    },
+    /**
+     * Assign a role to `user:<name>` or `group:<name>` (null clears it).
+     * @param {string} principal - The principal.
+     * @param {?string} role - Role name.
+     * @returns {Promise<object>} Every assignment, `principal -> role`.
+     */
+    assignRole: function (principal, role) {
+      return request('POST', '/api/admin/roles/assign', { principal: principal, role: role || null })
+        .then(function (r) { return r.assignments; });
+    },
+
     /**
      * List the server-configured named stores the user may target (names only,
      * never URIs/credentials) — the source of truth for the store picker.
@@ -6298,13 +6413,12 @@ function createDashboardClient(options) {
      * @param {object} [opts] - Options.
      * @param {string} [opts.store] - Named store the dataset lives in (defaults
      *   to the server's default dataset store).
+     * @param {string} [opts.owner] - The owner, for a dataset shared with the user.
      * @returns {Promise<object>} The CanvasXpress data object `{y, x?}`.
      */
     getDataset: function (id, opts) {
       opts = opts || {};
-      var path = '/api/datasets/' + encodeURIComponent(id);
-      if (opts.store) path += '?store=' + encodeURIComponent(opts.store);
-      return request('GET', path);
+      return request('GET', '/api/datasets/' + encodeURIComponent(id) + queryString({ store: opts.store, owner: opts.owner }));
     },
     /**
      * Upload a dataset (CSV/JSON), reshaped and stored server-side; bind a panel
@@ -6346,6 +6460,22 @@ function createDashboardClient(options) {
       return request('DELETE', path).then(function (r) { return r.datasets; });
     }
   };
+}
+
+/**
+ * The API path of a dashboard/dataset sub-resource (`/grants`, `/policy`).
+ * @param {('dashboard'|'dataset')} kind - Resource kind.
+ * @param {string} id - Resource id.
+ * @param {string} suffix - Sub-resource path.
+ * @param {object} [opts] - `{store, owner}` query parameters.
+ * @returns {string} The path.
+ * @private
+ */
+function resourcePath(kind, id, suffix, opts) {
+  opts = opts || {};
+  var base = kind === 'dataset' ? '/api/datasets/' : '/api/dashboards/';
+  return base + encodeURIComponent(id) + suffix +
+    queryString({ store: kind === 'dataset' ? opts.store : undefined, owner: opts.owner });
 }
 
 /**
@@ -7121,6 +7251,8 @@ function pointerToCell(clientX, clientY, gridRect, cols, rowHeight, gap) {
  * @param {object} [options] - Builder options.
  * @param {object} [options.spec] - Initial spec (a blank one is created if omitted).
  * @param {object} [options.client] - A dashboards persistence client (for Save/Share).
+ * @param {string} [options.owner] - Save to this owner's dashboard (one shared
+ *   with the user for editing) instead of the user's own; the id is kept.
  * @param {string} [options.baseUrl] - cxd_server origin used to resolve
  *   `kind:"dataset"` panel sources (defaults to same-origin `/api/datasets`).
  * @param {*} [options.CanvasXpress] - CanvasXpress constructor; defaults to global.
@@ -7136,6 +7268,9 @@ function createBuilder(target, options) {
   // Specs enter in the current format (older ones are migrated; a newer
   // MAJOR throws) and leave stamped with it (see getSpec).
   var spec = options.spec ? migrateSpec(options.spec).spec : blankSpec('dashboard-1', 'New Dashboard');
+  // options.owner applies to the dashboard that was opened, not to one that
+  // replaces it (chat, import) — those save as the user's own.
+  var ownerSpecId = spec.id;
   var client = options.client || null;
   // Whether the toolbar shows the "+ Data" (add data source) button. Apps that
   // manage datasets elsewhere (e.g. a dedicated Data page) can hide it and bind
@@ -7416,9 +7551,12 @@ function createBuilder(target, options) {
     // renamed) title so "save under a new name" creates a NEW dashboard
     // instead of silently overwriting the last one. An unchanged name keeps
     // the id, so re-saving still updates in place.
+    // Editing a dashboard shared by another owner keeps its id (the edit grant
+    // covers that dashboard only) and saves back to that owner.
+    var owner = options.owner && spec.id === ownerSpecId ? options.owner : null;
     var slug = String(spec.title || '').toLowerCase()
       .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    if (slug && slug !== spec.id) {
+    if (!owner && slug && slug !== spec.id) {
       var next = Object.assign({}, spec, { id: slug });
       // A broadcastGroup that just mirrored the old id follows the rename, so
       // separately-saved dashboards don't share a coordination domain.
@@ -7427,7 +7565,9 @@ function createBuilder(target, options) {
       if (options.onChange) { try { options.onChange(getSpec()); } catch (e) { /* noop */ } }
     }
     setMsg('Saving…');
-    client.save(getSpec()).then(function () { setMsg('Saved “' + spec.id + '”.'); }, showError);
+    client.save(getSpec(), owner ? { owner: owner } : undefined).then(function () {
+      setMsg('Saved “' + spec.id + '”' + (owner ? ' for ' + owner : '') + '.');
+    }, showError);
   }
 
   /**

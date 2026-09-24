@@ -200,20 +200,36 @@ export function createDashboardClient(options) {
      */
     auditVerify: function () { return request('GET', '/api/admin/audit/verify'); },
 
-    /** @returns {Promise<object[]>} The current user's dashboard summaries. */
+    /**
+     * The dashboards the user can open: their own, the shared examples, and
+     * those shared with them (`shared: true`, `owner`, `access`, `readOnly`).
+     * @returns {Promise<object[]>} Dashboard summaries.
+     */
     list: function () { return request('GET', '/api/dashboards').then(function (r) { return r.dashboards; }); },
     /**
      * Save (create or update) a dashboard spec.
      * @param {object} spec - The spec to persist.
+     * @param {object} [opts] - Options.
+     * @param {string} [opts.owner] - Save to another owner's dashboard (needs an
+     *   `edit` grant on it, or admin rights).
      * @returns {Promise<object>} The stored summary.
      */
-    save: function (spec) { return request('POST', '/api/dashboards', spec).then(function (r) { return r.dashboard; }); },
+    save: function (spec, opts) {
+      var path = '/api/dashboards' + queryString({ owner: opts && opts.owner });
+      return request('POST', path, spec).then(function (r) { return r.dashboard; });
+    },
     /**
-     * Load one of the user's dashboards by id.
+     * Load a dashboard by id: the user's own, else a shared example or one shared
+     * with them. Stored-dataset sources of another owner's dashboard come back
+     * pinned to that owner (`owner` on the source).
      * @param {string} id - Dashboard id.
+     * @param {object} [opts] - Options.
+     * @param {string} [opts.owner] - The owner, for a dashboard shared with the user.
      * @returns {Promise<object>} The spec.
      */
-    load: function (id) { return request('GET', '/api/dashboards/' + encodeURIComponent(id)); },
+    load: function (id, opts) {
+      return request('GET', '/api/dashboards/' + encodeURIComponent(id) + queryString({ owner: opts && opts.owner }));
+    },
     /**
      * Delete a dashboard by id.
      * @param {string} id - Dashboard id.
@@ -237,6 +253,99 @@ export function createDashboardClient(options) {
      */
     loadShared: function (token) { return request('GET', '/api/shared/' + encodeURIComponent(token)); },
 
+    // ---- sharing with users and groups, dataset security, lineage ----
+    /** @returns {Promise<object>} `{ users, groups }` a resource can be shared with. */
+    directory: function () { return request('GET', '/api/directory'); },
+    /**
+     * Who a dashboard or dataset is shared with (owner, or admin).
+     * @param {('dashboard'|'dataset')} kind - Resource kind.
+     * @param {string} id - Its id.
+     * @param {object} [opts] - `{store, owner}` (store: datasets only).
+     * @returns {Promise<object[]>} `[{ principal, level }]`.
+     */
+    grants: function (kind, id, opts) {
+      return request('GET', resourcePath(kind, id, '/grants', opts)).then(function (r) { return r.grants; });
+    },
+    /**
+     * Share a dashboard or dataset with a user, a group, or everyone signed in.
+     * @param {('dashboard'|'dataset')} kind - Resource kind.
+     * @param {string} id - Its id.
+     * @param {string} principal - `user:<name>`, `group:<name>`, or `*`.
+     * @param {?('view'|'edit')} level - Access level; null revokes.
+     * @param {object} [opts] - `{store, owner}`.
+     * @returns {Promise<object[]>} The updated grants.
+     */
+    setGrant: function (kind, id, principal, level, opts) {
+      return request('POST', resourcePath(kind, id, '/grants', opts), { principal: principal, level: level || null })
+        .then(function (r) { return r.grants; });
+    },
+    /**
+     * A dataset's row/column security policy (owner, or admin).
+     * @param {string} id - Dataset id.
+     * @param {object} [opts] - `{store, owner}`.
+     * @returns {Promise<?object>} `{rows, columns}` or null.
+     */
+    getPolicy: function (id, opts) {
+      return request('GET', resourcePath('dataset', id, '/policy', opts)).then(function (r) { return r.policy; });
+    },
+    /**
+     * Set (or with null, clear) a dataset's row/column security policy.
+     * @param {string} id - Dataset id.
+     * @param {?object} policy - `{rows:[{field, allow}], columns:[{hide, except}]}`.
+     * @param {object} [opts] - `{store, owner}`.
+     * @returns {Promise<?object>} The stored policy.
+     */
+    setPolicy: function (id, policy, opts) {
+      return request('PUT', resourcePath('dataset', id, '/policy', opts), { policy: policy || null })
+        .then(function (r) { return r.policy; });
+    },
+    /**
+     * Lineage of the dashboards the user can open (admins: `{all: true}` for everyone's).
+     * @param {object} [opts] - `{all}`.
+     * @returns {Promise<object>} `{ dashboards, datasets, connectors }`.
+     */
+    lineage: function (opts) { return request('GET', opts && opts.all ? '/api/admin/lineage' : '/api/lineage'); },
+
+    // ---- admin: roles and groups ----
+    /** @returns {Promise<object>} `{ permissions, roles, groups, assignments, default_role }`. */
+    governance: function () { return request('GET', '/api/admin/governance'); },
+    /**
+     * Create or update a group.
+     * @param {object} group - `{name, description?, members?, role?}` (members replaces the list).
+     * @returns {Promise<object[]>} Every group.
+     */
+    saveGroup: function (group) { return request('POST', '/api/admin/groups', group).then(function (r) { return r.groups; }); },
+    /**
+     * @param {string} name - Group name.
+     * @returns {Promise<object[]>} The remaining groups.
+     */
+    deleteGroup: function (name) {
+      return request('DELETE', '/api/admin/groups/' + encodeURIComponent(name)).then(function (r) { return r.groups; });
+    },
+    /**
+     * Create or update a custom role.
+     * @param {object} role - `{name, permissions, description?}`.
+     * @returns {Promise<object[]>} Every role.
+     */
+    saveRole: function (role) { return request('POST', '/api/admin/roles', role).then(function (r) { return r.roles; }); },
+    /**
+     * @param {string} name - Custom role name.
+     * @returns {Promise<object[]>} The remaining roles.
+     */
+    deleteRole: function (name) {
+      return request('DELETE', '/api/admin/roles/' + encodeURIComponent(name)).then(function (r) { return r.roles; });
+    },
+    /**
+     * Assign a role to `user:<name>` or `group:<name>` (null clears it).
+     * @param {string} principal - The principal.
+     * @param {?string} role - Role name.
+     * @returns {Promise<object>} Every assignment, `principal -> role`.
+     */
+    assignRole: function (principal, role) {
+      return request('POST', '/api/admin/roles/assign', { principal: principal, role: role || null })
+        .then(function (r) { return r.assignments; });
+    },
+
     /**
      * List the server-configured named stores the user may target (names only,
      * never URIs/credentials) — the source of truth for the store picker.
@@ -258,13 +367,12 @@ export function createDashboardClient(options) {
      * @param {object} [opts] - Options.
      * @param {string} [opts.store] - Named store the dataset lives in (defaults
      *   to the server's default dataset store).
+     * @param {string} [opts.owner] - The owner, for a dataset shared with the user.
      * @returns {Promise<object>} The CanvasXpress data object `{y, x?}`.
      */
     getDataset: function (id, opts) {
       opts = opts || {};
-      var path = '/api/datasets/' + encodeURIComponent(id);
-      if (opts.store) path += '?store=' + encodeURIComponent(opts.store);
-      return request('GET', path);
+      return request('GET', '/api/datasets/' + encodeURIComponent(id) + queryString({ store: opts.store, owner: opts.owner }));
     },
     /**
      * Upload a dataset (CSV/JSON), reshaped and stored server-side; bind a panel
@@ -306,6 +414,22 @@ export function createDashboardClient(options) {
       return request('DELETE', path).then(function (r) { return r.datasets; });
     }
   };
+}
+
+/**
+ * The API path of a dashboard/dataset sub-resource (`/grants`, `/policy`).
+ * @param {('dashboard'|'dataset')} kind - Resource kind.
+ * @param {string} id - Resource id.
+ * @param {string} suffix - Sub-resource path.
+ * @param {object} [opts] - `{store, owner}` query parameters.
+ * @returns {string} The path.
+ * @private
+ */
+function resourcePath(kind, id, suffix, opts) {
+  opts = opts || {};
+  var base = kind === 'dataset' ? '/api/datasets/' : '/api/dashboards/';
+  return base + encodeURIComponent(id) + suffix +
+    queryString({ store: kind === 'dataset' ? opts.store : undefined, owner: opts.owner });
 }
 
 /**

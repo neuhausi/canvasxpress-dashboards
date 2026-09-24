@@ -335,3 +335,10 @@ test('a missing default function runtime explains itself; a custom runtime keeps
   var custom = Object.assign({}, sources.f, { runtime: 'https://rt.example/run' });
   await assert.rejects(store404.resolve('f', custom, { sources: sources }), /HTTP 404/);
 });
+
+test('a dataset source pinned to another owner fetches with ?owner=', async function () {
+  var fetchStub = fakeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map(), baseUrl: 'http://x' });
+  await store.resolve('sales', { kind: 'dataset', id: 'sales', store: 's3', owner: 'bob' });
+  assert.equal(fetchStub.calls[0].url, 'http://x/api/datasets/sales?store=s3&owner=bob');
+});

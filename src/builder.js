@@ -190,6 +190,8 @@ export function pointerToCell(clientX, clientY, gridRect, cols, rowHeight, gap) 
  * @param {object} [options] - Builder options.
  * @param {object} [options.spec] - Initial spec (a blank one is created if omitted).
  * @param {object} [options.client] - A dashboards persistence client (for Save/Share).
+ * @param {string} [options.owner] - Save to this owner's dashboard (one shared
+ *   with the user for editing) instead of the user's own; the id is kept.
  * @param {string} [options.baseUrl] - cxd_server origin used to resolve
  *   `kind:"dataset"` panel sources (defaults to same-origin `/api/datasets`).
  * @param {*} [options.CanvasXpress] - CanvasXpress constructor; defaults to global.
@@ -205,6 +207,9 @@ export function createBuilder(target, options) {
   // Specs enter in the current format (older ones are migrated; a newer
   // MAJOR throws) and leave stamped with it (see getSpec).
   var spec = options.spec ? migrateSpec(options.spec).spec : blankSpec('dashboard-1', 'New Dashboard');
+  // options.owner applies to the dashboard that was opened, not to one that
+  // replaces it (chat, import) — those save as the user's own.
+  var ownerSpecId = spec.id;
   var client = options.client || null;
   // Whether the toolbar shows the "+ Data" (add data source) button. Apps that
   // manage datasets elsewhere (e.g. a dedicated Data page) can hide it and bind
@@ -485,9 +490,12 @@ export function createBuilder(target, options) {
     // renamed) title so "save under a new name" creates a NEW dashboard
     // instead of silently overwriting the last one. An unchanged name keeps
     // the id, so re-saving still updates in place.
+    // Editing a dashboard shared by another owner keeps its id (the edit grant
+    // covers that dashboard only) and saves back to that owner.
+    var owner = options.owner && spec.id === ownerSpecId ? options.owner : null;
     var slug = String(spec.title || '').toLowerCase()
       .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    if (slug && slug !== spec.id) {
+    if (!owner && slug && slug !== spec.id) {
       var next = Object.assign({}, spec, { id: slug });
       // A broadcastGroup that just mirrored the old id follows the rename, so
       // separately-saved dashboards don't share a coordination domain.
@@ -496,7 +504,9 @@ export function createBuilder(target, options) {
       if (options.onChange) { try { options.onChange(getSpec()); } catch (e) { /* noop */ } }
     }
     setMsg('Saving…');
-    client.save(getSpec()).then(function () { setMsg('Saved “' + spec.id + '”.'); }, showError);
+    client.save(getSpec(), owner ? { owner: owner } : undefined).then(function () {
+      setMsg('Saved “' + spec.id + '”' + (owner ? ' for ' + owner : '') + '.');
+    }, showError);
   }
 
   /**
