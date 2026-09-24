@@ -146,3 +146,17 @@ test('client surfaces the server error detail + status on failure', async functi
     return true;
   });
 });
+
+test('client audit methods: filtered page, export URL, verify', async function () {
+  var fetchStub = routedFetch({
+    'GET /api/admin/audit?action=dashboard.&before=40&outcome=denied': { status: 200, body: { events: [{ seq: 39 }], next: null, enabled: true } },
+    'GET /api/admin/audit/verify': { status: 200, body: { ok: true, checked: 3 } }
+  });
+  var client = createDashboardClient({ fetch: fetchStub, baseUrl: 'http://x' });
+  var page = await client.auditLog({ action: 'dashboard.', actor: '', before: 40, outcome: 'denied' });
+  assert.equal(page.events[0].seq, 39);
+  assert.equal(fetchStub.calls[0].init.credentials, 'include');
+  assert.equal(client.auditExportUrl({ actor: 'alice', before: 40, limit: 5 }, 'jsonl'),
+    'http://x/api/admin/audit/export?actor=alice&format=jsonl');
+  assert.equal((await client.auditVerify()).ok, true);
+});

@@ -31,7 +31,23 @@ change values to your resources (Postgres, S3, Google Drive, HTTPS, …). Common
 vars: `SESSION_SECRET` (auto-generated if unset), `CXD_HOST`/`CXD_PORT`,
 `APP_DB_PATH`, `CXD_DASHBOARD_STORE`, `CXD_DATASET_STORE`, `ALLOW_SIGNUP`,
 `CXD_HTTPS_ONLY`, `CXD_ADMINS`, `CXD_PUBLISH_BASE_URL`, `CXD_CANVASXPRESS_URL`,
-`CXD_CANVASXPRESS_LICENSE`, `CXD_LLM_API_KEY`, `CXD_LLM_MODEL`, `CXD_FUNCTIONS*`.
+`CXD_CANVASXPRESS_LICENSE`, `CXD_LLM_API_KEY`, `CXD_LLM_MODEL`, `CXD_FUNCTIONS*`,
+`CXD_AUDIT`, `CXD_AUDIT_RETENTION_DAYS`.
+
+**Audit log.** The server records who did what: sign-ins (including failed
+attempts), dashboard and dataset changes, shares, share-link views, data-function
+runs, natural-language builder calls, admin actions, and reads of the audit log
+itself. Denied attempts are recorded with their status. Each event holds the
+time, user, action, target, owner, outcome, client IP and a few non-sensitive
+details. Passwords, specs, data and function code are never stored; a function
+run is identified by a hash of its code. Events are append-only and
+**hash-chained**, so an edited or deleted entry shows up in
+`GET /api/admin/audit/verify`. They live in a `cxd_audit` table next to the
+dashboards (the same SQLite file, or the same database for a SQL store).
+Administrators browse, filter and export them in the app's Admin view.
+`CXD_AUDIT=off` disables it; `CXD_AUDIT_RETENTION_DAYS=N` prunes older events
+(default: keep everything). A failure to write an event is reported on stderr and
+never fails the request.
 
 **Data functions** (`kind:"function"` sources — R / Python snippets) run in
 this server only when `CXD_FUNCTIONS=admin` (administrators) or `users` (any
@@ -76,6 +92,9 @@ uvicorn cxd_server.app:create_dashboards_app --factory --reload
 | `POST` | `/auth/signup` · `/auth/login` · `/auth/logout` | Session auth (cookie) |
 | `GET` | `/auth/me` | Current user (`{user, is_admin}`) |
 | `GET` | `/api/llm/status` | Whether the NL builder is configured (`{enabled, model}`; no key) |
+| `GET` | `/api/admin/audit` | Admin: audit events, newest first (`actor`, `action` (a trailing `.` matches a prefix), `target`, `outcome`, `since`, `until`, `before`, `limit`) |
+| `GET` | `/api/admin/audit/export` | Admin: the same filters as a CSV (default) or `format=jsonl` download |
+| `GET` | `/api/admin/audit/verify` | Admin: re-check the hash chain → `{ok, checked, first_seq, last_seq, broken_at}` |
 | `GET` | `/api/functions/status` | Data-function runtime: `{enabled, mode, languages, timeout, memoryMb, networkIsolation}` |
 | `POST` | `/api/functions/run` | Run a data function (`{language, code, inputs, params, axis}` → `{data}`); needs `CXD_FUNCTIONS` |
 | `GET`·`POST` | `/api/admin/users` | Admin: list / create users (needs `CXD_ADMINS`) |

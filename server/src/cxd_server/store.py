@@ -44,6 +44,7 @@ class DashboardStore:
     """Owner-isolated store for users and dashboard specs."""
 
     def __init__(self, db_path: str):
+        self.db_path = db_path          # the audit log keeps its table in the same file
         self._lock = threading.Lock()
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
         self._conn.execute("PRAGMA journal_mode=WAL")
@@ -97,6 +98,10 @@ class DashboardStore:
                 self._conn.commit()
             return True
         except sqlite3.IntegrityError:
+            # The failed INSERT leaves the implicit transaction (and the database
+            # write lock) open; release it, or every other connection to this
+            # file — another worker, the audit log — blocks until it times out.
+            self._conn.rollback()
             return False
 
     def is_admin(self, username: str) -> bool:

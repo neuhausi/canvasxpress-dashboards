@@ -17,22 +17,26 @@ permissions — this service only stores and serves the spec.
 from __future__ import annotations
 
 import datetime
+import hashlib
 import html
 import json
 import os
 import re
 import secrets
+import time
 import warnings
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import mcp_bridge
 from .datasets import DatasetStore, reshape_to_cx, filter_cx_data
+from .audit import (AuditLog, NullAuditLog, SqlAuditLog, SqliteAuditLog, action_for, iter_actions,
+                    open_audit_log, target_from)
 from .functions import FunctionError, FunctionsConfig, functions_status, run_function
 from .sqldashboard import open_dashboard_store
 from .store import DashboardStore
@@ -267,6 +271,63 @@ _LLM_OUTPUT_SCHEMA = {
 }
 
 
+def note(request: Request, **fields) -> None:
+    """Attach details to the request's audit event (``None`` values are skipped).
+
+    ``target`` / ``owner`` override the event's target and owner; every other
+    field goes into ``detail``. Safe to call when no audit middleware runs.
+    """
+    info = getattr(request.state, "audit", None)
+    if info is None:
+        info = {}
+        request.state.audit = info
+    for key, value in fields.items():
+        if value is not None:
+            info[key] = value
+
+
+def _record_request(audit, request: Request, actor_before, status: int) -> None:
+    """Record one finished request in the audit log, if its route is audited.
+
+    The actor is whoever is signed in after the handler (a sign-in) or before it
+    (a sign-out). A failure to write is reported on stderr, never raised: the
+    audit log must not take the app down.
+    """
+    route = request.scope.get("route")
+    action = action_for(request.method, getattr(route, "path", None))
+    if not action or not audit.enabled:
+        return
+    info = dict(getattr(request.state, "audit", None) or {})
+    session = request.scope.get("session") or {}
+    actor = session.get("user") or actor_before
+    target = info.pop("target", None) or target_from(request.scope.get("path_params") or {})
+    owner = info.pop("owner", None)
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        info["forwarded_for"] = forwarded[:200]
+    try:
+        audit.record(action, actor=actor, target=target, owner=owner, status=status,
+                     ip=request.client.host if request.client else None, detail=info or None)
+    except Exception as exc:  # noqa: BLE001 - never fail the request over the log
+        print("[audit] FAILED to record %s by %s: %s" % (action, actor, exc), flush=True)
+
+
+def _default_audit_log(store, db_path: Optional[str]):
+    """Build the audit log next to the dashboard store (see ``cxd_server.audit``)."""
+    mode = os.getenv("CXD_AUDIT", "on")
+    try:
+        retention = int(os.getenv("CXD_AUDIT_RETENTION_DAYS", "") or 0) or None
+    except ValueError:
+        retention = None
+    if mode.strip().lower() in ("off", "0", "false", "no"):
+        return NullAuditLog()
+    if getattr(store, "_engine", None) is not None:        # SQL dashboard store
+        return SqlAuditLog(None, retention, engine=store._engine)
+    if getattr(store, "db_path", None):                    # stdlib SQLite store
+        return SqliteAuditLog(store.db_path, retention)
+    return open_audit_log(os.getenv("CXD_DASHBOARD_STORE"), db_path, mode, retention)
+
+
 def _now_iso() -> str:
     """Return the current UTC time as an ISO-8601 string."""
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
@@ -292,6 +353,7 @@ def create_dashboards_app(
     llm_api_key: Optional[str] = None,
     llm_model: Optional[str] = None,
     functions: Optional[FunctionsConfig] = None,
+    audit: Optional[AuditLog] = None,
 ) -> FastAPI:
     """Build the dashboards FastAPI app.
 
@@ -332,6 +394,9 @@ def create_dashboards_app(
     :param functions: Data-function runtime settings; built from the
         ``CXD_FUNCTIONS*`` env vars if omitted (``CXD_FUNCTIONS`` defaults to
         ``off``; ``admin`` or ``users`` enables ``POST /api/functions/run``).
+    :param audit: The audit log; built next to the dashboard store if omitted
+        (the same SQLite file or SQL database). ``CXD_AUDIT=off`` disables it and
+        ``CXD_AUDIT_RETENTION_DAYS`` prunes old events (default: keep all).
     :returns: The configured FastAPI application.
     """
     session_secret = session_secret or os.getenv("SESSION_SECRET")
@@ -383,6 +448,10 @@ def create_dashboards_app(
     llm_model = llm_model or os.getenv("CXD_LLM_MODEL")
     # Data functions (R/Python snippets) run user code: off unless configured.
     functions = functions or FunctionsConfig.from_env()
+    # Audit log: append-only, hash-chained, next to the dashboard store.
+    if audit is None:
+        audit = _default_audit_log(store, db_path)
+    audit.prune()
 
     def dataset_store_for(name: Optional[str]) -> DatasetStore:
         """Resolve the DatasetStore for a named dataset store (default when None)."""
@@ -396,6 +465,21 @@ def create_dashboards_app(
         return [s["name"] for s in registry.named("dataset")]
 
     app = FastAPI(title="canvasxpress-dashboards · persistence & sharing")
+    app.state.audit = audit
+
+    # Registered BEFORE the session middleware so it runs inside it: the session
+    # (who is signed in) is readable before and after the handler.
+    @app.middleware("http")
+    async def audit_requests(request: Request, call_next):
+        before = request.session.get("user") if "session" in request.scope else None
+        request.state.audit = {}
+        status = 500
+        try:
+            response = await call_next(request)
+            status = response.status_code
+            return response
+        finally:
+            _record_request(audit, request, before, status)
     app.add_middleware(
         SessionMiddleware, secret_key=session_secret, same_site="lax", https_only=https_only,
         session_cookie="cxd_session",  # distinct name so co-hosted apps (e.g. connectors) don't clobber it
@@ -433,6 +517,7 @@ def create_dashboards_app(
         # First user to sign up bootstraps as admin, so a fresh deployment has an
         # administrator without needing CXD_ADMINS preset.
         first_user = not store.list_users()
+        note(request, target=username, first_admin=first_user or None)
         if not store.create_user(username, password, is_admin=first_user):
             raise HTTPException(status_code=409, detail="Username already taken")
         request.session["user"] = username
@@ -442,6 +527,7 @@ def create_dashboards_app(
     async def login(request: Request):
         body = await request.json()
         username, password = body.get("username", ""), body.get("password", "")
+        note(request, target=username)   # also recorded when the attempt fails
         if not store.check_user(username, password):
             raise HTTPException(status_code=401, detail="Invalid username or password")
         request.session["user"] = username
@@ -547,6 +633,8 @@ def create_dashboards_app(
         if not isinstance(spec, dict) or not spec.get("id"):
             raise HTTPException(status_code=400, detail="Body must be a dashboard spec with an id")
         target = resolve_write_owner(user, owner)
+        note(request, target=spec["id"], owner=target,
+             created=store.get_summary(target, spec["id"]) is None, lock=lock)
         saved = store.save_dashboard(target, spec, _now_iso())
         # An admin may lock/unlock in the same call (e.g. saving a new example).
         if lock is not None and user_is_admin(user):
@@ -559,10 +647,13 @@ def create_dashboards_app(
         user = require_user(request)
         spec = store.get_dashboard(user, dashboard_id)
         # Fall back to the shared example owner so viewers can open examples.
+        spec_owner = user
         if spec is None and examples_owner and examples_owner != user:
             spec = store.get_dashboard(examples_owner, dashboard_id)
+            spec_owner = examples_owner
         if spec is None:
             raise HTTPException(status_code=404, detail="No such dashboard")
+        note(request, owner=spec_owner)
         return spec
 
     @app.post("/api/dashboards/{dashboard_id}/lock")
@@ -571,6 +662,7 @@ def create_dashboards_app(
         admin = require_admin(request)
         target = owner or examples_owner or admin
         body = await request.json() if _has_body(request) else {}
+        note(request, owner=target, locked=bool(body.get("locked", True)))
         summary = store.set_locked(target, dashboard_id, bool(body.get("locked", True)))
         if summary is None:
             raise HTTPException(status_code=404, detail="No such dashboard")
@@ -586,6 +678,7 @@ def create_dashboards_app(
                 raise HTTPException(status_code=403, detail="Admin access required")
             target = owner
         # Locked dashboards are protected; only an admin may delete them.
+        note(request, owner=target)
         if store.is_locked(target, dashboard_id) and not user_is_admin(user):
             raise HTTPException(status_code=403, detail="Dashboard is locked")
         store.delete_dashboard(target, dashboard_id)
@@ -597,6 +690,7 @@ def create_dashboards_app(
         user = require_user(request)
         body = await request.json() if _has_body(request) else {}
         visibility = (body or {}).get("visibility", "public")
+        note(request, owner=user, visibility=visibility)
         try:
             summary = store.set_visibility(user, dashboard_id, visibility)
         except ValueError as exc:
@@ -611,6 +705,8 @@ def create_dashboards_app(
         shared = store.get_shared(token)
         if not shared:
             raise HTTPException(status_code=404, detail="Share link not found")
+        note(request, target=(shared.get("spec") or {}).get("id") or target_from({"token": token}),
+             owner=shared["owner"], visibility=shared["visibility"])
         # auth-gated shares require *any* logged-in viewer; public shares are open.
         if shared["visibility"] == "auth" and not request.session.get("user"):
             raise HTTPException(status_code=401, detail="Login required to view this dashboard")
@@ -700,6 +796,8 @@ def create_dashboards_app(
             config=config, locked=locked,
         )
         summary["url"] = target.url_for(owner, summary["id"])
+        note(request, target=summary["id"], owner=owner, store=body.get("store"),
+             rows=summary.get("rows"), cols=summary.get("cols"), locked=locked or None)
         return {"dataset": summary}
 
     @app.get("/api/datasets/{dataset_id}")
@@ -707,11 +805,14 @@ def create_dashboards_app(
         user = require_user(request)
         ds_store = resolve_dataset_store(store)
         data = ds_store.get(user, dataset_id)
+        data_owner = user
         # Fall back to the shared example owner so viewers can read example data.
         if data is None and examples_owner and examples_owner != user:
             data = ds_store.get(examples_owner, dataset_id)
+            data_owner = examples_owner
         if data is None:
             raise HTTPException(status_code=404, detail="No such dataset")
+        note(request, owner=data_owner, store=store)
         # Any extra query params are sample-annotation filters (the parameterized
         # dataset path for live-data controls): keep only matching samples. Only
         # keys that name a real annotation participate, so nothing here executes
@@ -731,6 +832,7 @@ def create_dashboards_app(
                 raise HTTPException(status_code=403, detail="Admin access required")
             target = owner
         ds_store = resolve_dataset_store(store)
+        note(request, owner=target, store=store)
         # Locked datasets are protected; only an admin may delete them.
         if ds_store.is_locked(target, dataset_id) and not user_is_admin(user):
             raise HTTPException(status_code=403, detail="Dataset is locked")
@@ -747,6 +849,7 @@ def create_dashboards_app(
         admin = require_admin(request)
         target = owner or examples_owner or admin
         body = await request.json() if _has_body(request) else {}
+        note(request, owner=target, store=store, locked=bool(body.get("locked", True)))
         summary = resolve_dataset_store(store).set_locked(target, dataset_id, bool(body.get("locked", True)))
         if summary is None:
             raise HTTPException(status_code=404, detail="No such dataset")
@@ -777,11 +880,57 @@ def create_dashboards_app(
             payload = await request.json()
         except ValueError:
             raise HTTPException(status_code=400, detail="Request body must be JSON")
+        # The code itself is not stored — a hash identifies which snippet ran.
+        body = payload if isinstance(payload, dict) else {}
+        code = body.get("code")
+        inputs = body.get("inputs")
+        note(request, language=body.get("language"),
+             code_sha256=(hashlib.sha256(code.encode("utf-8")).hexdigest()[:16]
+                          if isinstance(code, str) else None),
+             inputs=sorted(inputs.keys()) if isinstance(inputs, dict) else None)
+        started = time.monotonic()
         try:
             result = await run_in_threadpool(run_function, payload, functions)
         except FunctionError as exc:
+            elapsed = int((time.monotonic() - started) * 1000)
+            note(request, duration_ms=elapsed, error=str(exc)[:200])
             raise HTTPException(status_code=exc.status, detail=str(exc))
+        note(request, duration_ms=int((time.monotonic() - started) * 1000))
         print("[functions] user=%s language=%s ok" % (user, payload.get("language")), flush=True)
+        return result
+
+    # ---- audit log (admin only; reading it is itself audited) ----
+    def audit_filters(request: Request) -> dict:
+        q = request.query_params
+        keys = ("actor", "action", "target", "outcome", "since", "until")
+        filters = {k: q.get(k) for k in keys if q.get(k)}
+        note(request, **filters)
+        return filters
+
+    @app.get("/api/admin/audit")
+    def audit_view(request: Request, before: Optional[int] = None, limit: int = 200):
+        require_admin(request)
+        page = audit.query(before=before, limit=limit, **audit_filters(request))
+        page["enabled"] = audit.enabled
+        page["actions"] = list(iter_actions())
+        return page
+
+    @app.get("/api/admin/audit/export")
+    def audit_export(request: Request, format: str = "csv"):
+        require_admin(request)
+        fmt = "jsonl" if format == "jsonl" else "csv"
+        body = audit.export(fmt, **audit_filters(request))
+        stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        disposition = 'attachment; filename="cxd-audit-%s.%s"' % (stamp, fmt)
+        return Response(content=body,
+                        media_type="application/x-ndjson" if fmt == "jsonl" else "text/csv",
+                        headers={"Content-Disposition": disposition})
+
+    @app.get("/api/admin/audit/verify")
+    def audit_verify(request: Request):
+        require_admin(request)
+        result = audit.verify()
+        note(request, ok=result["ok"], checked=result["checked"], broken_at=result["broken_at"])
         return result
 
     @app.get("/api/llm/status")
@@ -1158,6 +1307,7 @@ def create_dashboards_app(
             raise HTTPException(status_code=502, detail="Could not reach the LLM API")
 
         total = cost_tally["cost_usd"] + cost_tally["mcp_cost_usd"]
+        note(request, model=model, cost_usd=round(total, 5), produced_spec=spec is not None)
         print("[llm] DASHBOARD cost=$%.4f (orchestrator $%.4f over %d calls + "
               "mcp $%.4f over %d calls)" % (
                   total, cost_tally["cost_usd"], cost_tally["calls"],

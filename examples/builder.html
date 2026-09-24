@@ -863,7 +863,31 @@
             '<div class="data-list" style="width:auto"><div id="admin-ex-ds">' +
               '<div class="placeholder">Loading…</div></div></div>' +
           '</div>' +
-        '</div>';
+        '</div>' +
+        '<h3 style="margin:24px 0 4px">Audit log</h3>' +
+        '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">Every sign-in, change, share, ' +
+          'share-link view and data-function run, newest first. Append-only and hash-chained: ' +
+          '<b>Verify chain</b> detects any edited or deleted entry.</p>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">' +
+          '<input id="audit-actor" placeholder="User" style="width:130px"/>' +
+          '<select id="audit-action"><option value="">All actions</option></select>' +
+          '<select id="audit-outcome"><option value="">Any outcome</option>' +
+            '<option value="ok">ok</option><option value="denied">denied</option><option value="error">error</option></select>' +
+          '<button id="audit-apply">Apply</button>' +
+          '<button id="audit-verify">Verify chain</button>' +
+          '<a id="audit-export" href="#" download>Export CSV</a>' +
+        '</div>' +
+        '<div id="audit-status" style="min-height:18px;font-size:14px;margin-bottom:6px"></div>' +
+        '<div style="overflow:auto;max-height:480px;border:1px solid var(--border,#e2e5ea);border-radius:8px">' +
+          '<table class="audit-table" style="width:100%;border-collapse:collapse;font-size:13px">' +
+            '<thead><tr style="text-align:left;position:sticky;top:0;background:var(--panel-bg,#f7f8fa)">' +
+              '<th style="padding:6px 8px">Time (UTC)</th><th style="padding:6px 8px">User</th>' +
+              '<th style="padding:6px 8px">Action</th><th style="padding:6px 8px">Target</th>' +
+              '<th style="padding:6px 8px">Outcome</th><th style="padding:6px 8px">Details</th></tr></thead>' +
+            '<tbody id="audit-rows"><tr><td colspan="6" style="padding:8px">Loading…</td></tr></tbody>' +
+          '</table>' +
+        '</div>' +
+        '<button id="audit-more" style="margin-top:8px;display:none">Load older</button>';
 
       var errEl = document.getElementById('admin-err');
       function fail(err) { errEl.textContent = (err && err.message) || String(err); }
@@ -947,6 +971,85 @@
           load();
         }, fail);
       };
+
+      // ---- Audit log (read-only; the server records, the admin browses) -----
+      var auditNext = null;
+      var auditStatus = document.getElementById('audit-status');
+      function auditFilters() {
+        return {
+          actor: document.getElementById('audit-actor').value.trim(),
+          action: document.getElementById('audit-action').value,
+          outcome: document.getElementById('audit-outcome').value
+        };
+      }
+      function auditCell(text, extra) {
+        return '<td style="padding:5px 8px;border-top:1px solid var(--border,#e2e5ea);' + (extra || '') + '">' + text + '</td>';
+      }
+      function renderAudit(page, append) {
+        var body = document.getElementById('audit-rows');
+        if (!body) return;
+        if (!append) body.innerHTML = '';
+        if (!page.enabled) {
+          body.innerHTML = '<tr><td colspan="6" style="padding:8px">Auditing is turned off on this server (CXD_AUDIT=off).</td></tr>';
+        } else if (!page.events.length && !append) {
+          body.innerHTML = '<tr><td colspan="6" style="padding:8px">No matching events.</td></tr>';
+        }
+        page.events.forEach(function (e) {
+          var colour = e.outcome === 'denied' ? '#b26a00' : e.outcome === 'error' ? '#d64545' : 'inherit';
+          var detail = e.detail ? esc(JSON.stringify(e.detail)) : '';
+          var tr = document.createElement('tr');
+          tr.innerHTML =
+            auditCell(esc((e.ts || '').replace('T', ' ').replace(/\+00:00$/, '')), 'white-space:nowrap') +
+            auditCell(esc(e.actor || '—')) +
+            auditCell(esc(e.action)) +
+            auditCell(esc(e.target || '') + (e.owner && e.owner !== e.actor ? ' <span style="color:var(--muted)">(' + esc(e.owner) + ')</span>' : '')) +
+            auditCell(esc(e.outcome) + (e.status >= 400 ? ' ' + e.status : ''), 'color:' + colour) +
+            auditCell('<code style="font-size:12px;word-break:break-all">' + detail + '</code>');
+          body.appendChild(tr);
+        });
+        auditNext = page.next;
+        document.getElementById('audit-more').style.display = auditNext ? '' : 'none';
+        document.getElementById('audit-export').href = client.auditExportUrl(auditFilters(), 'csv');
+      }
+      function loadAudit(append) {
+        var filters = auditFilters();
+        if (append && auditNext) filters.before = auditNext;
+        auditStatus.style.color = 'inherit';
+        auditStatus.textContent = '';
+        return client.auditLog(filters).then(function (page) {
+          var select = document.getElementById('audit-action');
+          if (select.options.length === 1 && page.actions) {
+            var groups = {};
+            page.actions.forEach(function (a) { groups[a.split('.')[0] + '.'] = true; });
+            Object.keys(groups).sort().forEach(function (g) {
+              var o = document.createElement('option'); o.value = g; o.textContent = g + '*'; select.appendChild(o);
+            });
+            page.actions.forEach(function (a) {
+              var o = document.createElement('option'); o.value = a; o.textContent = a; select.appendChild(o);
+            });
+          }
+          renderAudit(page, append);
+        }, function (err) {
+          auditStatus.style.color = '#d64545';
+          auditStatus.textContent = (err && err.message) || String(err);
+        });
+      }
+      document.getElementById('audit-apply').onclick = function () { loadAudit(false); };
+      document.getElementById('audit-more').onclick = function () { loadAudit(true); };
+      document.getElementById('audit-verify').onclick = function () {
+        auditStatus.style.color = 'inherit';
+        auditStatus.textContent = 'Verifying…';
+        client.auditVerify().then(function (r) {
+          auditStatus.style.color = r.ok ? '#2e7d32' : '#d64545';
+          auditStatus.textContent = r.ok
+            ? 'Chain intact: ' + r.checked + ' events verified' + (r.checked ? ' (#' + r.first_seq + '–#' + r.last_seq + ').' : '.')
+            : 'Chain BROKEN at event #' + r.broken_at + ': an entry was edited or deleted.';
+        }, function (err) {
+          auditStatus.style.color = '#d64545';
+          auditStatus.textContent = (err && err.message) || String(err);
+        });
+      };
+      loadAudit(false);
 
       // ---- Default examples (app-owned) maintenance -------------------------
       // These call the API directly (owner=app) so the admin can unlock/delete

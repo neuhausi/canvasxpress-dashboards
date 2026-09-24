@@ -47,6 +47,10 @@
     .toolbar-host { width: 100%; }
     .view-title { margin: 0; font-size:16px; font-weight: 600; }
     .view { padding: 16px 20px 32px; }
+    /* Home is document-like content — cap it to the same width the examples use
+       (1400px) and centre it, so the hero and how-to images don't balloon on a
+       large screen. Other views (Builder canvas, etc.) stay full width. */
+    .home { max-width: 1400px; margin: 0 auto; }
 
     /* Home view */
     .hero { background: linear-gradient(120deg, #eaf3fb, #f4f7fb); border-radius: 12px;
@@ -60,7 +64,15 @@
     .cta { padding: 10px 18px; background: var(--accent); color: #fff; border: none;
       border-radius: 8px; font-size:16px; font-weight: 600; cursor: pointer; }
     .cta:hover { background: #065fa3; }
-    .notices { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+    /* Editorial layout: a 6-col grid with cards of varied widths. */
+    /* align-items: stretch makes every card in a row take the tallest card's
+       height, so each row lines up cleanly regardless of how the text wraps. */
+    .notices { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; align-items: stretch; }
+    .notice.n-sm { grid-column: span 2; }
+    .notice.n-md { grid-column: span 3; }
+    .notice.n-lg { grid-column: span 4; }
+    .notice.n-feature { grid-column: span 6; }
+    @media (max-width: 900px) { .notices { grid-template-columns: 1fr; } .notices .notice { grid-column: auto; } }
     .howto { display: flex; gap: 8px; align-items: stretch; margin: 0 0 22px; }
     .howto-step { flex: 1; min-width: 0; background: var(--rail-bg); border: 1px solid var(--rail-border);
       border-radius: 12px; padding: 14px; cursor: pointer; transition: box-shadow .15s, transform .15s; }
@@ -79,6 +91,12 @@
     .notice .ni { font-size: 22px; line-height: 1; }
     .notice h3 { margin: 0 0 4px; font-size:16px; }
     .notice p { margin: 0; color: var(--muted); font-size:16px; line-height: 1.5; }
+    /* Connector tags inside the "Live data" card — compact, monochrome, with icon. */
+    .conn-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .conn-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px;
+      font-weight: 500; letter-spacing: .1px; padding: 3px 9px; border: 1px solid var(--rail-border);
+      border-radius: 6px; background: transparent; color: var(--muted); white-space: nowrap; }
+    .conn-chip .ci { font-size: 19px; line-height: 1; }
     .placeholder { padding: 60px 20px; text-align: center; color: var(--muted); }
 
     /* Settings view */
@@ -241,9 +259,9 @@
       viewEl.innerHTML = '';
     }
 
-    function notice(icon, title, bodyHtml) {
-      return '<div class="notice"><div class="ni">' + icon + '</div><div><h3>' + title +
-             '</h3><p>' + bodyHtml + '</p></div></div>';
+    function notice(icon, title, bodyHtml, cls) {
+      return '<div class="notice' + (cls ? ' ' + cls : '') + '"><div class="ni">' + icon +
+             '</div><div><h3>' + title + '</h3><p>' + bodyHtml + '</p></div></div>';
     }
 
     function showHome() {
@@ -255,7 +273,25 @@
           '<img src="' + API_BASE + '/examples/assets/' + img + '?v=4" alt="' + title + '"/>' +
           '<p>' + body + '</p></div>';
       }
+      // The connectors available through canvasxpress-connectors, as compact
+      // monochrome tags with an icon. Keep in sync with cx_connectors/sources/*.
+      var connectors = [
+        ['🗄️', 'SQL databases'],
+        ['🧱', 'Databricks'],
+        ['❄️', 'Snowflake'],
+        ['🔷', 'BigQuery'],
+        ['📗', 'Google Sheets'],
+        ['☁️', 'Salesforce'],
+        ['🛎️', 'ServiceNow'],
+        ['📈', 'Google Analytics'],
+        ['💹', 'Finance feeds']
+      ];
+      var connChips = '<div class="conn-chips">' + connectors.map(function (c) {
+        return '<span class="conn-chip"><span class="ci">' + c[0] + '</span>' + c[1] + '</span>';
+      }).join('') + '</div>';
+
       viewEl.innerHTML =
+        '<div class="home">' +
         '<div class="hero">' +
           '<a class="hero-gh" href="https://github.com/neuhausi/canvasxpress-dashboards" target="_blank" rel="noopener" title="View on GitHub" aria-label="View on GitHub">' +
             '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>' +
@@ -275,10 +311,11 @@
                'The KM curves land on the canvas — coordinated, editable (⚙), saveable, shareable.') +
         '</div>' +
         '<div class="notices">' +
-          notice('📣', 'What’s new', 'Every panel opens the native CanvasXpress customizer — click the ⚙ on a panel to change chart type, colors, grouping and more.') +
-          notice('🔌', 'Live data', 'Bind panels to databases &amp; Google Sheets through canvasxpress-connectors.') +
-          notice('🔗', 'Sharing', 'Share read-only links from the Dashboards view — straight into an email.') +
-          notice('📖', 'The product story', 'Why recipes beat screenshots: <a href="' + API_BASE + '/examples/reproducible-bench/narrative.html">read the Reproducible Bench narrative</a> — illustrated with the live dashboards it describes.') +
+          notice('📣', 'What’s new', 'Every panel opens the native CanvasXpress customizer — click the ⚙ to change chart type, colors, grouping and axes. Drag panels to reorder or resize them, and every change is saved with the dashboard. Prefer to describe it? Ask the chat assistant and it applies the tweak for you. Swap a panel’s dataset on the fly and the chart updates in place — no reload.', 'n-md') +
+          notice('🔌', 'Live data', 'Bind panels to live sources through <b>canvasxpress-connectors</b> — SQL warehouses, spreadsheets, business apps and finance feeds:' + connChips, 'n-md') +
+          notice('🔗', 'Sharing', 'Publish read-only share links from the Dashboards view — a live, always-current dashboard, straight into an email.', 'n-sm') +
+          notice('📖', 'The product story', 'Why recipes beat screenshots: a dashboard is a reproducible recipe — data plus spec — so its figures regenerate as the data changes. Hand someone the recipe instead of an image and they rerun it on current data to get the same figures. <a href="' + API_BASE + '/examples/reproducible-bench/narrative.html">Read the Reproducible Bench narrative</a>, illustrated with the live dashboards it describes.', 'n-lg') +
+        '</div>' +
         '</div>';
       var create = document.getElementById('home-create');
       if (create) create.onclick = function () { activate('Builder'); };
@@ -696,14 +733,17 @@
       // (CXD_ADMINS). Hiding the nav is cosmetic — the API enforces it too.
       if (adminNav) adminNav.style.display = isAdmin ? '' : 'none';
       // The Logs view (chart-engine request/response log) is server-gated via
-      // CXD_LOGS_PANEL + CXD_MCP_LOG.
-      if (currentUser) {
+      // CXD_LOGS_PANEL + CXD_MCP_LOG, and additionally admin-only in the UI.
+      if (currentUser && isAdmin) {
         fetch(API_BASE + '/api/llm/status', { credentials: 'include' })
           .then(function (r) { return r.json(); })
           .then(function (st) {
             var nav = document.getElementById('nav-logs');
             if (nav) nav.style.display = st.logsPanel ? '' : 'none';
           }).catch(function () {});
+      } else {
+        var logsNav = document.getElementById('nav-logs');
+        if (logsNav) logsNav.style.display = 'none';
       }
     }
 
@@ -783,8 +823,9 @@
     // Admin-only (gated client-side by isAdmin and server-side by CXD_ADMINS).
     function showAdmin() {
       teardown();
-      toolbarEl.innerHTML = '<h2 class="view-title">Admin · Users</h2>';
+      toolbarEl.innerHTML = '<h2 class="view-title">Admin</h2>';
       viewEl.innerHTML =
+        '<h3 style="margin:0 0 8px">Users</h3>' +
         '<div class="settings">' +
           '<div class="settings-form" style="flex:0 0 280px">' +
             '<h3>Create user</h3>' +
@@ -798,7 +839,48 @@
               '<div class="placeholder">Loading…</div>' +
             '</div></div>' +
           '</div>' +
-        '</div>';
+        '</div>' +
+        '<h3 style="margin:24px 0 4px">Default examples</h3>' +
+        '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">Datasets and dashboards owned by the <b>app</b> account. ' +
+          'They are shared read-only to every user and are locked so they survive code updates. ' +
+          'Only you (admin) can unlock or delete them here.</p>' +
+        '<div id="admin-ex-err" style="color:#d64545;min-height:16px;font-size:16px"></div>' +
+        '<div class="settings">' +
+          '<div class="settings-preview" style="flex:1 1 320px">' +
+            '<h4 style="margin:0 0 6px">Example dashboards</h4>' +
+            '<div class="data-list" style="width:auto"><div id="admin-ex-dash">' +
+              '<div class="placeholder">Loading…</div></div></div>' +
+          '</div>' +
+          '<div class="settings-preview" style="flex:1 1 320px">' +
+            '<h4 style="margin:0 0 6px">Example datasets</h4>' +
+            '<div class="data-list" style="width:auto"><div id="admin-ex-ds">' +
+              '<div class="placeholder">Loading…</div></div></div>' +
+          '</div>' +
+        '</div>' +
+        '<h3 style="margin:24px 0 4px">Audit log</h3>' +
+        '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">Every sign-in, change, share, ' +
+          'share-link view and data-function run, newest first. Append-only and hash-chained: ' +
+          '<b>Verify chain</b> detects any edited or deleted entry.</p>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">' +
+          '<input id="audit-actor" placeholder="User" style="width:130px"/>' +
+          '<select id="audit-action"><option value="">All actions</option></select>' +
+          '<select id="audit-outcome"><option value="">Any outcome</option>' +
+            '<option value="ok">ok</option><option value="denied">denied</option><option value="error">error</option></select>' +
+          '<button id="audit-apply">Apply</button>' +
+          '<button id="audit-verify">Verify chain</button>' +
+          '<a id="audit-export" href="#" download>Export CSV</a>' +
+        '</div>' +
+        '<div id="audit-status" style="min-height:18px;font-size:14px;margin-bottom:6px"></div>' +
+        '<div style="overflow:auto;max-height:480px;border:1px solid var(--border,#e2e5ea);border-radius:8px">' +
+          '<table class="audit-table" style="width:100%;border-collapse:collapse;font-size:13px">' +
+            '<thead><tr style="text-align:left;position:sticky;top:0;background:var(--panel-bg,#f7f8fa)">' +
+              '<th style="padding:6px 8px">Time (UTC)</th><th style="padding:6px 8px">User</th>' +
+              '<th style="padding:6px 8px">Action</th><th style="padding:6px 8px">Target</th>' +
+              '<th style="padding:6px 8px">Outcome</th><th style="padding:6px 8px">Details</th></tr></thead>' +
+            '<tbody id="audit-rows"><tr><td colspan="6" style="padding:8px">Loading…</td></tr></tbody>' +
+          '</table>' +
+        '</div>' +
+        '<button id="audit-more" style="margin-top:8px;display:none">Load older</button>';
 
       var errEl = document.getElementById('admin-err');
       function fail(err) { errEl.textContent = (err && err.message) || String(err); }
@@ -883,7 +965,153 @@
         }, fail);
       };
 
+      // ---- Audit log (read-only; the server records, the admin browses) -----
+      var auditNext = null;
+      var auditStatus = document.getElementById('audit-status');
+      function auditFilters() {
+        return {
+          actor: document.getElementById('audit-actor').value.trim(),
+          action: document.getElementById('audit-action').value,
+          outcome: document.getElementById('audit-outcome').value
+        };
+      }
+      function auditCell(text, extra) {
+        return '<td style="padding:5px 8px;border-top:1px solid var(--border,#e2e5ea);' + (extra || '') + '">' + text + '</td>';
+      }
+      function renderAudit(page, append) {
+        var body = document.getElementById('audit-rows');
+        if (!body) return;
+        if (!append) body.innerHTML = '';
+        if (!page.enabled) {
+          body.innerHTML = '<tr><td colspan="6" style="padding:8px">Auditing is turned off on this server (CXD_AUDIT=off).</td></tr>';
+        } else if (!page.events.length && !append) {
+          body.innerHTML = '<tr><td colspan="6" style="padding:8px">No matching events.</td></tr>';
+        }
+        page.events.forEach(function (e) {
+          var colour = e.outcome === 'denied' ? '#b26a00' : e.outcome === 'error' ? '#d64545' : 'inherit';
+          var detail = e.detail ? esc(JSON.stringify(e.detail)) : '';
+          var tr = document.createElement('tr');
+          tr.innerHTML =
+            auditCell(esc((e.ts || '').replace('T', ' ').replace(/\+00:00$/, '')), 'white-space:nowrap') +
+            auditCell(esc(e.actor || '—')) +
+            auditCell(esc(e.action)) +
+            auditCell(esc(e.target || '') + (e.owner && e.owner !== e.actor ? ' <span style="color:var(--muted)">(' + esc(e.owner) + ')</span>' : '')) +
+            auditCell(esc(e.outcome) + (e.status >= 400 ? ' ' + e.status : ''), 'color:' + colour) +
+            auditCell('<code style="font-size:12px;word-break:break-all">' + detail + '</code>');
+          body.appendChild(tr);
+        });
+        auditNext = page.next;
+        document.getElementById('audit-more').style.display = auditNext ? '' : 'none';
+        document.getElementById('audit-export').href = client.auditExportUrl(auditFilters(), 'csv');
+      }
+      function loadAudit(append) {
+        var filters = auditFilters();
+        if (append && auditNext) filters.before = auditNext;
+        auditStatus.style.color = 'inherit';
+        auditStatus.textContent = '';
+        return client.auditLog(filters).then(function (page) {
+          var select = document.getElementById('audit-action');
+          if (select.options.length === 1 && page.actions) {
+            var groups = {};
+            page.actions.forEach(function (a) { groups[a.split('.')[0] + '.'] = true; });
+            Object.keys(groups).sort().forEach(function (g) {
+              var o = document.createElement('option'); o.value = g; o.textContent = g + '*'; select.appendChild(o);
+            });
+            page.actions.forEach(function (a) {
+              var o = document.createElement('option'); o.value = a; o.textContent = a; select.appendChild(o);
+            });
+          }
+          renderAudit(page, append);
+        }, function (err) {
+          auditStatus.style.color = '#d64545';
+          auditStatus.textContent = (err && err.message) || String(err);
+        });
+      }
+      document.getElementById('audit-apply').onclick = function () { loadAudit(false); };
+      document.getElementById('audit-more').onclick = function () { loadAudit(true); };
+      document.getElementById('audit-verify').onclick = function () {
+        auditStatus.style.color = 'inherit';
+        auditStatus.textContent = 'Verifying…';
+        client.auditVerify().then(function (r) {
+          auditStatus.style.color = r.ok ? '#2e7d32' : '#d64545';
+          auditStatus.textContent = r.ok
+            ? 'Chain intact: ' + r.checked + ' events verified' + (r.checked ? ' (#' + r.first_seq + '–#' + r.last_seq + ').' : '.')
+            : 'Chain BROKEN at event #' + r.broken_at + ': an entry was edited or deleted.';
+        }, function (err) {
+          auditStatus.style.color = '#d64545';
+          auditStatus.textContent = (err && err.message) || String(err);
+        });
+      };
+      loadAudit(false);
+
+      // ---- Default examples (app-owned) maintenance -------------------------
+      // These call the API directly (owner=app) so the admin can unlock/delete
+      // the shared examples; the server enforces admin-only for these writes.
+      var EX_OWNER = 'app';
+      var exErr = document.getElementById('admin-ex-err');
+      function exFail(err) { exErr.textContent = (err && err.message) || String(err); }
+      function apiJSON(method, path, body) {
+        var init = { method: method, credentials: 'include', headers: {} };
+        if (body !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(body); }
+        return fetch(API_BASE + path, init).then(function (res) {
+          return res.text().then(function (t) {
+            var p = t ? JSON.parse(t) : null;
+            if (!res.ok) throw new Error((p && p.detail) || ('HTTP ' + res.status));
+            return p;
+          });
+        });
+      }
+      function exRow(host, item, kind) {
+        var row = document.createElement('div');
+        row.className = 'data-item';
+        row.style.cssText = 'display:flex;align-items:center;gap:10px';
+        var lockTag = item.locked ? ' <span title="protected" style="font-size:13px">🔒</span>' : '';
+        row.innerHTML =
+          '<div style="flex:1">' +
+            '<div class="data-item-title">' + esc(item.title || item.id) + lockTag + '</div>' +
+            '<div class="data-item-meta">' + esc(item.id) + (item.store ? ' · ' + esc(item.store) : '') + '</div>' +
+          '</div>';
+        var params = 'owner=' + encodeURIComponent(EX_OWNER) + (item.store ? '&store=' + encodeURIComponent(item.store) : '');
+        var lockBtn = document.createElement('button');
+        lockBtn.textContent = item.locked ? 'Unlock' : 'Lock';
+        lockBtn.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer';
+        lockBtn.onclick = function () {
+          exErr.textContent = '';
+          apiJSON('POST', '/api/' + kind + '/' + encodeURIComponent(item.id) + '/lock?' + params,
+                  { locked: !item.locked }).then(loadExamples, exFail);
+        };
+        row.appendChild(lockBtn);
+        var del = document.createElement('button');
+        del.textContent = 'Delete';
+        del.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer;color:#d64545';
+        del.onclick = function () {
+          if (!window.confirm('Delete example ' + kind.slice(0, -1) + ' "' + (item.title || item.id) + '"? This removes it for everyone.')) return;
+          exErr.textContent = '';
+          apiJSON('DELETE', '/api/' + kind + '/' + encodeURIComponent(item.id) + '?' + params).then(loadExamples, exFail);
+        };
+        row.appendChild(del);
+        host.appendChild(row);
+      }
+      function fillExamples(hostId, items, kind) {
+        var host = document.getElementById(hostId);
+        if (!host) return;
+        var mine = (items || []).filter(function (it) { return it.owner === EX_OWNER || it.example; });
+        if (!mine.length) { host.innerHTML = '<div class="placeholder">No example ' + kind + '.</div>'; return; }
+        host.innerHTML = '';
+        mine.forEach(function (it) { exRow(host, it, kind); });
+      }
+      function loadExamples() {
+        exErr.style.color = '#d64545';
+        apiJSON('GET', '/api/dashboards').then(function (r) {
+          fillExamples('admin-ex-dash', r.dashboards, 'dashboards');
+        }, exFail);
+        apiJSON('GET', '/api/datasets').then(function (r) {
+          fillExamples('admin-ex-ds', r.datasets, 'datasets');
+        }, exFail);
+      }
+
       load();
+      loadExamples();
     }
 
     // List the datasets and auto-select one so a table is always visible: the
@@ -2094,6 +2322,8 @@
         scrollChatToEnd();
         chatHistory.push({ role: 'assistant', content: res.reply || '' });
         if (res.spec) {
+          // Defence in depth: the server validates and repairs before replying,
+          // so this should already be clean — but never render an invalid spec.
           var v = CXD.validateSpec(res.spec);
           if (v.valid) {
             currentSpec = res.spec;
@@ -2102,6 +2332,11 @@
           } else {
             appendChatBubble('assistant', 'The generated spec did not validate: ' + v.errors.join('; '));
           }
+        } else if (res.validation && res.validation.ok === false) {
+          // The server tried to repair its own spec and ran out of attempts.
+          // Say why, so the user can rephrase instead of guessing.
+          appendChatBubble('assistant', 'I could not build a valid dashboard: '
+            + (res.validation.errors || []).slice(0, 5).join('; '));
         }
       }).catch(function (err) {
         pending.textContent = '⚠ ' + err.message;
@@ -2214,6 +2449,7 @@
     function activate(name) {
       if (PROTECTED[name] && !currentUser) { pendingView = name; return showLogin(name); }
       if (name === 'Admin' && !isAdmin) { return showHome(); }  // not an admin — nothing to see
+      if (name === 'Logs' && !isAdmin) { return showHome(); }   // Logs is admin-only
       navItems.forEach(function (n) { n.classList.toggle('active', n.getAttribute('data-view') === name); });
       if (name === 'Home') showHome();
       else if (name === 'Builder') showBuilder();
@@ -2242,18 +2478,32 @@
     // into the builder like before. The served app always shows the login screen.
     var IS_SERVED_APP = typeof window.__CXD_CONFIG__ !== 'undefined';
 
+    // Deep link: ?open=<dashboard-id> loads that dashboard into the Builder
+    // (used by the "Open in Builder" button on the full-page preview). Falls back
+    // to the Dashboards view if the dashboard can't be loaded.
+    var openId = new URLSearchParams(location.search).get('open');
+    function openInBuilder(id) {
+      return client.load(id).then(function (spec) {
+        currentSpec = spec;
+        activate('Builder');
+      }, function () { activate('Dashboards'); });
+    }
+    function landing() {
+      return openId ? openInBuilder(openId) : activate('Home');
+    }
+
     // Boot: ask the server who we are. If a session cookie is already valid we
     // land on Home signed-in; otherwise the served app reads "Signed out" and
     // protected views bounce to Login — while the dev example auto-signs-in demo.
     refreshUser().catch(function () {}).then(function () {
-      if (currentUser || IS_SERVED_APP) return activate('Home');
+      if (currentUser || IS_SERVED_APP) return landing();
       // dev example, not logged in → sign in as the seeded demo user (create on
       // first run), then continue. Falls through to Home if no server is present.
       return client.login(DEMO_USER, DEMO_PASS)
         .catch(function () { return client.signup(DEMO_USER, DEMO_PASS); })
         .then(function () { return refreshUser(); })
         .catch(function () {})
-        .then(function () { activate('Home'); });
+        .then(function () { landing(); });
     });
   </script>
 </body>

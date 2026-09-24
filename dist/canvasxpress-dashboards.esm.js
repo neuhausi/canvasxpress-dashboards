@@ -6203,6 +6203,37 @@ function createDashboardClient(options) {
       return request('DELETE', '/api/admin/users/' + encodeURIComponent(username)).then(function (r) { return r.users; });
     },
 
+    // ---- admin: audit log (requires the caller to be an admin) ----
+    /**
+     * A newest-first page of audit events.
+     * @param {object} [filters] - `{actor, action, target, outcome, since, until,
+     *   before, limit}`; an `action` ending in "." matches as a prefix.
+     * @returns {Promise<object>} `{ events, next, enabled, actions }` — pass
+     *   `next` as `before` to load older events.
+     */
+    auditLog: function (filters) {
+      return request('GET', '/api/admin/audit' + queryString(filters));
+    },
+    /**
+     * The URL that downloads the audit log (same filters) as CSV or JSON lines.
+     * @param {object} [filters] - As for {@link auditLog} (no paging).
+     * @param {string} [format='csv'] - `csv` or `jsonl`.
+     * @returns {string} The URL (cookie-authenticated).
+     */
+    auditExportUrl: function (filters, format) {
+      var q = {};
+      for (var k in (filters || {})) {
+        if (Object.prototype.hasOwnProperty.call(filters, k) && k !== 'before' && k !== 'limit') q[k] = filters[k];
+      }
+      q.format = format === 'jsonl' ? 'jsonl' : 'csv';
+      return baseUrl + '/api/admin/audit/export' + queryString(q);
+    },
+    /**
+     * Re-compute the audit log's hash chain.
+     * @returns {Promise<object>} `{ ok, checked, first_seq, last_seq, broken_at }`.
+     */
+    auditVerify: function () { return request('GET', '/api/admin/audit/verify'); },
+
     /** @returns {Promise<object[]>} The current user's dashboard summaries. */
     list: function () { return request('GET', '/api/dashboards').then(function (r) { return r.dashboards; }); },
     /**
@@ -6343,6 +6374,21 @@ function inferFormat(name, type) {
   var n = (name || '').toLowerCase();
   if (n.slice(-4) === '.csv' || (type || '').indexOf('csv') !== -1) return 'csv';
   return 'json';
+}
+
+/**
+ * Encode request parameters as a query string (empty values are skipped).
+ * @param {object} [params] - name -> value.
+ * @returns {string} `?a=1&b=2`, or '' when nothing is set.
+ * @private
+ */
+function queryString(params) {
+  var parts = [];
+  Object.keys(params || {}).forEach(function (k) {
+    var v = params[k];
+    if (v !== undefined && v !== null && v !== '') parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+  });
+  return parts.length ? '?' + parts.join('&') : '';
 }
 
 /**
