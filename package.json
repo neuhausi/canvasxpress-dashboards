@@ -22,6 +22,7 @@
     "schema",
     "bin",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {

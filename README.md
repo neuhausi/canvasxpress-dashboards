@@ -12,6 +12,10 @@ This package adds the missing layer: a **spec**, a **grid layout**, a
 **renderer**, data binding, persistence, and a no-code builder. It does **not**
 re-implement chart rendering or coordination.
 
+**Guides:** [governance and audit](docs/governance.md) (roles, sharing, row/column
+security, lineage, audit log) · [live-data controls](docs/live-data-controls.md) ·
+[server](server/README.md) · [changelog](CHANGELOG.md)
+
 ---
 
 ## Install
@@ -211,6 +215,26 @@ runtime guard.
 
 ---
 
+## Table data: one point per row
+
+Uploads, connectors and joins arrive as tables: one row per record, one column
+per field. CanvasXpress's scatter-type charts plot one mark per *variable*, with
+samples as the axes. So, left alone, a Scatter2D of `age` against `response` over
+a patient table would plot each column instead of each patient.
+
+The renderer handles this: a **Scatter2D, Scatter3D, ScatterBubble2D,
+KaplanMeier or Pie** panel whose `xAxis` / `yAxis` name only columns of the data
+(and no row) gets the data transposed first. That gives one point, curve entry
+or slice per row. So does a Pie with no axis named over a single column of
+several rows, which would otherwise be one 100% slice. Set `"transpose": true`
+or `false` on a panel to decide yourself:
+
+```jsonc
+"pdl1": { "dataRef": "cohort",
+          "config": { "graphType": "Scatter2D", "xAxis": ["CD274"], "yAxis": ["os_months"], "colorBy": "arm" } }
+// -> one point per patient, no transpose needed in the spec
+```
+
 ## Data blending (joins)
 
 A `kind: "join"` source combines two other sources — inline, connector, dataset,
@@ -400,6 +424,38 @@ git config diff.cxd.textconv "npx cxd-spec format"
 echo '*.spec.json diff=cxd' >> .gitattributes
 ```
 
+## Governance and audit (server)
+
+The dashboards server controls who can do what and who sees which data, and
+records what happened. The full guide is **[docs/governance.md](docs/governance.md)**.
+
+- **Audit log.** Sign-ins (including failed ones), dashboard and dataset changes,
+  shares, share-link views, data-function runs, AI-builder calls and admin
+  actions are recorded. Events are append-only and hash-chained, so *Verify
+  chain* detects an edited or deleted entry. Admins filter and export them from
+  Admin → *Audit log*. Passwords, specs, data and code are never stored.
+- **Roles and groups.** A role is a set of permissions: create dashboards, upload
+  datasets, share with people, publish links, run data functions, use the AI
+  builder. `viewer` and `editor` are built in, and admins add their own. Roles are
+  given to users or groups. `CXD_DEFAULT_ROLE` (default `editor`) covers everyone
+  else, so a server nobody configures behaves as before.
+- **Sharing with people and groups.** Owners share a dashboard with a user, a
+  group or everyone signed in, to view or to edit. It appears in their Dashboards
+  list and reads the owner's stored datasets. An edit share saves back to the
+  owner. Datasets can be shared on their own.
+- **Row- and column-level security.** Per-dataset rules, for example "site-A
+  staff see site-A rows; only clinicians see patient names". The server applies
+  them wherever it hands out the dataset: in the app, through shared dashboards,
+  and on share links. They fail closed.
+- **Lineage.** Which dashboards read which datasets and connectors.
+
+```jsonc
+// PUT /api/datasets/trial/policy
+{ "policy": {
+    "rows":    [{ "field": "site", "allow": { "group:site-a": ["A"], "user:lead": "*" } }],
+    "columns": [{ "hide": ["name"], "except": ["group:clinicians"] }] } }
+```
+
 ## Authenticated data binding (connectors)
 
 A `kind: "connector"` data source fetches live from a
@@ -543,8 +599,20 @@ const imported = await importSpecFromFile(file); // parse + validate a File
 
 - `exportSpec` / `importSpecFromFile` / `parseAndValidate` — download and load a
   spec as `.json` (validated on import).
-- `createDashboardClient(opts)` — thin, credentialed client for the server API
-  (`login`/`signup`/`logout`/`me`, `list`/`save`/`load`/`remove`, `share`/`loadShared`).
+- `createDashboardClient(opts)` — thin, credentialed client for the server API:
+  - session: `login`, `signup`, `logout`, `me` (with `permissions`, `groups`, `roles`)
+  - dashboards: `list`, `save(spec, {owner})`, `load(id, {owner})`, `remove`,
+    `share`, `loadShared`
+  - datasets: `listDatasets`, `getDataset(id, {store, owner})`, `uploadDataset`,
+    `deleteDataset`, `listStores`
+  - sharing and security: `directory`, `grants`, `setGrant`, `getPolicy`,
+    `setPolicy`, `lineage`
+  - admin: `listUsers`, `createUser`, `setUserPassword`, `setUserAdmin`,
+    `deleteUser`, `governance`, `saveGroup`, `deleteGroup`, `saveRole`,
+    `deleteRole`, `assignRole`, `auditLog`, `auditExportUrl`, `auditVerify`
+
+  See [docs/governance.md](docs/governance.md#client-methods) for the sharing,
+  security, lineage and audit calls.
 
 ### No-code builder
 
@@ -572,6 +640,8 @@ const seed = setDataSource(blankSpec('my-dashboard', 'My Dashboard'), 'sample',
 const builder = createBuilder(document.getElementById('builder'), {
   spec: seed,
   client: createDashboardClient({ baseUrl: '' }),  // optional (Save/Share)
+  // owner: 'alice',   // editing a dashboard alice shared with edit access:
+  //                   // Save writes back to hers and keeps its id
   onChange: (spec) => { /* autosave, undo stack, … */ }
 });
 

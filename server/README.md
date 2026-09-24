@@ -49,6 +49,9 @@ Administrators browse, filter and export them in the app's Admin view.
 (default: keep everything). A failure to write an event is reported on stderr and
 never fails the request.
 
+The full guide to the audit log, roles, sharing, security rules and lineage is
+[docs/governance.md](../docs/governance.md).
+
 **Roles, groups and sharing.** Administrators create groups of users and roles:
 named sets of permissions (create dashboards, upload datasets, share with people,
 publish share links, run data functions, use the AI builder). `viewer` (no
