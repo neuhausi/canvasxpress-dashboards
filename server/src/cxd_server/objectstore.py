@@ -1,7 +1,6 @@
 """Pluggable object storage behind one interface, resolved by URI scheme.
 
-Phase 5.1 of the dashboards storage program (`docs/plans/dashboards/
-dashboards-storage-plan.md`). Two logical stores — **datasets** and (later)
+Two logical stores — **datasets** and (later)
 **dashboards** — share this shape; a backend is selected purely by the URI
 scheme, so calling code never changes when the physical store does::
 

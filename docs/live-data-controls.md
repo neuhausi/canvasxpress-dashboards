@@ -148,5 +148,4 @@ read-only with a "snapshot" note pinned to the value in effect at export time.
 ---
 
 Implementation: `src/dataStore.js`, `src/renderDashboard.js`, `src/validateSpec.js`,
-`src/builder.js`, `server/src/cxd_server/datasets.py`. Plan + status:
-[`docs/plans/live-data-controls-plan.md`](plans/live-data-controls-plan.md).
+`src/builder.js`, `server/src/cxd_server/datasets.py`.
