@@ -739,7 +739,9 @@ _PREFIX = (os.getenv("CXD_MOUNT_PREFIX") or "").rstrip("/")
 if _PREFIX:
     from fastapi import FastAPI as _FastAPI
 
-    _inner, app = app, _FastAPI(openapi_url=None)
+    # Mounted sub-apps do not get lifespan events; hand the inner app's to the
+    # wrapper so its startup work (the scheduler thread) still runs.
+    _inner, app = app, _FastAPI(openapi_url=None, lifespan=app.router.lifespan_context)
     app.mount(_PREFIX, _inner)
     app.mount("/", _inner)
 
