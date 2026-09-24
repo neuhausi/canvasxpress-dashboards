@@ -15,6 +15,7 @@
 import { injectStyles } from './styles.js';
 import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames } from './renderDashboard.js';
 import { validateSpec } from './validateSpec.js';
+import { migrateSpec, DASHBOARD_SCHEMA_VERSION } from './spec.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
 import { addPanel, removePanel, movePanel, resizePanel, resolveCollisions, resolveDrop, updatePanel, setDataSource, setParam, setSourceQuery, blankSpec, DEFAULT_COLS }
   from './builderModel.js';
@@ -201,7 +202,9 @@ export function createBuilder(target, options) {
   if (!container) throw new Error('Builder target element not found.');
   injectStyles(container.ownerDocument || document);
 
-  var spec = options.spec || blankSpec('dashboard-1', 'New Dashboard');
+  // Specs enter in the current format (older ones are migrated; a newer
+  // MAJOR throws) and leave stamped with it (see getSpec).
+  var spec = options.spec ? migrateSpec(options.spec).spec : blankSpec('dashboard-1', 'New Dashboard');
   var client = options.client || null;
   // Whether the toolbar shows the "+ Data" (add data source) button. Apps that
   // manage datasets elsewhere (e.g. a dedicated Data page) can hide it and bind
@@ -213,6 +216,7 @@ export function createBuilder(target, options) {
   var limitDatasetsToSpec = !!options.limitDatasetsToSpec;
   var addPanelBtn = null;   // disabled while no data source is declared (see updateAddPanelState)
   var addControlBtn = null; // disabled until the dashboard has data AND a graph panel
+  var addFiltersBtn = null; // same rule as addControlBtn
   var baseUrl = options.baseUrl || '';   // cxd_server origin for kind:"dataset" sources
   var CX = options.CanvasXpress || (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
   var selectedId = null;
@@ -222,6 +226,7 @@ export function createBuilder(target, options) {
   var cellEls = {};         // panelId -> panel cell element
   var instByPanel = {};     // panelId -> CanvasXpress instance
   var baselineConfigs = {}; // panelId -> {configKey: JSON} snapshot at render (diff-based save capture)
+  var pendingBaselines = []; // baseline snapshots waiting for getConfig() to attach
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
   var availableConnectors = []; // connector sources ({name, url}) from options.listConnectorSources
   var liveRefs = {};        // data-source names the current liveHandle was built with
@@ -269,13 +274,14 @@ export function createBuilder(target, options) {
     var row1 = el('div', 'cxb-trow');
     addPanelBtn = button('+ Panel', function () { doAddPanel(); });
     addControlBtn = button('+ Control', function () { doAddControl(); });
+    addFiltersBtn = button('+ Filters', function () { doAddFilters(); });
     var editJsonBtn = button('✎', function () { doEditJson(); });
     editJsonBtn.setAttribute('title', 'Edit dashboard JSON');
     editJsonBtn.setAttribute('aria-label', 'Edit dashboard JSON');
     var createActions = [titleInput, editJsonBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }),
       button('+ Image', function () { doAddImage(); }),
-      addControlBtn];
+      addControlBtn, addFiltersBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
     append(row1, createActions);
@@ -388,6 +394,23 @@ export function createBuilder(target, options) {
   }
 
   /**
+   * Add a Filters panel (a multi-field filter inspector) over the first data
+   * source, with its fields auto-derived from that source, and select it.
+   * @returns {void}
+   */
+  function doAddFilters() {
+    var id = uniquePanelId(spec);
+    var firstRef = Object.keys(spec.data || {})[0];
+    commit(addPanel(spec, { id: id, type: 'filters', title: 'Filters', dataRef: firstRef, w: 3, h: 12 }), false);
+    selectedId = id;
+    if (liveHandle && liveHandle.addPanel && gridEl) {
+      lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
+    } else {
+      rebuild();
+    }
+  }
+
+  /**
    * Add an annotation-filter control and select it. The control binds ONE
    * annotation of one dataset; its properties (data / scope / annotation /
    * style) are edited in the toolbar props group. Like text elements it floats
@@ -424,15 +447,32 @@ export function createBuilder(target, options) {
     var datasetsPromise = (client && typeof client.listDatasets === 'function')
       ? client.listDatasets().then(function (d) { return d; }, function () { return []; })
       : Promise.resolve([]);
-    Promise.all([storesPromise, datasetsPromise]).then(function (res) {
+    // Offer "Data function" only when the server runs them for this user.
+    var functionsPromise = functionLanguages();
+    Promise.all([storesPromise, datasetsPromise, functionsPromise]).then(function (res) {
       openDataDialog(doc, Object.keys(spec.data || {}),
-        { client: client, stores: res[0], datasets: res[1] }).then(function (result) {
+        { client: client, stores: res[0], datasets: res[1], functionLanguages: res[2] }).then(function (result) {
         if (!result) return;
         commit(setDataSource(spec, result.name, result.source), false);
         renderProps();
         loadDatasets();   // a store upload may have created a new dataset
       });
     });
+  }
+
+  /**
+   * The data-function languages this server runs for the current user
+   * (`GET <baseUrl>/api/functions/status`), or none when disabled/unreachable.
+   * @returns {Promise<string[]>} e.g. `["python", "r"]`.
+   */
+  function functionLanguages() {
+    var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
+    if (!client || typeof fetchImpl !== 'function') return Promise.resolve([]);
+    return fetchImpl(baseUrl + '/api/functions/status', { credentials: 'include' }).then(function (res) {
+      return res.ok ? res.json() : null;
+    }).then(function (status) {
+      return status && status.enabled && Array.isArray(status.languages) ? status.languages : [];
+    }, function () { return []; });
   }
 
   /**
@@ -670,6 +710,12 @@ export function createBuilder(target, options) {
     var opts = { CanvasXpress: CX, validate: false, baseUrl: baseUrl, observeResize: false };
     opts.onPanelRendered = decorate;
     opts.onControlRendered = decorateControl;
+    // A filter scheme saved in a Filters panel becomes part of the spec.
+    opts.onFilterSchemesChange = function (schemes) {
+      var next = rawSpec();
+      next.filterSchemes = schemes;
+      commit(next, false);
+    };
     // Record the sources this render resolves against; the live handle closes
     // over this spec snapshot, so a later fast per-panel re-render can only bind
     // to these refs. Binding a source added afterwards needs a full rebuild.
@@ -749,6 +795,7 @@ export function createBuilder(target, options) {
     var isText = panelType === 'text';
     var isControl = panelType === 'control';
     var isImage = panelType === 'image';
+    var isFilters = panelType === 'filters';
     cell.classList.add('cxb-cell');
     if (info.panelId === selectedId) cell.classList.add('cxb-selected');
     cellEls[info.panelId] = cell;
@@ -757,17 +804,11 @@ export function createBuilder(target, options) {
     // after render, per key as JSON. On save, only keys whose value CHANGED
     // since this snapshot (i.e. actual customizer edits) are persisted —
     // render-derived state present from the start never reaches the spec.
-    if (info.instance && typeof info.instance.getConfig === 'function') {
-      try {
-        var snap = info.instance.getConfig() || {};
-        var base = {};
-        for (var bk in snap) {
-          if (Object.prototype.hasOwnProperty.call(snap, bk)) {
-            try { base[bk] = JSON.stringify(snap[bk]); } catch (e) { /* skip unserializable */ }
-          }
-        }
-        baselineConfigs[info.panelId] = base;
-      } catch (e) { /* no baseline: fall back to blocklist-only capture */ }
+    // CanvasXpress attaches getConfig() asynchronously, after this callback,
+    // so wait for it: without a baseline every derived key (broadcastFilter,
+    // theme, a clustered heatmap's dendrogram…) would be saved into the spec.
+    if (info.instance) {
+      pendingBaselines.push(takeBaseline(info.panelId, info.instance));
     }
 
     var cols = gridCols(spec);
@@ -784,7 +825,7 @@ export function createBuilder(target, options) {
     on(grip, 'pointerdown', function (ev) { startDrag(ev, info.panelId, cols, rowHeight, gap); });
     on(grip, 'click', function (ev) { stop(ev); selectPanel(info.panelId); });
     var tools = el('span', 'cxb-tools');
-    if (!isText && !isControl && !isImage) {
+    if (!isText && !isControl && !isImage && !isFilters) {
       var gear = iconBtn('⚙', 'Customize graph', function (ev) {
         stop(ev);
         var inst = instByPanel[info.panelId];
@@ -1229,6 +1270,13 @@ export function createBuilder(target, options) {
     toggleText.textContent = 'Title';
     titleToggle.appendChild(checkbox);
     titleToggle.appendChild(toggleText);
+
+    // A Filters panel filters its data source's fields (auto-derived); it has
+    // no graph, so no click-to-parameter wiring.
+    if (panel.type === 'filters') {
+      append(propsGroup, [titleLabel, titleField, dataLabel, dsField, titleToggle]);
+      return;
+    }
 
     // Chart-click cross-filter: when the dashboard declares parameters, a graph
     // panel can set one from the clicked mark, re-querying the panels bound to
@@ -2194,6 +2242,29 @@ export function createBuilder(target, options) {
    * @returns {void}
    * @private
    */
+  /**
+   * Snapshot a panel's post-render config (the diff-based save capture's
+   * baseline) once CanvasXpress has attached `getConfig()`.
+   * @param {string} panelId - The panel id.
+   * @param {object} instance - Its CanvasXpress instance.
+   * @returns {Promise<void>} Resolves once the baseline is taken (or given up).
+   */
+  function takeBaseline(panelId, instance) {
+    return whenConfigReady(instance).then(function () {
+      if (instByPanel[panelId] !== instance || typeof instance.getConfig !== 'function') return;
+      try {
+        var snap = instance.getConfig() || {};
+        var base = {};
+        for (var bk in snap) {
+          if (Object.prototype.hasOwnProperty.call(snap, bk)) {
+            try { base[bk] = JSON.stringify(snap[bk]); } catch (e) { /* skip unserializable */ }
+          }
+        }
+        baselineConfigs[panelId] = base;
+      } catch (e) { /* no baseline: fall back to blocklist-only capture */ }
+    });
+  }
+
   function syncLiveConfigs() {
     Object.keys(instByPanel).forEach(function (id) {
       var inst = instByPanel[id];
@@ -2205,33 +2276,36 @@ export function createBuilder(target, options) {
         // data on re-render, makes the graph fall back to bars. Strip any value
         // carrying that sentinel (real user grouping like ["Region"] is kept).
         var live = stripDerived(inst.getConfig() || {});
-        // MERGE over the existing config, skipping undefined values. Transient
-        // keys are dropped from the existing config too, so a spec polluted by
-        // an older save self-heals on the next one.
+        // MERGE over the existing (authored) config, skipping undefined
+        // values. Authored keys are kept as written — including ones on the
+        // transient list, which an author may set on purpose — except the
+        // theme-derived colors, which an older save could have polluted and
+        // which self-heal here (see SELF_HEALING_KEYS).
         var merged = {};
         var existing = spec.panels[id].config || {};
         var k;
         for (k in existing) {
-          if (Object.prototype.hasOwnProperty.call(existing, k) && !TRANSIENT_CONFIG_KEYS[k]) {
+          if (Object.prototype.hasOwnProperty.call(existing, k) && !SELF_HEALING_KEYS[k]) {
             merged[k] = existing[k];
           }
         }
         // Diff-based capture: a live key is persisted only when its value
         // CHANGED since the post-render baseline (a real customizer edit).
-        // Render-derived state that getConfig() reports from the moment the
-        // chart exists never reaches the spec — even keys the blocklist has
-        // never heard of. Without a baseline (older instances), everything
+        // Unchanged keys keep their authored form (or stay absent), so loading
+        // and saving a dashboard with no edits returns the same spec — even
+        // where the engine normalizes a value (e.g. ids stamped on authored
+        // decorations). Transient keys are never newly added. Without a
+        // baseline (instance never exposed getConfig), everything
         // non-transient is taken, as before.
         var baseline = baselineConfigs[id];
         for (k in live) {
           if (!Object.prototype.hasOwnProperty.call(live, k) || live[k] === undefined) continue;
+          var authored = Object.prototype.hasOwnProperty.call(existing, k);
+          if (TRANSIENT_CONFIG_KEYS[k] && !authored) continue;
           if (baseline && Object.prototype.hasOwnProperty.call(baseline, k)) {
             var liveJson;
             try { liveJson = JSON.stringify(live[k]); } catch (e) { continue; }
-            if (liveJson === baseline[k] &&
-                !Object.prototype.hasOwnProperty.call(existing, k)) {
-              continue;   // unchanged since render and not authored: derived state
-            }
+            if (liveJson === baseline[k]) continue;   // unchanged since render
           }
           merged[k] = live[k];
         }
@@ -2274,6 +2348,10 @@ export function createBuilder(target, options) {
       });
       addControlBtn.disabled = !(hasData && hasGraphPanel);
       addControlBtn.title = addControlBtn.disabled ? 'Add a panel with data first' : '';
+      if (addFiltersBtn) {
+        addFiltersBtn.disabled = addControlBtn.disabled;
+        addFiltersBtn.title = addControlBtn.title;
+      }
     }
   }
 
@@ -2281,7 +2359,12 @@ export function createBuilder(target, options) {
   function rawSpec() { return JSON.parse(JSON.stringify(spec)); }
 
   /** @returns {object} The current spec with live customizer edits folded in. */
-  function getSpec() { syncLiveConfigs(); return JSON.parse(JSON.stringify(spec)); }
+  function getSpec() {
+    syncLiveConfigs();
+    var out = JSON.parse(JSON.stringify(spec));
+    out.schemaVersion = DASHBOARD_SCHEMA_VERSION;   // saved specs are self-describing
+    return out;
+  }
 
   /**
    * Replace the current spec and re-render everything.
@@ -2289,7 +2372,7 @@ export function createBuilder(target, options) {
    * @returns {void}
    */
   function setSpec(nextSpec) {
-    spec = nextSpec;
+    spec = migrateSpec(nextSpec).spec;
     selectedId = null;
     updateAddPanelState();
     if (options.onChange) { try { options.onChange(rawSpec()); } catch (e) { /* noop */ } }
@@ -2335,7 +2418,14 @@ export function createBuilder(target, options) {
     getSpec: getSpec,
     setSpec: setSpec,
     /** @returns {Promise<void>} Resolves when the current live render settles. */
-    whenReady: function () { return lastRender; },
+    whenReady: function () {
+      // Settle the render, then the post-render config baselines it queued.
+      return Promise.resolve(lastRender).then(function () {
+        var pending = pendingBaselines.slice();
+        pendingBaselines.length = 0;
+        return Promise.all(pending);
+      }).then(function () {});
+    },
     /**
      * Add a panel programmatically (same incremental path as the toolbar button
      * — existing panels are not re-rendered).
@@ -2373,20 +2463,13 @@ export function createBuilder(target, options) {
 // -------------------------------------------------------------------- utils
 
 /**
- * Remove config values that carry CanvasXpress's internal "__FACTOR__" sentinel
- * (derived grouping state that breaks a re-render with fresh data). Real,
- * user-set values (e.g. `groupingFactors: ["Region"]`) are preserved.
- * @param {object} config - A config object from `getConfig()`.
- * @returns {object} A cleaned shallow copy.
- * @private
- */
-/**
- * Live-instance config keys that are TRANSIENT RENDER STATE, never authored
- * intent — they must not be persisted into the spec. filterSmpBy/filterVarBy
- * are the worst offenders: a broadcast filter (e.g. a Region control pick)
- * serialized mid-session crashes CanvasXpress at construction on the next
- * load ("Cannot read properties of null (reading 'length')"), bricking the
- * dashboard. The rest are UI/session chrome that only adds noise.
+ * Live-instance config keys that are TRANSIENT RENDER STATE — a save never
+ * adds them from the live chart. filterSmpBy/filterVarBy are the worst
+ * offenders: a broadcast filter (e.g. a Region control pick) serialized
+ * mid-session crashes CanvasXpress at construction on the next load ("Cannot
+ * read properties of null (reading 'length')"), bricking the dashboard. The
+ * rest are UI/session chrome that only adds noise. When the AUTHOR wrote one
+ * of these keys it is kept, except the SELF_HEALING_KEYS below.
  * @type {Object<string, boolean>}
  */
 var TRANSIENT_CONFIG_KEYS = {
@@ -2403,11 +2486,28 @@ var TRANSIENT_CONFIG_KEYS = {
   smpTextColor: true, smpTitleColor: true
 };
 
+/**
+ * Transient keys that are also dropped from an AUTHORED config on save, so a
+ * spec an older save polluted self-heals: the serialized filter state (which
+ * bricks a dashboard on load) and the theme-derived label/title colors. Other
+ * transient keys are kept when the author wrote them.
+ * @type {Object<string, boolean>}
+ * @private
+ */
+var SELF_HEALING_KEYS = { filterSmpBy: true, filterVarBy: true, smpTextColor: true, smpTitleColor: true };
+
+/**
+ * Remove config values that carry CanvasXpress's internal "__FACTOR__" sentinel
+ * (derived grouping state that breaks a re-render with fresh data). Real,
+ * user-set values (e.g. `groupingFactors: ["Region"]`) are preserved.
+ * @param {object} config - A config object from `getConfig()`.
+ * @returns {object} A cleaned shallow copy.
+ * @private
+ */
 function stripDerived(config) {
   var out = {};
   for (var k in config) {
     if (Object.prototype.hasOwnProperty.call(config, k) &&
-        !TRANSIENT_CONFIG_KEYS[k] &&
         !hasFactorSentinel(config[k])) {
       out[k] = config[k];
     }
@@ -2602,13 +2702,18 @@ function stop(ev) {
  * upload a `.json`/`.csv` file as inline data, point at a connector URL, or —
  * when a persistence client + configured dataset stores are available — upload a
  * file **to a store** and bind by id (`{kind:"dataset", id, store}`), keeping the
- * spec path- and credential-free. Resolves with `{ name, source }` or `null`.
+ * spec path- and credential-free. When the server runs data functions, a
+ * "Data function" mode writes an R / Python snippet over existing sources
+ * (`{kind:"function", language, code, inputs}`). Resolves with
+ * `{ name, source }` or `null`.
  *
  * @param {Document} doc - The owning document.
  * @param {string[]} existingNames - Already-used source names (uniqueness check).
  * @param {object} [opts] - Dialog options.
  * @param {object} [opts.client] - Persistence client (enables the store path).
  * @param {object[]} [opts.stores] - Configured dataset stores `[{name, default}]`.
+ * @param {string[]} [opts.functionLanguages] - Data-function languages the
+ *   server offers (enables the "Data function" mode).
  * @returns {Promise<{name: string, source: object}|null>} The chosen source.
  * @private
  */
@@ -2619,6 +2724,8 @@ function openDataDialog(doc, existingNames, opts) {
   var datasets = opts.datasets || [];
   var canUseStore = !!(client && typeof client.uploadDataset === 'function' && stores.length);
   var canPickDataset = datasets.length > 0;
+  var functionLangs = (opts.functionLanguages || []).filter(function (l) { return l === 'python' || l === 'r'; });
+  var canUseFunction = functionLangs.length > 0 && existingNames.length > 0;
 
   return new Promise(function (resolve) {
     var overlay = el('div', 'cxb-modal-overlay');
@@ -2639,6 +2746,7 @@ function openDataDialog(doc, existingNames, opts) {
     modes.push(['json', 'Paste CanvasXpress JSON'], ['csv', 'Upload CSV / JSON file (inline)']);
     if (canUseStore) modes.push(['store', 'Upload CSV / JSON to a store']);
     modes.push(['connector', 'Connector URL']);
+    if (canUseFunction) modes.push(['function', 'Data function (R / Python)']);
     var typeSel = el('select');
     modes.forEach(function (pair) {
       var o = doc.createElement('option');
@@ -2688,7 +2796,9 @@ function openDataDialog(doc, existingNames, opts) {
     urlInput.type = 'text';
     urlInput.setAttribute('placeholder', '/api/data?source=sales');
 
-    var bodies = { dataset: datasetWrap, json: jsonArea, csv: fileInput, store: storeWrap, connector: urlInput };
+    var fn = buildFunctionBody(doc, existingNames, functionLangs);
+
+    var bodies = { dataset: datasetWrap, json: jsonArea, csv: fileInput, store: storeWrap, connector: urlInput, function: fn.root };
     var bodyWrap = el('div', 'cxb-modal-body');
     Object.keys(bodies).forEach(function (k) { if (bodies[k]) bodyWrap.appendChild(bodies[k]); });
     function showBody() {
@@ -2741,6 +2851,12 @@ function openDataDialog(doc, existingNames, opts) {
         var dsrc = { kind: 'dataset', id: picked.id };
         if (picked.store) dsrc.store = picked.store;
         return close({ name: name, source: dsrc });
+      }
+
+      if (mode === 'function') {
+        var fsrc = fn.source();
+        if (typeof fsrc === 'string') return fail(fsrc);
+        return close({ name: name, source: fsrc });
       }
 
       if (mode === 'store') {
@@ -2800,6 +2916,105 @@ function openDataDialog(doc, existingNames, opts) {
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
       resolve(result || null);
     }
+  });
+}
+
+/**
+ * The "Data function" body of the Add-data dialog: a language picker, one
+ * checkbox per existing source (checked sources become the code's input
+ * tables, named after the source — non-identifier names are sanitized), and a
+ * code box seeded with a starter snippet for the chosen language.
+ * @param {Document} doc - The owning document.
+ * @param {string[]} refs - Existing source names.
+ * @param {string[]} languages - Offered languages (`python` / `r`).
+ * @returns {{root: HTMLElement, source: function}} The body, and a builder that
+ *   returns the `kind:"function"` source (or an error message string).
+ * @private
+ */
+function buildFunctionBody(doc, refs, languages) {
+  var root = el('div', 'cxb-modal-fn');
+  var langSel = el('select');
+  languages.forEach(function (l) {
+    var o = doc.createElement('option');
+    o.value = l;
+    o.textContent = l === 'r' ? 'R' : 'Python';
+    langSel.appendChild(o);
+  });
+  var inputsWrap = el('div', 'cxb-modal-fn-inputs');
+  var boxes = refs.map(function (ref, i) {
+    var row = el('label', 'cxb-check');
+    var box = el('input');
+    box.type = 'checkbox';
+    box.value = ref;
+    box.checked = i === 0;
+    var text = el('span');
+    text.textContent = identifierFor(ref) + (identifierFor(ref) === ref ? '' : '  (' + ref + ')');
+    row.appendChild(box);
+    row.appendChild(text);
+    inputsWrap.appendChild(row);
+    return box;
+  });
+  var code = el('textarea', 'cxb-modal-json');
+  var edited = false;
+  on(code, 'input', function () { edited = true; });
+
+  /**
+   * A starter snippet for the chosen language over the first checked input.
+   * @returns {string} The snippet.
+   */
+  function starter() {
+    var first = boxes.filter(function (b) { return b.checked; })[0];
+    var input = first ? identifierFor(first.value) : 'data';
+    return langSel.value === 'r'
+      ? '# Inputs are data.frames named after their sources (row names = row ids).\n' +
+        '# Assign the output table to `result`.\nresult <- ' + input + '\n'
+      : '# Inputs are pandas DataFrames named after their sources (index = row ids).\n' +
+        '# Assign the output table to `result`.\nresult = ' + input + '\n';
+  }
+  function reseed() { if (!edited) code.value = starter(); }
+  on(langSel, 'change', reseed);
+  boxes.forEach(function (b) { on(b, 'change', reseed); });
+  reseed();
+  append(root, [field('Language', langSel), field('Inputs', inputsWrap), field('Code', code)]);
+
+  return {
+    root: root,
+    source: function () {
+      var picked = boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
+      if (!String(code.value || '').trim()) return 'Write the code (assign `result`)';
+      var inputs = {};
+      picked.forEach(function (ref) { inputs[identifierFor(ref)] = ref; });
+      return { kind: 'function', language: langSel.value, code: code.value, inputs: inputs };
+    }
+  };
+}
+
+/**
+ * A code-safe variable name for a source ref (letters, digits, `_`).
+ * @param {string} ref - Source ref.
+ * @returns {string} An identifier.
+ * @private
+ */
+function identifierFor(ref) {
+  var id = String(ref).replace(/[^A-Za-z0-9_]/g, '_');
+  return /^[A-Za-z_]/.test(id) ? id : '_' + id;
+}
+
+/**
+ * Resolve once a CanvasXpress instance exposes `getConfig()` (attached
+ * asynchronously after construction), polling briefly; resolves anyway after
+ * ~5s so a chart that never gets one does not stall the builder.
+ * @param {object} instance - CanvasXpress instance.
+ * @returns {Promise<void>} Settles when ready (or timed out).
+ * @private
+ */
+function whenConfigReady(instance) {
+  return new Promise(function (resolve) {
+    var tries = 0;
+    (function poll() {
+      if (typeof instance.getConfig === 'function' || tries++ >= 100) return resolve();
+      setTimeout(poll, 50);
+    })();
   });
 }
 

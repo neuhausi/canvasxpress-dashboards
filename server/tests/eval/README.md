@@ -31,10 +31,29 @@ Prefer `--only` while iterating and keep the full suite as a pre-commit gate.
 expectation or a validator rule, instead of paying to regenerate identical
 specs.
 
+## Render check (free)
+
+`--render` renders every generated spec with the real CanvasXpress engine
+(`render_check.cjs`, headless Chromium) and adds a `render` axis. It fails a
+chart when the engine silently replaced the axes the spec named, when a
+grouping / colour annotation is missing from the panel's data, when a Pie is a
+single 100% slice, or when nothing was drawn. It needs the server running (the
+eval user's datasets and functions resolve through it), Playwright
+(`PLAYWRIGHT_MODULE` to reuse an install) and CanvasXpress (`CX_LIB_DIR` /
+`CX_CSS_DIR`, else the CDN). It works with `--replay` too, so re-checking saved
+specs costs nothing:
+
+    python3 run_eval.py --prompts prompts_blend.json --render --url ...
+    python3 run_eval.py --replay results.json --render --url ...
+
+`prompts_blend.json` (8 prompts) covers joins, relationships, Filters panels and R /
+Python functions; the `labs` fixture joins to `trial` on its `patient` column.
+Results also record each prompt's server-reported cost (`cost`, `cost_usd`).
+
 ## Validator parity
 
 `run_js.mjs` and `run_py.py` run the JS `validateSpec` and the Python
-`validate_spec` over `specs_corpus.json` (25 specs) and their output is
+`validate_spec` over `specs_corpus.json` (53 specs) and their output is
 compared; they must agree exactly.
 
     node run_js.mjs > /tmp/js.json && python3 run_py.py > /tmp/py.json && diff /tmp/js.json /tmp/py.json

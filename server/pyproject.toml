@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "canvasxpress-dashboards-server"
-version = "0.9.0"
+version = "0.10.0"
 description = "Persistence & sharing service for canvasxpress-dashboards specs — save/load/share dashboards behind your own origin, mirroring the canvasxpress-connectors auth model."
 readme = "README.md"
 requires-python = ">=3.9"

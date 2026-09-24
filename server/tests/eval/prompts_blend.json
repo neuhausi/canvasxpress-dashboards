@@ -1,0 +1,99 @@
+[
+ {
+  "id": "n01",
+  "datasets": [
+   "trial",
+   "labs"
+  ],
+  "message": "Combine the trial outcomes with the lab results by patient and plot biomarker against ALT for each patient.",
+  "expect": {
+   "source_kind": "join"
+  },
+  "targets": "kind:join on patient"
+ },
+ {
+  "id": "n02",
+  "datasets": [
+   "trial",
+   "labs"
+  ],
+  "message": "When I select patients in the outcomes chart, highlight the same patients in the lab results chart.",
+  "expect": {
+   "links_sources": true
+  },
+  "targets": "relationships (or a join)"
+ },
+ {
+  "id": "n03",
+  "datasets": [
+   "trial"
+  ],
+  "message": "Add a filter panel so I can filter the trial by arm, sex and biomarker range.",
+  "expect": {
+   "panel_type": "filters"
+  },
+  "targets": "type:filters"
+ },
+ {
+  "id": "n04",
+  "datasets": [
+   "trial",
+   "labs"
+  ],
+  "message": "Give me a filter panel on the lab results that also filters the trial outcome charts.",
+  "expect": {
+   "panel_type": "filters",
+   "links_sources": true
+  },
+  "targets": "filters + relationship"
+ },
+ {
+  "id": "n05",
+  "datasets": [
+   "trial"
+  ],
+  "message": "Use R to compute the mean biomarker per arm and chart it.",
+  "expect": {
+   "source_kind": "function",
+   "function_language": "r"
+  },
+  "targets": "kind:function (R)"
+ },
+ {
+  "id": "n06",
+  "datasets": [
+   "sales"
+  ],
+  "message": "With Python, compute revenue per unit for each region and show it as a bar chart.",
+  "expect": {
+   "source_kind": "function",
+   "function_language": "python"
+  },
+  "targets": "kind:function (Python)"
+ },
+ {
+  "id": "n07",
+  "datasets": [
+   "trial",
+   "labs"
+  ],
+  "message": "Left-join the labs onto the trial so every trial patient is kept, and show the combined table.",
+  "expect": {
+   "source_kind": "join",
+   "join_how": "left"
+  },
+  "targets": "join how:left"
+ },
+ {
+  "id": "n08",
+  "datasets": [
+   "sales"
+  ],
+  "message": "Add a filter panel for region and save a filter scheme called 'North only' that keeps just North.",
+  "expect": {
+   "panel_type": "filters",
+   "has_top_key": "filterSchemes"
+  },
+  "targets": "filterSchemes"
+ }
+]

@@ -10,6 +10,19 @@
  * @module validateSpec
  */
 
+import { JOIN_TYPES, AXES, derivedCycle } from './join.js';
+import { FIELD_KINDS } from './filters.js';
+import { specCompatibility, DASHBOARD_SCHEMA_VERSION } from './spec.js';
+
+/** @type {string[]} Data source kinds. */
+var DATA_KINDS = ['inline', 'connector', 'dataset', 'join', 'function'];
+
+/** @type {string[]} Languages a data function may be written in. */
+var FUNCTION_LANGUAGES = ['python', 'r'];
+
+/** @type {string[]} How related panels show marked rows (CanvasXpress highlightMode). */
+var MARKING_MODES = ['focus', 'highlight', 'ghost'];
+
 /**
  * Validate a dashboard spec.
  *
@@ -31,6 +44,22 @@ export function validateSpec(spec) {
   if (spec.version != null && !(Number.isInteger(spec.version) && spec.version >= 1)) {
     errors.push('spec.version must be an integer >= 1');
   }
+
+  // --- format version (schemaVersion "MAJOR.MINOR"; absent = the legacy 1.0) ---
+  var warnings = [];
+  var compat = specCompatibility(spec);
+  if (spec.$schema != null && typeof spec.$schema !== 'string') {
+    errors.push('spec.$schema must be a URL string');
+  }
+  if (compat.status === 'invalid') {
+    errors.push('spec.schemaVersion must be "MAJOR.MINOR" (e.g. "' + DASHBOARD_SCHEMA_VERSION + '")');
+  } else if (compat.status === 'newer-major') {
+    errors.push('spec.schemaVersion ' + compat.version + ' needs a newer canvasxpress-dashboards (this one reads ' +
+      DASHBOARD_SCHEMA_VERSION.split('.')[0] + '.x)');
+  }
+  // A newer MINOR may add source kinds this version does not know: those
+  // sources are skipped (their panels show an error) instead of failing all.
+  var newerMinor = compat.status === 'newer-minor';
 
   // --- layout ---
   var layout = spec.layout;
@@ -87,7 +116,8 @@ export function validateSpec(spec) {
       // A config control drives a target panel's config from its own static
       // option list, so it too needs no data of its own.
       var isConfigControl = panel.type === 'control' && panel.mode === 'config';
-      if (panel.type !== 'text' && panel.type !== 'image' && !paramWithOptions && !isConfigControl &&
+      if (panel.type !== 'text' && panel.type !== 'image' && panel.type !== 'filters' &&
+          !paramWithOptions && !isConfigControl &&
           panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
@@ -101,6 +131,10 @@ export function validateSpec(spec) {
             ['contain', 'cover', 'fill', 'none', 'scale-down'].indexOf(panel.fit) === -1) {
           errors.push(at + '.fit must be "contain", "cover", "fill", "none", or "scale-down"');
         }
+      }
+      if (panel.type === 'filters') checkFiltersPanel(panel, at, spec.data, errors);
+      if (panel.transpose != null && typeof panel.transpose !== 'boolean') {
+        errors.push(at + '.transpose must be true or false');
       }
       if (panel.type === 'control') {
         if (panel.compartment != null && panel.compartment !== 'x' && panel.compartment !== 'z') {
@@ -181,8 +215,10 @@ export function validateSpec(spec) {
           errors.push(at + ' must be an object');
           return;
         }
-        if (src.kind !== 'inline' && src.kind !== 'connector' && src.kind !== 'dataset') {
-          errors.push(at + '.kind must be "inline", "connector", or "dataset"');
+        if (DATA_KINDS.indexOf(src.kind) === -1) {
+          var kindMessage = at + '.kind must be "inline", "connector", "dataset", "join", or "function"';
+          if (newerMinor) warnings.push(kindMessage + ' (unknown kind from a newer format: skipped)');
+          else errors.push(kindMessage);
         }
         if (src.kind === 'inline' && src.value == null) {
           errors.push(at + ' of kind "inline" requires a value');
@@ -193,6 +229,11 @@ export function validateSpec(spec) {
         if (src.kind === 'dataset' && (typeof src.id !== 'string' || src.id.length === 0)) {
           errors.push(at + ' of kind "dataset" requires an id string');
         }
+        if (src.kind === 'join') checkJoin(src, at, spec.data, errors);
+        else if (src.axis != null && AXES.indexOf(src.axis) === -1) {
+          errors.push(at + '.axis must be "smps" or "vars"');
+        }
+        if (src.kind === 'function') checkFunction(src, at, spec, errors);
         // A `query` template maps request keys to literals or "$param" tokens;
         // every token must name a declared parameter.
         if (src.query != null) {
@@ -210,6 +251,55 @@ export function validateSpec(spec) {
             });
           }
         }
+      });
+    }
+  }
+
+  // --- cycles (a join / data function reading itself, directly or indirectly) ---
+  if (spec.data != null && typeof spec.data === 'object' && !Array.isArray(spec.data)) {
+    Object.keys(spec.data).forEach(function (key) {
+      var src = spec.data[key];
+      if (!src || (src.kind !== 'join' && src.kind !== 'function')) return;
+      var cycle = derivedCycle(key, spec.data);
+      // Flag each ref on the cycle; a ref that only leads into one is not flagged.
+      if (cycle && cycle[0] === key) {
+        errors.push('spec.data["' + key + '"] ' + src.kind + ' depends on itself (' + cycle.join(' -> ') + ')');
+      }
+    });
+  }
+
+  // --- relationships (cross-source marking / filtering) ---
+  if (spec.relationships != null) {
+    if (!Array.isArray(spec.relationships)) {
+      errors.push('spec.relationships must be an array');
+    } else {
+      spec.relationships.forEach(function (rel, i) {
+        var at = 'spec.relationships[' + i + ']';
+        if (rel == null || typeof rel !== 'object' || Array.isArray(rel)) {
+          errors.push(at + ' must be an object');
+          return;
+        }
+        checkRelation(rel, at, spec.data, errors, 'relationship');
+      });
+    }
+  }
+  if (spec.markingMode != null && MARKING_MODES.indexOf(spec.markingMode) === -1) {
+    errors.push('spec.markingMode must be "focus", "highlight", or "ghost"');
+  }
+
+  // --- filter schemes (named Filters-panel states) ---
+  if (spec.filterSchemes != null) {
+    if (typeof spec.filterSchemes !== 'object' || Array.isArray(spec.filterSchemes)) {
+      errors.push('spec.filterSchemes must be an object map');
+    } else {
+      Object.keys(spec.filterSchemes).forEach(function (name) {
+        var at = 'spec.filterSchemes["' + name + '"]';
+        var scheme = spec.filterSchemes[name];
+        if (!Array.isArray(scheme)) {
+          errors.push(at + ' must be an array of filters');
+          return;
+        }
+        scheme.forEach(function (p, i) { checkFilterPredicate(p, at + '[' + i + ']', spec.data, errors); });
       });
     }
   }
@@ -252,7 +342,197 @@ export function validateSpec(spec) {
     }
   }
 
-  return { valid: errors.length === 0, errors: errors };
+  var result = { valid: errors.length === 0, errors: errors };
+  if (warnings.length) result.warnings = warnings;
+  return result;
+}
+
+/**
+ * Validate a `kind:"join"` source: `left`/`right` name other sources, `how` is a
+ * known join type, and `on` is a column name, `{left, right}`, or an array of those.
+ *
+ * @param {object} src - The join source spec.
+ * @param {string} at - Error path prefix.
+ * @param {object} data - The spec's data map.
+ * @param {string[]} errors - Error list to append to.
+ * @returns {void}
+ * @private
+ */
+function checkJoin(src, at, data, errors) {
+  checkRelation(src, at, data, errors, 'of kind "join"');
+  if (src.how != null && JOIN_TYPES.indexOf(src.how) === -1) {
+    errors.push(at + '.how must be one of "' + JOIN_TYPES.join('", "') + '"');
+  }
+  if (src.suffix != null && typeof src.suffix !== 'string') {
+    errors.push(at + '.suffix must be a string');
+  }
+}
+
+/**
+ * Validate a `kind:"function"` source: a language, non-empty code, inputs
+ * naming other sources (as identifiers the code can use), an `args` template
+ * whose `$param` tokens are declared, and an optional runtime URL.
+ *
+ * @param {object} src - The function source.
+ * @param {string} at - Error path prefix.
+ * @param {object} spec - The dashboard spec (for data / params).
+ * @param {string[]} errors - Error list to append to.
+ * @returns {void}
+ * @private
+ */
+function checkFunction(src, at, spec, errors) {
+  if (FUNCTION_LANGUAGES.indexOf(src.language) === -1) {
+    errors.push(at + ' of kind "function" requires language "python" or "r"');
+  }
+  if (typeof src.code !== 'string' || !src.code.trim()) {
+    errors.push(at + ' of kind "function" requires a code string');
+  }
+  var inputs = src.inputs;
+  var pairs = [];
+  if (Array.isArray(inputs)) {
+    inputs.forEach(function (ref) { pairs.push([ref, ref]); });
+  } else if (inputs != null && typeof inputs === 'object') {
+    Object.keys(inputs).forEach(function (name) { pairs.push([name, inputs[name]]); });
+  } else if (inputs != null) {
+    errors.push(at + '.inputs must be an array of refs or a {name: ref} map');
+  }
+  pairs.forEach(function (pair) {
+    if (typeof pair[0] !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(pair[0])) {
+      errors.push(at + '.inputs name "' + pair[0] + '" must be an identifier (letters, digits, _)');
+    }
+    if (typeof pair[1] !== 'string' || spec.data == null || !hasOwn(spec.data, pair[1])) {
+      errors.push(at + '.inputs "' + pair[1] + '" has no matching entry in spec.data');
+    }
+  });
+  if (src.args != null) {
+    if (typeof src.args !== 'object' || Array.isArray(src.args)) {
+      errors.push(at + '.args must be an object map');
+    } else {
+      Object.keys(src.args).forEach(function (name) {
+        var token = src.args[name];
+        if (typeof token === 'string' && token.charAt(0) === '$' &&
+            (spec.params == null || !hasOwn(spec.params, token.slice(1)))) {
+          errors.push(at + '.args["' + name + '"] references undeclared param "' + token.slice(1) + '"');
+        }
+      });
+    }
+  }
+  if (src.runtime != null && typeof src.runtime !== 'string') {
+    errors.push(at + '.runtime must be a URL string');
+  }
+}
+
+/**
+ * Validate a Filters panel: `fields` entries are field names (of the panel's
+ * dataRef) or `{field, dataRef?, kind?, label?}`, and every field has a source.
+ *
+ * @param {object} panel - The Filters panel.
+ * @param {string} at - Error path prefix.
+ * @param {object} data - The spec's data map.
+ * @param {string[]} errors - Error list to append to.
+ * @returns {void}
+ * @private
+ */
+function checkFiltersPanel(panel, at, data, errors) {
+  if (panel.fields != null && !Array.isArray(panel.fields)) {
+    errors.push(at + '.fields must be an array');
+    return;
+  }
+  var fields = panel.fields || [];
+  if (panel.dataRef == null && !fields.length) {
+    errors.push(at + ' of type "filters" requires a dataRef or fields');
+  }
+  fields.forEach(function (f, i) {
+    var fat = at + '.fields[' + i + ']';
+    if (typeof f === 'string') {
+      if (!f.length) errors.push(fat + ' must be a non-empty field name');
+      else if (panel.dataRef == null) errors.push(fat + ' needs the panel dataRef (or use {field, dataRef})');
+      return;
+    }
+    if (f == null || typeof f !== 'object' || Array.isArray(f) || typeof f.field !== 'string' || !f.field.length) {
+      errors.push(fat + ' must be a field name or {field, dataRef?, kind?}');
+      return;
+    }
+    if (f.dataRef != null && (data == null || !hasOwn(data, f.dataRef))) {
+      errors.push(fat + '.dataRef "' + f.dataRef + '" has no matching entry in spec.data');
+    } else if (f.dataRef == null && panel.dataRef == null) {
+      errors.push(fat + ' needs a dataRef (on the field or the panel)');
+    }
+    if (f.kind != null && FIELD_KINDS.indexOf(f.kind) === -1) {
+      errors.push(fat + '.kind must be "values", "range", or "search"');
+    }
+  });
+}
+
+/**
+ * Validate one saved filter (a filter-scheme entry):
+ * `{dataRef, field, values? | min? / max? | text?}`.
+ *
+ * @param {*} p - The filter.
+ * @param {string} at - Error path prefix.
+ * @param {object} data - The spec's data map.
+ * @param {string[]} errors - Error list to append to.
+ * @returns {void}
+ * @private
+ */
+function checkFilterPredicate(p, at, data, errors) {
+  if (p == null || typeof p !== 'object' || Array.isArray(p)) {
+    errors.push(at + ' must be an object');
+    return;
+  }
+  if (typeof p.dataRef !== 'string' || data == null || !hasOwn(data, p.dataRef)) {
+    errors.push(at + '.dataRef has no matching entry in spec.data');
+  }
+  if (typeof p.field !== 'string' || !p.field.length) {
+    errors.push(at + '.field must be a non-empty string');
+  }
+  if (p.values != null && !Array.isArray(p.values)) errors.push(at + '.values must be an array');
+  ['min', 'max'].forEach(function (k) {
+    if (p[k] != null && (typeof p[k] !== 'number' || !isFinite(p[k]))) errors.push(at + '.' + k + ' must be a number');
+  });
+  if (p.text != null && typeof p.text !== 'string') errors.push(at + '.text must be a string');
+}
+
+/**
+ * Validate the parts a join source and a `spec.relationships` entry share:
+ * `left`/`right` name sources, `on` is a column name, `{left, right}`, or an
+ * array of those, and the axes are `"smps"` or `"vars"`.
+ *
+ * @param {object} rel - The join source or relationship.
+ * @param {string} at - Error path prefix.
+ * @param {object} data - The spec's data map.
+ * @param {string[]} errors - Error list to append to.
+ * @param {string} what - How to name the entry in a "requires" error.
+ * @returns {void}
+ * @private
+ */
+function checkRelation(rel, at, data, errors, what) {
+  ['left', 'right'].forEach(function (side) {
+    var ref = rel[side];
+    if (typeof ref !== 'string' || ref.length === 0) {
+      errors.push(at + ' ' + what + ' requires a ' + side + ' ref string');
+    } else if (data == null || !hasOwn(data, ref)) {
+      errors.push(at + '.' + side + ' "' + ref + '" has no matching entry in spec.data');
+    }
+  });
+  var src = rel;
+  if (src.on != null) {
+    var keys = Array.isArray(src.on) ? src.on : [src.on];
+    var validKey = function (key) {
+      return (typeof key === 'string' && key.length > 0) ||
+        (key != null && typeof key === 'object' && !Array.isArray(key) &&
+          typeof key.left === 'string' && key.left.length > 0 &&
+          typeof key.right === 'string' && key.right.length > 0);
+    };
+    if (keys.length === 0 || !keys.every(validKey)) {
+      errors.push(at + '.on must be a column name, {left, right}, or a non-empty array of those');
+    }
+  }
+  ['axis', 'leftAxis', 'rightAxis'].forEach(function (field) {
+    if (src[field] != null && AXES.indexOf(src[field]) === -1) {
+      errors.push(at + '.' + field + ' must be "smps" or "vars"');
+    }
+  });
 }
 
 /**

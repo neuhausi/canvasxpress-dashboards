@@ -28,10 +28,12 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import mcp_bridge
 from .datasets import DatasetStore, reshape_to_cx, filter_cx_data
+from .functions import FunctionError, FunctionsConfig, functions_status, run_function
 from .sqldashboard import open_dashboard_store
 from .store import DashboardStore
 from .stores import StoreRegistry
@@ -51,7 +53,7 @@ updated spec, preserving ids and anything the user didn't ask to change.
 
 ## Dashboard spec contract
 {
-  "id": "<kebab-case>", "title": "<Title>", "version": 1,
+  "schemaVersion": "1.1", "id": "<kebab-case>", "title": "<Title>", "version": 1,
   "layout": {"cols": 12, "rowHeight": 130, "gap": 12,
              "items": [{"panel": "<panel-id>", "x": 0-11, "y": 0+, "w": 1-12, "h": 1+}]},
   "data": {"<ref>": {"kind": "dataset", "id": "<dataset id>", "store": "<store>"}
@@ -61,9 +63,24 @@ updated spec, preserving ids and anything the user didn't ask to change.
                   "headers"?: {"<header>": "<value>"},
                   "dependsOn"?: ["<param>", ...]  // params beyond those in query
                                                   // that should re-trigger a fetch
-                 } */},
+                 }
+              or {"kind": "join", "left": "<ref>", "right": "<ref>",
+                  "on"?: "smps" | "<column>" | {"left": "<col>", "right": "<col>"} | [...],
+                  "how"?: "inner|left|right|outer", "suffix"?: "<str>"}
+              or {"kind": "function", "language": "python|r", "code": "<assigns result>",
+                  "inputs": ["<ref>", ...] | {"<var>": "<ref>"},
+                  "args"?: {"<name>": "$param" | literal}}
+              any source may add "axis": "smps" (default, one row per sample)
+              | "vars" (one row per variable: scatter-oriented data) */},
+  "relationships"?: [{"left": "<ref>", "right": "<ref>",
+                      "on"?: <same forms as a join's on>}],
+  "markingMode"?: "focus|highlight|ghost",
+  "filterSchemes"?: {"<name>": [{"dataRef": "<ref>", "field": "<field>",
+                     "values"?: [...] | "min"?: n, "max"?: n | "text"?: "..."}]},
   "panels": {"<panel-id>": {"title": "<Panel title>", "dataRef": "<ref>",
              "measures"?: ["<var>", ...],
+             "transpose"?: true|false,  /* scatter/KaplanMeier of a table with one
+               point per row: automatic when xAxis/yAxis name table columns */
              "config": { /* passed straight to new CanvasXpress() */ }}},
   "controls": [{"kind": "table", "dataRef": "<ref>", "title"?: "..."}],
   "params": {"<param-name>": {"value": "<default>", "type": "string|number|boolean"}},
@@ -83,6 +100,13 @@ A panel's "type" is absent for a GRAPH panel, or one of "text", "control", "imag
 - image — {"type":"image","src":"<url or data: URI>","alt"?:"...","fit"?:"contain|cover|fill|none|scale-down","href"?:"<link>"}
 Text and image panels need NO dataRef and no data. Use them for titles, notes,
 logos and banners — never refuse such a request.
+- filters — {"type":"filters","dataRef":"<ref>",
+             "fields"?:["<field>", {"field":"<f>","dataRef":"<ref>","kind":"values|range|search"}]}
+  A Filters panel (like Spotfire's): checkbox lists for categories, min/max for
+  numbers, search for many values; omit "fields" to list every annotation and
+  numeric column. It filters its source and, via relationships/joins, related
+  sources. Use it when the user asks for "a filter panel" or to filter by
+  several fields; "filterSchemes" pre-defines named filter states.
 
 ## Cross-filtering by clicking a chart
 A GRAPH panel can turn a click into a dashboard parameter:
@@ -127,11 +151,39 @@ with options/optionsFrom/style:"search".
   panel chrome shows the title), showLegend, xAxis/yAxis (variable names),
   smpOverlays/varOverlays. For KaplanMeier: xAxis:["<time var>"],
   yAxis:["<event var>"], colorBy:"<group annotation>".
+- Scatter2D / Scatter3D / KaplanMeier axes must be NUMERIC columns — never a
+  category annotation. A category against a number is a Boxplot or Dotplot
+  (groupingFactors: ["<category>"]), not a scatter.
 - Datasets are tables: y.vars are columns/variables, y.smps are rows/samples;
   x holds per-smp annotations, z per-var annotations. measures picks numeric
   vars to plot. Categorical columns work as colorBy.
 - Layout on a 12-column grid; typical panel is w:6 h:3; don't overlap items.
 - Panels sharing a dataRef coordinate selections automatically (broadcast).
+- To combine two datasets (e.g. samples + clinical annotations), declare both
+  as sources and add a "join" source over them; bind panels to the join ref.
+  "on" defaults to "smps" (the row/sample ids); name a shared column, or map
+  {"left","right"} columns, when the ids differ. "how" defaults to "inner"; use
+  "left" to keep every row of the primary table. Clashing right-hand column
+  names get "suffix" (default ".<right ref>").
+- A "function" source runs an R or Python snippet on the server (only when the
+  "Data functions" note after the dataset list says AVAILABLE). Inputs are
+  DataFrames / data.frames named after "inputs"; the code must assign `result`
+  (a table: its first column or index/row names become row ids, numeric columns
+  become variables). Use it for statistics or reshaping the other features
+  can't express (models, custom scores, grouped summaries). Name the output
+  columns explicitly in the code, and chart exactly those names: a grouped
+  summary's group column becomes the row ids (not an annotation), so don't
+  colour or group by it. "args" reach the code ONLY through the `params`
+  mapping — Python params["name"], R params$name — never as bare variables.
+- Totals per category (e.g. a pie or bar of revenue BY region) need the rows
+  aggregated first: when data functions are AVAILABLE use a function source
+  that sums per category; otherwise chart the rows as they are.
+- To LINK sources without blending them (selecting rows in one chart marks the
+  related rows in charts of another source, and a filter control on one source
+  filters related panels), add a "relationships" entry with the same "left",
+  "right", "on" as a join. Joins link their inputs automatically. Data whose
+  rows are variables (scatter data: points are y.vars) needs "axis": "vars" on
+  its source; then "vars" is its row-id key.
 - 2-6 panels unless asked otherwise; add a table control when it helps.
 - When the user asks to filter, choose, or switch something interactively,
   add a control PANEL (see Interactive controls) — never say controls are
@@ -239,6 +291,7 @@ def create_dashboards_app(
     canvasxpress_license: Optional[str] = None,
     llm_api_key: Optional[str] = None,
     llm_model: Optional[str] = None,
+    functions: Optional[FunctionsConfig] = None,
 ) -> FastAPI:
     """Build the dashboards FastAPI app.
 
@@ -276,6 +329,9 @@ def create_dashboards_app(
         builder; falls back to ``CXD_LLM_API_KEY``. Kept server-side — never sent
         to the browser (the client only learns whether an LLM is configured).
     :param llm_model: LLM model id; falls back to ``CXD_LLM_MODEL``.
+    :param functions: Data-function runtime settings; built from the
+        ``CXD_FUNCTIONS*`` env vars if omitted (``CXD_FUNCTIONS`` defaults to
+        ``off``; ``admin`` or ``users`` enables ``POST /api/functions/run``).
     :returns: The configured FastAPI application.
     """
     session_secret = session_secret or os.getenv("SESSION_SECRET")
@@ -325,6 +381,8 @@ def create_dashboards_app(
     # LLM config stays server-side (secret). The client only learns it's enabled.
     llm_api_key = llm_api_key or os.getenv("CXD_LLM_API_KEY")
     llm_model = llm_model or os.getenv("CXD_LLM_MODEL")
+    # Data functions (R/Python snippets) run user code: off unless configured.
+    functions = functions or FunctionsConfig.from_env()
 
     def dataset_store_for(name: Optional[str]) -> DatasetStore:
         """Resolve the DatasetStore for a named dataset store (default when None)."""
@@ -694,6 +752,38 @@ def create_dashboards_app(
             raise HTTPException(status_code=404, detail="No such dataset")
         return {"dataset": summary}
 
+    # ---- data functions (kind:"function" sources) ----
+    def require_function_user(request: Request) -> str:
+        """The caller, if this server lets them run data functions."""
+        user = require_user(request)
+        if functions.mode == "off":
+            raise HTTPException(
+                status_code=403,
+                detail="Data functions are disabled on this server (set CXD_FUNCTIONS)")
+        if functions.mode == "admin" and not user_is_admin(user):
+            raise HTTPException(status_code=403,
+                                detail="Data functions are limited to administrators")
+        return user
+
+    @app.get("/api/functions/status")
+    def function_status(request: Request):
+        require_user(request)
+        return functions_status(functions)
+
+    @app.post("/api/functions/run")
+    async def function_run(request: Request):
+        user = require_function_user(request)
+        try:
+            payload = await request.json()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Request body must be JSON")
+        try:
+            result = await run_in_threadpool(run_function, payload, functions)
+        except FunctionError as exc:
+            raise HTTPException(status_code=exc.status, detail=str(exc))
+        print("[functions] user=%s language=%s ok" % (user, payload.get("language")), flush=True)
+        return result
+
     @app.get("/api/llm/status")
     def llm_status(request: Request):
         """Whether the NL dashboard builder is configured (no secret exposed)."""
@@ -831,8 +921,12 @@ def create_dashboards_app(
                 "returned config VERBATIM as that panel's `config` (you may only add "
                 "title:false). To change an existing panel's graph, call "
                 "modify_chart_config(config, instruction, dataset_id) with its current "
-                "config. Table controls need no tool. After all tool calls, respond "
-                "with the final JSON object only.")
+                "config. Table controls need no tool. EXCEPTION: the tools only know "
+                "stored datasets, so for a panel bound to a \"join\" or \"function\" "
+                "source write its config yourself from that source's OUTPUT columns (a "
+                "join: both inputs' columns; a function: the columns your code creates) "
+                "— never pass an input dataset's id for it. After all tool calls, "
+                "respond with the final JSON object only.")
 
         # The dataset catalogue changes whenever the user adds/renames/removes a
         # dataset, so it must NOT sit inside the cached block: a prompt cache is
@@ -840,6 +934,17 @@ def create_dashboards_app(
         # system prompt on every catalogue change. It goes in a second,
         # uncached block after the breakpoint instead.
         catalog_block = "## The user's datasets\n" + json.dumps(catalog)
+        # Data functions depend on server config and the caller's role, so the
+        # availability note rides in the uncached block too.
+        can_run_functions = functions.mode == "users" or (
+            functions.mode == "admin" and user_is_admin(user))
+        if can_run_functions:
+            catalog_block += ("\n\n## Data functions: AVAILABLE (languages: %s). You may use "
+                              "kind \"function\" sources when the user asks for computation." %
+                              ", ".join(functions_status(functions)["languages"]))
+        else:
+            catalog_block += ("\n\n## Data functions: NOT available on this server for this "
+                              "user. Never emit kind \"function\" sources.")
         messages = []
         for turn in history[-12:]:
             if isinstance(turn, dict) and turn.get("role") in ("user", "assistant") \

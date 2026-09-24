@@ -41,6 +41,23 @@ export var dashboardCss = [
   // collision resolution lets graphs compact through their rows, and without
   // the raise a control ends up hidden behind whichever panel slid over it.
   '.cxd-annctl-cell { border: none; background: transparent; overflow: visible; z-index: 3; }',
+  // Filters panel: a titled panel whose body scrolls a stack of field sections.
+  '.cxd-filters-cell .cxd-panel-body { align-items: stretch; justify-content: flex-start; overflow: auto; }',
+  '.cxd-filters { width: 100%; padding: 8px 10px; font: 13px/1.35 var(--cxd-font, system-ui, sans-serif); color: var(--cxd-title, #2a2f36); }',
+  '.cxd-filters-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }',
+  '.cxd-filters-bar select, .cxd-filters-bar input, .cxd-filters-bar button, .cxd-filters-range input, .cxd-filters-text {',
+  '  padding: 3px 6px; border: 1px solid var(--cxd-ctrl-border,var(--cxd-border,#d0d4da)); border-radius: 6px;',
+  '  font: inherit; background: var(--cxd-ctrl-bg,#fff); color: inherit; }',
+  '.cxd-filters-scheme-name { width: 110px; }',
+  '.cxd-filters-bar button { cursor: pointer; }',
+  '.cxd-filters-field { padding: 6px 0; border-top: 1px solid var(--cxd-border, #e2e5ea); }',
+  '.cxd-filters-label { font-weight: 600; margin-bottom: 4px; }',
+  '.cxd-filters-values { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow: auto; }',
+  '.cxd-filters-check { display: flex; align-items: center; gap: 6px; cursor: pointer; }',
+  '.cxd-filters-range { display: flex; align-items: center; gap: 6px; }',
+  '.cxd-filters-range input { width: 0; flex: 1 1 0; min-width: 60px; }',
+  '.cxd-filters-text { width: 100%; }',
+  '.cxd-filters-hint { color: var(--cxd-muted,#8a9099); }',
   '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
   '  padding: 5px 0; background: transparent;',
   '  font: 14px/1.3 var(--cxd-font, system-ui, sans-serif); color: var(--cxd-title,#2a2f36); }',

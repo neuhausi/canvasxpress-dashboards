@@ -12,8 +12,18 @@
       "description": "Stable dashboard identifier. Defaults the broadcast group.",
       "minLength": 1
     },
+    "$schema": {
+      "type": "string",
+      "description": "Optional URL of this JSON Schema (https://canvasxpress.org/schema/dashboard.schema.json), for editors and validators."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "default": "1.1",
+      "description": "Spec FORMAT version, MAJOR.MINOR (absent = 1.0). MINOR bumps are additive (a reader renders what it knows); MAJOR bumps are migrated on load. Current: 1.1 (1.0 + join/function sources, relationships, Filters panels). Not the dashboard's own revision — that is `version`."
+    },
     "title": { "type": "string" },
-    "version": { "type": "integer", "minimum": 1, "default": 1 },
+    "version": { "type": "integer", "minimum": 1, "default": 1, "description": "The dashboard's own revision counter (author-managed). Distinct from schemaVersion, the format version." },
     "broadcastGroup": {
       "type": "string",
       "description": "Coordination domain isolating this dashboard's panels. Defaults to id."
@@ -76,6 +86,22 @@
       "type": "array",
       "items": { "$ref": "#/definitions/control" }
     },
+    "relationships": {
+      "type": "array",
+      "description": "How sources relate, for cross-source marking and filtering without blending: a selection (or a filter-control pick) in one source marks (or filters) the related rows of the panels bound to the others. Every kind:join source implies one too.",
+      "items": { "$ref": "#/definitions/relationship" }
+    },
+    "filterSchemes": {
+      "type": "object",
+      "description": "Named filter states offered by Filters panels (type:filters). Each is an array of saved filters.",
+      "additionalProperties": { "type": "array", "items": { "$ref": "#/definitions/savedFilter" } }
+    },
+    "markingMode": {
+      "type": "string",
+      "enum": ["focus", "highlight", "ghost"],
+      "default": "focus",
+      "description": "How panels on related sources show marked rows (CanvasXpress highlightMode): focus greys the rest, highlight recolors the marked rows, ghost fades the rest."
+    },
     "params": {
       "type": "object",
       "description": "Named dashboard parameters written by mode:'param' controls and read by data sources via $name tokens in their query. Each value is a bare default or a { value, type } object.",
@@ -111,7 +137,11 @@
       "required": ["kind"],
       "additionalProperties": true,
       "properties": {
-        "kind": { "type": "string", "enum": ["inline", "connector", "dataset"] },
+        "kind": {
+          "type": "string",
+          "enum": ["inline", "connector", "dataset", "join", "function"],
+          "description": "inline = literal value; connector = fetched URL; dataset = stored dataset by id; join = two other sources blended on a key; function = an R / Python snippet run by a data-function runtime over other sources."
+        },
         "value": { "type": "object" },
         "id": {
           "type": "string",
@@ -144,6 +174,72 @@
           "description": "Request params merged into the fetch URL. Each value is a literal or a \"$name\" token resolved from spec.params; a token whose param is null/unset is dropped (widens the query). Different resolved values are distinct cache entries.",
           "additionalProperties": { "type": ["string", "number", "boolean"] }
         },
+        "axis": {
+          "type": "string",
+          "enum": ["smps", "vars"],
+          "default": "smps",
+          "description": "Row axis: smps = one row per sample (connector/CSV tables); vars = one row per variable (scatter orientation, e.g. genes or cells as points). The axis name is also the key meaning 'the row id'. For kind:join, the axis of both inputs (and of the output)."
+        },
+        "leftAxis": {
+          "type": "string",
+          "enum": ["smps", "vars"],
+          "description": "kind:join — row axis of the left input (overrides axis; the output follows it). Defaults to the left source's own axis."
+        },
+        "rightAxis": {
+          "type": "string",
+          "enum": ["smps", "vars"],
+          "description": "kind:join — row axis of the right input. Defaults to the right source's own axis."
+        },
+        "left": {
+          "type": "string",
+          "description": "kind:join — ref (in spec.data) of the left input. Any source kind, including another join."
+        },
+        "right": {
+          "type": "string",
+          "description": "kind:join — ref (in spec.data) of the right input."
+        },
+        "on": {
+          "description": "kind:join — the key. The row id (\"smps\" or \"vars\", per axis) is the default; any other string names a variable or x annotation present on both sides; {left, right} maps differently named columns; an array of those is a composite key. Keys compare as strings; a missing key never matches.",
+          "oneOf": [
+            { "$ref": "#/definitions/joinKey" },
+            { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/joinKey" } }
+          ]
+        },
+        "how": {
+          "type": "string",
+          "enum": ["inner", "left", "right", "outer"],
+          "default": "inner",
+          "description": "kind:join — inner keeps matched rows; left/right also keep that side's unmatched rows; outer keeps both."
+        },
+        "suffix": {
+          "type": "string",
+          "description": "kind:join — appended to a right column whose name clashes with a left one. Defaults to \".<right ref>\"."
+        },
+        "language": {
+          "type": "string",
+          "enum": ["python", "r"],
+          "description": "kind:function — the snippet's language."
+        },
+        "code": {
+          "type": "string",
+          "description": "kind:function — the snippet. Inputs arrive as pandas DataFrames / R data.frames named after `inputs` (row ids as index / row names; numeric columns + row annotations as columns) and `params` holds the resolved args; it must assign `result` (a table, or a CanvasXpress data object)."
+        },
+        "inputs": {
+          "description": "kind:function — the sources it reads: an array of refs (each becomes a variable named after the ref) or a {variableName: ref} map.",
+          "oneOf": [
+            { "type": "array", "items": { "type": "string" } },
+            { "type": "object", "additionalProperties": { "type": "string" } }
+          ]
+        },
+        "args": {
+          "type": "object",
+          "description": "kind:function — values passed as `params`: literals or \"$name\" tokens resolved from spec.params (a change re-runs the function).",
+          "additionalProperties": { "type": ["string", "number", "boolean", "null"] }
+        },
+        "runtime": {
+          "type": "string",
+          "description": "kind:function — the runtime URL (POST {language, code, inputs, params, axis} -> {data}). Defaults to the dashboards server's /api/functions/run (enabled with CXD_FUNCTIONS)."
+        },
         "dependsOn": {
           "type": "array",
           "items": { "type": "string" },
@@ -162,6 +258,74 @@
         {
           "if": { "properties": { "kind": { "const": "dataset" } } },
           "then": { "required": ["id"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "join" } } },
+          "then": { "required": ["left", "right"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "function" } } },
+          "then": { "required": ["language", "code"] }
+        }
+      ]
+    },
+    "relationship": {
+      "type": "object",
+      "required": ["left", "right"],
+      "additionalProperties": true,
+      "properties": {
+        "left": { "type": "string", "description": "Ref (in spec.data) of one source." },
+        "right": { "type": "string", "description": "Ref of the related source." },
+        "on": {
+          "description": "The key, as for kind:join: the row id by default, a shared column, {left, right}, or an array (composite).",
+          "oneOf": [
+            { "$ref": "#/definitions/joinKey" },
+            { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/joinKey" } }
+          ]
+        },
+        "axis": { "type": "string", "enum": ["smps", "vars"], "description": "Row axis of both sides (defaults to each source's own axis)." },
+        "leftAxis": { "type": "string", "enum": ["smps", "vars"] },
+        "rightAxis": { "type": "string", "enum": ["smps", "vars"] }
+      }
+    },
+    "filterField": {
+      "oneOf": [
+        { "type": "string", "minLength": 1, "description": "A field of the panel's dataRef." },
+        {
+          "type": "object",
+          "required": ["field"],
+          "properties": {
+            "field": { "type": "string", "minLength": 1, "description": "A row annotation, numeric column, or the row id (\"smps\"/\"vars\")." },
+            "dataRef": { "type": "string", "description": "Source of the field; defaults to the panel's dataRef." },
+            "kind": { "type": "string", "enum": ["values", "range", "search"], "description": "Widget: checkbox list, min/max range, or contains-search. Detected from the data when absent." },
+            "label": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "savedFilter": {
+      "type": "object",
+      "required": ["dataRef", "field"],
+      "properties": {
+        "dataRef": { "type": "string" },
+        "field": { "type": "string", "minLength": 1 },
+        "values": { "type": "array", "description": "Keep rows whose value is one of these." },
+        "min": { "type": "number", "description": "Keep rows >= min." },
+        "max": { "type": "number", "description": "Keep rows <= max." },
+        "text": { "type": "string", "description": "Keep rows whose value contains this (case-insensitive)." }
+      }
+    },
+    "joinKey": {
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "object",
+          "required": ["left", "right"],
+          "additionalProperties": false,
+          "properties": {
+            "left": { "type": "string", "minLength": 1 },
+            "right": { "type": "string", "minLength": 1 }
+          }
         }
       ]
     },
@@ -171,8 +335,8 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["text", "control", "image"],
-          "description": "Panel variant: absent = graph; 'text' = free-form text; 'control' = annotation-filter widget; 'image' = a picture (URL or data: URI). Text and control panels float free (may overlap graph panels)."
+          "enum": ["text", "control", "image", "filters"],
+          "description": "Panel variant: absent = graph; 'text' = free-form text; 'control' = annotation-filter widget; 'image' = a picture (URL or data: URI); 'filters' = a Filters panel (multi-field filter inspector with filter schemes). Text and control panels float free (may overlap graph panels)."
         },
         "title": { "type": "string" },
         "dataRef": { "type": "string" },
@@ -181,6 +345,20 @@
         "src": {
           "type": "string",
           "description": "Image panels: the picture's URL or a data: URI. Empty renders a placeholder."
+        },
+        "transpose": {
+          "type": "boolean",
+          "description": "Graph panels: swap the data's samples and variables before charting. Absent = automatic: a Scatter2D / Scatter3D / ScatterBubble2D / KaplanMeier / Pie whose xAxis / yAxis name only variables (table columns) is transposed, so it plots one point (or slice) per row; so is a Pie with no axis named, one variable and several rows."
+        },
+        "fields": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/filterField" },
+          "description": "Filters panels: the fields to filter. Absent = every row annotation and numeric column of the panel's dataRef."
+        },
+        "saveSchemes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Filters panels: show the name box + Save button for saving the current filters as a scheme."
         },
         "fit": {
           "type": "string",

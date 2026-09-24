@@ -262,3 +262,10 @@ test('updatePanel edits param-control fields and keeps options exclusive', funct
   assert.equal(s.panels.c1.options, undefined);
   assert.deepEqual(s.panels.c1.optionsFrom, { dataRef: 'regions', annotation: 'region' });
 });
+
+test('addPanel filters stores a Filters panel over its data source', function () {
+  var s = addPanel(blankSpec('d1'), { id: 'f1', type: 'filters', dataRef: 'src', w: 3, h: 4 });
+  assert.deepEqual(s.panels.f1, { type: 'filters', title: 'Filters', dataRef: 'src' });
+  s = addPanel(s, { id: 'f2', type: 'filters', dataRef: 'src', fields: ['Arm'] });
+  assert.deepEqual(s.panels.f2.fields, ['Arm']);
+});

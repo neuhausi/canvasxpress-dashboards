@@ -79,6 +79,12 @@ export function addPanel(spec, panel) {
       if (panel.optionsFrom) control.optionsFrom = panel.optionsFrom;
     }
     next.panels[panel.id] = control;
+  } else if (panel.type === 'filters') {
+    // A Filters panel: a multi-field filter inspector; no `fields` = every
+    // annotation and numeric column of its dataRef.
+    var filters = { type: 'filters', title: panel.title || 'Filters', dataRef: panel.dataRef };
+    if (Array.isArray(panel.fields)) filters.fields = panel.fields;
+    next.panels[panel.id] = filters;
   } else {
     next.panels[panel.id] = {
       title: panel.title || panel.id,

@@ -15,8 +15,13 @@
  * data object `{ y: { vars, smps, data }, x? }`, and non-2xx responses carry a
  * JSON `{ detail }` message. See canvasxpress-connectors `web/byo_app.py`.
  *
+ * A `kind:"join"` source blends two other sources on a key (see `join.js`);
+ * it is computed from its inputs on every resolve and never cached itself.
+ *
  * @module dataStore
  */
+
+import { joinData, derivedCycle, sourceAxis } from './join.js';
 
 /**
  * A process-wide default cache shared across `renderDashboard` calls, so two
@@ -160,12 +165,19 @@ export function createDataStore(options) {
     /**
      * Resolve a data source to a CanvasXpress data object.
      * @param {string} ref - The source ref name (for cache keying/errors).
-     * @param {object} sourceSpec - The data source spec (inline | connector).
+     * @param {object} sourceSpec - The data source spec (inline | connector |
+     *   dataset | join).
      * @param {object} [opts] - Resolution options.
      * @param {boolean} [opts.force=false] - Bypass a fresh cache entry and refetch.
      * @param {object} [opts.params] - Current dashboard parameter values, used to
      *   resolve the source's `query` template (`$name` tokens) and to key the
      *   cache so different parameter values are distinct fetches.
+     * @param {object} [opts.sources] - The spec's `data` map; a `kind:"join"`
+     *   source looks its `left`/`right` refs up here.
+     * @param {function} [opts.resolveInput] - `function(ref)` returning a
+     *   Promise of a join input's data. The renderer passes its per-render memo
+     *   so a join shares the fetch of an input panels already use. Defaults to
+     *   resolving `opts.sources[ref]` through this store with the same options.
      * @returns {Promise<object>} The resolved data.
      */
     resolve: function (ref, sourceSpec, opts) {
@@ -174,6 +186,14 @@ export function createDataStore(options) {
 
       if (sourceSpec.kind === 'inline') {
         return Promise.resolve(sourceSpec.value);
+      }
+      if (sourceSpec.kind === 'join') {
+        return resolveJoin(this, ref, sourceSpec, opts);
+      }
+      if (sourceSpec.kind === 'function') {
+        return resolveFunction(this, ref, sourceSpec, opts, {
+          fetch: fetchImpl, baseUrl: baseUrl, params: opts.params
+        });
       }
       if (sourceSpec.kind !== 'connector' && sourceSpec.kind !== 'dataset') {
         return Promise.reject(new Error('unknown data source kind "' + sourceSpec.kind + '"'));
@@ -215,6 +235,156 @@ export function createDataStore(options) {
       cache.delete(keyFor(ref, sourceSpec, params));
     }
   };
+}
+
+/**
+ * Resolve a `kind:"join"` source: resolve its `left` and `right` refs (which may
+ * themselves be joins), then blend them with {@link joinData}. A join is never
+ * cached itself — its inputs are — so it always reflects their current data.
+ * @param {DataStore} store - The store resolving the inputs.
+ * @param {string} ref - The join's ref name.
+ * @param {object} sourceSpec - The join spec `{left, right, on?, how?, axis?,
+ *   leftAxis?, rightAxis?, suffix?}`.
+ * @param {object} opts - The options passed to `resolve` (see there).
+ * @returns {Promise<object>} The joined CanvasXpress data object.
+ * @private
+ */
+function resolveJoin(store, ref, sourceSpec, opts) {
+  var sources = opts.sources || {};
+  var cycle = derivedCycle(ref, sources);
+  if (cycle) return Promise.reject(new Error('join "' + ref + '" depends on itself (' + cycle.join(' -> ') + ')'));
+  var resolveInput = opts.resolveInput || function (inputRef) {
+    return store.resolve(inputRef, sources[inputRef], opts);
+  };
+
+  // Check both refs before resolving either, so a bad spec fetches nothing.
+  var sides = [sourceSpec.left, sourceSpec.right];
+  for (var i = 0; i < sides.length; i++) {
+    if (typeof sides[i] !== 'string' || !Object.prototype.hasOwnProperty.call(sources, sides[i])) {
+      return Promise.reject(new Error('join "' + ref + '" input "' + sides[i] + '" not found in spec.data'));
+    }
+  }
+
+  return Promise.all([resolveInput(sourceSpec.left), resolveInput(sourceSpec.right)]).then(function (inputs) {
+    return joinData(inputs[0], inputs[1], {
+      on: sourceSpec.on,
+      how: sourceSpec.how,
+      // Each side defaults to its input source's own row axis.
+      leftAxis: sourceSpec.leftAxis || sourceSpec.axis || sourceAxis(sourceSpec.left, sources),
+      rightAxis: sourceSpec.rightAxis || sourceSpec.axis || sourceAxis(sourceSpec.right, sources),
+      suffix: sourceSpec.suffix,
+      leftName: sourceSpec.left,
+      rightName: sourceSpec.right
+    });
+  });
+}
+
+/**
+ * Resolve a `kind:"function"` source: resolve its inputs, then POST them with
+ * the code to a data-function runtime (`runtime`, default the cxd_server
+ * `<baseUrl>/api/functions/run`) and return the CanvasXpress data object it
+ * sends back. Like a join, the result is recomputed on every resolve (its
+ * inputs are cached, not it).
+ *
+ * Runtime contract: `POST {language, code, inputs: {name: {data, axis}},
+ * params, axis}` -> `{data}` (non-2xx carries `{detail}`).
+ * @param {DataStore} store - The store resolving the inputs.
+ * @param {string} ref - The function's ref name.
+ * @param {object} sourceSpec - `{language, code, inputs, args?, runtime?, axis?}`.
+ * @param {object} opts - The options passed to `resolve`.
+ * @param {object} env - `{fetch, baseUrl, params}` from the store.
+ * @returns {Promise<object>} The function's result data.
+ * @private
+ */
+function resolveFunction(store, ref, sourceSpec, opts, env) {
+  var sources = opts.sources || {};
+  var cycle = derivedCycle(ref, sources);
+  if (cycle) return Promise.reject(new Error('function "' + ref + '" depends on itself (' + cycle.join(' -> ') + ')'));
+  var inputs = sourceSpec.inputs;
+  var names = [];
+  var refs = [];
+  if (Array.isArray(inputs)) {
+    inputs.forEach(function (r) { names.push(r); refs.push(r); });
+  } else if (inputs && typeof inputs === 'object') {
+    Object.keys(inputs).forEach(function (name) { names.push(name); refs.push(inputs[name]); });
+  }
+  for (var i = 0; i < refs.length; i++) {
+    if (typeof refs[i] !== 'string' || !Object.prototype.hasOwnProperty.call(sources, refs[i])) {
+      return Promise.reject(new Error('function "' + ref + '" input "' + refs[i] + '" not found in spec.data'));
+    }
+  }
+  if (typeof env.fetch !== 'function') {
+    return Promise.reject(new Error('no fetch available for data function "' + ref + '"'));
+  }
+  var resolveInput = opts.resolveInput || function (inputRef) {
+    return store.resolve(inputRef, sources[inputRef], opts);
+  };
+  return Promise.all(refs.map(function (r) { return resolveInput(r); })).then(function (datas) {
+    var payload = { language: sourceSpec.language, code: sourceSpec.code, inputs: {}, params: {}, axis: sourceSpec.axis || 'smps' };
+    names.forEach(function (name, k) {
+      payload.inputs[name] = { data: datas[k], axis: sourceAxis(refs[k], sources) };
+    });
+    payload.params = resolveTemplate(sourceSpec.args, env.params);
+    var url = sourceSpec.runtime || (env.baseUrl + '/api/functions/run');
+    // Call fetch unbound: the native window.fetch throws "Illegal invocation"
+    // when invoked as a method of another object.
+    var doFetch = env.fetch;
+    return doFetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (res) {
+      return res.text().then(function (text) {
+        var body = parseJson(text);
+        if (!res.ok) {
+          throw new DataError(functionErrorMessage(res.status, body, !!sourceSpec.runtime), res.status);
+        }
+        if (!body || !body.data) throw new DataError('data function "' + ref + '" returned no data', res.status);
+        return body.data;
+      });
+    });
+  });
+}
+
+/**
+ * A readable message for a failed data-function call. The default runtime
+ * missing (a static host: 404 / 405 / 501) or an anonymous viewer (401) get an
+ * explanation instead of a bare HTTP status; otherwise the runtime's `detail`.
+ * @param {number} status - HTTP status.
+ * @param {(object|null)} body - Parsed response body.
+ * @param {boolean} customRuntime - Whether the source names its own runtime URL.
+ * @returns {string} The message.
+ * @private
+ */
+function functionErrorMessage(status, body, customRuntime) {
+  if (!customRuntime && (status === 404 || status === 405 || status === 501)) {
+    return 'Data functions are not available here: serve this dashboard from a ' +
+      'canvasxpress-dashboards server with data functions enabled (CXD_FUNCTIONS)';
+  }
+  if (status === 401) return 'Sign in to run data functions';
+  return body && body.detail ? body.detail : ('HTTP ' + status);
+}
+
+/**
+ * Resolve a `{name: literal | "$param"}` template against parameter values
+ * (an unset `$param` resolves to null — a data function sees it as missing).
+ * @param {object} [template] - The template.
+ * @param {object} [params] - Current parameter values.
+ * @returns {object} Concrete values.
+ * @private
+ */
+function resolveTemplate(template, params) {
+  var out = {};
+  params = params || {};
+  for (var name in (template || {})) {
+    if (!Object.prototype.hasOwnProperty.call(template, name)) continue;
+    var token = template[name];
+    out[name] = typeof token === 'string' && token.charAt(0) === '$'
+      ? (params[token.slice(1)] == null ? null : params[token.slice(1)])
+      : token;
+  }
+  return out;
 }
 
 /**

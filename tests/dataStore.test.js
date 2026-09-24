@@ -185,3 +185,153 @@ test('cache key is order-independent for the same param values', async function 
   await store.resolve('s', src, { params: { b: '2', a: '1' } });
   assert.equal(fetchStub.calls.length, 1, 'same values in any order share one cache entry');
 });
+
+// --- kind:"join" sources ---
+
+var LEFT = { y: { vars: ['V'], smps: ['a', 'b'], data: [[1, 2]] } };
+var RIGHT = { y: { vars: ['W'], smps: ['b', 'c'], data: [[20, 30]] } };
+
+test('resolves a join source by blending its two inputs', async function () {
+  var store = createDataStore({ fetch: fakeFetch(), cache: new Map() });
+  var sources = {
+    l: { kind: 'inline', value: LEFT },
+    r: { kind: 'inline', value: RIGHT },
+    j: { kind: 'join', left: 'l', right: 'r', how: 'left' }
+  };
+  var data = await store.resolve('j', sources.j, { sources: sources });
+  assert.deepEqual(data.y.smps, ['a', 'b']);
+  assert.deepEqual(data.y.vars, ['V', 'W']);
+  assert.deepEqual(data.y.data, [[1, 2], [null, 20]]);
+});
+
+test('a join fetches remote inputs with the current params and nests joins', async function () {
+  var urls = [];
+  var fetchStub = function (url) {
+    urls.push(url);
+    var body = JSON.stringify(/source=r/.test(url) ? RIGHT : LEFT);
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(body); } });
+  };
+  var store = createDataStore({ fetch: fetchStub, cache: new Map() });
+  var sources = {
+    l: { kind: 'connector', url: '/api/data?source=l', query: { region: '$region' } },
+    r: { kind: 'connector', url: '/api/data?source=r' },
+    j: { kind: 'join', left: 'l', right: 'r', how: 'outer' },
+    jj: { kind: 'join', left: 'j', right: 'r', suffix: '_again' }
+  };
+  var data = await store.resolve('jj', sources.jj, { sources: sources, params: { region: 'EMEA' } });
+  assert.ok(urls.indexOf('/api/data?source=l&region=EMEA') !== -1, 'left input got the param');
+  assert.deepEqual(data.y.vars, ['V', 'W', 'W_again']);
+  assert.deepEqual(data.y.smps, ['b', 'c']);
+});
+
+test('a join resolves its inputs through opts.resolveInput when given', async function () {
+  var store = createDataStore({ fetch: fakeFetch(), cache: new Map() });
+  var asked = [];
+  var sources = {
+    l: { kind: 'connector', url: '/never' },
+    r: { kind: 'connector', url: '/never' },
+    j: { kind: 'join', left: 'l', right: 'r' }
+  };
+  var data = await store.resolve('j', sources.j, {
+    sources: sources,
+    resolveInput: function (ref) { asked.push(ref); return Promise.resolve(ref === 'l' ? LEFT : RIGHT); }
+  });
+  assert.deepEqual(asked, ['l', 'r']);
+  assert.deepEqual(data.y.smps, ['b']);
+});
+
+test('a join rejects a missing input and a cycle without fetching', async function () {
+  var fetchStub = fakeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map() });
+  var sources = {
+    l: { kind: 'connector', url: '/x' },
+    j: { kind: 'join', left: 'l', right: 'ghost' },
+    c1: { kind: 'join', left: 'l', right: 'c2' },
+    c2: { kind: 'join', left: 'c1', right: 'l' }
+  };
+  await assert.rejects(store.resolve('j', sources.j, { sources: sources }), /input "ghost" not found/);
+  await assert.rejects(store.resolve('c1', sources.c1, { sources: sources }), /depends on itself \(c1 -> c2 -> c1\)/);
+  assert.equal(fetchStub.calls.length, 0);
+});
+
+// --- kind:"function" sources (data functions) ---
+
+/**
+ * A fetch stub for a data-function runtime: records the POSTed contract and
+ * answers with a canned result (or an error).
+ * @param {object} [opts] - `{ status, body }`.
+ * @returns {function} fetch stub with `.calls`.
+ */
+function runtimeFetch(opts) {
+  opts = opts || {};
+  var fn = function (url, init) {
+    fn.calls.push({ url: url, init: init, body: init && init.body ? JSON.parse(init.body) : null });
+    var status = opts.status || 200;
+    var text = JSON.stringify(opts.body || { data: { y: { vars: ['n'], smps: ['drug'], data: [[2]] } } });
+    return Promise.resolve({ ok: status < 300, status: status, text: function () { return Promise.resolve(text); } });
+  };
+  fn.calls = [];
+  return fn;
+}
+
+test('a function source POSTs its inputs, code and resolved args to the runtime', async function () {
+  var fetchStub = runtimeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map(), baseUrl: 'http://srv' });
+  var sources = {
+    clin: { kind: 'inline', value: LEFT },
+    genes: { kind: 'inline', axis: 'vars', value: RIGHT },
+    f: { kind: 'function', language: 'r', code: 'result <- d', inputs: { d: 'clin', g: 'genes' },
+      args: { k: '$k', n: 3, missing: '$unset' }, axis: 'vars' }
+  };
+  var data = await store.resolve('f', sources.f, { sources: sources, params: { k: 2 } });
+  assert.deepEqual(data, { y: { vars: ['n'], smps: ['drug'], data: [[2]] } });
+  var call = fetchStub.calls[0];
+  assert.equal(call.url, 'http://srv/api/functions/run');
+  assert.equal(call.init.method, 'POST');
+  assert.equal(call.init.credentials, 'include');
+  assert.deepEqual(call.body, {
+    language: 'r', code: 'result <- d', axis: 'vars',
+    inputs: { d: { data: LEFT, axis: 'smps' }, g: { data: RIGHT, axis: 'vars' } },
+    params: { k: 2, n: 3, missing: null }
+  });
+});
+
+test('a function source takes inputs as an array and a custom runtime URL', async function () {
+  var fetchStub = runtimeFetch();
+  var store = createDataStore({ fetch: fetchStub, cache: new Map() });
+  var sources = { clin: { kind: 'inline', value: LEFT }, f: { kind: 'function', language: 'python', code: 'result = clin', inputs: ['clin'], runtime: 'https://rt.example/run' } };
+  await store.resolve('f', sources.f, { sources: sources });
+  assert.equal(fetchStub.calls[0].url, 'https://rt.example/run');
+  assert.deepEqual(Object.keys(fetchStub.calls[0].body.inputs), ['clin']);
+});
+
+test('a runtime error surfaces as a DataError with its detail', async function () {
+  var store = createDataStore({ fetch: runtimeFetch({ status: 400, body: { detail: 'NameError: nope' } }), cache: new Map() });
+  var sources = { clin: { kind: 'inline', value: LEFT }, f: { kind: 'function', language: 'python', code: 'x', inputs: ['clin'] } };
+  await assert.rejects(store.resolve('f', sources.f, { sources: sources }), function (err) {
+    return err instanceof DataError && err.status === 400 && /NameError: nope/.test(err.message);
+  });
+  await assert.rejects(store.resolve('g', { kind: 'function', language: 'python', code: 'x', inputs: ['ghost'] }, { sources: sources }), /input "ghost" not found/);
+});
+
+test('a function source calls fetch unbound (native fetch rejects a foreign `this`)', async function () {
+  var sawThis = 'unset';
+  var fetchStub = function (url, init) {
+    sawThis = this;
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve('{"data":{"y":{"vars":[],"smps":[],"data":[]}}}'); } });
+  };
+  var store = createDataStore({ fetch: fetchStub, cache: new Map() });
+  var sources = { clin: { kind: 'inline', value: LEFT }, f: { kind: 'function', language: 'python', code: 'result = clin', inputs: ['clin'] } };
+  await store.resolve('f', sources.f, { sources: sources });
+  assert.equal(sawThis, undefined);
+});
+
+test('a missing default function runtime explains itself; a custom runtime keeps its status', async function () {
+  var sources = { clin: { kind: 'inline', value: LEFT }, f: { kind: 'function', language: 'r', code: 'x', inputs: ['clin'] } };
+  var store404 = createDataStore({ fetch: runtimeFetch({ status: 404, body: {} }), cache: new Map() });
+  await assert.rejects(store404.resolve('f', sources.f, { sources: sources }), /Data functions are not available here/);
+  var store401 = createDataStore({ fetch: runtimeFetch({ status: 401, body: { detail: 'Not logged in' } }), cache: new Map() });
+  await assert.rejects(store401.resolve('f', sources.f, { sources: sources }), /Sign in to run data functions/);
+  var custom = Object.assign({}, sources.f, { runtime: 'https://rt.example/run' });
+  await assert.rejects(store404.resolve('f', custom, { sources: sources }), /HTTP 404/);
+});

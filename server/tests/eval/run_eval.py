@@ -23,6 +23,7 @@ import argparse
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -106,7 +107,10 @@ def meets_expectation(spec, expect):
     failure for the user — this is the axis `structural`/`bindings` cannot see.
     Supported expectations: ``has_key`` (key present anywhere in the tree),
     ``panel_type`` (a panel of that type exists), ``control_mode`` (a control
-    panel in that mode exists).
+    panel in that mode exists), ``source_kind`` (a data source of that kind),
+    ``function_language`` (a function source in that language), ``join_how``
+    (a join of that type), ``links_sources`` (a relationship or a join links
+    two sources).
 
     :returns: (met, note) — note explains a miss.
     """
@@ -149,12 +153,62 @@ def meets_expectation(spec, expect):
                          for p in panels.values()):
         return False, "no panel of type '%s'" % ptype
 
+    sources = [s for s in ((spec.get("data") or {}).values() if isinstance(spec, dict) else [])
+               if isinstance(s, dict)]
+    kind = expect.get("source_kind")
+    if kind and not any(s.get("kind") == kind for s in sources):
+        return False, "no data source of kind '%s'" % kind
+    lang = expect.get("function_language")
+    if lang and not any(s.get("kind") == "function" and s.get("language") == lang for s in sources):
+        return False, "no %s function source" % lang
+    how = expect.get("join_how")
+    if how and not any(s.get("kind") == "join" and s.get("how") == how for s in sources):
+        return False, "no join with how '%s'" % how
+    if expect.get("links_sources"):
+        linked = bool(spec.get("relationships")) or any(s.get("kind") == "join" for s in sources)
+        if not linked:
+            return False, "no relationship or join links the sources"
     mode = expect.get("control_mode")
     if mode and not any(isinstance(p, dict) and p.get("type") == "control"
                         and p.get("mode") == mode for p in panels.values()):
         return False, "no control panel with mode '%s'" % mode
 
     return True, ""
+
+
+def apply_render_check(args, results):
+    """Render every spec with the real engine (render_check.cjs) and fold the
+    verdict in as a ``render`` axis. Free — no LLM calls — but it needs the
+    dashboards server running (dataset / function sources resolve through it)
+    and Playwright + CanvasXpress (see render_check.cjs).
+
+    :returns: the summary count of specs that rendered as asked.
+    """
+    tmp = args.out + ".render-input.json"
+    json.dump({"results": results}, open(tmp, "w"))
+    try:
+        proc = subprocess.run(
+            ["node", os.path.join(HERE, "render_check.cjs"), "--results", tmp,
+             "--url", args.url, "--user", args.user, "--password", args.password],
+            capture_output=True, text=True, timeout=1800)
+    finally:
+        os.remove(tmp)
+    if proc.returncode != 0:
+        raise SystemExit("render check failed:\n" + (proc.stderr or proc.stdout)[-2000:])
+    report = json.loads(proc.stdout)
+    rendered = 0
+    for row in results:
+        verdict = report.get(row["id"])
+        if verdict is None:          # no spec to render
+            row["render"] = False
+        else:
+            row["render"] = verdict["ok"]
+            row.setdefault("errors", []).extend("render: " + p for p in verdict["problems"])
+        row["pass"] = bool(row.get("pass") and row["render"])
+        rendered += 1 if row["render"] else 0
+        print("  %s  render %s  %s" % (row["id"], "ok  " if row["render"] else "FAIL",
+                                        "; ".join((verdict or {}).get("problems") or [])[:220]))
+    return rendered
 
 
 def replay(args):
@@ -200,10 +254,13 @@ def replay(args):
         print("  %s  %s  %s" % (new_row["id"], "PASS" if new_row["pass"] else "FAIL",
                                 "; ".join(new_row.get("errors") or [])[:150]))
 
+    summary = {"total": len(results)}
+    if args.render:
+        summary["render"] = apply_render_check(args, results)
     passed = sum(1 for r in results if r["pass"])
+    summary["passed"] = passed
     print("\n== REPLAY (no API cost) %d/%d passed ==" % (passed, len(results)))
-    json.dump({"summary": {"total": len(results), "passed": passed},
-               "results": results}, open(args.out, "w"), indent=1)
+    json.dump({"summary": summary, "results": results}, open(args.out, "w"), indent=1)
     print("wrote " + args.out)
     return 0
 
@@ -217,6 +274,10 @@ def main():
     ap.add_argument("--prompts", default="prompts.json",
                     help="prompt file to run (default prompts.json)")
     ap.add_argument("--out", default=os.path.join(HERE, "results.json"))
+    ap.add_argument("--render", action="store_true",
+                    help=("also render every spec with the real CanvasXpress engine "
+                          "(render_check.cjs) and require the charts to plot what "
+                          "the spec asks for — free, needs the server running"))
     ap.add_argument("--replay", help=("re-score a previous results file offline "
                                       "(no API calls, no cost) — use after changing "
                                       "expectations or the validator"))
@@ -253,6 +314,7 @@ def main():
 
         spec = res.get("spec")
         row["reply"] = (res.get("reply") or "")[:120]
+        row["cost"] = res.get("cost")   # server-reported USD (orchestrator + MCP)
         row["produced"] = spec is not None
         if spec is None:
             row.update(structural=False, bindings=False, errors=["no spec returned"])
@@ -272,9 +334,12 @@ def main():
         row["pass"] = bool(row["produced"] and row["structural"]
                            and row["bindings"] and row["intent"])
         results.append(row)
-        print("  %s  %s  %s" % (prompt["id"], "PASS" if row["pass"] else "FAIL",
-                                "; ".join(row.get("errors") or [])[:150]))
+        cost = (row.get("cost") or {}).get("total_usd")
+        print("  %s  %s  %s%s" % (prompt["id"], "PASS" if row["pass"] else "FAIL",
+                                  "" if cost is None else "$%.4f  " % cost,
+                                  "; ".join(row.get("errors") or [])[:150]))
 
+    rendered = apply_render_check(args, results) if args.render else None
     total = len(results)
     summary = {
         "total": total,
@@ -283,11 +348,14 @@ def main():
         "bindings": sum(1 for r in results if r.get("bindings")),
         "intent": sum(1 for r in results if r.get("intent")),
         "passed": sum(1 for r in results if r.get("pass")),
+        "cost_usd": round(sum(((r.get("cost") or {}).get("total_usd") or 0) for r in results), 4),
     }
+    if rendered is not None:
+        summary["render"] = rendered
     json.dump({"summary": summary, "results": results}, open(args.out, "w"), indent=1)
-    print("\n== %d/%d passed ==  produced %d | structural %d | bindings %d | intent %d"
+    print("\n== %d/%d passed ==  produced %d | structural %d | bindings %d | intent %d | cost $%.4f"
           % (summary["passed"], total, summary["produced"],
-             summary["structural"], summary["bindings"], summary["intent"]))
+             summary["structural"], summary["bindings"], summary["intent"], summary["cost_usd"]))
     print("wrote " + args.out)
     return 0
 

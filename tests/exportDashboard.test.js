@@ -81,3 +81,20 @@ test('guardScript neutralizes </script but leaves regex literals intact', async 
   assert.match(html, /var re = \/<\/g;/, 'the regex literal /</g survives unescaped');
   assert.match(html, /x<\\\/script>y/, 'the </script hazard is neutralized to <\\/script');
 });
+
+test('inlineSpecData bakes a join source (and its inputs) inline', async function () {
+  var spec = {
+    id: 'blend',
+    layout: { cols: 12, items: [{ panel: 'bar', x: 0, y: 0, w: 6, h: 3 }] },
+    data: {
+      l: { kind: 'inline', value: { y: { vars: ['V'], smps: ['a', 'b'], data: [[1, 2]] } } },
+      r: { kind: 'inline', value: { y: { vars: ['W'], smps: ['b'], data: [[9]] } } },
+      j: { kind: 'join', left: 'l', right: 'r' }
+    },
+    panels: { bar: { dataRef: 'j', config: { graphType: 'Bar' } } }
+  };
+  var out = await inlineSpecData(spec, {});
+  assert.equal(out.data.j.kind, 'inline');
+  assert.deepEqual(out.data.j.value.y, { vars: ['V', 'W'], smps: ['b'], data: [[2], [9]] });
+  assert.equal(spec.data.j.kind, 'join', 'the input spec is not mutated');
+});

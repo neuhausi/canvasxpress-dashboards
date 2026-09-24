@@ -31,7 +31,24 @@ change values to your resources (Postgres, S3, Google Drive, HTTPS, …). Common
 vars: `SESSION_SECRET` (auto-generated if unset), `CXD_HOST`/`CXD_PORT`,
 `APP_DB_PATH`, `CXD_DASHBOARD_STORE`, `CXD_DATASET_STORE`, `ALLOW_SIGNUP`,
 `CXD_HTTPS_ONLY`, `CXD_ADMINS`, `CXD_PUBLISH_BASE_URL`, `CXD_CANVASXPRESS_URL`,
-`CXD_CANVASXPRESS_LICENSE`, `CXD_LLM_API_KEY`, `CXD_LLM_MODEL`.
+`CXD_CANVASXPRESS_LICENSE`, `CXD_LLM_API_KEY`, `CXD_LLM_MODEL`, `CXD_FUNCTIONS*`.
+
+**Data functions** (`kind:"function"` sources — R / Python snippets) run in
+this server only when `CXD_FUNCTIONS=admin` (administrators) or `users` (any
+logged-in user); the default is `off`. Each run is a sandboxed subprocess with a
+timeout, resource limits and — where the OS supports it — no network; see the
+main README's *Data functions* section for every `CXD_FUNCTIONS_*` knob, and
+`GET /api/functions/status` for what is in effect. It executes user-supplied
+code: run `users` mode only inside a container / VM you trust.
+
+To turn them on for a deployed demo (e.g. so the shipped Cohort Explorer's R
+panel computes): install the interpreters' packages on the host (`pip install
+pandas` for `CXD_FUNCTIONS_PYTHON`, `install.packages("jsonlite")` for R), add
+`CXD_FUNCTIONS=users` to the server's `.env`, restart, and check
+`GET /api/functions/status` — `languages` lists what can run and
+`networkIsolation` the sandbox actually in effect (`none` means run it in a
+container). `CXD_FUNCTIONS=admin` works too, but then only administrators see
+functions computed; every other viewer gets the panel's error message.
 
 `CXD_CANVASXPRESS_URL` points the served app at a (self-hosted) CanvasXpress
 build; `CXD_CANVASXPRESS_LICENSE` is injected as `window.cX` before the library
@@ -59,6 +76,8 @@ uvicorn cxd_server.app:create_dashboards_app --factory --reload
 | `POST` | `/auth/signup` · `/auth/login` · `/auth/logout` | Session auth (cookie) |
 | `GET` | `/auth/me` | Current user (`{user, is_admin}`) |
 | `GET` | `/api/llm/status` | Whether the NL builder is configured (`{enabled, model}`; no key) |
+| `GET` | `/api/functions/status` | Data-function runtime: `{enabled, mode, languages, timeout, memoryMb, networkIsolation}` |
+| `POST` | `/api/functions/run` | Run a data function (`{language, code, inputs, params, axis}` → `{data}`); needs `CXD_FUNCTIONS` |
 | `GET`·`POST` | `/api/admin/users` | Admin: list / create users (needs `CXD_ADMINS`) |
 | `POST` | `/api/admin/users/{u}/password` | Admin: reset a user's password |
 | `DELETE` | `/api/admin/users/{u}` | Admin: delete a user + their dashboards |

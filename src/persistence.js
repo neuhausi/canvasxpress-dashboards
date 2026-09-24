@@ -9,6 +9,7 @@
  */
 
 import { validateSpec } from './validateSpec.js';
+import { migrateSpec, serializeSpec } from './spec.js';
 
 /**
  * Trigger a browser download of a spec as pretty-printed JSON.
@@ -20,7 +21,9 @@ import { validateSpec } from './validateSpec.js';
 export function exportSpec(spec, filename, doc) {
   doc = doc || document;
   var name = filename || ((spec && spec.id ? spec.id : 'dashboard') + '.json');
-  var json = JSON.stringify(spec, null, 2);
+  // The canonical text (stable key order, stamped format version), so an
+  // exported spec diffs cleanly in git and is self-describing.
+  var json = serializeSpec(migrateSpec(spec).spec);
   var blob = new Blob([json], { type: 'application/json' });
   var url = URL.createObjectURL(blob);
   var a = doc.createElement('a');
@@ -44,10 +47,11 @@ export function importSpecFromFile(file) {
 }
 
 /**
- * Parse a JSON string into a validated spec.
+ * Parse a JSON string into a validated spec, upgraded to the current format.
  * @param {string} text - JSON text.
- * @returns {object} The validated spec.
- * @throws {Error} If the JSON is malformed or the spec is invalid.
+ * @returns {object} The validated, migrated spec.
+ * @throws {Error} If the JSON is malformed, the spec is invalid, or it comes
+ *   from a newer major format version.
  */
 export function parseAndValidate(text) {
   var spec;
@@ -60,7 +64,7 @@ export function parseAndValidate(text) {
   if (!result.valid) {
     throw new Error('Invalid dashboard spec:\n  - ' + result.errors.join('\n  - '));
   }
-  return spec;
+  return migrateSpec(spec).spec;
 }
 
 /**

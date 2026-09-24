@@ -419,6 +419,26 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.set_locked(EXAMPLES_OWNER, genomics["id"], True)
         print("  [seed] shipped dashboard: %s" % genomics["id"])
 
+    # Cohort Explorer (the blending showcase): clinical, expression and labs move into
+    # the dataset store; the join, the R data function, the relationship and the
+    # Filters panel stay as authored and bind to those refs. Its R panel runs only
+    # when the server enables data functions (CXD_FUNCTIONS=users; with =admin
+    # only administrators see it computed).
+    cohort = load_spec("cohort-explorer.spec.json")
+    if cohort and cohort["id"] not in saved:
+        cohort = copy.deepcopy(cohort)
+        for ref, source in cohort.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            dataset_id = "cohort-" + ref
+            if dataset_id not in have:
+                datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                title="Cohort: " + ref, dataset_id=dataset_id, locked=True)
+            cohort["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+        dashboards.save_dashboard(EXAMPLES_OWNER, cohort, now)
+        dashboards.set_locked(EXAMPLES_OWNER, cohort["id"], True)
+        print("  [seed] shipped dashboard: %s" % cohort["id"])
+
     # Biomarker Cohort: 60-sample immuno-oncology board (two boxplots with
     # individual points, a scatter, a heatmap; Sex/Timepoint filter controls).
     # Its three inline datasets move into the dataset store.

@@ -72,11 +72,24 @@ export function inlineSpecData(spec, opts) {
   var out = JSON.parse(JSON.stringify(spec));
   var params = currentParams(spec, opts.params);
   var sources = out.data || {};
+  var original = spec.data || {};   // unmutated, so joins still see their inputs' specs
   var refs = Object.keys(sources);
+  var memo = {};
+  /**
+   * Resolve a source once per export, shared by the panels and joins reading it.
+   * @param {string} ref - Source ref name.
+   * @returns {Promise<object>} Its data.
+   */
+  function resolveInput(ref) {
+    if (!memo[ref]) {
+      memo[ref] = store.resolve(ref, original[ref], { params: params, sources: original, resolveInput: resolveInput });
+    }
+    return memo[ref];
+  }
   return Promise.all(refs.map(function (ref) {
     var src = sources[ref];
     if (!src || src.kind === 'inline') return null;
-    return store.resolve(ref, src, { params: params }).then(function (data) {
+    return resolveInput(ref).then(function (data) {
       // Drop the now-meaningless query template — the data is baked inline.
       sources[ref] = { kind: 'inline', value: data };
     });

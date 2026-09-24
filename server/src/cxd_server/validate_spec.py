@@ -15,6 +15,7 @@ contract for both is ``schema/dashboard.schema.json``.
 
 from __future__ import annotations
 
+import re
 from typing import Any, Optional
 
 _FIT = ("contain", "cover", "fill", "none", "scale-down")
@@ -22,7 +23,17 @@ _STYLE = ("auto", "dropdown", "radio", "buttons", "search", "slider")
 _ALIGN = ("left", "center", "right")
 _VALIGN = ("top", "middle", "bottom")
 _PARAM_TYPES = ("string", "number", "boolean")
-_DATA_KINDS = ("inline", "connector", "dataset")
+_DATA_KINDS = ("inline", "connector", "dataset", "join", "function")
+_FUNCTION_LANGUAGES = ("python", "r")
+_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_JOIN_TYPES = ("inner", "left", "right", "outer")
+_AXES = ("smps", "vars")
+_MARKING_MODES = ("focus", "highlight", "ghost")
+_FIELD_KINDS = ("values", "range", "search")
+# The dashboard spec format version this server reads/writes — keep in sync with
+# DASHBOARD_SCHEMA_VERSION in src/spec.js.
+DASHBOARD_SCHEMA_VERSION = "1.1"
+_VERSION_RE = re.compile(r"^(\d+)\.(\d+)$")
 
 
 def _is_int(value: Any) -> bool:
@@ -59,17 +70,63 @@ def validate_spec(spec: Any) -> dict:
     if version is not None and not (_is_int(version) and version >= 1):
         errors.append("spec.version must be an integer >= 1")
 
+    # Format version (schemaVersion "MAJOR.MINOR"; absent = the legacy 1.0).
+    warnings: list = []
+    status, found = spec_compatibility(spec)
+    if spec.get("$schema") is not None and not _is_str(spec.get("$schema")):
+        errors.append("spec.$schema must be a URL string")
+    if status == "invalid":
+        errors.append('spec.schemaVersion must be "MAJOR.MINOR" (e.g. "%s")'
+                      % DASHBOARD_SCHEMA_VERSION)
+    elif status == "newer-major":
+        errors.append("spec.schemaVersion %s needs a newer canvasxpress-dashboards "
+                      "(this one reads %s.x)" % (found, DASHBOARD_SCHEMA_VERSION.split(".")[0]))
+
     panels = spec.get("panels")
     data = spec.get("data")
     params = spec.get("params")
 
     _check_layout(spec, panels, errors)
     _check_panels(panels, data, params, errors)
-    _check_data(data, params, errors)
+    _check_data(data, params, errors, warnings if status == "newer-minor" else None)
+    _check_relationships(spec.get("relationships"), data, errors)
+    if spec.get("markingMode") is not None and spec.get("markingMode") not in _MARKING_MODES:
+        errors.append('spec.markingMode must be "focus", "highlight", or "ghost"')
+    _check_filter_schemes(spec.get("filterSchemes"), data, errors)
     _check_params(params, errors)
     _check_controls(spec.get("controls"), data, errors)
 
-    return {"valid": not errors, "errors": errors}
+    result = {"valid": not errors, "errors": errors}
+    if warnings:
+        result["warnings"] = warnings
+    return result
+
+
+def spec_compatibility(spec: dict):
+    """How a spec's format version relates to this server.
+
+    Mirrors ``specCompatibility`` in src/spec.js.
+
+    :returns: ``(status, version)`` — status is ``current``, ``older``,
+        ``newer-minor``, ``newer-major`` or ``invalid``.
+    """
+    raw = spec.get("schemaVersion")
+    if raw is None:
+        major, minor = 1, 0
+    else:
+        match = _VERSION_RE.fullmatch(raw) if _is_str(raw) else None
+        if not match:
+            return "invalid", str(raw)
+        major, minor = int(match.group(1)), int(match.group(2))
+    cur_major, cur_minor = (int(p) for p in DASHBOARD_SCHEMA_VERSION.split("."))
+    version = "%d.%d" % (major, minor)
+    if major > cur_major:
+        return "newer-major", version
+    if major < cur_major or minor < cur_minor:
+        return "older", version
+    if minor > cur_minor:
+        return "newer-minor", version
+    return "current", version
 
 
 def _check_layout(spec: dict, panels: Any, errors: list) -> None:
@@ -129,7 +186,7 @@ def _check_panels(panels: Any, data: Any, params: Any, errors: list) -> None:
             or panel.get("style") == "search")
         is_config_control = ptype == "control" and panel.get("mode") == "config"
 
-        if (ptype not in ("text", "image") and not param_with_options
+        if (ptype not in ("text", "image", "filters") and not param_with_options
                 and not is_config_control
                 and panel.get("dataRef") is None and panel.get("data") is None):
             errors.append(at + " must have either a dataRef or inline data")
@@ -140,6 +197,10 @@ def _check_panels(panels: Any, data: Any, params: Any, errors: list) -> None:
             if panel.get("fit") is not None and panel.get("fit") not in _FIT:
                 errors.append(at + '.fit must be "contain", "cover", "fill", "none", or "scale-down"')
 
+        if ptype == "filters":
+            _check_filters_panel(panel, at, data, errors)
+        if panel.get("transpose") is not None and not isinstance(panel.get("transpose"), bool):
+            errors.append(at + ".transpose must be true or false")
         if ptype == "control":
             _check_control_panel(panel, panels, data, params, at, errors)
 
@@ -204,8 +265,12 @@ def _check_control_panel(panel: dict, panels: Any, data: Any, params: Any,
                 errors.append(at + ".optionsFrom.dataRef has no matching entry in spec.data")
 
 
-def _check_data(data: Any, params: Any, errors: list) -> None:
-    """Validate spec.data sources and their $param query tokens."""
+def _check_data(data: Any, params: Any, errors: list, lenient: Optional[list] = None) -> None:
+    """Validate spec.data sources and their $param query tokens.
+
+    :param lenient: For a newer-MINOR spec, a list collecting unknown-kind
+        warnings (those sources are skipped rather than failing the spec).
+    """
     if data is None:
         return
     if not _is_obj(data):
@@ -219,13 +284,23 @@ def _check_data(data: Any, params: Any, errors: list) -> None:
             continue
         kind = src.get("kind")
         if kind not in _DATA_KINDS:
-            errors.append(at + '.kind must be "inline", "connector", or "dataset"')
+            message = at + '.kind must be "inline", "connector", "dataset", "join", or "function"'
+            if lenient is not None:
+                lenient.append(message + " (unknown kind from a newer format: skipped)")
+            else:
+                errors.append(message)
         if kind == "inline" and src.get("value") is None:
             errors.append(at + ' of kind "inline" requires a value')
         if kind == "connector" and not _is_str(src.get("url")):
             errors.append(at + ' of kind "connector" requires a url string')
         if kind == "dataset" and (not _is_str(src.get("id")) or not src.get("id")):
             errors.append(at + ' of kind "dataset" requires an id string')
+        if kind == "join":
+            _check_join(src, at, data, errors)
+        elif src.get("axis") is not None and src.get("axis") not in _AXES:
+            errors.append(at + '.axis must be "smps" or "vars"')
+        if kind == "function":
+            _check_function(src, at, data, params, errors)
 
         # A `query` template maps request keys to literals or "$param" tokens;
         # every token must name a declared parameter.
@@ -239,6 +314,219 @@ def _check_data(data: Any, params: Any, errors: list) -> None:
                         name = token[1:]
                         if not _is_obj(params) or name not in params:
                             errors.append(at + '.query["%s"] references undeclared param "%s"' % (qk, name))
+
+
+    # A join / data function must not read itself, directly or indirectly.
+    # Flag each ref on the cycle; a ref that only leads into one is not flagged.
+    for key, src in data.items():
+        if _is_obj(src) and src.get("kind") in ("join", "function"):
+            cycle = join_cycle(key, data)
+            if cycle and cycle[0] == key:
+                errors.append('spec.data["%s"] %s depends on itself (%s)'
+                              % (key, src.get("kind"), " -> ".join(cycle)))
+
+
+def _check_join(src: dict, at: str, data: dict, errors: list) -> None:
+    """Validate a kind:"join" source: left/right refs, how, on, axes, suffix."""
+    _check_relation(src, at, data, errors, 'of kind "join"')
+    if src.get("how") is not None and src.get("how") not in _JOIN_TYPES:
+        errors.append(at + '.how must be one of "%s"' % '", "'.join(_JOIN_TYPES))
+    if src.get("suffix") is not None and not _is_str(src.get("suffix")):
+        errors.append(at + ".suffix must be a string")
+
+
+def _check_relation(src: dict, at: str, data: Any, errors: list, what: str) -> None:
+    """Validate what a join and a spec.relationships entry share: refs, on, axes."""
+    for side in ("left", "right"):
+        ref = src.get(side)
+        if not _is_str(ref) or not ref:
+            errors.append(at + " %s requires a %s ref string" % (what, side))
+        elif not _is_obj(data) or ref not in data:
+            errors.append(at + '.%s "%s" has no matching entry in spec.data' % (side, ref))
+    on = src.get("on")
+    if on is not None:
+        keys = on if isinstance(on, list) else [on]
+
+        def valid_key(key: Any) -> bool:
+            if _is_str(key):
+                return bool(key)
+            return _is_obj(key) and _is_str(key.get("left")) and bool(key.get("left")) \
+                and _is_str(key.get("right")) and bool(key.get("right"))
+
+        if not keys or not all(valid_key(k) for k in keys):
+            errors.append(
+                at + ".on must be a column name, {left, right}, or a non-empty array of those")
+    for field in ("axis", "leftAxis", "rightAxis"):
+        if src.get(field) is not None and src.get(field) not in _AXES:
+            errors.append(at + '.%s must be "smps" or "vars"' % field)
+
+
+def source_inputs(src: Any) -> list:
+    """The refs a derived source reads (mirrors ``sourceInputs`` in ``src/join.js``)."""
+    if not _is_obj(src):
+        return []
+    if src.get("kind") == "join":
+        return [src.get("left"), src.get("right")]
+    if src.get("kind") == "function":
+        inputs = src.get("inputs")
+        if isinstance(inputs, list):
+            return list(inputs)
+        if _is_obj(inputs):
+            return list(inputs.values())
+    return []
+
+
+def join_cycle(ref: str, data: dict) -> Optional[list]:
+    """Find a cycle through join / data-function inputs reachable from ``ref``.
+
+    Mirrors ``derivedCycle`` in ``src/join.js``.
+
+    :returns: the cycle path (first ref repeated last), or ``None``.
+    """
+    path: list = []
+    done: set = set()
+
+    def visit(node: Any) -> Optional[list]:
+        if node in path:
+            return path[path.index(node):] + [node]
+        if not _is_str(node) or node in done:
+            return None
+        inputs = source_inputs(data.get(node))
+        if inputs:
+            path.append(node)
+            found = None
+            for item in inputs:
+                found = found or visit(item)
+            path.pop()
+            if found:
+                return found
+        done.add(node)
+        return None
+
+    return visit(ref)
+
+
+def _check_function(src: dict, at: str, data: dict, params: Any, errors: list) -> None:
+    """Validate a kind:"function" source (mirrors ``checkFunction`` in validateSpec.js)."""
+    if src.get("language") not in _FUNCTION_LANGUAGES:
+        errors.append(at + ' of kind "function" requires language "python" or "r"')
+    code = src.get("code")
+    if not _is_str(code) or not code.strip():
+        errors.append(at + ' of kind "function" requires a code string')
+    inputs = src.get("inputs")
+    pairs = []
+    if isinstance(inputs, list):
+        pairs = [(ref, ref) for ref in inputs]
+    elif _is_obj(inputs):
+        pairs = list(inputs.items())
+    elif inputs is not None:
+        errors.append(at + ".inputs must be an array of refs or a {name: ref} map")
+    for name, ref in pairs:
+        if not _is_str(name) or not _IDENTIFIER.match(name):
+            errors.append(at + '.inputs name "%s" must be an identifier (letters, digits, _)'
+                          % _js_str(name))
+        if not _is_str(ref) or ref not in data:
+            errors.append(at + '.inputs "%s" has no matching entry in spec.data' % _js_str(ref))
+    args = src.get("args")
+    if args is not None:
+        if not _is_obj(args):
+            errors.append(at + ".args must be an object map")
+        else:
+            for name, token in args.items():
+                if not (_is_str(token) and token.startswith("$")):
+                    continue
+                if not _is_obj(params) or token[1:] not in params:
+                    errors.append(at + '.args["%s"] references undeclared param "%s"'
+                                  % (name, token[1:]))
+    if src.get("runtime") is not None and not _is_str(src.get("runtime")):
+        errors.append(at + ".runtime must be a URL string")
+
+
+def _js_str(value: Any) -> str:
+    """Render a value the way JS string concatenation would (for parity)."""
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value)
+
+
+def _check_filters_panel(panel: dict, at: str, data: Any, errors: list) -> None:
+    """Validate a type:"filters" panel's fields and sources."""
+    fields = panel.get("fields")
+    if fields is not None and not isinstance(fields, list):
+        errors.append(at + ".fields must be an array")
+        return
+    fields = fields or []
+    if panel.get("dataRef") is None and not fields:
+        errors.append(at + ' of type "filters" requires a dataRef or fields')
+    for i, f in enumerate(fields):
+        fat = at + ".fields[%d]" % i
+        if _is_str(f):
+            if not f:
+                errors.append(fat + " must be a non-empty field name")
+            elif panel.get("dataRef") is None:
+                errors.append(fat + " needs the panel dataRef (or use {field, dataRef})")
+            continue
+        if not _is_obj(f) or not _is_str(f.get("field")) or not f.get("field"):
+            errors.append(fat + " must be a field name or {field, dataRef?, kind?}")
+            continue
+        if f.get("dataRef") is not None and (not _is_obj(data) or f.get("dataRef") not in data):
+            errors.append(fat + '.dataRef "%s" has no matching entry in spec.data'
+                          % f.get("dataRef"))
+        elif f.get("dataRef") is None and panel.get("dataRef") is None:
+            errors.append(fat + " needs a dataRef (on the field or the panel)")
+        if f.get("kind") is not None and f.get("kind") not in _FIELD_KINDS:
+            errors.append(fat + '.kind must be "values", "range", or "search"')
+
+
+def _check_filter_schemes(schemes: Any, data: Any, errors: list) -> None:
+    """Validate spec.filterSchemes: name -> array of saved filters."""
+    if schemes is None:
+        return
+    if not _is_obj(schemes):
+        errors.append("spec.filterSchemes must be an object map")
+        return
+    for name, scheme in schemes.items():
+        at = 'spec.filterSchemes["%s"]' % name
+        if not isinstance(scheme, list):
+            errors.append(at + " must be an array of filters")
+            continue
+        for i, p in enumerate(scheme):
+            pat = at + "[%d]" % i
+            if not _is_obj(p):
+                errors.append(pat + " must be an object")
+                continue
+            if not _is_str(p.get("dataRef")) or not _is_obj(data) or p.get("dataRef") not in data:
+                errors.append(pat + ".dataRef has no matching entry in spec.data")
+            if not _is_str(p.get("field")) or not p.get("field"):
+                errors.append(pat + ".field must be a non-empty string")
+            if p.get("values") is not None and not isinstance(p.get("values"), list):
+                errors.append(pat + ".values must be an array")
+            for k in ("min", "max"):
+                v = p.get(k)
+                if v is not None and (isinstance(v, bool) or not isinstance(v, (int, float))
+                                      or v != v or v in (float("inf"), float("-inf"))):
+                    errors.append(pat + ".%s must be a number" % k)
+            if p.get("text") is not None and not _is_str(p.get("text")):
+                errors.append(pat + ".text must be a string")
+
+
+def _check_relationships(relationships: Any, data: Any, errors: list) -> None:
+    """Validate spec.relationships (cross-source marking / filtering)."""
+    if relationships is None:
+        return
+    if not isinstance(relationships, list):
+        errors.append("spec.relationships must be an array")
+        return
+    for i, rel in enumerate(relationships):
+        at = "spec.relationships[%d]" % i
+        if not _is_obj(rel):
+            errors.append(at + " must be an object")
+            continue
+        _check_relation(rel, at, data, errors, "relationship")
 
 
 def _check_params(params: Any, errors: list) -> None:

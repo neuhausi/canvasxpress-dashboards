@@ -12,9 +12,20 @@
  */
 
 import { validateSpec } from './validateSpec.js';
+import { migrateSpec } from './spec.js';
 import { injectStyles } from './styles.js';
 import { createDataStore, isEmptyData } from './dataStore.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
+import { hasRelationships, relationGraph, translateMarks } from './marking.js';
+import { sourceAxis, sourceInputs, transposeCxData } from './join.js';
+import { resolveFields, rowsPassing, normalizeState, isActive, fieldKey } from './filters.js';
+
+/**
+ * A row name no data object carries: marking a related panel with only this
+ * name highlights nothing, so the whole panel reads as "no related rows".
+ * @type {string}
+ */
+var NO_MARKED_ROWS = '\u0000cxd-no-marked-rows';
 
 /**
  * Render a dashboard into a target element.
@@ -41,6 +52,14 @@ import { gridTemplate, cellArea } from './gridLayout.js';
 export function renderDashboard(spec, target, options) {
   options = options || {};
   var validate = options.validate !== false;
+
+  // Upgrade an older spec format (and refuse one from a newer MAJOR) before
+  // anything reads it; a newer MINOR renders what this version understands.
+  var migration = migrateSpec(spec);
+  spec = migration.spec;
+  if (migration.warnings.length && typeof console !== 'undefined') {
+    migration.warnings.forEach(function (w) { console.warn('[canvasxpress-dashboards] ' + w); });
+  }
 
   if (validate) {
     var result = validateSpec(spec);
@@ -117,6 +136,20 @@ export function renderDashboard(spec, target, options) {
   // controls combine; "All" in any control clears everything.
   var controlWidgets = [];
 
+  // Filters panels (type:"filters"): one shared, serializable filter state
+  // (predicates per source + field; see filters.js), the named filter schemes
+  // (spec.filterSchemes plus any saved at runtime), and the rendered panels to
+  // repaint when the state is replaced (scheme pick, reset, setFilterState).
+  var filterState = [];
+  var filterSchemes = {};
+  var activeScheme = null;
+  var filterPanelViews = [];
+  if (spec.filterSchemes && typeof spec.filterSchemes === 'object') {
+    Object.keys(spec.filterSchemes).forEach(function (name) {
+      filterSchemes[name] = normalizeState(spec.filterSchemes[name]);
+    });
+  }
+
   // Config controls (mode:"config") drive a TARGET panel's live config via
   // updateConfig — not a data filter. Several config controls can target the
   // same panel (e.g. an expiry slider + an IV/Premium metric toggle); on any
@@ -178,16 +211,36 @@ export function renderDashboard(spec, target, options) {
       var applicable = picks.filter(function (w) {
         return instanceHasAnnotation(inst, w.annotation);
       });
+      // Picks on an annotation this panel lacks can still narrow it through a
+      // relationship: the matching rows of the control's source, translated.
+      var ref = refOfInstance(inst);
+      var related = markingGraph && ref ? relatedRowFilter(picks.filter(function (w) {
+        return applicable.indexOf(w) === -1;
+      }), ref) : null;
+      // Filters-panel predicates (on this source or, translated, on related ones).
+      var panelRows = ref ? filterPanelRows(ref) : null;
+      if (panelRows) {
+        related = related
+          ? { axis: related.axis, ids: related.ids.filter(function (id) { return panelRows.indexOf(id) !== -1; }) }
+          : { axis: sourceAxis(ref, spec.data || {}), ids: panelRows };
+      }
       var savedGroup = inst.broadcastGroup;
       inst.broadcastGroup = '__cxd_annctl_serial__';
       try {
-        if (!applicable.length) {
+        if (!applicable.length && !related) {
           if (typeof inst.resetDataFilter === 'function') inst.resetDataFilter(null, false);
         } else if (typeof inst.modifyFilter === 'function') {
           if (typeof inst.resetDataFilter === 'function') inst.resetDataFilter(null, true);
           applicable.forEach(function (w, i) {
-            inst.modifyFilter('guess', w.annotation, 'exact', w.value, i < applicable.length - 1);
+            inst.modifyFilter('guess', w.annotation, 'exact', w.value, related ? true : i < applicable.length - 1);
           });
+          if (related && typeof inst.filterUserData === 'function') {
+            var names = related.ids.length ? related.ids : [NO_MARKED_ROWS];
+            var found = bindingOf(inst);
+            if (found) related.axis = instanceAxis(found.binding, found.ref);
+            if (related.axis === 'vars') inst.filterUserData('filterVarBy', 'vars', 'exact', names, false, true, false);
+            else inst.filterUserData('filterSmpBy', 'smps', 'exact', names, false, true, false);
+          }
         }
       } catch (e) { /* keep filtering the remaining instances */
       } finally {
@@ -197,16 +250,102 @@ export function renderDashboard(spec, target, options) {
   }
 
   /**
+   * The rows of `targetRef` that survive the Filters-panel state: predicates on
+   * `targetRef` itself, and predicates on related sources translated through
+   * the relationship graph. Sources the target does not relate to are ignored.
+   * @param {string} targetRef - The panel's source ref.
+   * @returns {(string[]|null)} Rows to keep, or null when nothing applies.
+   */
+  function filterPanelRows(targetRef) {
+    if (!filterState.length) return null;
+    var sources = spec.data || {};
+    var refs = [];
+    filterState.forEach(function (p) { if (refs.indexOf(p.dataRef) === -1) refs.push(p.dataRef); });
+    var keep = null;
+    refs.forEach(function (from) {
+      var data = refData[from];
+      if (!data) return;
+      var rows = rowsPassing(filterState, from, data, sourceAxis(from, sources));
+      if (rows === null) return;
+      var set = rows;
+      if (from !== targetRef) {
+        if (!markingGraph) return;
+        var marks = translateMarks(from, rows, markingGraph, function (r) { return refData[r] || null; });
+        if (!Object.prototype.hasOwnProperty.call(marks, targetRef)) return;
+        set = marks[targetRef];
+      }
+      keep = keep === null ? set : keep.filter(function (id) { return set.indexOf(id) !== -1; });
+    });
+    return keep;
+  }
+
+  /**
+   * The source ref a live instance is bound to.
+   * @param {object} inst - CanvasXpress instance.
+   * @returns {(string|null)} Its dataRef, or null for inline-data panels.
+   */
+  function refOfInstance(inst) {
+    for (var ref in refBindings) {
+      if (!Object.prototype.hasOwnProperty.call(refBindings, ref)) continue;
+      var bound = refBindings[ref];
+      for (var i = 0; i < bound.length; i++) {
+        if (bound[i].instance === inst) return ref;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Turn filter picks on OTHER sources into the rows of `targetRef` they
+   * relate to: for each pick, the control source's rows carrying the picked
+   * annotation value, translated through the relationship graph; several picks
+   * intersect. Picks whose source does not reach `targetRef`, or whose
+   * annotation is not a row annotation of that source, are ignored.
+   * @param {object[]} picks - Active filter picks (`{annotation, value, dataRef, compartment}`).
+   * @param {string} targetRef - The panel's source ref.
+   * @returns {({axis: string, ids: string[]}|null)} Rows to keep along the
+   *   target's row axis, or null when no pick relates.
+   */
+  function relatedRowFilter(picks, targetRef) {
+    var sources = spec.data || {};
+    var keep = null;
+    picks.forEach(function (w) {
+      var from = w.dataRef;
+      if (!from || from === targetRef || !refData[from]) return;
+      var axis = sourceAxis(from, sources);
+      // An x annotation describes samples, a z annotation variables: it can
+      // only select rows when it lies along the source's row axis.
+      if ((w.compartment === 'z' ? 'vars' : 'smps') !== axis) return;
+      var data = refData[from];
+      var values = (axis === 'vars' ? data.z : data.x) || {};
+      var column = values[w.annotation];
+      var ids = data.y && data.y[axis];
+      if (!Array.isArray(column) || !Array.isArray(ids)) return;
+      var rows = ids.filter(function (id, i) { return column[i] != null && String(column[i]) === String(w.value); });
+      var marks = translateMarks(from, rows, markingGraph, function (r) { return refData[r] || null; });
+      if (!Object.prototype.hasOwnProperty.call(marks, targetRef)) return;
+      var set = marks[targetRef];
+      keep = keep === null ? set : keep.filter(function (id) { return set.indexOf(id) !== -1; });
+    });
+    return keep === null ? null : { axis: sourceAxis(targetRef, sources), ids: keep };
+  }
+
+  /**
    * Snap every annotation-filter control back to "All" (UI + filters), as if
    * All had been clicked. Bound to the Escape key for the dashboard's lifetime.
    * @returns {void}
    */
   function resetAllControls() {
-    if (!controlWidgets.length) return;
+    if (!controlWidgets.length && !filterState.length) return;
     controlWidgets.forEach(function (w) {
       w.value = null;
       if (w.resetUI) w.resetUI();
     });
+    if (filterState.length) {
+      filterState = [];
+      activeScheme = null;
+      renderFilterPanels();
+    }
     applyControlFilters();
   }
   var doc = container.ownerDocument || (typeof document !== 'undefined' ? document : null);
@@ -217,6 +356,7 @@ export function renderDashboard(spec, target, options) {
   }
   var pending = [];        // per-cell settle promises (feed handle.ready)
   var refMemo = {};        // dataRef -> Promise<data> (one resolve per render)
+  var refData = {};        // dataRef -> latest resolved data (for marking translation)
   var refBindings = {};    // dataRef -> [{ instance }] (for scheduled refresh)
   var timers = [];         // refresh interval handles
   var observers = [];      // ResizeObservers keeping canvases sized to their cells
@@ -228,9 +368,96 @@ export function renderDashboard(spec, target, options) {
    */
   function resolveRef(ref) {
     if (refMemo[ref]) return refMemo[ref];
-    var promise = store.resolve(ref, (spec.data || {})[ref], { params: paramState });
+    var promise = store.resolve(ref, (spec.data || {})[ref], resolveOptions(false));
     refMemo[ref] = promise;
+    promise.then(function (data) {
+      if (refMemo[ref] === promise) refData[ref] = data;
+    }, function () { /* surfaced by the panels that render it */ });
     return promise;
+  }
+
+  /**
+   * Options for `store.resolve`: the live params, plus the spec's sources and
+   * the memoized resolver so a `kind:"join"` source shares its inputs' fetches
+   * with the panels bound to them.
+   * @param {boolean} force - Bypass a fresh cache entry and refetch.
+   * @returns {object} Resolve options.
+   */
+  function resolveOptions(force) {
+    return { params: paramState, force: force, sources: spec.data || {}, resolveInput: resolveRef };
+  }
+
+  /**
+   * Push fresh data into every instance bound to a ref: rebuild remote-URL
+   * panels, `updateData` the rest.
+   * @param {string} ref - Source ref name.
+   * @param {object} data - The new data.
+   * @returns {void}
+   */
+  function updateBound(ref, data) {
+    refData[ref] = data;
+    (refBindings[ref] || []).forEach(function (b) {
+      if (b.cell && b.cell.setState) b.cell.setState('ready');
+      if (b.rebuild) {
+        // Remote (URL) source: rebuild the instance to reload+parse the new URL.
+        try { b.instance = b.rebuild(data); } catch (e) { /* keep others */ }
+      } else if (b.instance && typeof b.instance.updateData === 'function') {
+        try { b.instance.updateData(b.prepare ? b.prepare(data) : data, true, false); } catch (e) { /* keep others */ }
+      }
+    });
+  }
+
+  /**
+   * The derived sources (`kind:"join"` / `kind:"function"`) that read any of
+   * `refs`, directly or through another derived source, in dependency order
+   * (a source after the ones it reads).
+   * @param {string[]} refs - Source refs whose data changed.
+   * @returns {string[]} Dependent refs, not including `refs` themselves.
+   */
+  function dependentSources(refs) {
+    var sources = spec.data || {};
+    var changed = refs.slice();
+    var out = [];
+    var grew = true;
+    while (grew) {
+      grew = false;
+      for (var ref in sources) {
+        if (!Object.prototype.hasOwnProperty.call(sources, ref)) continue;
+        var src = sources[ref];
+        var inputs = sourceInputs(src);
+        if (!inputs.length || changed.indexOf(ref) !== -1) continue;
+        if (inputs.some(function (input) { return changed.indexOf(input) !== -1; })) {
+          changed.push(ref);
+          out.push(ref);
+          grew = true;
+        }
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Recompute the joins that read refs whose data just changed (e.g. on a
+   * scheduled refresh) and live-update the panels bound to them.
+   * @param {string} ref - The refreshed source ref.
+   * @param {object} data - Its fresh data.
+   * @returns {Promise<void>} Resolves once the dependent joins have updated.
+   */
+  function refreshJoinsOf(ref, data) {
+    refMemo[ref] = Promise.resolve(data);
+    refData[ref] = data;
+    var joins = dependentSources([ref]);
+    joins.forEach(function (join) { refMemo[join] = null; });
+    return Promise.all(joins.map(function (join) {
+      return resolveRef(join).then(function (joined) {
+        updateBound(join, joined);
+      }, function (err) {
+        refMemo[join] = null;
+        (refBindings[join] || []).forEach(function (b) {
+          if (b.cell && b.cell.setState) b.cell.setState('error', String(err && err.message || err));
+        });
+      });
+    })).then(function () {});
   }
 
   /**
@@ -256,18 +483,141 @@ export function renderDashboard(spec, target, options) {
    */
   function paramClickEvents(panel) {
     var events = (panel && panel.events) || {};
-    if (!panel || !panel.clickParam) return events;
+    var clicks = !!(panel && panel.clickParam);
+    // Every bound panel reports its selections: related sources are marked
+    // through the relationship graph, and same-source panels shown in the other
+    // orientation (transposed) — which the engine's own broadcast cannot reach.
+    var marks = !!(panel && panel.dataRef);
+    if (!clicks && !marks) return events;
     var merged = {};
     for (var key in events) {
       if (Object.prototype.hasOwnProperty.call(events, key)) merged[key] = events[key];
     }
-    var authorClick = events.click;
-    merged.click = function (clicked, mouseEvent, target) {
-      var value = extractClickValue(clicked, panel.clickField);
-      if (value != null) applyParamChange(panel.clickParam, value);
-      if (typeof authorClick === 'function') authorClick.call(this, clicked, mouseEvent, target);
-    };
+    if (clicks) {
+      var authorClick = events.click;
+      merged.click = function (clicked, mouseEvent, target) {
+        var value = extractClickValue(clicked, panel.clickField);
+        if (value != null) applyParamChange(panel.clickParam, value);
+        if (typeof authorClick === 'function') authorClick.call(this, clicked, mouseEvent, target);
+      };
+    }
+    if (marks) {
+      // Cross-source marking: a selection here marks the related rows of the
+      // panels bound to other, related sources.
+      var authorSelect = events.select;
+      merged.select = function (selected, mouseEvent, target) {
+        applyMarking(panel.dataRef, this);
+        if (typeof authorSelect === 'function') authorSelect.call(this, selected, mouseEvent, target);
+      };
+    }
     return merged;
+  }
+
+  // --- cross-source marking (spec.relationships + join sources) ---
+  var markingGraph = hasRelationships(spec) ? relationGraph(spec) : null;
+  var markingMode = spec.markingMode || 'focus';
+  var markedInstances = [];   // [{ instance, highlightSmp, highlightVar, highlightMode }] to restore
+  var markingSeq = 0;         // guards against an older async marking landing last
+
+  /**
+   * The row ids currently selected in a source, read from CanvasXpress's
+   * page-global selector along the source's row axis (samples for most
+   * graphs, variables for scatter-oriented data).
+   * @param {string} ref - The source the selection was made in.
+   * @param {object} [origin] - The instance the selection was made in.
+   * @returns {string[]} Selected row ids of that source.
+   */
+  function selectedRows(ref, origin) {
+    var selector = CX.selector || {};
+    var axis = sourceAxis(ref, spec.data || {});
+    // The engine names the selected rows along the INSTANCE's axis (flipped
+    // when the panel transposes); the ids are the source's rows either way.
+    var found = origin ? bindingOf(origin) : null;
+    var names = selector[found ? instanceAxis(found.binding, ref) : axis] || {};
+    var data = refData[ref];
+    var ids = data && data.y && Array.isArray(data.y[axis]) ? data.y[axis] : [];
+    return ids.filter(function (id) { return Object.prototype.hasOwnProperty.call(names, id); });
+  }
+
+  /**
+   * Translate the selection just made in `originRef` to every related source
+   * and mark those rows on the panels bound to them (a declarative
+   * `highlightSmp` / `highlightVar` in `spec.markingMode`, default "focus").
+   * An empty selection clears every mark.
+   * @param {string} originRef - The source the selection was made in.
+   * @param {object} [origin] - The instance the selection was made in.
+   * @returns {Promise<void>} Resolves once the marks are drawn.
+   */
+  function applyMarking(originRef, origin) {
+    var seq = ++markingSeq;
+    var ids = selectedRows(originRef, origin);
+    if (!ids.length) {
+      clearMarking();
+      return Promise.resolve();
+    }
+    // Resolve every source the graph can traverse (memoized; normally ready).
+    var refs = markingGraph ? Object.keys(markingGraph) : [];
+    return Promise.all(refs.map(function (ref) {
+      return resolveRef(ref).then(null, function () { return null; });
+    })).then(function () {
+      if (seq !== markingSeq) return;   // a newer selection superseded this one
+      var marks = markingGraph
+        ? translateMarks(originRef, ids, markingGraph, function (ref) { return refData[ref] || null; })
+        : {};
+      clearMarking();
+      // Same-source panels in the other orientation: the engine names the rows
+      // along the origin's axis, which is the other dimension for them.
+      var found = origin ? bindingOf(origin) : null;
+      var originFlipped = !!(found && found.binding.prepare && found.binding.prepare.transposed);
+      (refBindings[originRef] || []).forEach(function (b) {
+        if (b.instance === origin) return;
+        if (!!(b.prepare && b.prepare.transposed) !== originFlipped) markInstance(b.instance, instanceAxis(b, originRef), ids);
+      });
+      Object.keys(marks).forEach(function (ref) {
+        (refBindings[ref] || []).forEach(function (b) { markInstance(b.instance, instanceAxis(b, ref), marks[ref]); });
+      });
+    });
+  }
+
+  /**
+   * Mark rows on one instance, remembering its own highlight settings first.
+   * @param {object} instance - CanvasXpress instance.
+   * @param {string} axis - The row axis of its source.
+   * @param {string[]} ids - Row ids to mark (empty = nothing related).
+   * @returns {void}
+   */
+  function markInstance(instance, axis, ids) {
+    if (!instance) return;
+    markedInstances.push({
+      instance: instance,
+      highlightSmp: instance.highlightSmp,
+      highlightVar: instance.highlightVar,
+      highlightMode: instance.highlightMode
+    });
+    var names = ids.length ? ids.slice() : [NO_MARKED_ROWS];
+    instance.highlightSmp = axis === 'smps' ? names : [];
+    instance.highlightVar = axis === 'vars' ? names : [];
+    instance.highlightMode = markingMode;
+    if (typeof instance.draw === 'function') {
+      try { instance.draw(); } catch (e) { /* keep marking the others */ }
+    }
+  }
+
+  /**
+   * Remove every mark, restoring each instance's own highlight settings.
+   * @returns {void}
+   */
+  function clearMarking() {
+    var marked = markedInstances;
+    markedInstances = [];
+    marked.forEach(function (m) {
+      m.instance.highlightSmp = m.highlightSmp;
+      m.instance.highlightVar = m.highlightVar;
+      m.instance.highlightMode = m.highlightMode;
+      if (typeof m.instance.draw === 'function') {
+        try { m.instance.draw(); } catch (e) { /* keep restoring the others */ }
+      }
+    });
   }
 
   /**
@@ -280,16 +630,51 @@ export function renderDashboard(spec, target, options) {
    *   itself: a `function(url)` that destroys the old instance and builds a fresh
    *   one for the new URL, returning it. `updateData` cannot re-fetch a URL, so a
    *   refresh calls this instead. Absent for ordinary data-object panels.
+   * @param {function} [prepare] - The panel's `data -> data` step (measures
+   *   projection + transpose, see {@link panelDataPreparer}), re-applied to
+   *   every live update. It reports whether it transposed via `.transposed`.
    * @returns {void}
    */
-  function bind(ref, instance, cell, rebuild) {
+  function bind(ref, instance, cell, rebuild, prepare) {
     if (!ref) return;
-    (refBindings[ref] || (refBindings[ref] = [])).push({ instance: instance, cell: cell, rebuild: rebuild });
+    (refBindings[ref] || (refBindings[ref] = [])).push({
+      instance: instance, cell: cell, rebuild: rebuild, prepare: prepare || null
+    });
+  }
+
+  /**
+   * The row axis a bound instance actually shows its source's rows along: the
+   * source's axis, flipped when the panel transposes its data.
+   * @param {object} binding - A refBindings entry.
+   * @param {string} ref - Its source ref.
+   * @returns {string} `"smps"` or `"vars"`.
+   */
+  function instanceAxis(binding, ref) {
+    var axis = sourceAxis(ref, spec.data || {});
+    if (!binding || !binding.prepare || !binding.prepare.transposed) return axis;
+    return axis === 'smps' ? 'vars' : 'smps';
+  }
+
+  /**
+   * The binding (and source ref) of a live instance.
+   * @param {object} inst - CanvasXpress instance.
+   * @returns {({ref: string, binding: object}|null)} Or null for inline-data panels.
+   */
+  function bindingOf(inst) {
+    for (var ref in refBindings) {
+      if (!Object.prototype.hasOwnProperty.call(refBindings, ref)) continue;
+      var bound = refBindings[ref];
+      for (var i = 0; i < bound.length; i++) {
+        if (bound[i].instance === inst) return { ref: ref, binding: bound[i] };
+      }
+    }
+    return null;
   }
 
   /**
    * Refs whose source `query` references `$<param>` (or lists it in `dependsOn`)
-   * — the panels to re-fetch and live-update when that parameter changes.
+   * — the panels to re-fetch and live-update when that parameter changes —
+   * followed by the joins that read them (inputs before the joins that use them).
    * @param {string} param - The parameter name that changed.
    * @returns {string[]} Affected source ref names.
    */
@@ -306,9 +691,14 @@ export function renderDashboard(spec, target, options) {
       for (var qk in query) {
         if (query[qk] === '$' + param) { uses = true; break; }
       }
+      // A data function's `args` template reads params the same way.
+      var args = source.kind === 'function' ? (source.args || {}) : {};
+      for (var ak in args) {
+        if (args[ak] === '$' + param) { uses = true; break; }
+      }
       if (uses) affected.push(ref);
     }
-    return affected;
+    return affected.concat(dependentSources(affected));
   }
 
   /**
@@ -323,23 +713,20 @@ export function renderDashboard(spec, target, options) {
   function applyParamChange(param, value) {
     paramState[param] = value;
     var refs = refsForParam(param);
+    // Refs come inputs-first, so a join's memoized inputs are already the
+    // fresh fetches by the time it resolves them.
     var work = refs.map(function (ref) {
       var source = (spec.data || {})[ref];
       var bound = refBindings[ref] || [];
-      refMemo[ref] = null;   // force a fresh resolve for any later renderers of this ref
       bound.forEach(function (b) { if (b.cell && b.cell.setState) b.cell.setState('loading'); });
-      return store.resolve(ref, source, { params: paramState, force: true })
+      // Memoize the fresh resolve so later renderers (and joins) of this ref share it.
+      var promise = store.resolve(ref, source, resolveOptions(true));
+      refMemo[ref] = promise;
+      return promise
         .then(function (data) {
-          bound.forEach(function (b) {
-            if (b.cell && b.cell.setState) b.cell.setState('ready');
-            if (b.rebuild) {
-              // Remote (URL) source: rebuild the instance to reload+parse the new URL.
-              try { b.instance = b.rebuild(data); } catch (e) { /* keep others */ }
-            } else if (b.instance && typeof b.instance.updateData === 'function') {
-              try { b.instance.updateData(data, true, false); } catch (e) { /* keep others */ }
-            }
-          });
+          updateBound(ref, data);
         }, function (err) {
+          if (refMemo[ref] === promise) refMemo[ref] = null;   // let a later renderer retry
           // Keep last-good data; surface the failure on the affected cells.
           bound.forEach(function (b) {
             if (b.cell && b.cell.setState) b.cell.setState('error', String(err && err.message || err));
@@ -376,9 +763,11 @@ export function renderDashboard(spec, target, options) {
   function renderPanelItem(item, panel) {
     // Text/control elements never show a title bar (a control carries its own
     // inline label); graph panels can opt out via hideTitle.
+    // A Filters panel is titled "Filters" unless it names itself.
+    var title = panel && (panel.title || (panel.type === 'filters' ? 'Filters' : ''));
     var showTitle = panel && panel.type !== 'text' && panel.type !== 'control' &&
-      panel.type !== 'image' && !panel.hideTitle && panel.title;
-    var cell = buildCell(showTitle ? panel.title : null);
+      panel.type !== 'image' && !panel.hideTitle && title;
+    var cell = buildCell(showTitle ? title : null);
     placeCell(cell.root, item);
     grid.appendChild(cell.root);
     cellByPanel[item.panel] = { cell: cell, item: item, instance: null };
@@ -398,6 +787,11 @@ export function renderDashboard(spec, target, options) {
     // Annotation-filter controls render native inputs, not a graph.
     if (panel && panel.type === 'control') {
       return renderControlWidget(cell, item, panel);
+    }
+
+    // The Filters panel: a multi-field filter inspector over one or more sources.
+    if (panel && panel.type === 'filters') {
+      return renderFiltersPanel(cell, item, panel);
     }
 
     var canvasId = makeCanvasId(spec.id, 'panel', item.panel, panelIdCounter.n++);
@@ -456,7 +850,8 @@ export function renderDashboard(spec, target, options) {
           notify(remoteInstance, 'ready');
           return remoteInstance;
         }
-        data = projectMeasures(data, panel && panel.measures);
+        var prepare = panelDataPreparer(panel);
+        data = prepare(data);
         if (isEmptyData(data)) { cell.setState('empty'); notify(null, 'empty'); return null; }
         sizeCanvasToCell(cell, canvasInset);
         var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
@@ -464,7 +859,7 @@ export function renderDashboard(spec, target, options) {
         var instance = new CX(canvasId, data, config, paramClickEvents(panel));
         instances.push(instance);
         if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
-        bind(panel && panel.dataRef, instance, cell);
+        bind(panel && panel.dataRef, instance, cell, undefined, prepare);
         if (autoResize) observeResize(cell, instance, observers, canvasInset);
         cell.setState('ready');
         notify(instance, 'ready');
@@ -578,6 +973,296 @@ export function renderDashboard(spec, target, options) {
   }
 
   /**
+   * Replace the whole filter state (scheme pick, reset, API), repaint every
+   * Filters panel, and re-filter the bound panels.
+   * @param {object[]} state - New predicates.
+   * @param {(string|null)} scheme - The scheme it came from, if any.
+   * @returns {void}
+   */
+  function replaceFilterState(state, scheme) {
+    filterState = normalizeState(state);
+    activeScheme = scheme;
+    renderFilterPanels();
+    applyControlFilters();
+  }
+
+  /**
+   * Set (or clear, with `null`) the predicate of one source + field, then
+   * re-filter. The edit leaves any active scheme ("custom" state).
+   * @param {string} dataRef - Source ref.
+   * @param {string} field - Field name.
+   * @param {(object|null)} predicate - `{values}` | `{min, max}` | `{text}` | null.
+   * @returns {void}
+   */
+  function setFilterPredicate(dataRef, field, predicate) {
+    var key = fieldKey(dataRef, field);
+    var next = filterState.filter(function (p) { return fieldKey(p.dataRef, p.field) !== key; });
+    if (predicate && isActive(predicate)) {
+      var entry = { dataRef: dataRef, field: field };
+      for (var k in predicate) {
+        if (Object.prototype.hasOwnProperty.call(predicate, k)) entry[k] = predicate[k];
+      }
+      next.push(entry);
+    }
+    filterState = normalizeState(next);
+    if (activeScheme !== null) {
+      activeScheme = null;
+      filterPanelViews.forEach(function (v) { v.syncScheme(); });
+    }
+    applyControlFilters();
+  }
+
+  /**
+   * Repaint every Filters panel from the current state.
+   * @returns {void}
+   */
+  function renderFilterPanels() {
+    filterPanelViews.forEach(function (v) { v.render(); });
+  }
+
+  /**
+   * Render a Filters panel (`type:"filters"`): a scheme bar (pick / save /
+   * reset) and one widget per field — a checkbox list with counts, a min/max
+   * range, or a search box. Its fields come from `panel.fields` or, when
+   * absent, every row annotation and numeric column of `panel.dataRef`.
+   * @param {object} cell - The cell from {@link buildCell}.
+   * @param {object} item - The layout item.
+   * @param {object} panel - The Filters panel spec.
+   * @returns {Promise<null>} Resolves once its sources are resolved and it is drawn.
+   */
+  function renderFiltersPanel(cell, item, panel) {
+    cell.canvas.style.display = 'none';
+    cell.root.classList.add('cxd-filters-cell');
+    var sources = spec.data || {};
+    var refs = [];
+    if (panel.dataRef) refs.push(panel.dataRef);
+    (Array.isArray(panel.fields) ? panel.fields : []).forEach(function (f) {
+      if (f && typeof f === 'object' && f.dataRef && refs.indexOf(f.dataRef) === -1) refs.push(f.dataRef);
+    });
+
+    function notify(state) {
+      if (typeof options.onPanelRendered === 'function') {
+        options.onPanelRendered({
+          panelId: item.panel, item: item, cell: cell.root,
+          canvas: cell.canvas, body: cell.body, instance: null,
+          type: 'filters', state: state
+        });
+      }
+    }
+
+    return Promise.all(refs.map(function (ref) {
+      return resolveRef(ref).then(null, function () { return null; });
+    })).then(function () {
+      var fields = resolveFields(panel,
+        function (ref) { return refData[ref] || null; },
+        function (ref) { return sourceAxis(ref, sources); });
+      var schemeSelect = null;
+      var view = {
+        panelId: item.panel,
+        render: function () {
+          cell.body.innerHTML = '';
+          var root = document.createElement('div');
+          root.className = 'cxd-filters';
+          root.appendChild(buildSchemeBar());
+          if (!fields.length) {
+            var hint = document.createElement('div');
+            hint.className = 'cxd-filters-hint';
+            hint.textContent = 'No fields to filter';
+            root.appendChild(hint);
+          }
+          fields.forEach(function (f) { root.appendChild(buildField(f)); });
+          cell.body.appendChild(root);
+        },
+        syncScheme: function () {
+          if (schemeSelect) schemeSelect.value = activeScheme === null ? '' : activeScheme;
+        }
+      };
+
+      /**
+       * The scheme bar: a scheme picker, a name box + Save, and Reset.
+       * @returns {HTMLElement} The bar.
+       */
+      function buildSchemeBar() {
+        var bar = document.createElement('div');
+        bar.className = 'cxd-filters-bar';
+        schemeSelect = null;
+        var names = Object.keys(filterSchemes);
+        if (names.length) {
+          schemeSelect = document.createElement('select');
+          schemeSelect.className = 'cxd-filters-scheme';
+          var custom = document.createElement('option');
+          custom.value = '';
+          custom.textContent = 'Current filters';
+          schemeSelect.appendChild(custom);
+          names.forEach(function (name) {
+            var opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            schemeSelect.appendChild(opt);
+          });
+          schemeSelect.value = activeScheme === null ? '' : activeScheme;
+          schemeSelect.addEventListener('change', function () {
+            var name = schemeSelect.value;
+            if (name && Object.prototype.hasOwnProperty.call(filterSchemes, name)) {
+              replaceFilterState(filterSchemes[name], name);
+            }
+          });
+          bar.appendChild(schemeSelect);
+        }
+        if (panel.saveSchemes !== false) {
+          var nameInput = document.createElement('input');
+          nameInput.className = 'cxd-filters-scheme-name';
+          nameInput.type = 'text';
+          nameInput.placeholder = 'Scheme name';
+          var save = document.createElement('button');
+          save.className = 'cxd-filters-save';
+          save.type = 'button';
+          save.textContent = 'Save';
+          save.addEventListener('click', function () {
+            var name = String(nameInput.value || '').trim();
+            if (!name) return;
+            filterSchemes[name] = normalizeState(filterState);
+            activeScheme = name;
+            if (typeof options.onFilterSchemesChange === 'function') {
+              options.onFilterSchemesChange(JSON.parse(JSON.stringify(filterSchemes)));
+            }
+            renderFilterPanels();
+          });
+          bar.appendChild(nameInput);
+          bar.appendChild(save);
+        }
+        var reset = document.createElement('button');
+        reset.className = 'cxd-filters-reset';
+        reset.type = 'button';
+        reset.textContent = 'Reset';
+        reset.addEventListener('click', function () { replaceFilterState([], null); });
+        bar.appendChild(reset);
+        return bar;
+      }
+
+      /**
+       * One field's section: its label and widget, seeded from the state.
+       * @param {object} f - Resolved field (see filters.resolveFields).
+       * @returns {HTMLElement} The section.
+       */
+      function buildField(f) {
+        var current = null;
+        filterState.forEach(function (p) {
+          if (p.dataRef === f.dataRef && p.field === f.field) current = p;
+        });
+        var section = document.createElement('div');
+        section.className = 'cxd-filters-field';
+        var label = document.createElement('div');
+        label.className = 'cxd-filters-label';
+        label.textContent = f.label;
+        section.appendChild(label);
+        if (f.kind === 'values') section.appendChild(buildValues(f, current));
+        else if (f.kind === 'range') section.appendChild(buildRange(f, current));
+        else section.appendChild(buildSearch(f, current));
+        return section;
+      }
+
+      /**
+       * Checkbox list: every value (with its row count), all checked = no filter.
+       * @param {object} f - Resolved field.
+       * @param {(object|null)} current - Its current predicate.
+       * @returns {HTMLElement} The list.
+       */
+      function buildValues(f, current) {
+        var list = document.createElement('div');
+        list.className = 'cxd-filters-values';
+        var boxes = [];
+        f.summary.values.forEach(function (entry) {
+          var row = document.createElement('label');
+          row.className = 'cxd-filters-check';
+          var box = document.createElement('input');
+          box.type = 'checkbox';
+          box.className = 'cxd-filters-cb';
+          box.value = entry.value;
+          box.checked = !current || !Array.isArray(current.values) || current.values.indexOf(entry.value) !== -1;
+          box.addEventListener('change', function () {
+            var checked = boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
+            setFilterPredicate(f.dataRef, f.field, checked.length === boxes.length ? null : { values: checked });
+          });
+          boxes.push(box);
+          var text = document.createElement('span');
+          text.textContent = entry.value + ' (' + entry.count + ')';
+          row.appendChild(box);
+          row.appendChild(text);
+          list.appendChild(row);
+        });
+        return list;
+      }
+
+      /**
+       * Min / max number inputs (blank = unbounded), hinted with the data range.
+       * @param {object} f - Resolved field.
+       * @param {(object|null)} current - Its current predicate.
+       * @returns {HTMLElement} The range widget.
+       */
+      function buildRange(f, current) {
+        var wrap = document.createElement('div');
+        wrap.className = 'cxd-filters-range';
+        var min = document.createElement('input');
+        var max = document.createElement('input');
+        [[min, 'min', f.summary.min], [max, 'max', f.summary.max]].forEach(function (spec3) {
+          var input = spec3[0];
+          input.type = 'number';
+          input.className = 'cxd-filters-' + spec3[1];
+          input.placeholder = spec3[2] == null ? spec3[1] : String(spec3[2]);
+          input.value = current && typeof current[spec3[1]] === 'number' ? String(current[spec3[1]]) : '';
+          input.addEventListener('change', function () {
+            var lo = parseBound(min.value);
+            var hi = parseBound(max.value);
+            var pred = {};
+            if (lo !== null) pred.min = lo;
+            if (hi !== null) pred.max = hi;
+            setFilterPredicate(f.dataRef, f.field, lo === null && hi === null ? null : pred);
+          });
+        });
+        var dash = document.createElement('span');
+        dash.textContent = '\u2013';
+        wrap.appendChild(min);
+        wrap.appendChild(dash);
+        wrap.appendChild(max);
+        return wrap;
+      }
+
+      /**
+       * A search box (case-insensitive "contains"), applied after a short pause.
+       * @param {object} f - Resolved field.
+       * @param {(object|null)} current - Its current predicate.
+       * @returns {HTMLElement} The input.
+       */
+      function buildSearch(f, current) {
+        var input = document.createElement('input');
+        input.type = 'search';
+        input.className = 'cxd-filters-text';
+        input.placeholder = 'Contains\u2026';
+        input.value = current && typeof current.text === 'string' ? current.text : '';
+        var timer = null;
+        var delayMs = typeof panel.debounce === 'number' ? panel.debounce : 250;
+        input.addEventListener('input', function () {
+          if (timer) clearTimeout(timer);
+          var apply = function () {
+            timer = null;
+            var text = String(input.value || '');
+            setFilterPredicate(f.dataRef, f.field, text.trim() ? { text: text } : null);
+          };
+          if (delayMs > 0) timer = setTimeout(apply, delayMs);
+          else apply();
+        });
+        return input;
+      }
+
+      filterPanelViews.push(view);
+      view.render();
+      notify('ready');
+      return null;
+    });
+  }
+
+  /**
    * Render an annotation-filter control panel: native inputs (dropdown / radio /
    * segmented buttons) whose entries are the unique values of one annotation of
    * the bound dataset. Choosing a value FILTERS the data: it calls
@@ -654,7 +1339,7 @@ export function renderDashboard(spec, target, options) {
         if (panel.disabled) disableControlInput(widget, paramInput, panel);
         widget.appendChild(paramInput);
       } else {
-        var entry = { annotation: panel.annotation, value: null, resetUI: null };
+        var entry = { annotation: panel.annotation, value: null, resetUI: null, dataRef: panel.dataRef, compartment: comp };
         controlWidgets.push(entry);
         var input = buildAnnotationInput(panel, values, function (value) {
           entry.value = value;
@@ -994,7 +1679,7 @@ export function renderDashboard(spec, target, options) {
   });
 
   // --- scheduled refresh: poll connector sources, live-update bound panels ---
-  scheduleRefreshes(spec, store, refBindings, timers, CX);
+  scheduleRefreshes(spec, store, refBindings, timers, CX, refreshJoinsOf);
 
   var handle = {
     spec: spec,
@@ -1025,6 +1710,30 @@ export function renderDashboard(spec, target, options) {
      */
     setParam: function (name, value) {
       return applyParamChange(name, value);
+    },
+    /**
+     * The Filters-panel state: a serializable list of predicates
+     * `{dataRef, field, values? | min? / max? | text?}` (see filters.js).
+     * @returns {object[]} A copy of the current state.
+     */
+    getFilterState: function () {
+      return JSON.parse(JSON.stringify(filterState));
+    },
+    /**
+     * Replace the Filters-panel state (e.g. to restore a saved view): the
+     * panels repaint and every bound panel is re-filtered.
+     * @param {object[]} state - Predicates, as from {@link getFilterState}.
+     * @returns {void}
+     */
+    setFilterState: function (state) {
+      replaceFilterState(state, null);
+    },
+    /**
+     * The named filter schemes: `spec.filterSchemes` plus any saved at runtime.
+     * @returns {object} name -> filter state (a copy).
+     */
+    getFilterSchemes: function () {
+      return JSON.parse(JSON.stringify(filterSchemes));
     },
     /**
      * Resolves once every panel and control has settled (rendered, empty, or
@@ -1065,6 +1774,8 @@ export function renderDashboard(spec, target, options) {
         if (entry.cell.root.parentNode) entry.cell.root.parentNode.removeChild(entry.cell.root);
         delete cellByPanel[panelId];
       }
+      // A removed Filters panel stops repainting (its state stays shared).
+      filterPanelViews = filterPanelViews.filter(function (v) { return v.panelId !== panelId; });
       renderedItems = allItems ? allItems.slice()
         : renderedItems.filter(function (it) { return it.panel !== panelId; });
       refreshTemplate();
@@ -1104,10 +1815,12 @@ export function renderDashboard(spec, target, options) {
  * @param {object} refBindings - dataRef -> [{ instance }].
  * @param {number[]} timers - Array collecting interval handles for cleanup.
  * @param {*} CX - CanvasXpress constructor (unused; reserved for re-instantiation).
+ * @param {function} [onRefreshed] - `function(ref, data)` called with each
+ *   refreshed source's fresh data, so joins that read it can be recomputed.
  * @returns {void}
  * @private
  */
-function scheduleRefreshes(spec, store, refBindings, timers, CX) {
+function scheduleRefreshes(spec, store, refBindings, timers, CX, onRefreshed) {
   var sources = spec.data || {};
   Object.keys(sources).forEach(function (ref) {
     var source = sources[ref];
@@ -1123,13 +1836,81 @@ function scheduleRefreshes(spec, store, refBindings, timers, CX) {
           }
           var instance = binding.instance;
           if (instance && typeof instance.updateData === 'function') {
-            try { instance.updateData(data, true, false); } catch (e) { /* keep polling */ }
+            var prepared = binding.prepare ? binding.prepare(data) : data;
+            try { instance.updateData(prepared, true, false); } catch (e) { /* keep polling */ }
           }
         });
+        if (typeof onRefreshed === 'function') return onRefreshed(ref, data);
       }).catch(function () { /* transient error: keep polling */ });
     }, source.refresh * 1000);
     timers.push(handle);
   });
+}
+
+/**
+ * Graph types that plot one point per VARIABLE, with samples as the axes.
+ * @type {RegExp}
+ */
+var ROW_POINT_GRAPHS = /^(Scatter2D|Scatter3D|ScatterBubble2D|KaplanMeier|Pie)$/;
+
+/**
+ * Whether a graph panel's data should be transposed before CanvasXpress sees
+ * it. An explicit `panel.transpose` (true / false) wins. Otherwise a
+ * scatter-type chart (Scatter2D / Scatter3D / ScatterBubble2D / KaplanMeier)
+ * or a Pie whose `xAxis` / `yAxis` name only VARIABLES of the data — and no
+ * sample — is transposed: those graphs take samples as axes (a Pie: one slice
+ * per variable) and plot one mark per variable, so axes named after table
+ * columns (one row per sample, as uploads, connectors and joins arrive) mean
+ * "one point / slice per row". A Pie with no axis named, one variable and
+ * several samples is transposed too (it would otherwise be a single slice).
+ * @param {object} panel - The panel spec.
+ * @param {object} data - The panel's resolved data.
+ * @returns {boolean} True to transpose.
+ */
+export function shouldTranspose(panel, data) {
+  if (!panel) return false;
+  if (panel.transpose === true || panel.transpose === false) return panel.transpose;
+  var config = panel.config || {};
+  if (!ROW_POINT_GRAPHS.test(config.graphType || '') || !data || !data.y) return false;
+  var names = [].concat(config.xAxis || [], config.yAxis || []).filter(function (n) { return typeof n === 'string'; });
+  var vars = data.y.vars || [];
+  var smps = data.y.smps || [];
+  // A Pie of a single column with several rows (and no axis named) would draw
+  // one 100% slice — one slice per variable — so its rows become the slices.
+  if (!names.length) return config.graphType === 'Pie' && vars.length === 1 && smps.length > 1;
+  return names.every(function (n) { return vars.indexOf(n) !== -1; }) &&
+    !names.some(function (n) { return smps.indexOf(n) !== -1; });
+}
+
+/**
+ * The `data -> data` step a graph panel applies to its source's data, at
+ * render and on every live update: project to `panel.measures`, then
+ * transpose when {@link shouldTranspose} says so. The returned function
+ * records its last decision as `.transposed`.
+ * @param {object} panel - The panel spec.
+ * @returns {function} The preparer.
+ * @private
+ */
+function panelDataPreparer(panel) {
+  var prepare = function (data) {
+    var projected = projectMeasures(data, panel && panel.measures);
+    prepare.transposed = shouldTranspose(panel, projected);
+    return prepare.transposed ? transposeCxData(projected) : projected;
+  };
+  prepare.transposed = false;
+  return prepare;
+}
+
+/**
+ * Parse a range-filter bound typed into a number input.
+ * @param {string} text - The input's value.
+ * @returns {(number|null)} The number, or null when blank / not a number.
+ * @private
+ */
+function parseBound(text) {
+  if (text == null || String(text).trim() === '') return null;
+  var n = Number(text);
+  return isFinite(n) ? n : null;
 }
 
 /**

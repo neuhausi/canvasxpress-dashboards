@@ -315,3 +315,89 @@ test('param-control props render without error and expose the mode selector', as
   assert.ok(hasModeOption, 'mode selector offers "Query source"');
   assert.equal(builder.getSpec().panels.pick.mode, 'param');
 });
+
+test('+ Filters adds a Filters panel over the first source once a graph exists', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var builder = createBuilder(container, { spec: setDataSource(blankSpec('d1'), 'sample', DATA), CanvasXpress: makeCX([]) });
+  function filtersBtn() {
+    return [].filter.call(container.querySelectorAll('button'), function (b) {
+      return b.textContent === '+ Filters';
+    })[0];
+  }
+  assert.equal(filtersBtn().disabled, true, 'disabled before a graph panel exists');
+  builder.addPanel({ id: 'p1', dataRef: 'sample', config: { graphType: 'Bar' } });
+  await builder.whenReady();
+  assert.equal(filtersBtn().disabled, false);
+  filtersBtn().dispatchEvent('click');
+  await builder.whenReady();
+  var panels = builder.getSpec().panels;
+  var added = Object.keys(panels).filter(function (id) { return panels[id].type === 'filters'; });
+  assert.equal(added.length, 1);
+  assert.deepEqual(panels[added[0]], { type: 'filters', title: 'Filters', dataRef: 'sample' });
+});
+
+// --- save capture: round-trip guarantee (a load + save with no edits is a no-op) ---
+
+/**
+ * A CX stub like the real engine: getConfig() attaches a tick AFTER
+ * construction and reports the authored config plus render-derived keys.
+ * @param {object[]} made - Collects instances.
+ * @returns {function} Constructor.
+ */
+function lateConfigCX(made) {
+  function CX(id, data, config) {
+    var self = this;
+    self.id = id;
+    self.live = Object.assign({}, config, {
+      broadcastFilter: false, theme: 'auto', schemaVersion: '1.0', toolbarSize: 'small',
+      decorations: config.decorations ? { line: [{ value: 1, id: id + '-decoration-line-0' }] } : undefined
+    });
+    self.setDimensions = function () {};
+    self.destroy = function () {};
+    self.updateConfig = function (c) { Object.assign(self.live, c); };
+    setTimeout(function () { self.getConfig = function () { return JSON.parse(JSON.stringify(self.live)); }; }, 20);
+    made.push(self);
+  }
+  return CX;
+}
+
+/**
+ * A one-panel spec with an authored transient key, authored decorations, and
+ * a stale serialized filter an older save left behind.
+ * @returns {object} Spec.
+ */
+function captureSpec() {
+  var spec = setDataSource(blankSpec('cap'), 'sample', DATA);
+  spec.panels = { p1: { dataRef: 'sample', config: {
+    graphType: 'Bar', smpTextScaleFontFactor: 0.8, decorations: { line: [{ value: 1 }] },
+    filterSmpBy: { Region: ['N'] }
+  } } };
+  spec.layout.items = [{ panel: 'p1', x: 0, y: 0, w: 6, h: 3 }];
+  return spec;
+}
+
+test('saving with no edits returns the spec (derived keys never captured, authored kept)', async function () {
+  installDom();
+  var made = [];
+  var container = document.createElement('div');
+  var builder = createBuilder(container, { spec: captureSpec(), CanvasXpress: lateConfigCX(made) });
+  await builder.whenReady();   // waits for the late getConfig() baseline
+  var config = builder.getSpec().panels.p1.config;
+  assert.deepEqual(config, { graphType: 'Bar', smpTextScaleFontFactor: 0.8, decorations: { line: [{ value: 1 }] } },
+    'no broadcastFilter/theme/schemaVersion/toolbarSize, no stamped decoration ids; the stale filterSmpBy self-heals');
+  assert.equal(builder.getSpec().schemaVersion, '1.1', 'saved specs are stamped');
+});
+
+test('a real edit (changed since render) is captured, including an authored transient key', async function () {
+  installDom();
+  var made = [];
+  var container = document.createElement('div');
+  var builder = createBuilder(container, { spec: captureSpec(), CanvasXpress: lateConfigCX(made) });
+  await builder.whenReady();
+  made[made.length - 1].updateConfig({ graphType: 'Line', smpTextScaleFontFactor: 1.2, toolbarSize: 'large' });
+  var config = builder.getSpec().panels.p1.config;
+  assert.equal(config.graphType, 'Line');
+  assert.equal(config.smpTextScaleFontFactor, 1.2);
+  assert.equal('toolbarSize' in config, false, 'a transient key the author never wrote stays out');
+});

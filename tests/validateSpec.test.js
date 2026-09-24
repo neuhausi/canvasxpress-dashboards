@@ -275,3 +275,46 @@ test('flags a config control missing target and options', function () {
   assert.ok(res.errors.some(function (e) { return e.includes('requires a target panel id'); }));
   assert.ok(res.errors.some(function (e) { return e.includes('requires a non-empty options array'); }));
 });
+
+test('accepts a join source over two declared sources', function () {
+  var spec = clone(VALID);
+  spec.data.clin = { kind: 'inline', value: { y: {} } };
+  spec.data.blend = { kind: 'join', left: 'sales', right: 'clin', on: [{ left: 'pid', right: 'smps' }, 'visit'], how: 'outer' };
+  spec.panels.bar.dataRef = 'blend';
+  var result = validateSpec(spec);
+  assert.deepEqual(result.errors, []);
+});
+
+test('flags join sources with missing refs, bad options, and cycles', function () {
+  var spec = clone(VALID);
+  spec.data.bad = { kind: 'join', left: 'sales', right: 'ghost', how: 'cross', on: [], suffix: 1 };
+  spec.data.c1 = { kind: 'join', left: 'sales', right: 'c2' };
+  spec.data.c2 = { kind: 'join', left: 'c1', right: 'sales' };
+  var errors = validateSpec(spec).errors;
+  assert.ok(errors.some(function (e) { return e.includes('.right "ghost" has no matching entry'); }));
+  assert.ok(errors.some(function (e) { return e.includes('.how must be one of'); }));
+  assert.ok(errors.some(function (e) { return e.includes('.on must be'); }));
+  assert.ok(errors.some(function (e) { return e.includes('.suffix must be a string'); }));
+  assert.ok(errors.some(function (e) { return e.includes('depends on itself (c1 -> c2 -> c1)'); }));
+});
+
+test('accepts relationships, a source axis, and markingMode', function () {
+  var spec = clone(VALID);
+  spec.data.genes = { kind: 'inline', axis: 'vars', value: { y: {} } };
+  spec.relationships = [{ left: 'sales', right: 'genes', on: { left: 'Top', right: 'vars' } }];
+  spec.markingMode = 'ghost';
+  assert.deepEqual(validateSpec(spec).errors, []);
+});
+
+test('flags bad relationships, axes, and markingMode', function () {
+  var spec = clone(VALID);
+  spec.data.sales.axis = 'rows';
+  spec.relationships = [{ left: 'sales', right: 'ghost', on: [] }, { right: 'sales' }, 'nope'];
+  spec.markingMode = 'blink';
+  var errors = validateSpec(spec).errors;
+  assert.ok(errors.includes('spec.data["sales"].axis must be "smps" or "vars"'));
+  assert.ok(errors.includes('spec.relationships[0].right "ghost" has no matching entry in spec.data'));
+  assert.ok(errors.includes('spec.relationships[1] relationship requires a left ref string'));
+  assert.ok(errors.includes('spec.relationships[2] must be an object'));
+  assert.ok(errors.includes('spec.markingMode must be "focus", "highlight", or "ghost"'));
+});

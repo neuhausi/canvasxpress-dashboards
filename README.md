@@ -211,6 +211,195 @@ runtime guard.
 
 ---
 
+## Data blending (joins)
+
+A `kind: "join"` source combines two other sources — inline, connector, dataset,
+or another join — into one CanvasXpress data object, so a panel can plot
+columns from both. Each input is read as a table with one row per sample
+(`y.smps`), whose columns are the numeric variables and the `x` annotations.
+
+```jsonc
+"data": {
+  "expr":   { "kind": "dataset", "id": "expression" },
+  "clin":   { "kind": "connector", "url": "/api/data?source=clinical" },
+  "cohort": {
+    "kind": "join",
+    "left": "expr", "right": "clin",
+    "on": { "left": "smps", "right": "patient_id" },  // default "smps" (the sample ids)
+    "how": "left",                                    // inner (default) | left | right | outer
+    "suffix": ".clin"                                 // clashing right names; default ".<right ref>"
+  }
+}
+```
+
+- **`on`** — `"smps"` is the sample id; any other string names a variable or
+  annotation on both sides; `{left, right}` maps differently named columns; an
+  array of those is a composite key. Keys compare as strings, and a missing key
+  never matches (as in SQL / R `merge()`).
+- **Output** — left columns first, then right. A key column with the same name
+  on both sides appears once. A one-to-many match emits one row per pair; the
+  repeated sample ids are made unique as `<left id>|<right id>`.
+- **Live** — a join re-computes when an input changes: a `param` that re-queries
+  an input, or an input's `refresh` poll, live-updates the panels bound to the
+  join. A join shares its inputs' fetches with the panels bound to them.
+- The blend runs in the browser on the already-fetched inputs; `joinData(left,
+  right, options)` is exported for direct use, with `matchIds` /
+  `joinProvenance` for mapping row ids between related data objects.
+
+### Row axis
+
+Sources are read as tables along a row **axis**. `"smps"` (default) means one row
+per sample — how connectors and CSV uploads arrive. `"vars"` means one row per
+variable: the scatter orientation, where genes or cells are the points and the
+samples are `logFC` / `UMAP1`… Set `"axis": "vars"` on such a source; its
+row-id key is then `"vars"`. A join's sides default to their sources' axes (or
+set `axis` / `leftAxis` / `rightAxis`), and its output follows the left side.
+
+## Cross-source marking and filtering (relationships)
+
+Panels bound to the same source already link through CanvasXpress's own
+selection broadcast. To link panels on *different* sources whose rows are
+keyed differently, declare how the sources relate:
+
+```jsonc
+"relationships": [
+  { "left": "expr", "right": "clin", "on": { "left": "smps", "right": "patient_id" } },
+  { "left": "expr", "right": "genes", "on": { "left": "Top", "right": "vars" } }
+],
+"markingMode": "focus"   // focus (default) | highlight | ghost
+```
+
+- **Marking** — selecting rows in a panel marks the related rows in the panels
+  of every source reachable through relationships (several hops, both
+  directions), shown with CanvasXpress's declarative highlight in
+  `markingMode`. A related source with no matching rows shows fully dimmed.
+  Esc / an empty selection clears the marks.
+- **Filtering** — a filter control on one source also narrows panels whose
+  source lacks that annotation but is related: the control source's matching
+  rows are translated and kept (several picks intersect).
+- A `kind: "join"` source relates its two inputs through its `on`, and relates
+  itself to each input row by row, with no extra declaration.
+- `on` uses the join key grammar (row id by default, a shared column,
+  `{left, right}`, or an array).
+
+## Data functions (R / Python)
+
+A `kind: "function"` source runs a short R or Python snippet over other sources
+and feeds the result to panels like any other source:
+
+```jsonc
+"data": {
+  "clin":   { "kind": "dataset", "id": "clinical" },
+  "byArm":  {
+    "kind": "function", "language": "r",
+    "inputs": ["clin"],                        // or { "d": "clin" } to rename
+    "args":   { "minAge": "$minAge" },         // literals or $params
+    "code":   "d <- clin[clin$Age >= params$minAge, ]\nresult <- aggregate(Age ~ Arm, data = d, FUN = mean)"
+  }
+}
+```
+
+- Inputs arrive as pandas `DataFrame`s / R `data.frame`s named after `inputs`:
+  row ids as the index / row names, numeric columns and row annotations as
+  columns (sources with `axis: "vars"` are read one variable per row).
+- The code assigns `result`: a table (row ids from its index / row names, or
+  its first column when those are the defaults; numeric columns become
+  variables, the rest annotations) or a CanvasXpress data object. Set `axis:
+  "vars"` on the function to emit one variable per row (scatter orientation).
+- A function re-runs when an input changes (param re-query, refresh) or one of
+  its `$param` args changes; joins, relationships and Filters panels treat it
+  like any source.
+
+[`examples/cohort-explorer.html`](examples/cohort-explorer.html) shows one in
+context — an R function ranking genes against survival on a joined cohort,
+alongside a join, relationships and a Filters panel. On a static host its R
+panel explains that data functions are not available; everything else runs
+in the browser.
+
+**Runtime.** The browser POSTs `{language, code, inputs: {name: {data, axis}},
+params, axis}` to `runtime` (default `<server>/api/functions/run`) and expects
+`{data}`. Any service honouring that contract works. The bundled server's
+runtime is **off by default**:
+
+| Env | Meaning |
+|---|---|
+| `CXD_FUNCTIONS` | `off` (default) · `admin` (administrators only) · `users` (any logged-in user) |
+| `CXD_FUNCTIONS_TIMEOUT` / `_MEMORY_MB` | per-run wall-clock seconds (20) / memory cap MB (1024, where the OS enforces it) |
+| `CXD_FUNCTIONS_MAX_CONCURRENT` | concurrent runs (2); extra requests get 429 |
+| `CXD_FUNCTIONS_PYTHON` / `_RSCRIPT` | interpreters (need `pandas` / `jsonlite`) |
+| `CXD_FUNCTIONS_WRAPPER` | sandbox command prefix: `auto` (sandbox-exec on macOS, `unshare -rn` on Linux, when they work) · `none` · e.g. `firejail --net=none` |
+
+Each run is a fresh subprocess in an empty temp directory with a minimal
+environment, CPU / file-size limits and size caps. `GET /api/functions/status`
+reports the languages and the **network isolation actually in effect**. This is
+defence in depth, not a multi-tenant sandbox — expose `users` mode only inside a
+container / VM you trust. Shared links (anonymous viewers) cannot run functions;
+export the dashboard as HTML to share a snapshot.
+
+## Filters panel and filter schemes
+
+A `type: "filters"` panel is a multi-field filter inspector (like Spotfire's
+Filters panel): a checkbox list with counts for each categorical field, a min /
+max range for numeric fields, and a search box for fields with many values (or
+the row ids). Without `fields` it lists every row annotation and numeric column
+of its `dataRef`.
+
+```jsonc
+"panels": {
+  "filters": { "type": "filters", "dataRef": "clin",
+               "fields": ["Arm", "Age", { "field": "Chr", "dataRef": "genes", "kind": "values" }] }
+},
+"filterSchemes": {
+  "Drug arm, 65+": [{ "dataRef": "clin", "field": "Arm", "values": ["drug"] },
+                    { "dataRef": "clin", "field": "Age", "min": 65 }]
+}
+```
+
+- Filters on one source AND together. They filter that source's panels and —
+  through `relationships` / joins — the related rows of other sources; they
+  combine with the annotation filter controls.
+- **Schemes** are named filter states: pick one from the panel's header, or type
+  a name and **Save** the current filters (reported through the
+  `onFilterSchemesChange(schemes)` render option; the builder writes them to
+  `spec.filterSchemes`). **Reset** or Esc clears every filter.
+- `handle.getFilterState()` / `handle.setFilterState(state)` /
+  `handle.getFilterSchemes()` read and restore the state programmatically.
+- In the builder, **+ Filters** adds one over the first data source.
+
+## Portable, versioned specs (git-native dashboards)
+
+A spec is the whole dashboard — data bindings, layout, panels, filters — in one
+JSON file you can keep in git, review, and re-render anywhere.
+
+- **Format version.** Specs carry `schemaVersion: "MAJOR.MINOR"` (currently
+  `1.1`; an unstamped spec is `1.0`). The builder and `exportSpec` stamp it; the
+  renderer, builder and importer **migrate** older specs on load (`migrateSpec`).
+  A MINOR bump is additive — a reader on an older MINOR renders what it knows
+  and skips the rest with a warning; a MAJOR bump is migrated on load, and a
+  spec from a newer MAJOR is refused with a clear message. (`version` stays the
+  dashboard's own revision counter.)
+- **Round-trip guarantee.** Loading a spec into the builder and saving it with
+  no edits returns the same spec; only real edits change it. This is enforced
+  by `npm run test:roundtrip` (every example, real browser + engine; set
+  `CX_LIB_DIR` to test a local CanvasXpress build).
+- **Canonical text + diff.** `serializeSpec` writes a stable form (fixed
+  top-level key order, 2-space indent) and `dashboardDiff(a, b)` compares two
+  specs structurally — layout items matched by panel id, so moving panels
+  around the array is not a change — with a readable summary.
+
+The `cxd-spec` CLI wraps these for scripts and git:
+
+```bash
+npx cxd-spec validate sales.spec.json          # errors (exit 1) and warnings
+npx cxd-spec migrate  sales.spec.json --write  # upgrade in place to the current format
+npx cxd-spec format   sales.spec.json --write  # canonical text
+npx cxd-spec diff old.spec.json new.spec.json  # "changed panels.bar.config.graphType: ..."; exit 1 if different
+
+# readable dashboard diffs in git:
+git config diff.cxd.textconv "npx cxd-spec format"
+echo '*.spec.json diff=cxd' >> .gitattributes
+```
+
 ## Authenticated data binding (connectors)
 
 A `kind: "connector"` data source fetches live from a
