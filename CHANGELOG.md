@@ -8,6 +8,15 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 Server features, live on the demo; the client additions ship in the next npm
 release.
 
+### Running several servers ([docs/deployment.md](docs/deployment.md))
+- `GET /healthz` (liveness) and `GET /readyz` (readiness: stores, governance,
+  schedules, audit log, datasets, scheduler thread; `503` names the failure).
+- Verified on Postgres: two servers sharing one database and `SESSION_SECRET`
+  share sessions and data, keep one audit chain, and run a due schedule exactly
+  once (`tests/test_postgres.py`, run in CI against the Postgres service).
+- A guide for several processes and hosts: requirements, the scheduler, health
+  checks, rolling upgrades, backups.
+
 ### Single sign-on ([docs/sso.md](docs/sso.md))
 - **OpenID Connect sign-in** (authorization code + PKCE) with ID tokens verified
   against the provider's keys (signature, iss, aud, exp, nonce; no `none` / HMAC).

@@ -36,6 +36,10 @@ vars: `SESSION_SECRET` (auto-generated if unset), `CXD_HOST`/`CXD_PORT`,
 `CXD_SMTP_*` (incl. `CXD_SMTP_PASSWORD_FILE`), `CXD_EMAIL_VERIFY`, `CXD_EMAIL_DAILY_CAP`,
 `CXD_SNAPSHOTS`, `CXD_INTERNAL_URL`, `CXD_DASHBOARD_URL`.
 
+**Several servers.** Any process can serve any request (signed-cookie sessions, all
+state in the database). Use Postgres and one `SESSION_SECRET` across hosts, and
+`/readyz` for load-balancer health. See [docs/deployment.md](../docs/deployment.md).
+
 **Single sign-on.** OpenID Connect (Okta, Entra ID, Google Workspace, Keycloak,
 Auth0, …): set `CXD_OIDC_ISSUER`, `CXD_OIDC_CLIENT_ID` and a client secret, and
 install the `sso` extra. Groups and admin rights can follow the provider. See
@@ -129,6 +133,7 @@ uvicorn cxd_server.app:create_dashboards_app --factory --reload
 | `POST` | `/auth/signup` · `/auth/login` · `/auth/logout` | Session auth (cookie) |
 | `GET` | `/auth/me` | Current user (`{user, is_admin, sso, permissions, groups, roles}`) |
 | `GET` | `/auth/config` | How users sign in here (`{password, signup, oidc}`) |
+| `GET` | `/healthz` · `/readyz` | Liveness · readiness (`503` names the failing check) |
 | `GET` | `/auth/oidc/login` · `/auth/oidc/callback` | Single sign-on (OpenID Connect) |
 | `GET` | `/api/directory` | Users and groups a dashboard or dataset can be shared with |
 | `GET`·`POST` | `/api/dashboards/{id}/grants` | Owner: who it is shared with / share (`{principal, level}`, `level: null` revokes). Principals: `user:<name>`, `group:<name>`, `*` |

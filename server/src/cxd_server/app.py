@@ -637,6 +637,35 @@ def create_dashboards_app(
         raise HTTPException(status_code=400, detail="No such user or group: %s" % principal)
 
     # ---- auth (mirrors canvasxpress-connectors) ----
+    # ---- health (for load balancers / orchestrators; no sign-in, not audited) ----
+    @app.get("/healthz")
+    def healthz():
+        """Liveness: the process answers (no database call)."""
+        from . import __version__
+        return {"status": "ok", "version": __version__}
+
+    @app.get("/readyz")
+    def readyz():
+        """Readiness: the stores this process needs answer (503 names what failed)."""
+        checks = {}
+
+        def check(name, fn):
+            try:
+                fn()
+                checks[name] = "ok"
+            except Exception as exc:  # noqa: BLE001 - reported, never raised
+                checks[name] = "failed: %s" % type(exc).__name__
+        check("dashboards", store.list_users)
+        check("governance", governance.group_names)
+        check("schedules", lambda: schedules.due(datetime.datetime.now(datetime.timezone.utc)))
+        check("audit", lambda: audit.query(limit=1))
+        check("datasets", lambda: dataset_store_for(None).list("__readyz__"))
+        if scheduler_enabled:
+            checks["scheduler"] = "ok" if scheduler.running else "failed: not running"
+        ready = all(v == "ok" for v in checks.values())
+        return JSONResponse({"status": "ready" if ready else "not ready", "checks": checks},
+                            status_code=200 if ready else 503)
+
     @app.get("/auth/config")
     def auth_config():
         """How users sign in here (the login page adapts to it)."""

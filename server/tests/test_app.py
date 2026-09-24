@@ -391,3 +391,24 @@ def test_dataset_config_round_trips(app):
     # a bad config type is rejected
     bad = client.post("/api/datasets", json={"format": "csv", "data": "id,v\nA,1\n", "config": 5})
     assert bad.status_code == 400
+
+
+def test_health_and_readiness(tmp_path):
+    from cxd_server.app import create_dashboards_app
+    from cxd_server.store import DashboardStore
+    app = create_dashboards_app(store=DashboardStore(str(tmp_path / "d.db")), session_secret="s",
+                                serve_static=False, scheduler_enabled=True,
+                                dataset_store_uri="file://" + str(tmp_path / "ds"))
+    client = TestClient(app)
+    assert client.get("/healthz").json()["status"] == "ok"
+    # Outside the app's lifespan the scheduler thread is not running: not ready.
+    down = client.get("/readyz")
+    assert down.status_code == 503 and down.json()["checks"]["scheduler"].startswith("failed")
+    with TestClient(app) as running:
+        up = running.get("/readyz")
+        assert up.status_code == 200, up.json()
+        assert set(up.json()["checks"]) == {"dashboards", "governance", "schedules", "audit",
+                                            "datasets", "scheduler"}
+    # A store that fails makes it not ready, and says which.
+    app.state.governance.group_names = None
+    assert "failed" in TestClient(app).get("/readyz").json()["checks"]["governance"]

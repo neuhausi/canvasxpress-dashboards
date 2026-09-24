@@ -13,7 +13,8 @@ This package adds the missing layer: a **spec**, a **grid layout**, a
 re-implement chart rendering or coordination.
 
 **Guides:** [governance and audit](docs/governance.md) (roles, sharing, row/column
-security, lineage, audit log) · [single sign-on](docs/sso.md) (OpenID Connect) · [scheduling](docs/scheduling.md) (refresh, alerts,
+security, lineage, audit log) · [single sign-on](docs/sso.md) (OpenID Connect) ·
+[running several servers](docs/deployment.md) · [scheduling](docs/scheduling.md) (refresh, alerts,
 emailed dashboards) · [large data](docs/large-data.md) (aggregate, filter and join in the
 database) · [live-data controls](docs/live-data-controls.md) ·
 [server](server/README.md) · [changelog](CHANGELOG.md)
