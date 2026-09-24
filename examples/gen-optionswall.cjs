@@ -1,6 +1,6 @@
 /**
  * Generate the options-wall dashboard spec from the real IBM fixture
- * (docs/plans/finance/assets/ibm-optionswall-multi.json in the canvas-ai repo).
+ * (examples/data/ibm-optionswall.json).
  *
  * Emits examples/options-wall.spec.json — a single OptionsWall panel plus two
  * `mode:"config"` controls that drive its live config (updateConfig):
@@ -14,7 +14,7 @@
 var fs = require('fs');
 var path = require('path');
 
-var SRC = '/Users/isaac/git/canvas-ai/docs/plans/finance/assets/ibm-optionswall-multi.json';
+var SRC = path.join(__dirname, 'data', 'ibm-optionswall.json');
 var multi = JSON.parse(fs.readFileSync(SRC, 'utf8'));
 
 var symbol = multi.symbol;             // "IBM"
