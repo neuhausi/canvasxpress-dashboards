@@ -320,6 +320,8 @@
           notice('🧾', 'Audit log', 'Who did what, when: sign-ins, changes, shares, share-link views and function runs. Tamper-evident, filterable and exportable from the Admin view.', 'n-sm') +
           notice('⏰', 'Scheduling', 'Refresh datasets from a URL or a database every night, get an email when a value crosses a threshold, and send dashboards to people every Monday — with a PNG snapshot of what each of them may see. Set it up in <b>Schedules</b>.', 'n-md') +
           notice('🔗', 'Sharing', 'Share with people and groups from the Dashboards view (<b>People</b>), or publish a read-only link — a live, always-current dashboard, straight into an email.', 'n-md') +
+          notice('🔑', 'Single sign-on', 'Sign in with your company account (Okta, Entra ID, Google Workspace, Keycloak and other OpenID Connect providers). Groups and admin rights can follow the identity provider. <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/sso.md" target="_blank" rel="noopener">Set it up</a>.', 'n-md') +
+          notice('✍️', 'Signed records', 'Every save is a version you can open, compare and restore. Sign a version as Authored, Reviewed or Approved after re-entering your password: the signature is bound to that exact content. Built for 21 CFR Part 11. <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/compliance.md" target="_blank" rel="noopener">How it works</a>.', 'n-md') +
           notice('🗄️', 'Large data', 'Millions of rows stay in the database: panels ask it for totals, filters and joins, and only the answer travels. <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/large-data.md" target="_blank" rel="noopener">How it works</a>.', 'n-sm') +
           notice('📖', 'The product story', 'Why recipes beat screenshots: a dashboard is a reproducible recipe — data plus spec — so its figures regenerate as the data changes. Hand someone the recipe instead of an image and they rerun it on current data to get the same figures. <a href="' + API_BASE + '/examples/reproducible-bench/narrative.html">Read the Reproducible Bench narrative</a>, illustrated with the live dashboards it describes.', 'n-lg') +
         '</div>' +
@@ -2905,6 +2907,7 @@
               (mine && isShared
                 ? '<button class="cta" data-act="unshare" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Unshare</button>'
                 : '') +
+              '<button class="cta" data-act="history" title="Versions and electronic signatures" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">History</button>' +
               (hasPerm('schedule.create')
                 ? '<button class="cta" data-act="subscribe" title="Email this dashboard on a schedule" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Subscribe</button>'
                 : '') +
@@ -2929,6 +2932,8 @@
               });
             } else if (act === 'people') {
               showPeople({ kind: 'dashboard', id: d.id, title: d.title });
+            } else if (act === 'history') {
+              showHistory(d);
             } else if (act === 'subscribe') {
               pendingSchedule = { kind: 'subscription', name: (d.title || d.id) + ' by email',
                 config: { dashboard: d.id, dashboard_owner: d.owner || currentUser } };
@@ -3004,6 +3009,98 @@
         box.appendChild(input); box.appendChild(row);
       }, function (err) {
         box.textContent = 'Share failed: ' + err.message;
+      });
+    }
+
+    // Version history and electronic signatures for one dashboard (a modal).
+    function showHistory(d) {
+      var opts = d.shared || d.example ? { owner: d.owner } : undefined;
+      // Closing refreshes the list (a restore changes it), except when closing to
+      // preview an old version: the refresh would re-preview the current one.
+      var previewing = false;
+      var body = openModal('History of “' + (d.title || d.id) + '”', function () {
+        if (!previewing) loadDashList();
+      });
+      function draw() {
+        body.textContent = 'Loading…';
+        client.versions(d.id, opts).then(function (r) {
+          body.innerHTML = '<p style="margin:0 0 10px;color:var(--muted);font-size:14px">Every save is kept as a version ' +
+            'that cannot be changed. A signature binds a person, a meaning and a time to one version’s exact content ' +
+            '(its fingerprint); an edit makes a new, unsigned version.</p>';
+          var err = document.createElement('div');
+          err.style.cssText = 'color:#d64545;min-height:18px;font-size:14px';
+          r.versions.forEach(function (v, i) {
+            var box = document.createElement('div');
+            box.className = 'cxd-version';
+            box.style.cssText = 'border:1px solid var(--rail-border);border-radius:8px;padding:8px 10px;margin-bottom:8px';
+            var sigs = v.signatures.map(function (sg) {
+              return '<div style="font-size:14px;margin-top:3px">' + (sg.valid ? '✍️ ' : '⚠️ ') + '<b>' + esc(sg.meaning) + '</b> by ' +
+                esc(sg.signer) + ' · ' + esc(whenText(sg.signed_at)) + ' <span style="color:var(--muted)">(' + esc(sg.method) + ')</span>' +
+                (sg.valid ? '' : ' <span style="color:#d64545">content changed since signing</span>') + '</div>';
+            }).join('');
+            box.innerHTML = '<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">' +
+              '<b>Version ' + v.version + '</b>' + (i === 0 ? ' <span style="font-size:13px;color:var(--accent)">current</span>' : '') +
+              '<span style="color:var(--muted);font-size:14px">' + esc(whenText(v.saved_at)) + (v.saved_by ? ' · ' + esc(v.saved_by) : '') +
+              (v.note ? ' · ' + esc(v.note) : '') + '</span>' +
+              '<code style="font-size:12px;color:var(--muted);margin-left:auto" title="SHA-256 of the saved spec">' + esc(v.sha256.slice(0, 12)) + '…</code></div>' +
+              sigs;
+            var actions = document.createElement('div');
+            actions.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:6px';
+            actions.appendChild(smallButton('Preview', function () {
+              client.version(d.id, v.version, opts).then(function (res) {
+                previewing = true;
+                body.close();
+                previewSpec(res.spec, (d.title || d.id) + ' · version ' + v.version);
+              }, function (e) { err.textContent = e.message; });
+            }));
+            var mine = !d.shared && !d.example;
+            if (i > 0 && (mine || d.access === 'edit' || isAdmin)) {
+              actions.appendChild(smallButton('Restore', function () {
+                if (!confirm('Make version ' + v.version + ' current again? It is saved as a new version.')) return;
+                client.restoreVersion(d.id, v.version, opts).then(draw, function (e) { err.textContent = e.message; });
+              }));
+            }
+            if (r.can_sign) {
+              var meaning = document.createElement('select');
+              meaning.style.cssText = 'font-size:14px;padding:3px 4px';
+              r.meanings.forEach(function (m) { meaning.appendChild(new Option(m, m)); });
+              var pw = document.createElement('input');
+              pw.type = 'password'; pw.placeholder = 'your password';
+              pw.style.cssText = 'font-size:14px;padding:3px 6px;width:150px';
+              if (r.reauth !== 'password') pw.style.display = 'none';
+              actions.appendChild(meaning); actions.appendChild(pw);
+              actions.appendChild(smallButton('Sign', function () {
+                err.textContent = '';
+                client.signVersion(d.id, { version: v.version, meaning: meaning.value, password: pw.value }, opts).then(draw, function (e) {
+                  if (e.status === 401 && /^reauth/.test(e.message)) {
+                    if (confirm('To sign, confirm who you are with single sign-on (you come back here afterwards).')) {
+                      location.href = API_BASE + '/auth/oidc/login?prompt=login';
+                    }
+                    return;
+                  }
+                  err.textContent = e.message;
+                });
+              }, 'background:var(--accent);color:#fff;border:none;border-radius:6px'));
+            }
+            box.appendChild(actions);
+            body.appendChild(box);
+          });
+          body.appendChild(err);
+        }, function (e) { body.textContent = e.message; });
+      }
+      draw();
+    }
+
+    // Render a spec (e.g. an old version) in the Dashboards preview pane.
+    function previewSpec(spec, label) {
+      var titleEl = document.getElementById('dash-title');
+      if (titleEl) { titleEl.style.display = ''; titleEl.textContent = label + ' (read-only preview)'; }
+      currentPreview = Promise.resolve(currentPreview).then(function (h) {
+        if (h && h.destroy) { try { h.destroy(); } catch (e) {} }
+        var host = document.getElementById('dash-host');
+        if (!host) return null;
+        host.innerHTML = '';
+        return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE });
       });
     }
 

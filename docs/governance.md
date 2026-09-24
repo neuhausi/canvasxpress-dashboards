@@ -77,6 +77,7 @@ A **role** is a named set of permissions:
 | `function.run` | Run R/Python data functions (when the server enables them, `CXD_FUNCTIONS`) |
 | `llm.use` | Use the AI dashboard builder |
 | `schedule.create` | Schedule dataset refreshes, alerts and emailed dashboards ([scheduling](scheduling.md)) |
+| `dashboard.sign` | Electronically sign dashboard versions ([records and signatures](compliance.md)) |
 
 Built-in roles:
 

@@ -36,6 +36,10 @@ vars: `SESSION_SECRET` (auto-generated if unset), `CXD_HOST`/`CXD_PORT`,
 `CXD_SMTP_*` (incl. `CXD_SMTP_PASSWORD_FILE`), `CXD_EMAIL_VERIFY`, `CXD_EMAIL_DAILY_CAP`,
 `CXD_SNAPSHOTS`, `CXD_INTERNAL_URL`, `CXD_DASHBOARD_URL`.
 
+**Versions and e-signatures.** Every save is an immutable version; versions can
+be signed with a meaning after re-authentication (21 CFR Part 11). See
+[docs/compliance.md](../docs/compliance.md).
+
 **Several servers.** Any process can serve any request (signed-cookie sessions, all
 state in the database). Use Postgres and one `SESSION_SECRET` across hosts, and
 `/readyz` for load-balancer health. See [docs/deployment.md](../docs/deployment.md).

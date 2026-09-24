@@ -143,10 +143,13 @@ class OidcClient:
             self._discovery, self._discovered_at, self._jwks = doc, time.time(), None
         return self._discovery
 
-    def authorize_url(self, redirect_uri: str, state: str, nonce: str, challenge: str) -> str:
+    def authorize_url(self, redirect_uri: str, state: str, nonce: str, challenge: str,
+                      prompt: Optional[str] = None) -> str:
         params = {"response_type": "code", "client_id": self.config.client_id,
                   "redirect_uri": redirect_uri, "scope": self.config.scopes, "state": state,
                   "nonce": nonce, "code_challenge": challenge, "code_challenge_method": "S256"}
+        if prompt in ("login", "consent", "select_account"):
+            params["prompt"] = prompt      # "login" forces re-authentication (e-signatures)
         endpoint = self.discovery()["authorization_endpoint"]
         return endpoint + ("&" if "?" in endpoint else "?") + urllib.parse.urlencode(params)
 

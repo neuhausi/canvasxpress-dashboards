@@ -8,6 +8,22 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 Server features, live on the demo; the client additions ship in the next npm
 release.
 
+### Electronic records and signatures ([docs/compliance.md](docs/compliance.md))
+- **Versions.** Every dashboard save appends an immutable version (spec, who,
+  when, SHA-256). Versions are kept when the dashboard is deleted; restoring
+  saves a new version; an older dashboard gets a baseline version.
+- **E-signatures** on a version:
+  - a meaning (`CXD_SIGNATURE_MEANINGS`) and re-authentication (password, or a
+    single sign-on within `CXD_SIGN_REAUTH_SECONDS`, with `prompt=login`);
+  - bound to the version's SHA-256 and hash-chained;
+  - shown with the version, with a validity check;
+  - `/api/admin/signatures/verify` re-checks all of them.
+  - A new `dashboard.sign` permission (editor).
+- **UI:** Dashboards → **History** lists versions, signatures, preview, restore
+  and sign.
+- **Guide:** a control-by-control Part 11 mapping stating what the software
+  provides and what the regulated company must still do.
+
 ### Running several servers ([docs/deployment.md](docs/deployment.md))
 - `GET /healthz` (liveness) and `GET /readyz` (readiness: stores, governance,
   schedules, audit log, datasets, scheduler thread; `503` names the failure).

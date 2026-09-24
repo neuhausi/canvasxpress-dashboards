@@ -43,6 +43,7 @@ from .governance import (PERMISSIONS, Governance, GovernanceError, apply_policy,
                          open_governance, spec_sources)
 from .jobs import Jobs
 from .mailer import SmtpMailer
+from .records import RecordError, RecordStore
 from .oidc import (IdentityStore, OidcClient, OidcConfig, OidcError, groups_from, pkce_pair,
                    username_from)
 from .scheduler import Cron, ScheduleError, ScheduleStore, Scheduler
@@ -539,6 +540,16 @@ def create_dashboards_app(
         oidc_config = OidcConfig.from_env()
         oidc = OidcClient(oidc_config) if oidc_config else None
     identities = IdentityStore(governance._db)
+    # Electronic records: dashboard version history and e-signatures.
+    records = RecordStore(governance._db)
+    app.state.records = records
+    signature_meanings = [m.strip() for m in (os.getenv("CXD_SIGNATURE_MEANINGS")
+                                               or "Authored,Reviewed,Approved").split(",")
+                          if m.strip()]
+    try:
+        reauth_seconds = int(os.getenv("CXD_SIGN_REAUTH_SECONDS", "300") or 300)
+    except ValueError:
+        reauth_seconds = 300
     app.state.oidc = oidc
 
     # Registered BEFORE the session middleware so it runs inside it: the session
@@ -688,6 +699,7 @@ def create_dashboards_app(
         if not store.create_user(username, password, is_admin=first_user):
             raise HTTPException(status_code=409, detail="Username already taken")
         request.session["user"] = username
+        request.session["auth_at"] = int(time.time())
         return {"user": username}
 
     @app.post("/auth/login")
@@ -704,6 +716,7 @@ def create_dashboards_app(
         if not store.check_user(username, password):
             raise HTTPException(status_code=401, detail="Invalid username or password")
         request.session["user"] = username
+        request.session["auth_at"] = int(time.time())
         return {"user": username}
 
     @app.post("/auth/logout")
@@ -735,7 +748,7 @@ def create_dashboards_app(
     app_url_for_errors = (publish_base_url or "").rstrip("/") + "/"
 
     @app.get("/auth/oidc/login")
-    def oidc_login(request: Request):
+    def oidc_login(request: Request, prompt: Optional[str] = None):
         """Start single sign-on: send the browser to the identity provider."""
         if not oidc:
             raise HTTPException(status_code=404, detail="Single sign-on is not configured")
@@ -744,7 +757,7 @@ def create_dashboards_app(
         request.session["oidc"] = {"state": state, "nonce": nonce, "verifier": verifier,
                                    "at": int(time.time())}
         try:
-            url = oidc.authorize_url(oidc_redirect_uri(request), state, nonce, challenge)
+            url = oidc.authorize_url(oidc_redirect_uri(request), state, nonce, challenge, prompt)
         except OidcError as exc:
             return sso_error(str(exc), 502)
         return RedirectResponse(url, status_code=302)
@@ -810,6 +823,7 @@ def create_dashboards_app(
         request.session["user"] = username
         request.session["sso"] = issuer
         request.session["id_token"] = tokens["id_token"]
+        request.session["auth_at"] = int(time.time())
         note(request, target=username, issuer=issuer, created=created or None,
              groups=len(groups) if groups is not None else None)
         return RedirectResponse(app_url(request), status_code=302)
@@ -946,6 +960,10 @@ def create_dashboards_app(
         note(request, target=spec["id"], owner=target,
              created=store.get_summary(target, spec["id"]) is None, lock=lock)
         saved = store.save_dashboard(target, spec, _now_iso())
+        # Every save is also an immutable version (electronic record).
+        version = records.add_version(target, spec, user, _now_iso())
+        saved = dict(saved, version=version["version"])
+        note(request, version=version["version"])
         # An admin may lock/unlock in the same call (e.g. saving a new example).
         if lock is not None and user_is_admin(user):
             store.set_locked(target, spec["id"], bool(lock))
@@ -1427,6 +1445,111 @@ def create_dashboards_app(
         except GovernanceError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
         return {"assignments": governance.assignments()}
+
+    # ---- electronic records: version history and e-signatures ----
+    def record_access(request: Request, dashboard_id: str, owner: Optional[str],
+                      edit: bool = False) -> tuple:
+        """``(user, owner)`` for a dashboard the caller may open (``edit``: change)."""
+        user = require_user(request)
+        owner = owner or user
+        if edit:
+            allowed = owner == user or user_is_admin(user) or governance.access_level(
+                user, "dashboard", owner, dashboard_id) == "edit"
+        else:
+            allowed = dashboard_access(user, owner, dashboard_id)
+        if not allowed:
+            raise HTTPException(status_code=404, detail="No such dashboard")
+        note(request, owner=owner)
+        return user, owner
+
+    @app.get("/api/dashboards/{dashboard_id}/versions")
+    def dashboard_versions(request: Request, dashboard_id: str, owner: Optional[str] = None):
+        """The dashboard's saved versions (newest first) with their signatures."""
+        user, owner = record_access(request, dashboard_id, owner)
+        versions = records.versions(owner, dashboard_id)
+        if not versions:
+            current = store.get_dashboard(owner, dashboard_id)
+            if current is None:
+                raise HTTPException(status_code=404, detail="No such dashboard")
+            # Saved before versions were kept: its current content becomes v1.
+            records.add_version(owner, current, None, _now_iso(), note="baseline")
+            versions = records.versions(owner, dashboard_id)
+        return {"versions": versions, "meanings": signature_meanings,
+                "can_sign": "dashboard.sign" in permissions_of(user),
+                "reauth": "sso" if request.session.get("sso") else "password"}
+
+    @app.get("/api/dashboards/{dashboard_id}/versions/{version}")
+    def dashboard_version(request: Request, dashboard_id: str, version: int,
+                          owner: Optional[str] = None):
+        _, owner = record_access(request, dashboard_id, owner)
+        spec = records.version_spec(owner, dashboard_id, version)
+        if spec is None:
+            raise HTTPException(status_code=404, detail="No such version")
+        return {"version": records.version_info(owner, dashboard_id, version), "spec": spec}
+
+    @app.post("/api/dashboards/{dashboard_id}/versions/{version}/restore")
+    def restore_version(request: Request, dashboard_id: str, version: int,
+                        owner: Optional[str] = None):
+        """Make an old version current again (saved as a new version)."""
+        user, owner = record_access(request, dashboard_id, owner, edit=True)
+        if store.is_locked(owner, dashboard_id) and not user_is_admin(user):
+            raise HTTPException(status_code=403, detail="Dashboard is locked")
+        spec = records.version_spec(owner, dashboard_id, version)
+        if spec is None:
+            raise HTTPException(status_code=404, detail="No such version")
+        store.save_dashboard(owner, spec, _now_iso())
+        restored = records.add_version(owner, spec, user, _now_iso(),
+                                       note="restored from version %d" % version)
+        note(request, restored_from=version, version=restored["version"])
+        return {"version": restored}
+
+    @app.post("/api/dashboards/{dashboard_id}/sign")
+    async def sign_dashboard(request: Request, dashboard_id: str, owner: Optional[str] = None):
+        """Electronically sign a version: ``{version, meaning, password?}``.
+
+        The signer re-authenticates: a password account enters its password; a
+        single sign-on account must have signed in within the last few minutes.
+        """
+        user, owner = record_access(request, dashboard_id, owner)
+        if "dashboard.sign" not in permissions_of(user):
+            raise HTTPException(status_code=403, detail="Your role does not allow this: "
+                                + PERMISSIONS["dashboard.sign"].lower())
+        body = await request.json()
+        body = body if isinstance(body, dict) else {}
+        meaning = body.get("meaning")
+        if meaning not in signature_meanings:
+            raise HTTPException(status_code=400, detail="meaning must be one of: "
+                                + ", ".join(signature_meanings))
+        try:
+            version = int(body.get("version"))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="Say which version to sign")
+        if request.session.get("sso"):
+            if time.time() - request.session.get("auth_at", 0) > reauth_seconds:
+                note(request, meaning=meaning, version=version, reauth="required")
+                raise HTTPException(status_code=401, detail="reauth: sign in again with "
+                                    "single sign-on to sign")
+            method = "sso"
+        else:
+            password = body.get("password") or ""
+            if not await run_in_threadpool(store.check_user, user, password):
+                note(request, meaning=meaning, version=version, reauth="failed")
+                raise HTTPException(status_code=401, detail="The password is not correct")
+            method = "password"
+        try:
+            signature = records.sign(owner, dashboard_id, version, user, meaning, _now_iso(),
+                                     method)
+        except RecordError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        note(request, meaning=meaning, version=version, sha256=signature["sha256"][:16],
+             method=method)
+        return {"signature": signature}
+
+    @app.get("/api/admin/signatures/verify")
+    def verify_signatures(request: Request):
+        """Re-check the signature chain and every signed version's content."""
+        require_admin(request)
+        return records.verify_signatures()
 
     # ---- scheduling: dataset refresh, alerts, dashboard subscriptions ----
     def dashboard_access(user: Optional[str], owner: str, dashboard_id: str) -> bool:

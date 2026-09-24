@@ -396,6 +396,53 @@ export function createDashboardClient(options) {
       return request('POST', '/api/admin/users/' + encodeURIComponent(username) + '/email', { email: email || '' });
     },
 
+    // ---- electronic records: versions and signatures ----
+    /**
+     * A dashboard's saved versions, newest first, each with its signatures.
+     * @param {string} id - Dashboard id.
+     * @param {object} [opts] - `{owner}` for a dashboard shared with the user.
+     * @returns {Promise<object>} `{ versions, meanings, can_sign, reauth }`.
+     */
+    versions: function (id, opts) {
+      return request('GET', '/api/dashboards/' + encodeURIComponent(id) + '/versions' + queryString({ owner: opts && opts.owner }));
+    },
+    /**
+     * One saved version's spec.
+     * @param {string} id - Dashboard id.
+     * @param {number} version - Version number.
+     * @param {object} [opts] - `{owner}`.
+     * @returns {Promise<object>} `{ version, spec }`.
+     */
+    version: function (id, version, opts) {
+      return request('GET', '/api/dashboards/' + encodeURIComponent(id) + '/versions/' + encodeURIComponent(version) +
+        queryString({ owner: opts && opts.owner }));
+    },
+    /**
+     * Make an old version current again (it is saved as a new version).
+     * @param {string} id - Dashboard id.
+     * @param {number} version - Version to restore.
+     * @param {object} [opts] - `{owner}`.
+     * @returns {Promise<object>} `{ version }` (the new one).
+     */
+    restoreVersion: function (id, version, opts) {
+      return request('POST', '/api/dashboards/' + encodeURIComponent(id) + '/versions/' + encodeURIComponent(version) +
+        '/restore' + queryString({ owner: opts && opts.owner }));
+    },
+    /**
+     * Electronically sign a version. Password accounts pass `password`; single
+     * sign-on accounts must have signed in recently (a 401 whose message starts
+     * with "reauth" means: sign in again, e.g. `/auth/oidc/login?prompt=login`).
+     * @param {string} id - Dashboard id.
+     * @param {object} signature - `{version, meaning, password?}`.
+     * @param {object} [opts] - `{owner}`.
+     * @returns {Promise<object>} `{ signature }`.
+     */
+    signVersion: function (id, signature, opts) {
+      return request('POST', '/api/dashboards/' + encodeURIComponent(id) + '/sign' + queryString({ owner: opts && opts.owner }), signature);
+    },
+    /** @returns {Promise<object>} Admin: `{ ok, checked, broken_at, reason? }` for every signature. */
+    verifySignatures: function () { return request('GET', '/api/admin/signatures/verify'); },
+
     // ---- admin: roles and groups ----
     /** @returns {Promise<object>} `{ permissions, roles, groups, assignments, default_role }`. */
     governance: function () { return request('GET', '/api/admin/governance'); },

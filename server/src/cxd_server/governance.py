@@ -55,6 +55,7 @@ PERMISSIONS = OrderedDict([
     ("function.run", "Run R/Python data functions (when the server allows it)"),
     ("llm.use", "Use the AI dashboard builder"),
     ("schedule.create", "Schedule dataset refreshes, alerts and email subscriptions"),
+    ("dashboard.sign", "Electronically sign dashboard versions"),
 ])
 
 BUILTIN_ROLES = OrderedDict([

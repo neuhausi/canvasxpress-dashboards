@@ -14,7 +14,8 @@ re-implement chart rendering or coordination.
 
 **Guides:** [governance and audit](docs/governance.md) (roles, sharing, row/column
 security, lineage, audit log) · [single sign-on](docs/sso.md) (OpenID Connect) ·
-[running several servers](docs/deployment.md) · [scheduling](docs/scheduling.md) (refresh, alerts,
+[running several servers](docs/deployment.md) · [electronic records and signatures](docs/compliance.md)
+(21 CFR Part 11) · [scheduling](docs/scheduling.md) (refresh, alerts,
 emailed dashboards) · [large data](docs/large-data.md) (aggregate, filter and join in the
 database) · [live-data controls](docs/live-data-controls.md) ·
 [server](server/README.md) · [changelog](CHANGELOG.md)
@@ -475,6 +476,11 @@ records what happened. The full guide is **[docs/governance.md](docs/governance.
   them wherever it hands out the dataset: in the app, through shared dashboards,
   and on share links. They fail closed.
 - **Lineage.** Which dashboards read which datasets and connectors.
+- **Versions and electronic signatures.** Every save is an immutable version, and
+  a person can sign a version with a meaning (Authored, Reviewed, Approved) after
+  re-authenticating. The signature is bound to that version's SHA-256 and
+  hash-chained, so tampering shows. The mapping to 21 CFR Part 11 is in
+  [docs/compliance.md](docs/compliance.md).
 - **Single sign-on.** Users sign in through Okta, Entra ID, Google Workspace,
   Keycloak or any OpenID Connect provider (authorization code + PKCE, verified ID
   tokens). Provider groups become dashboards groups and admin rights follow a

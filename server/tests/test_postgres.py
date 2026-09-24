@@ -145,3 +145,21 @@ def test_health_endpoints_on_postgres(pg_url):
     assert client.get("/healthz").json()["status"] == "ok"
     ready = client.get("/readyz")
     assert ready.status_code == 200 and set(ready.json()["checks"].values()) == {"ok"}
+
+
+def test_versions_and_signatures_on_postgres(pg_url):
+    (a, b), TestClient = two_servers(pg_url)
+    owner = TestClient(a)
+    owner.post("/auth/signup", json={"username": "owner", "password": "secret1"})
+    spec = {"id": "d1", "title": "T", "layout": {"items": []}, "panels": {}}
+    owner.post("/api/dashboards", json=spec)
+    owner.post("/api/dashboards", json=dict(spec, title="T2"))
+    on_b = TestClient(b, cookies=owner.cookies)
+    assert on_b.post("/api/dashboards/d1/sign", json={"version": 2, "meaning": "Approved",
+                                                      "password": "secret1"}).status_code == 200
+    owner.post("/api/dashboards/d1/sign", json={"version": 1, "meaning": "Authored",
+                                                "password": "secret1"})
+    v = on_b.get("/api/dashboards/d1/versions").json()["versions"]
+    assert [(x["version"], [s["meaning"] for s in x["signatures"]]) for x in v] == \
+        [(2, ["Approved"]), (1, ["Authored"])]
+    assert a.state.records.verify_signatures()["ok"] is True
