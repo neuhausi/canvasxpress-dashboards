@@ -847,4 +847,7 @@ if __name__ == "__main__":
     url = "http://%s:%d/" % (HOST, PORT)
     print("\n  CanvasXpress Dashboards demo running:\n    %s\n" % url)
     print("  Demo login is automatic (user 'demo'). Data dir: %s\n" % DATA_DIR)
-    uvicorn.run(app, host=HOST, port=PORT)
+    # Live (SSE) streams never finish on their own, so without a limit a graceful
+    # shutdown waits on every open one: `server.sh restart` then starts the new
+    # server while the old one is still alive. Cap the wait.
+    uvicorn.run(app, host=HOST, port=PORT, timeout_graceful_shutdown=5)

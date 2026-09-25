@@ -89,9 +89,20 @@ start() {
 }
 
 stop() {
-  local stopped=0 pid p
-  if pid="$(running_pid)"; then kill "$pid" 2>/dev/null || true; stopped=1; fi
-  for p in $(serve_pids_on_port); do kill "$p" 2>/dev/null || true; stopped=1; done
+  local stopped=0 pid p killed="" alive i
+  if pid="$(running_pid)"; then kill "$pid" 2>/dev/null || true; stopped=1; killed="$pid"; fi
+  for p in $(serve_pids_on_port); do kill "$p" 2>/dev/null || true; stopped=1; killed="$killed $p"; done
+  # Wait for the old server to exit, so a restart never overlaps it (an old
+  # process still holding the data files makes the new one fail to open them).
+  # serve.py caps its graceful shutdown at 5 s, even with live streams open;
+  # anything still alive after ~10 s is killed.
+  for i in $(seq 1 40); do
+    alive=0
+    for p in $killed; do kill -0 "$p" 2>/dev/null && alive=1; done
+    [ "$alive" = 0 ] && break
+    sleep 0.25
+  done
+  for p in $killed; do kill -0 "$p" 2>/dev/null && kill -9 "$p" 2>/dev/null; done
   rm -f "$PID_FILE"
   if [ "$stopped" = 1 ]; then echo "stopped."; else echo "not running."; fi
 }
