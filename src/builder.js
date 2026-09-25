@@ -237,6 +237,7 @@ export function createBuilder(target, options) {
   var pendingBaselines = []; // baseline snapshots waiting for getConfig() to attach
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
   var availableConnectors = []; // connector sources ({name, url}) from options.listConnectorSources
+  var availableLiveSources = []; // live streams ({name, title, url, variables}) from options.listLiveSources
   var liveRefs = {};        // data-source names the current liveHandle was built with
   var savedTextRange = null; // last selection inside a text editor (for format buttons)
 
@@ -352,6 +353,14 @@ export function createBuilder(target, options) {
         availableConnectors = list || [];
         if (selectedId) renderProps();
       }, function () { /* leave availableConnectors as-is on failure */ });
+    }
+    if (typeof options.listLiveSources === 'function') {
+      // Host-provided live (streaming) sources — offered in the Data dropdown;
+      // picking one binds the panel to a kind:"live" source.
+      Promise.resolve(options.listLiveSources()).then(function (list) {
+        availableLiveSources = list || [];
+        if (selectedId) renderProps();
+      }, function () { /* leave availableLiveSources as-is on failure */ });
     }
     if (!client || typeof client.listDatasets !== 'function') return;
     client.listDatasets().then(function (list) {
@@ -846,6 +855,11 @@ export function createBuilder(target, options) {
     // use (no editing-only canvasInset) so what you build is what a client
     // sees. Only a spec-level canvasInset (Settings) applies, as everywhere.
     var opts = { CanvasXpress: CX, validate: false, baseUrl: baseUrl, observeResize: false };
+    // Live (streaming) sources: the host's session hook and, for tests / non-browser
+    // hosts, the EventSource and frame scheduler — passed through unchanged.
+    ['prepareLive', 'EventSource', 'requestAnimationFrame'].forEach(function (key) {
+      if (options[key]) opts[key] = options[key];
+    });
     opts.onPanelRendered = decorate;
     opts.onControlRendered = decorateControl;
     // A filter scheme saved in a Filters panel becomes part of the spec.
@@ -1406,6 +1420,11 @@ export function createBuilder(target, options) {
     var dsField = buildDataSelect(panel, refs);
     dsField.setAttribute('title', 'Data source');
 
+    // A live (streaming) source adds its Window / Every settings after Data.
+    var boundSource = panel.dataRef ? (spec.data || {})[panel.dataRef] : null;
+    var liveFields = boundSource && boundSource.kind === 'live'
+      ? buildLiveFields(panel.dataRef, boundSource) : [];
+
     // A checkbox to show/hide this panel's title bar.
     var titleToggle = el('label', 'cxb-check');
     var checkbox = el('input');
@@ -1445,7 +1464,7 @@ export function createBuilder(target, options) {
     }
 
     // No Delete here — the panel frame already carries a × delete control.
-    append(propsGroup, [titleLabel, titleField, dataLabel, dsField].concat(crossFilter, [titleToggle]));
+    append(propsGroup, [titleLabel, titleField, dataLabel, dsField].concat(liveFields, crossFilter, [titleToggle]));
   }
 
 
@@ -1913,6 +1932,7 @@ export function createBuilder(target, options) {
   var STORE_OPT = ' ds:';
   // Sentinel prefix marking a "use a database/connector source" option.
   var CONN_OPT = ' cx:';
+  var LIVE_OPT = ' cx-live:';
 
   /**
    * Build the panel Data dropdown. Every dataset from the store is directly
@@ -1967,6 +1987,12 @@ export function createBuilder(target, options) {
       addOption(CONN_OPT + i, '\u{1F5C4} ' + (c.title || c.name));
     });
 
+    // Live (streaming) sources the host exposes — picking one binds the panel
+    // to a kind:"live" source that pushes new samples as they happen.
+    availableLiveSources.forEach(function (s, i) {
+      addOption(LIVE_OPT + i, '\u{1F4E1} ' + (s.title || s.name));
+    });
+
     // Reflect the panel's current binding as the selected option.
     var current = '';
     var curSrc = panel.dataRef ? (spec.data || {})[panel.dataRef] : null;
@@ -1988,6 +2014,19 @@ export function createBuilder(target, options) {
           if (select.options[oi].value === panel.dataRef) select.remove(oi);
         }
       }
+    } else if (curSrc && curSrc.kind === 'live') {
+      // Match on the stream path: the query carries per-dashboard settings
+      // (e.g. the interval), which must not make the stream look unlisted.
+      var li = -1;
+      availableLiveSources.forEach(function (s, i) {
+        if (li < 0 && liveStreamPath(s.url) === liveStreamPath(curSrc.url)) li = i;
+      });
+      current = li >= 0 ? LIVE_OPT + li : panel.dataRef;
+      if (li >= 0) {
+        for (var lo = select.options.length - 1; lo >= 0; lo--) {
+          if (select.options[lo].value === panel.dataRef) select.remove(lo);
+        }
+      }
     } else if (curSrc) {
       current = panel.dataRef;   // inline
     }
@@ -2003,6 +2042,11 @@ export function createBuilder(target, options) {
       if (v.indexOf(CONN_OPT) === 0) {
         var c = availableConnectors[parseInt(v.slice(CONN_OPT.length), 10)];
         if (c) useConnectorSource(c); else renderProps();
+        return;
+      }
+      if (v.indexOf(LIVE_OPT) === 0) {
+        var s = availableLiveSources[parseInt(v.slice(LIVE_OPT.length), 10)];
+        if (s) useLiveSource(s); else renderProps();
         return;
       }
       // Changing the source re-instantiates this panel's graph.
@@ -2085,6 +2129,101 @@ export function createBuilder(target, options) {
     commit(next, false);
     rerenderPanel(selectedId);
     renderProps();
+  }
+
+  /**
+   * Bind the selected panel to a live (streaming) source, reusing a spec source
+   * that already subscribes to the same stream or creating one. A panel still
+   * on the default Bar switches to a vertical Line — a rolling time series.
+   * Always a full rebuild: streams are opened per dashboard render.
+   * @param {object} stream - `{name, title, url, variables}` from options.listLiveSources.
+   * @returns {void}
+   * @private
+   */
+  function useLiveSource(stream) {
+    var existing = spec.data || {};
+    var name = null;
+    Object.keys(existing).forEach(function (ref) {
+      var srcx = existing[ref];
+      if (!name && srcx && srcx.kind === 'live' && liveStreamPath(srcx.url) === liveStreamPath(stream.url)) {
+        name = ref;
+      }
+    });
+    var next = spec;
+    if (!name) {
+      name = uniqueSourceName(stream.name);
+      var source = { kind: 'live', url: stream.url };
+      if (stream.variables && stream.variables.length) source.variables = stream.variables.slice();
+      next = setDataSource(spec, name, source);
+    }
+    next = updatePanel(next, selectedId, { dataRef: name });
+    var config = (next.panels[selectedId] || {}).config || {};
+    var adoptLine = !config.graphType || config.graphType === 'Bar';
+    if (adoptLine) {
+      next = updatePanel(next, selectedId, {
+        config: Object.assign({}, config, { graphType: 'Line', graphOrientation: 'vertical' })
+      });
+    }
+    commit(next, false);
+    // As in useDataset: drop the stale instance so the rebuild's config fold
+    // does not restore the Bar we just replaced.
+    if (adoptLine) delete instByPanel[selectedId];
+    syncLiveConfigs();
+    rebuild();
+  }
+
+  /**
+   * The Window / Every fields for a panel bound to a live source: samples kept
+   * (the source's `window`) and seconds between updates (the stream's
+   * `interval` query parameter, which the stream server clamps). Each change
+   * rebuilds, reopening the stream with the new settings.
+   * @param {string} ref - The live source's name.
+   * @param {object} source - The `kind:"live"` source spec.
+   * @returns {HTMLElement[]} Label/field pairs to append to the props panel.
+   * @private
+   */
+  function buildLiveFields(ref, source) {
+    function numberField(value, placeholder, step, title, onChange) {
+      var input = el('input');
+      input.type = 'number';
+      input.className = 'cxb-tinput';
+      input.min = step;
+      input.step = step;
+      input.value = value == null ? '' : String(value);
+      input.setAttribute('placeholder', placeholder);
+      input.setAttribute('title', title);
+      input.style.width = '5.5em';
+      on(input, 'change', function () { onChange(input.value.trim()); });
+      return input;
+    }
+    function save(nextSource) {
+      commit(setDataSource(spec, ref, nextSource), false);
+      syncLiveConfigs();
+      rebuild();
+    }
+
+    var windowLabel = el('span', 'cxb-tlabel');
+    windowLabel.textContent = 'Window';
+    var windowField = numberField(source.window, '1000', '1',
+      'Samples kept; the oldest are dropped as new ones arrive', function (text) {
+        var next = Object.assign({}, source);
+        var n = parseInt(text, 10);
+        if (n > 0) next.window = n; else delete next.window;
+        save(next);
+      });
+
+    var everyLabel = el('span', 'cxb-tlabel');
+    everyLabel.textContent = 'Every (s)';
+    var everyField = numberField(queryParam(source.url, 'interval'), '1', '0.1',
+      'Seconds between updates (sent to the stream as ?interval=; the server clamps it)',
+      function (text) {
+        var seconds = parseFloat(text);
+        save(Object.assign({}, source, {
+          url: withQueryParam(source.url, 'interval', seconds > 0 ? String(seconds) : null)
+        }));
+      });
+
+    return [windowLabel, windowField, everyLabel, everyField];
   }
 
   /**
@@ -3405,4 +3544,59 @@ function field(labelText, control) {
   wrap.appendChild(l);
   wrap.appendChild(control);
   return wrap;
+}
+
+/**
+ * A live stream's identity: its URL without the query (the query carries
+ * per-dashboard settings such as the interval).
+ * @param {string} url - Stream URL.
+ * @returns {string} The URL up to (not including) `?`.
+ * @private
+ */
+function liveStreamPath(url) {
+  var s = String(url || '');
+  var q = s.indexOf('?');
+  return q >= 0 ? s.slice(0, q) : s;
+}
+
+/**
+ * Read one query parameter from a URL (absolute or relative).
+ * @param {string} url - The URL.
+ * @param {string} key - Parameter name.
+ * @returns {(string|null)} The decoded value, or null when absent.
+ * @private
+ */
+function queryParam(url, key) {
+  var s = String(url || '');
+  var q = s.indexOf('?');
+  if (q < 0) return null;
+  var pairs = s.slice(q + 1).split('&');
+  for (var i = 0; i < pairs.length; i++) {
+    var eq = pairs[i].indexOf('=');
+    var name = decodeURIComponent(eq >= 0 ? pairs[i].slice(0, eq) : pairs[i]);
+    if (name === key) return eq >= 0 ? decodeURIComponent(pairs[i].slice(eq + 1)) : '';
+  }
+  return null;
+}
+
+/**
+ * Set (or, with a null value, remove) one query parameter, leaving the others
+ * exactly as written.
+ * @param {string} url - The URL (absolute or relative).
+ * @param {string} key - Parameter name.
+ * @param {(string|null)} value - New value; null removes the parameter.
+ * @returns {string} The updated URL.
+ * @private
+ */
+function withQueryParam(url, key, value) {
+  var s = String(url || '');
+  var q = s.indexOf('?');
+  var base = q >= 0 ? s.slice(0, q) : s;
+  var pairs = q >= 0 ? s.slice(q + 1).split('&').filter(function (p) { return p; }) : [];
+  pairs = pairs.filter(function (p) {
+    var eq = p.indexOf('=');
+    return decodeURIComponent(eq >= 0 ? p.slice(0, eq) : p) !== key;
+  });
+  if (value != null) pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+  return base + (pairs.length ? '?' + pairs.join('&') : '');
 }

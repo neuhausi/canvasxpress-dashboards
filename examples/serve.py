@@ -42,7 +42,9 @@ def _load_env_file(path):
 
 _load_env_file(os.path.join(ROOT, ".env"))
 
-DATA_DIR = os.path.join(HERE, ".cxd-demo")
+# CXD_DEMO_DATA_DIR relocates the demo's data (tests point it at a temp dir so they
+# never touch a running demo's databases); default: examples/.cxd-demo.
+DATA_DIR = os.environ.get("CXD_DEMO_DATA_DIR") or os.path.join(HERE, ".cxd-demo")
 DATASET_DIR = os.path.join(DATA_DIR, "datasets")
 DB_PATH = os.path.join(DATA_DIR, "dashboards.db")
 DATASET_URI = "file://" + DATASET_DIR
@@ -435,6 +437,24 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.set_locked(EXAMPLES_OWNER, kpi["id"], True)
         print("  [seed] shipped dashboard: %s" % kpi["id"])
 
+    # Live Ops: two kind:"live" panels (the connectors demo stream, subscribed
+    # with the viewer's own session) over a 24-hour snapshot. Only the inline
+    # snapshot moves into the dataset store; the live sources stay live.
+    live_ops = load_spec("live-ops.spec.json")
+    if live_ops and live_ops["id"] not in saved:
+        live_ops = copy.deepcopy(live_ops)
+        for ref, source in live_ops.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            dataset_id = "liveops-" + ref
+            if dataset_id not in have:
+                datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                title="Live Ops: " + ref, dataset_id=dataset_id, locked=True)
+            live_ops["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+        dashboards.save_dashboard(EXAMPLES_OWNER, live_ops, now)
+        dashboards.set_locked(EXAMPLES_OWNER, live_ops["id"], True)
+        print("  [seed] shipped dashboard: %s" % live_ops["id"])
+
     # Genomics Oncology Cohort: six inline scientific datasets (heatmap, three
     # DEG scatters, single-cell UMAP, cohort meter, survival) move into the
     # dataset store; the spec (three filter controls) binds to them.
@@ -623,15 +643,58 @@ except Exception as exc:  # noqa: BLE001 — missing extra just disables the fea
     print("  [connectors] NOTE: connectors web app not mounted (%s)" % exc)
 
 
-@app.get("/api/connectors/credentials", include_in_schema=False)
-def _connectors_credentials(request: "Request"):
-    """Session bridge: hand the SIGNED-IN cxd user a derived credential for the
-    connectors app (same username; password = HMAC(SESSION_SECRET, user), so it
-    is stable, never stored, and only obtainable with a valid cxd session).
-    Ensures the connectors user exists and seeds the demo inventory source."""
+def _derive_bridge_password(key, user):
+    """The bridged connectors password for a user: HMAC-SHA256 of ``cxc-bridge:<user>``
+    under ``key``, truncated to 32 hex characters (never stored anywhere)."""
     import hashlib
     import hmac as _hmac
 
+    return _hmac.new(key.encode(), ("cxc-bridge:" + user).encode(), hashlib.sha256).hexdigest()[:32]
+
+
+def _bridge_credential(store, user):
+    """Ensure ``user`` exists in the connectors store and return the password that
+    signs them in.
+
+    New users get the ENCRYPTION_KEY derivation. A user the earlier code created
+    with the SESSION_SECRET derivation is recognised by that credential still
+    verifying — which also proves the account is a bridged one, so an account made
+    directly in the connectors app with its own password is never taken over — and
+    is re-keyed to the new derivation, so a later SESSION_SECRET rotation cannot
+    lock them out. On a store without ``set_password`` (an older
+    canvasxpress-connectors) that user keeps the old credential instead.
+
+    :param store: The connectors ``Store``.
+    :param user: The signed-in dashboards username.
+    :returns: The password to log into the connectors app with.
+    """
+    password = _derive_bridge_password(os.environ["ENCRYPTION_KEY"], user)
+    if store.create_user(user, password) or store.check_user(user, password):
+        return password
+    legacy = _derive_bridge_password(os.environ["SESSION_SECRET"], user)
+    if store.check_user(user, legacy):
+        if hasattr(store, "set_password"):
+            store.set_password(user, password)
+            print("  [connectors] re-keyed bridged user %r to the ENCRYPTION_KEY derivation" % user)
+            return password
+        return legacy
+    # Neither credential verifies (e.g. a user created under a SESSION_SECRET that
+    # has since changed): nothing here can prove it is theirs, so leave it alone.
+    return password
+
+
+@app.get("/api/connectors/credentials", include_in_schema=False)
+def _connectors_credentials(request: "Request"):
+    """Session bridge: hand the SIGNED-IN cxd user a derived credential for the
+    connectors app (same username; password = HMAC(ENCRYPTION_KEY, user), so it
+    is stable, never stored, and only obtainable with a valid cxd session).
+    Ensures the connectors user exists and seeds the demo inventory source.
+
+    The key is ENCRYPTION_KEY — the key that already guards the user's stored
+    connection strings — not SESSION_SECRET: rotating the session secret (which
+    signs cookies) must not lock bridged users out of their saved connections.
+    Users created by the earlier SESSION_SECRET derivation are moved to the new
+    one the next time they come through here (see _bridge_credential)."""
     from fastapi.responses import JSONResponse
 
     user = request.session.get("user")
@@ -639,9 +702,7 @@ def _connectors_credentials(request: "Request"):
         return JSONResponse({"detail": "Not logged in"}, status_code=401)
     if _connectors_store is None:
         return JSONResponse({"detail": "connectors app not available"}, status_code=503)
-    password = _hmac.new(os.environ["SESSION_SECRET"].encode(),
-                         ("cxc-bridge:" + user).encode(), hashlib.sha256).hexdigest()[:32]
-    _connectors_store.create_user(user, password)   # no-op when it exists
+    password = _bridge_credential(_connectors_store, user)
     # Every bridged user starts with the demo SQLite sources registered
     # (read-only URLs into the repo-committed database).
     have_sources = _connectors_store.list_sources(user)

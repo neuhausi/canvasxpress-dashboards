@@ -22,12 +22,14 @@
  *    connector / dataset sources, params, controls.
  *  - `1.1` — `kind:"join"` and `kind:"function"` sources, source `axis`,
  *    `relationships`, `markingMode`, `type:"filters"` panels, `filterSchemes`.
+ *  - `1.2` — `kind:"live"` (streaming) sources: `url`, `window`, `variables`,
+ *    `initial`.
  *
  * @module spec
  */
 
 /** @type {string} The format version this library writes. */
-export var DASHBOARD_SCHEMA_VERSION = '1.1';
+export var DASHBOARD_SCHEMA_VERSION = '1.2';
 
 /** @type {string} The URL of the published JSON Schema. */
 export var DASHBOARD_SCHEMA_URL = 'https://canvasxpress.org/schema/dashboard.schema.json';
@@ -44,6 +46,12 @@ export var MIGRATIONS = [
     from: '1.0',
     to: '1.1',
     description: 'Additive: join / function sources, relationships, Filters panels (no rewrite)',
+    up: function (spec) { return spec; }
+  },
+  {
+    from: '1.1',
+    to: '1.2',
+    description: 'Additive: live (streaming) sources (no rewrite)',
     up: function (spec) { return spec; }
   }
 ];

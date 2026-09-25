@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — Live Ops</title>
+
+  <!-- CanvasXpress (peer dependency): rendering + broadcast coordination -->
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+
+  <!-- canvasxpress-dashboards renderer (UMD drop-in) -->
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    header { padding: 16px 24px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+    header p { margin: 0; color: #6b7280; font-size: 13px; }
+    #dashboard { padding: 16px 24px 32px; }
+    .live-badge { font-size: 12px; font-weight: 500; padding: 3px 9px; border-radius: 999px;
+      background: #e5e7eb; color: #374151; }
+    .live-badge.on { background: #dcfce7; color: #166534; }
+    .live-badge.sim { background: #fef3c7; color: #92400e; }
+    .live-badge .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+      background: currentColor; margin-right: 5px; vertical-align: 1px; animation: pulse 1.6s infinite; }
+    @keyframes pulse { 50% { opacity: .25; } }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0e1013; color: #e6e8ec; }
+      header p { color: #8a9099; }
+      .live-badge { background: #23262d; color: #c9ced6; }
+      .live-badge.on { background: #12321f; color: #86efac; }
+      .live-badge.sim { background: #3a2c0c; color: #fcd34d; }
+    }
+      .cxd-topnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      background: #fff; border: 1px solid #e6e9ee; border-radius: 10px;
+      padding: 8px 14px; margin: 16px 24px; font-size: 13.5px; }
+    .cxd-topnav .cxd-brand { font-weight: 400; margin-right: 10px; color: #57606a; }
+    .cxd-topnav .cxd-brand b { color: #24292f; }
+    .cxd-topnav a { color: #087ad1; text-decoration: none; padding: 4px 10px;
+      border-radius: 7px; }
+    .cxd-topnav a:hover { background: #eaf3fb; }
+    .cxd-topnav .cxd-here { margin-left: auto; color: #57606a; padding: 4px 10px;
+      background: #f2f4f7; border-radius: 7px; }
+    @media (prefers-color-scheme: dark) {
+      .cxd-topnav { background: #1b1e24; border-color: #2a2e36; }
+      .cxd-topnav .cxd-brand b { color: #e6e8ec; }
+      .cxd-topnav a:hover { background: #12283a; }
+      .cxd-topnav .cxd-here { background: #23262d; }
+    }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <a class="cxd-open" href="../?open=live-ops">✏️ Open in Builder</a>
+    <span class="cxd-here">📡 Live Ops</span>
+  </nav>
+  <header>
+    <h1>Live Ops <span id="live-badge" class="live-badge">connecting…</span></h1>
+    <p>Two panels follow live streams: each keeps the last 60 seconds and slides
+       forward as readings arrive, one redraw per frame. Below them, a snapshot of
+       the last 24 hours (an overnight batch job at 02:00, the business-hours hump)
+       gives the live numbers their context.</p>
+  </header>
+
+  <div id="dashboard"></div>
+
+  <script>
+    // Signed in to the dashboards app, the page opens the server's demo stream
+    // (canvasxpress-connectors, Server-Sent Events). Anywhere else — a static
+    // host, an anonymous visitor — the same kind of messages are made in the
+    // browser, so the example still moves. The badge says which one you see.
+
+    // The app's root: '' when served at the site root, '/dashboards' behind a
+    // reverse-proxy subpath (as on canvasxpress.org). Stream URLs in the spec are
+    // resolved against it too (renderDashboard's baseUrl).
+    var base = location.pathname.replace(/\/examples\/[^\/]*$/, '');
+
+    /**
+     * Sign in to the connectors app through the dashboards session bridge.
+     * @returns {Promise<boolean>} true when the server's streams are available.
+     */
+    function openServerStreams() {
+      return fetch(base + '/api/connectors/credentials', { credentials: 'include' })
+        .then(function (r) { if (!r.ok) throw new Error('no session'); return r.json(); })
+        .then(function (cred) {
+          return fetch(base + '/connectors/auth/login', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cred)
+          });
+        })
+        .then(function (r) {
+          if (!r.ok) throw new Error('no connectors');
+          // Signed in is not enough: the server must also offer the demo stream
+          // (an older connectors server has no streams at all).
+          return fetch(base + '/connectors/api/streams', { credentials: 'include' });
+        })
+        .then(function (r) { if (!r.ok) throw new Error('no streams'); return r.json(); })
+        .then(function (res) {
+          return (res.streams || []).some(function (st) { return st.name === 'demo'; });
+        })
+        .catch(function () { return false; });
+    }
+
+    /**
+     * An in-browser stand-in for EventSource: emits `tick` messages in the same
+     * shape as the server's demo feed (one new sample per interval, a bounded
+     * walk per variable), reading `vars` and `interval` from the stream URL.
+     * @param {string} url - The live source's stream URL.
+     */
+    function BrowserFeed(url) {
+      var self = this;
+      var query = {};
+      (url.split('?')[1] || '').split('&').forEach(function (pair) {
+        var kv = pair.split('=');
+        if (kv[0]) query[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || '');
+      });
+      var vars = (query.vars || 'metric').split(',');
+      var seconds = Math.max(0.1, parseFloat(query.interval) || 1);
+      // Each series gets its own personality — level, swing and rhythm — so the
+      // lines read as different metrics; error-like series stay small, with a
+      // short incident spike about every 45 readings.
+      var shape = vars.map(function (name, i) {
+        var small = /err/i.test(name);
+        return { small: small, base: small ? 3 : [55, 38, 65][i % 3], swing: small ? 1.2 : [14, 5, 9][i % 3],
+                 period: [23, 41, 17][i % 3], phase: i * 11 };
+      });
+      var n = 0;
+      this.listeners = {};
+      this.timer = setInterval(function () {
+        n++;
+        var data = shape.map(function (s) {
+          // A slow wave plus a deterministic wobble (index arithmetic, no Math.random).
+          var v = s.base + s.swing * Math.sin(2 * Math.PI * (n + s.phase) / s.period) +
+            s.swing * 0.3 * (((n * 7 + s.phase) % 5) - 2);
+          if (s.small && n % 45 < 3) v += 7 - 2 * (n % 45);   // incident: 7, 5, 3 extra
+          return [Math.round(Math.max(0, v) * 10) / 10];
+        });
+        var now = new Date();
+        var event = { data: JSON.stringify({
+          y: { vars: vars, smps: [now.toTimeString().slice(0, 8)], data: data },
+          x: { time: [now.toISOString()] }
+        }) };
+        (self.listeners.tick || []).forEach(function (fn) { fn(event); });
+      }, seconds * 1000);
+    }
+    BrowserFeed.prototype.addEventListener = function (type, fn) {
+      (this.listeners[type] || (this.listeners[type] = [])).push(fn);
+    };
+    BrowserFeed.prototype.close = function () { clearInterval(this.timer); };
+
+    var badge = document.getElementById('live-badge');
+    Promise.all([fetch('./live-ops.spec.json').then(function (res) { return res.json(); }), openServerStreams()])
+      .then(function (results) {
+        var spec = results[0];
+        var fromServer = results[1];
+        badge.className = 'live-badge ' + (fromServer ? 'on' : 'sim');
+        badge.innerHTML = '<span class="dot"></span>' +
+          (fromServer ? 'Live from the server' : 'Live, simulated in your browser');
+        badge.title = fromServer
+          ? 'Server-Sent Events from the connectors demo feed'
+          : 'No stream server here: the page generates the same messages itself';
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard',
+          fromServer ? { baseUrl: base } : { baseUrl: base, EventSource: BrowserFeed });
+      })
+      .then(function (handle) {
+        window.dashboard = handle;
+        console.log('Dashboard rendered:', handle.instances.length, 'instances in group', handle.broadcastGroup);
+      })
+      .catch(function (err) {
+        document.getElementById('dashboard').textContent = 'Failed to render: ' + err.message;
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

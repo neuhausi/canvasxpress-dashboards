@@ -68,7 +68,7 @@ updated spec, preserving ids and anything the user didn't ask to change.
 
 ## Dashboard spec contract
 {
-  "schemaVersion": "1.1", "id": "<kebab-case>", "title": "<Title>", "version": 1,
+  "schemaVersion": "1.2", "id": "<kebab-case>", "title": "<Title>", "version": 1,
   "layout": {"cols": 12, "rowHeight": 130, "gap": 12,
              "items": [{"panel": "<panel-id>", "x": 0-11, "y": 0+, "w": 1-12, "h": 1+}]},
   "data": {"<ref>": {"kind": "dataset", "id": "<dataset id>", "store": "<store>"}
@@ -85,6 +85,11 @@ updated spec, preserving ids and anything the user didn't ask to change.
               or {"kind": "function", "language": "python|r", "code": "<assigns result>",
                   "inputs": ["<ref>", ...] | {"<var>": "<ref>"},
                   "args"?: {"<name>": "$param" | literal}}
+              or {"kind": "live", "url": "/connectors/api/stream/<name>?...",
+                  "window"?: <samples kept, default 1000>,
+                  "variables"?: ["<series>", ...]}
+                  // a pushed (SSE) stream; only when the user asks for live /
+                  // real-time data and a stream exists; bind Line/Area/Bar panels
               any source may add "axis": "smps" (default, one row per sample)
               | "vars" (one row per variable: scatter-oriented data) */},
   "relationships"?: [{"left": "<ref>", "right": "<ref>",
@@ -297,15 +302,21 @@ def note(request: Request, **fields) -> None:
             info[key] = value
 
 
-def _record_request(audit, request: Request, actor_before, status: int) -> None:
+def _record_request(audit, request: Request, actor_before, status: int, base: str = "") -> None:
     """Record one finished request in the audit log, if its route is audited.
+
+    ``base`` is the request's ``root_path`` before routing (the app's own prefix, e.g.
+    behind a reverse-proxy subpath); whatever routing added to it is the mount of a
+    sub-app that served the request (``/connectors``).
 
     The actor is whoever is signed in after the handler (a sign-in) or before it
     (a sign-out). A failure to write is reported on stderr, never raised: the
     audit log must not take the app down.
     """
     route = request.scope.get("route")
-    action = action_for(request.method, getattr(route, "path", None))
+    after = request.scope.get("root_path") or ""
+    mount = after[len(base):] if base and after.startswith(base) else (after if not base else "")
+    action = action_for(request.method, getattr(route, "path", None), mount)
     if not action or not audit.enabled:
         return
     info = dict(getattr(request.state, "audit", None) or {})
@@ -573,6 +584,7 @@ def create_dashboards_app(
     @app.middleware("http")
     async def audit_requests(request: Request, call_next):
         before = request.session.get("user") if "session" in request.scope else None
+        base = request.scope.get("root_path") or ""   # before routing: the app's own prefix
         request.state.audit = {}
         status = 500
         try:
@@ -580,7 +592,7 @@ def create_dashboards_app(
             status = response.status_code
             return response
         finally:
-            _record_request(audit, request, before, status)
+            _record_request(audit, request, before, status, base)
     app.add_middleware(
         SessionMiddleware, secret_key=session_secret, same_site="lax", https_only=https_only,
         session_cookie="cxd_session",  # distinct name so co-hosted apps (e.g. connectors) don't clobber it

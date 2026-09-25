@@ -319,7 +319,8 @@
         '</div>' +
         '<div class="notices">' +
           notice('🎨', 'Edit every panel', 'Every panel opens the native CanvasXpress customizer — click the ⚙ to change chart type, colors, grouping and axes. Drag panels to reorder or resize them, and every change is saved with the dashboard. Prefer to describe it? Ask the chat assistant and it applies the tweak for you. Swap a panel’s dataset on the fly and the chart updates in place — no reload.', 'n-md') +
-          notice('🔌', 'Live data', 'Bind panels to live sources through <b>canvasxpress-connectors</b> — SQL warehouses, spreadsheets, business apps and finance feeds:' + connChips, 'n-md') +
+          notice('🔌', 'Connect your data', 'Bind panels to your own sources through <b>canvasxpress-connectors</b> — SQL warehouses, spreadsheets, business apps and finance feeds:' + connChips, 'n-md') +
+          notice('📡', 'Real-time streams', 'A panel can follow a stream as it happens: pick a 📡 stream in the panel’s <b>Data</b> list, set how many samples to keep and how often to update, and the chart slides forward with each new reading — no reload, one redraw per frame however fast data arrives. The browser never holds a credential, and every subscription is recorded in the audit log. <a href="' + API_BASE + '/examples/live-ops.html">See it in Live Ops</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/live-streaming.md" target="_blank" rel="noopener">How it works</a>.', 'n-feature') +
           notice('🧩', 'Blend and link sources', 'Join two sources on a key, link related ones so selecting a patient marks their lab visits everywhere, and filter the whole board from one <b>Filters</b> panel with saved schemes. <a href="' + API_BASE + '/examples/cohort-explorer.html">See it in the Cohort Explorer</a>.', 'n-md') +
           notice('🧪', 'R and Python functions', 'A data source can be a short R or Python snippet over your other sources — rank genes against survival, fit a model — and its result feeds panels like any dataset. Runs on the server in a sandbox, when an admin enables it.', 'n-md') +
           notice('🛡️', 'Governance', 'Roles decide who can build, upload and share. Share a dashboard or dataset with people and groups, to view or to edit. Row- and column-level security decides who sees which rows and columns — site A sees site A; only clinicians see names — in the app, in shared dashboards and on share links. Lineage shows which dashboards read which data. <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/governance.md" target="_blank" rel="noopener">How it works</a>.', 'n-lg') +
@@ -394,6 +395,22 @@
             });
           }).catch(function () { return []; });
         },
+        // Live (SSE) streams the bridged connectors app offers: a panel bound to
+        // one follows it in real time (kind:"live" source).
+        listLiveSources: function () {
+          return ensureConnectorsSession().then(function () {
+            return fetch(API_BASE + '/connectors/api/streams', { credentials: 'include' })
+              .then(function (r) { return r.ok ? r.json() : { streams: [] }; });
+          }).then(function (res) {
+            return (res.streams || []).map(function (st) {
+              return { name: st.name, title: st.title, url: API_BASE + '/connectors' + st.url,
+                       variables: st.variables };
+            });
+          }).catch(function () { return []; });
+        },
+        // A live stream authenticates with the connectors session: make sure the
+        // bridge ran before any stream opens.
+        prepareLive: ensureConnectorsSession,
         // Datasets are added/managed in the Data view; panels bind to them via
         // the per-panel Data dropdown — so hide the toolbar's "+ Data" button.
         showAddData: false,
@@ -2868,7 +2885,7 @@
         if (h && h.destroy) { try { h.destroy(); } catch (e) {} }
         var host = document.getElementById('s-preview');
         if (!host) return null;   // user navigated away mid-chain
-        return CXD.renderDashboard(currentSpec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE });
+        return CXD.renderDashboard(currentSpec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE , prepareLive: ensureConnectorsSession });
       });
     }
 
@@ -3188,7 +3205,7 @@
         var host = document.getElementById('dash-host');
         if (!host) return null;
         host.innerHTML = '';
-        return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE });
+        return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE , prepareLive: ensureConnectorsSession });
       });
     }
 
@@ -3211,7 +3228,7 @@
           var host = document.getElementById('dash-host');
           if (!host) return null;
           host.innerHTML = '';
-          return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE });
+          return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE , prepareLive: ensureConnectorsSession });
         });
       });
     }

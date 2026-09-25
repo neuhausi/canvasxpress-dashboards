@@ -364,6 +364,48 @@ defence in depth, not a multi-tenant sandbox — expose `users` mode only inside
 container / VM you trust. Shared links (anonymous viewers) cannot run functions;
 export the dashboard as HTML to share a snapshot.
 
+## Live data (streaming)
+
+A `kind: "live"` source is **pushed** to the page instead of fetched: the panel
+subscribes to a canvasxpress-connectors Server-Sent-Events endpoint and each
+message appends new samples to the chart, keeping a bounded rolling window.
+
+```jsonc
+"data": {
+  "feed": {
+    "kind": "live",
+    "url": "/connectors/api/stream/demo?interval=1&vars=cpu,mem",
+    "window": 120,                 // samples kept (oldest dropped); default 1000
+    "variables": ["cpu", "mem"],   // optional: series the stream emits
+    "initial": { "y": { ... } }    // optional: data to show before the first message
+  }
+},
+"panels": {
+  "cpu": { "title": "CPU / MEM", "dataRef": "feed",
+           "config": { "graphType": "Line", "graphOrientation": "vertical" } }
+}
+```
+
+- Each message is a CanvasXpress data object carrying **only the new samples**
+  (`{y: {vars, smps, data}, x?}`) and is handed to the engine's `pushData`,
+  which appends it, drops samples beyond the window and redraws.
+- Messages that arrive between two frames are merged, so a burst costs **one
+  redraw per frame**, not one per message.
+- The browser holds **no credential**: it subscribes to your connectors server
+  with the session cookie; the server holds any upstream secret and relays.
+- The stream reconnects on its own; while it is down the panel keeps its last
+  data. `destroy()` closes it.
+- Without `initial`, the panel shows *Loading…* until the first message.
+- **No code:** in the builder, pick a 📡 stream in a panel's **Data** list, then
+  set **Window** and **Every (s)**. The builder's `listLiveSources` option
+  supplies the streams (the bundled app reads the connectors app's
+  `GET /api/streams`).
+- **Governance:** each subscription is audited (`live.subscribe`) and live
+  streams appear in lineage.
+
+See [docs/live-streaming.md](docs/live-streaming.md) for the message format,
+the fallback for older CanvasXpress builds, and what stays out of scope.
+
 ## Filters panel and filter schemes
 
 A `type: "filters"` panel is a multi-field filter inspector (like Spotfire's
@@ -565,10 +607,20 @@ app.mount("/connectors", create_byo_app(store=store, serve_static=False))
 **How the session bridge works.** The two apps keep separate session cookies
 (`cxd_session` / `cxc_session`) and user tables. `GET /api/connectors/credentials`
 — guarded by the *dashboards* session — returns a derived credential for the
-connectors app: same username, password = `HMAC(SESSION_SECRET, user)` (stable,
-never stored, only obtainable with a valid dashboards session). The front-end
+connectors app: same username, password = `HMAC(ENCRYPTION_KEY, "cxc-bridge:" + user)`
+(stable, never stored, only obtainable with a valid dashboards session). The front-end
 fetches it and POSTs `/connectors/auth/login` behind the scenes; from then on
 every `/connectors/*` call is authenticated as that user.
+
+The key is `ENCRYPTION_KEY` — the one that already protects each user's stored
+connection strings — so rotating `SESSION_SECRET` (which signs cookies) does not
+lock anyone out of their saved connections. Users created by earlier versions,
+whose password was keyed on `SESSION_SECRET`, are re-keyed the next time they come
+through the bridge (while `SESSION_SECRET` is still the one they were created with).
+**Before rotating `SESSION_SECRET` on an existing server, let those users sign in
+once**, or their stored connections become unreachable. Rotating `ENCRYPTION_KEY`
+already makes stored connection strings unreadable, and it resets bridged
+passwords with them.
 
 **In the app.** The Data page shows a **Database sources** card: each user's
 registered sources (the demo seeds `inventory` and `furniture-only`, backed by
@@ -614,17 +666,20 @@ Renders `spec` into `target` (an element or its id). Returns a handle with:
 - `broadcastGroup` — the resolved coordination domain
 - `store` — the data store (shared cache, `resolve`/`invalidate`)
 - `ready` — a promise that resolves once every panel/control has settled
-- `destroy()` — stop refresh timers, tear down instances, clear the DOM
+- `destroy()` — stop refresh timers, close live streams, tear down instances, clear the DOM
 
 **Options:** `CanvasXpress` (constructor override; defaults to global),
 `fetch` (for `kind: "connector"` sources), `cache` (a `Map`; defaults to a
 process-wide shared cache), `ttl` (default connector cache lifetime in ms),
-`validate` (default `true`).
+`validate` (default `true`); for `kind: "live"` sources, `prepareLive` (runs
+once before streams open — e.g. establish the connectors session), `EventSource`
+and `requestAnimationFrame` (defaults to the globals).
 
 ### `createDataStore(options) → store`
 
 Standalone data resolver (inline + connector) with caching, in-flight
-de-duplication, and TTL. Also exported: `isEmptyData(data)`, `DataError`
+de-duplication, and TTL, plus `subscribe(ref, source, {onTick})` for live
+streams. Also exported: `isEmptyData(data)`, `DataError`
 (carries `.status`), `clearSharedCache()`.
 
 ### Persistence & sharing
