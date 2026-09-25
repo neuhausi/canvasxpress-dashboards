@@ -86,7 +86,8 @@ def test_filters_panel_and_schemes():
 def test_schema_version_rules():
     from cxd_server.validate_spec import spec_compatibility
     assert spec_compatibility({}) == ("older", "1.0")
-    assert spec_compatibility({"schemaVersion": "1.1"}) == ("current", "1.1")
+    assert spec_compatibility({"schemaVersion": "1.1"}) == ("older", "1.1")
+    assert spec_compatibility({"schemaVersion": "1.2"}) == ("current", "1.2")
     assert spec_compatibility({"schemaVersion": "1.4"}) == ("newer-minor", "1.4")
     assert spec_compatibility({"schemaVersion": "3.0"}) == ("newer-major", "3.0")
     assert spec_compatibility({"schemaVersion": "1.1\n"})[0] == "invalid"

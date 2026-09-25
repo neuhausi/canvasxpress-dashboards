@@ -5,6 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseAndValidate, createDashboardClient } from '../src/persistence.js';
+import { DASHBOARD_SCHEMA_VERSION } from '../src/spec.js';
 
 var SPEC = {
   id: 'd1',
@@ -15,7 +16,7 @@ var SPEC = {
 
 test('parseAndValidate accepts a valid spec and rejects bad JSON / bad spec', function () {
   // An imported spec comes back upgraded to (and stamped with) the current format.
-  assert.deepEqual(parseAndValidate(JSON.stringify(SPEC)), Object.assign({}, SPEC, { schemaVersion: '1.1' }));
+  assert.deepEqual(parseAndValidate(JSON.stringify(SPEC)), Object.assign({}, SPEC, { schemaVersion: DASHBOARD_SCHEMA_VERSION }));
   assert.throws(function () { return parseAndValidate(JSON.stringify(Object.assign({}, SPEC, { schemaVersion: '2.0' }))); },
     /needs a newer canvasxpress-dashboards/);
   assert.throws(function () { return parseAndValidate('{not json'); }, /Not valid JSON/);

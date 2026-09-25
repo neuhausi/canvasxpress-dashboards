@@ -87,29 +87,49 @@ _ACTIONS = {
     ("POST", "/api/me/profile/confirm"): "profile.confirm",
     ("GET", "/api/me/verify-email"): "profile.verify",
     ("POST", "/api/admin/users/{username}/email"): "admin.user.email",
+    # Requests into the canvasxpress-connectors app mounted at /connectors, keyed on
+    # the full mounted path (see action_for). A live (SSE) subscription is a data read;
+    # the connectors sign-in is the session bridge, not a dashboards sign-in.
+    ("GET", "/connectors/api/stream/{stream}"): "live.subscribe",
+    ("POST", "/connectors/auth/login"): "connectors.login",
+    ("POST", "/connectors/auth/logout"): "connectors.logout",
+    ("POST", "/connectors/api/sources"): "connectors.source.save",
+    ("DELETE", "/connectors/api/sources/{name}"): "connectors.source.delete",
 }
 
 # Path parameters that name the event's target, in order of preference.
 _TARGET_PARAMS = ("dashboard_id", "dataset_id", "schedule_id", "username", "group_name",
-                  "role_name")
+                  "role_name", "stream", "name")
 
 _FIELDS = ("seq", "ts", "actor", "action", "target", "owner", "outcome", "status", "ip",
            "detail", "prev_hash", "hash")
 
 
-def action_for(method: str, route: Optional[str]) -> Optional[str]:
+def action_for(method: str, route: Optional[str], mount: Optional[str] = None) -> Optional[str]:
     """The audit action for a request, or None when it is not audited.
 
     :param method: HTTP method.
     :param route: The matched route template (e.g. ``/api/dashboards/{dashboard_id}``),
         or None when no route matched.
+    :param mount: For a request served by an app mounted inside this one (the
+        connectors app at ``/connectors``), the mount path. Such a route reports its
+        template WITHOUT the mount prefix, so it is looked up by the full path
+        (``/connectors`` + ``/auth/login``) and never mistaken for one of this app's
+        routes of the same name; an unmapped write is recorded as
+        ``api.<METHOD> <full path>``.
     """
     if not route:
         return None
+    writes = ("POST", "PUT", "PATCH", "DELETE")
+    if mount:
+        full = mount + route
+        action = _ACTIONS.get((method.upper(), full))
+        if action:
+            return action
+        return "api.%s %s" % (method.upper(), full) if method.upper() in writes else None
     action = _ACTIONS.get((method.upper(), route))
     if action:
         return action
-    writes = ("POST", "PUT", "PATCH", "DELETE")
     if method.upper() in writes and route.startswith(("/api/", "/auth/")):
         return "api.%s %s" % (method.upper(), route)
     return None

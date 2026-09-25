@@ -406,12 +406,14 @@ function injectStyles(doc) {
  *    connector / dataset sources, params, controls.
  *  - `1.1` — `kind:"join"` and `kind:"function"` sources, source `axis`,
  *    `relationships`, `markingMode`, `type:"filters"` panels, `filterSchemes`.
+ *  - `1.2` — `kind:"live"` (streaming) sources: `url`, `window`, `variables`,
+ *    `initial`.
  *
  * @module spec
  */
 
 /** @type {string} The format version this library writes. */
-var DASHBOARD_SCHEMA_VERSION = '1.1';
+var DASHBOARD_SCHEMA_VERSION = '1.2';
 
 /** @type {string} The URL of the published JSON Schema. */
 var DASHBOARD_SCHEMA_URL = 'https://canvasxpress.org/schema/dashboard.schema.json';
@@ -428,6 +430,12 @@ var MIGRATIONS = [
     from: '1.0',
     to: '1.1',
     description: 'Additive: join / function sources, relationships, Filters panels (no rewrite)',
+    up: function (spec) { return spec; }
+  },
+  {
+    from: '1.1',
+    to: '1.2',
+    description: 'Additive: live (streaming) sources (no rewrite)',
     up: function (spec) { return spec; }
   }
 ];
@@ -1803,6 +1811,9 @@ var sharedCache = new Map();
  *   resolve `kind:"dataset"` sources via `GET /api/datasets/{id}`.
  * @param {number} [options.busyRetryMs=250] - First wait before retrying a data
  *   function the runtime refused as busy (429); doubles per retry, capped at 2s.
+ * @param {function} [options.EventSource] - EventSource constructor for
+ *   `kind:"live"` subscriptions; defaults to the global (injectable for tests).
+ *   When neither exists (e.g. server-side), `subscribe` is a no-op.
  * @returns {DataStore} The store.
  */
 function createDataStore(options) {
@@ -1813,6 +1824,8 @@ function createDataStore(options) {
   var now = options.now || function () { return Date.now(); };
   var baseUrl = options.baseUrl || '';
   var busyRetryMs = options.busyRetryMs != null ? options.busyRetryMs : 250;
+  var EventSourceImpl = options.EventSource ||
+    (typeof globalThis !== 'undefined' ? globalThis.EventSource : undefined);
   var inflight = {}; // cacheKey -> Promise<data>
 
   /**
@@ -2002,6 +2015,12 @@ function createDataStore(options) {
       if (sourceSpec.kind === 'inline') {
         return Promise.resolve(sourceSpec.value);
       }
+      if (sourceSpec.kind === 'live') {
+        // A live source has no snapshot to fetch: its data arrives as ticks over
+        // `subscribe`. Resolve to its `initial` seed, or an empty-but-valid object
+        // so the panel can instantiate and the first tick fills it in.
+        return Promise.resolve(sourceSpec.initial || emptyLiveData(sourceSpec.variables));
+      }
       if (sourceSpec.kind === 'join') {
         var self = this;
         var sqlJoin = sqlJoinUrl(sourceSpec, opts.sources || {}, opts.params);
@@ -2059,8 +2078,64 @@ function createDataStore(options) {
      */
     invalidate: function (ref, sourceSpec, params) {
       cache.delete(keyFor(ref, sourceSpec, params));
+    },
+
+    /**
+     * Subscribe to a `kind:"live"` source: open a Server-Sent-Events stream on
+     * its `url` (a canvasxpress-connectors SSE endpoint, cookie-authenticated —
+     * no credential in the browser) and hand each `tick` event's parsed payload
+     * to `handlers.onTick`. Reconnection is native to EventSource (the server
+     * sends a `retry` hint); `onError` reports a dropped connection without
+     * tearing it down, so a panel keeps its last good data while it reconnects.
+     * @param {string} ref - The source ref name (passed back to the handlers).
+     * @param {object} sourceSpec - The live source spec `{kind:"live", url}`.
+     * @param {object} handlers - `{onTick(tick, ref), onError?(err, ref, closed),
+     *   onOpen?(ref)}`; `closed` is true when the browser gave up for good.
+     * @returns {{close: function}} Handle whose `close()` ends the stream; a
+     *   no-op handle when the spec has no url or no EventSource is available.
+     */
+    subscribe: function (ref, sourceSpec, handlers) {
+      var noop = { close: function () {} };
+      if (!sourceSpec || sourceSpec.kind !== 'live' || typeof sourceSpec.url !== 'string') return noop;
+      if (typeof EventSourceImpl !== 'function') return noop;
+      handlers = handlers || {};
+      var url = /^https?:/i.test(sourceSpec.url) ? sourceSpec.url : baseUrl + sourceSpec.url;
+      var es = new EventSourceImpl(url, { withCredentials: true });
+      var closed = false;
+      function onTick(ev) {
+        if (closed) return;
+        var tick = parseJson(ev && ev.data);
+        if (tick && typeof handlers.onTick === 'function') handlers.onTick(tick, ref);
+      }
+      if (typeof es.addEventListener === 'function') es.addEventListener('tick', onTick);
+      es.onopen = function () {
+        if (!closed && typeof handlers.onOpen === 'function') handlers.onOpen(ref);
+      };
+      es.onerror = function (err) {
+        // readyState 2 (CLOSED): the browser gave up (e.g. the stream answered
+        // 404/401) and will not reconnect; otherwise it is retrying on its own.
+        if (!closed && typeof handlers.onError === 'function') handlers.onError(err, ref, es.readyState === 2);
+      };
+      return {
+        close: function () {
+          closed = true;
+          try { es.close(); } catch (e) { /* already closed */ }
+        }
+      };
     }
   };
+}
+
+/**
+ * The empty-but-valid CanvasXpress data object a live source starts from
+ * (before its first tick): the declared variables with no samples yet.
+ * @param {string[]} [variables] - Series names the stream will emit.
+ * @returns {object} `{ y: { vars, smps: [], data: [[], ...] } }`.
+ * @private
+ */
+function emptyLiveData(variables) {
+  var vars = Array.isArray(variables) ? variables.slice() : [];
+  return { y: { vars: vars, smps: [], data: vars.map(function () { return []; }) } };
 }
 
 /**
@@ -2751,7 +2826,7 @@ function cellArea(item) {
 
 
 /** @type {string[]} Data source kinds. */
-var DATA_KINDS = ['inline', 'connector', 'dataset', 'join', 'function'];
+var DATA_KINDS = ['inline', 'connector', 'dataset', 'join', 'function', 'live'];
 
 /** @type {string[]} Languages a data function may be written in. */
 var FUNCTION_LANGUAGES = ['python', 'r'];
@@ -2952,7 +3027,7 @@ function validateSpec(spec) {
           return;
         }
         if (DATA_KINDS.indexOf(src.kind) === -1) {
-          var kindMessage = at + '.kind must be "inline", "connector", "dataset", "join", or "function"';
+          var kindMessage = at + '.kind must be "inline", "connector", "dataset", "join", "function", or "live"';
           if (newerMinor) warnings.push(kindMessage + ' (unknown kind from a newer format: skipped)');
           else errors.push(kindMessage);
         }
@@ -2962,6 +3037,7 @@ function validateSpec(spec) {
         if (src.kind === 'connector' && typeof src.url !== 'string') {
           errors.push(at + ' of kind "connector" requires a url string');
         }
+        if (src.kind === 'live') checkLive(src, at, errors);
         if (src.kind === 'dataset' && (typeof src.id !== 'string' || src.id.length === 0)) {
           errors.push(at + ' of kind "dataset" requires an id string');
         }
@@ -3082,6 +3158,34 @@ function validateSpec(spec) {
   var result = { valid: errors.length === 0, errors: errors };
   if (warnings.length) result.warnings = warnings;
   return result;
+}
+
+/**
+ * Validate a `kind:"live"` source: a `url` string (the connectors SSE endpoint),
+ * an optional positive-integer `window` (samples kept; maps to the engine's
+ * `streamWindow`), an optional `variables` string array, and an optional
+ * `initial` CanvasXpress data object to seed the panel before the first tick.
+ *
+ * @param {object} src - The live source spec.
+ * @param {string} at - Error path prefix.
+ * @param {string[]} errors - Error list to append to.
+ * @returns {void}
+ * @private
+ */
+function checkLive(src, at, errors) {
+  if (typeof src.url !== 'string' || src.url.length === 0) {
+    errors.push(at + ' of kind "live" requires a url string');
+  }
+  if (src.window != null && !(Number.isInteger(src.window) && src.window > 0)) {
+    errors.push(at + '.window must be a positive integer');
+  }
+  if (src.variables != null && !(Array.isArray(src.variables) &&
+      src.variables.every(function (v) { return typeof v === 'string'; }))) {
+    errors.push(at + '.variables must be an array of strings');
+  }
+  if (src.initial != null && (typeof src.initial !== 'object' || !src.initial.y)) {
+    errors.push(at + '.initial must be a CanvasXpress data object with a y block');
+  }
 }
 
 /**
@@ -3403,6 +3507,14 @@ var NO_MARKED_ROWS = '\u0000cxd-no-marked-rows';
  *   instance is created, with `{ panelId, item, cell, canvas, body, instance }`.
  *   Used by the builder to attach editing chrome (drag/resize/customize) to
  *   live panels.
+ * @param {function} [options.EventSource] - EventSource constructor for
+ *   `kind:"live"` (streaming) sources; defaults to the global.
+ * @param {function} [options.requestAnimationFrame] - Frame scheduler used to
+ *   coalesce live ticks into at most one redraw per frame; defaults to the
+ *   global, else a ~16ms timeout (so it also works outside a browser).
+ * @param {function} [options.prepareLive] - Called once before live streams
+ *   open (only when the spec has a live source); may return a Promise. Hosts use
+ *   it to establish the stream server's session (e.g. the connectors bridge).
  * @returns {Promise<DashboardHandle>} A handle exposing the created instances
  *   and a `destroy()` cleanup.
  */
@@ -3445,7 +3557,7 @@ function renderDashboard(spec, target, options) {
   // different origin than the page (else same-origin `/api/datasets/{id}`).
   var store = createDataStore({
     fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl,
-    busyRetryMs: options.busyRetryMs
+    busyRetryMs: options.busyRetryMs, EventSource: options.EventSource
   });
   // Auto-resize each graph to its cell (via setDimensions) when the container
   // reflows. The builder disables this and re-renders panels itself on resize,
@@ -3736,7 +3848,97 @@ function renderDashboard(spec, target, options) {
   var pushedWhere = {};    // pushdown dataRef -> JSON of the filters it was last fetched with
   var refBindings = {};    // dataRef -> [{ instance }] (for scheduled refresh)
   var timers = [];         // refresh interval handles
+  var subscriptions = [];  // live (SSE) stream handles `{close}`, closed on destroy
+  var liveData = {};       // live dataRef -> its current bounded window (CX data object)
+  var liveWaiting = {};    // live dataRef -> [build(currentData)] for panels awaiting a first tick
   var observers = [];      // ResizeObservers keeping canvases sized to their cells
+
+  /**
+   * Whether a source ref is a streaming (`kind:"live"`) source.
+   * @param {string} ref - Source ref name.
+   * @returns {boolean} True for a live source.
+   */
+  function isLiveRef(ref) {
+    var source = ref && (spec.data || {})[ref];
+    return !!(source && source.kind === 'live');
+  }
+
+  /**
+   * Apply one (coalesced) live tick to a live source's panels. The dashboard
+   * keeps the bounded window itself (`liveData[ref]`, so Filters/table controls
+   * and full-data fallbacks see current data), then per bound instance:
+   *  - fast path — the engine's `pushData(tick)` (append + evict +
+   *    soft redraw) when the instance has it and the panel does not transpose;
+   *    `streamWindow` is set from the source's window so the engine evicts too;
+   *  - fallback — `updateData(prepare(window))` for an older engine without
+   *    `pushData`, or a transposing panel (an increment can't be transposed).
+   * Panels still waiting on their first tick are built from the window.
+   * @param {string} ref - The live source ref.
+   * @param {object} tick - A (possibly merged) tick of new samples.
+   * @returns {void}
+   */
+  /**
+   * A live source's stream failed for good (the browser will not reconnect —
+   * e.g. the server has no such stream): mark the panels still waiting for a
+   * first message as errored instead of leaving them on "Loading…".
+   * @param {string} ref - The live source ref.
+   * @returns {void}
+   */
+  function liveStreamClosed(ref) {
+    // Panels still waiting for a first message would otherwise say "Loading…"
+    // forever; panels that already show data keep it (last good state).
+    (liveWaiting[ref] || []).forEach(function (waiter) {
+      if (waiter.cell && waiter.cell.setState) waiter.cell.setState('error', 'Live stream unavailable');
+    });
+  }
+
+  function applyLiveTick(ref, tick) {
+    var windowSize = liveWindowSize((spec.data || {})[ref]);
+    liveData[ref] = appendTick(liveData[ref] || refData[ref], tick, windowSize);
+    refData[ref] = liveData[ref];
+    // Panels built right now start from the full window, so they already hold
+    // this tick — skip them when pushing to the rest below.
+    var justBuilt = [];
+    var waiting = liveWaiting[ref];
+    if (waiting && waiting.length) {
+      delete liveWaiting[ref];
+      waiting.forEach(function (build) {
+        try {
+          var built = build(liveData[ref]);
+          if (built) {
+            built.streamWindow = windowSize;
+            justBuilt.push(built);
+          }
+        } catch (e) { /* keep the others */ }
+      });
+    }
+    (refBindings[ref] || []).forEach(function (b) {
+      var inst = b.instance;
+      // Skip panels just built, and instances destroyed since binding (removePanel
+      // drops them from `instances` but not from their binding).
+      if (!inst || justBuilt.indexOf(inst) !== -1 || instances.indexOf(inst) === -1) return;
+      var transposes = !!(b.prepare && b.prepare.transposed);
+      try {
+        // A tick this instance could not take (it was still initialising — the
+        // CanvasXpress constructor is asynchronous — or the call threw) leaves it
+        // `liveStale`: resync once from the full window before pushing increments
+        // again, or it would keep a gap for as long as the stream runs.
+        if (typeof inst.pushData === 'function' && !transposes && !b.liveStale) {
+          if (inst.streamWindow !== windowSize) inst.streamWindow = windowSize;
+          inst.pushData(tick);
+        } else if (typeof inst.updateData === 'function') {
+          inst.updateData(b.prepare ? b.prepare(liveData[ref]) : liveData[ref], true, false);
+          b.liveStale = false;
+        } else {
+          b.liveStale = true;
+          return;
+        }
+        if (b.cell && b.cell.setState) b.cell.setState('ready');
+      } catch (e) {
+        b.liveStale = true;   // keep last good state; resync on the next tick
+      }
+    });
+  }
 
   /**
    * Resolve a named source once per render (shared object + single request).
@@ -4303,19 +4505,43 @@ function renderDashboard(spec, target, options) {
           return remoteInstance;
         }
         var prepare = panelDataPreparer(panel);
+        /**
+         * Instantiate CanvasXpress on already-prepared data and bind it to the
+         * panel's source (so refresh / live ticks can update it).
+         * @param {object} prepared - Prepared (projected/transposed) data.
+         * @returns {object} The new instance.
+         */
+        function buildInstance(prepared) {
+          sizeCanvasToCell(cell, canvasInset);
+          var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
+          applyDashboardChartStyle(config, spec);   // dashboard-wide font/theme/colors (Settings)
+          var instance = new CX(canvasId, prepared, config, paramClickEvents(panel));
+          instances.push(instance);
+          if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
+          bind(panel && panel.dataRef, instance, cell, undefined, prepare);
+          if (autoResize) observeResize(cell, instance, observers, canvasInset);
+          cell.setState('ready');
+          notify(instance, 'ready');
+          return instance;
+        }
         data = prepare(data);
-        if (isEmptyData(data)) { cell.setState('empty'); notify(null, 'empty'); return null; }
-        sizeCanvasToCell(cell, canvasInset);
-        var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
-        applyDashboardChartStyle(config, spec);   // dashboard-wide font/theme/colors (Settings)
-        var instance = new CX(canvasId, data, config, paramClickEvents(panel));
-        instances.push(instance);
-        if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
-        bind(panel && panel.dataRef, instance, cell, undefined, prepare);
-        if (autoResize) observeResize(cell, instance, observers, canvasInset);
-        cell.setState('ready');
-        notify(instance, 'ready');
-        return instance;
+        if (isEmptyData(data)) {
+          // A live (streaming) panel starts with no samples: instead of settling
+          // as "No data", wait for its first tick and build the instance then.
+          if (isLiveRef(panel && panel.dataRef)) {
+            cell.setState('loading');
+            var waiter = function (current) {
+              var ready = prepare(current);
+              return isEmptyData(ready) ? null : buildInstance(ready);
+            };
+            waiter.cell = cell;
+            (liveWaiting[panel.dataRef] || (liveWaiting[panel.dataRef] = [])).push(waiter);
+            notify(null, 'loading');
+            return null;
+          }
+          cell.setState('empty'); notify(null, 'empty'); return null;
+        }
+        return buildInstance(data);
       })
       .catch(function (err) {
         cell.setState('error', String(err && err.message || err));
@@ -5295,6 +5521,10 @@ function renderDashboard(spec, target, options) {
   // --- scheduled refresh: poll connector sources, live-update bound panels ---
   scheduleRefreshes(spec, store, refBindings, timers, CX, refreshJoinsOf);
 
+  // --- live streams: push (SSE) sources, coalesced to <=1 redraw per frame ---
+  subscriptions.push(subscribeLive(spec, store, applyLiveTick,
+    frameScheduler(options.requestAnimationFrame), options.prepareLive, liveStreamClosed));
+
   var handle = {
     spec: spec,
     container: container,
@@ -5395,8 +5625,8 @@ function renderDashboard(spec, target, options) {
       refreshTemplate();
     },
     /**
-     * Tear down the dashboard: stop refresh timers, destroy CanvasXpress
-     * instances, and clear the DOM.
+     * Tear down the dashboard: stop refresh timers, close live streams, destroy
+     * CanvasXpress instances, and clear the DOM.
      * @returns {void}
      */
     destroy: function () {
@@ -5406,6 +5636,8 @@ function renderDashboard(spec, target, options) {
       }
       timers.forEach(function (t) { clearInterval(t); });
       timers.length = 0;
+      subscriptions.forEach(function (s) { try { s.close(); } catch (e) { /* noop */ } });
+      subscriptions.length = 0;
       observers.forEach(function (o) { try { o.disconnect(); } catch (e) { /* noop */ } });
       observers.length = 0;
       instances.forEach(function (instance) {
@@ -5459,6 +5691,191 @@ function scheduleRefreshes(spec, store, refBindings, timers, CX, onRefreshed) {
     }, source.refresh * 1000);
     timers.push(handle);
   });
+}
+
+/**
+ * Samples a live source keeps when its spec sets no `window`. Eviction is never
+ * optional for a stream (an unbounded window grows memory forever), so an unset
+ * window still gets this bound.
+ * @type {number}
+ */
+var DEFAULT_LIVE_WINDOW = 1000;
+
+/**
+ * The bounded window (samples kept) for a live source.
+ * @param {object} source - The `kind:"live"` source spec.
+ * @returns {number} Its positive-integer `window`, else {@link DEFAULT_LIVE_WINDOW}.
+ * @private
+ */
+function liveWindowSize(source) {
+  return source && source.window > 0 ? source.window : DEFAULT_LIVE_WINDOW;
+}
+
+/**
+ * Subscribe every `kind:"live"` source (the push counterpart of
+ * {@link scheduleRefreshes}): each SSE tick is buffered per source and flushed on
+ * the next frame, where the ticks that arrived in between are merged into ONE
+ * tick — so a burst costs one redraw per frame, not one per message
+ * (backpressure). Reconnection is native to EventSource; a dropped stream keeps
+ * the panel's last good data.
+ * @param {object} spec - The dashboard spec.
+ * @param {DataStore} store - The data store (owns the SSE transport).
+ * @param {function} apply - `function(ref, tick)` applying a merged tick.
+ * @param {function} schedule - `function(fn)` running `fn` on the next frame.
+ * @param {function} [prepare] - Called once, only when the spec has a live
+ *   source, before any stream opens; may return a Promise (e.g. establishing the
+ *   stream server's session). Streams open once it settles, even if it fails —
+ *   a stream that is still refused reports that itself.
+ * @param {function} [onClosed] - `function(ref)` when a stream fails for good
+ *   (the browser will not reconnect — e.g. the server has no such stream).
+ * @returns {{close: function}} Handle closing every stream and dropping any
+ *   buffered ticks (so a pending frame flushes nothing after destroy).
+ * @private
+ */
+function subscribeLive(spec, store, apply, schedule, prepare, onClosed) {
+  var sources = spec.data || {};
+  var liveRefs = Object.keys(sources).filter(function (ref) {
+    return sources[ref] && sources[ref].kind === 'live';
+  });
+  var streams = [];
+  var pending = {};      // ref -> [tick] received since the last frame
+  var scheduled = false;
+  var stopped = false;
+
+  function flush() {
+    scheduled = false;
+    if (stopped) return;
+    var batch = pending;
+    pending = {};
+    Object.keys(batch).forEach(function (ref) {
+      var ticks = batch[ref];
+      if (!ticks.length) return;
+      var merged = ticks.length === 1 ? ticks[0]
+        : ticks.reduce(function (acc, tick) { return appendTick(acc, tick, 0); }, null);
+      try { apply(ref, merged); } catch (e) { /* keep streaming */ }
+    });
+  }
+
+  function open() {
+    if (stopped) return;   // destroyed while `prepare` was pending
+    liveRefs.forEach(function (ref) {
+      streams.push(store.subscribe(ref, sources[ref], {
+        onError: function (err, errRef, closed) {
+          if (closed && !stopped && typeof onClosed === 'function') onClosed(ref);
+        },
+        onTick: function (tick) {
+          if (stopped || !tick || !tick.y) return;
+          (pending[ref] || (pending[ref] = [])).push(tick);
+          if (!scheduled) {
+            scheduled = true;
+            schedule(flush);
+          }
+        }
+      }));
+    });
+  }
+
+  if (liveRefs.length && typeof prepare === 'function') {
+    var ready;
+    try { ready = Promise.resolve(prepare()); } catch (e) { ready = Promise.resolve(); }
+    ready.then(open, open);
+  } else if (liveRefs.length) {
+    open();
+  }
+
+  return {
+    close: function () {
+      stopped = true;
+      pending = {};
+      streams.forEach(function (s) { try { s.close(); } catch (e) { /* noop */ } });
+      streams.length = 0;
+    }
+  };
+}
+
+/**
+ * A "run on the next frame" scheduler: the given (or global)
+ * requestAnimationFrame, else a ~16ms timeout so coalescing also works outside a
+ * browser (tests, SSR).
+ * @param {function} [raf] - An injected requestAnimationFrame.
+ * @returns {function} `function(fn)` scheduling `fn` once.
+ * @private
+ */
+function frameScheduler(raf) {
+  var host = typeof globalThis !== 'undefined' ? globalThis : undefined;
+  var impl = raf || (host && host.requestAnimationFrame);
+  if (typeof impl === 'function') {
+    return function (fn) { impl.call(host, fn); };
+  }
+  return function (fn) { setTimeout(fn, 16); };
+}
+
+/**
+ * Append a live tick's new samples onto a CanvasXpress data object and trim it
+ * to a window — without mutating `base` (it may be the spec's `initial` seed).
+ * Rows align by variable name when the tick names its vars (positionally
+ * otherwise); a variable new in the tick gets a row back-filled with nulls, and
+ * annotation (`x`) columns stay length-aligned (null-padded). Also merges
+ * several ticks into one (pass `null` as base and `0` as window).
+ * @param {object|null} base - The current data (or null to start empty).
+ * @param {object} tick - `{y:{vars?, smps, data}, x?}` — the new samples.
+ * @param {number} windowSize - Samples to keep (the newest); `0` keeps all.
+ * @returns {object} A new CanvasXpress data object.
+ * @private
+ */
+function appendTick(base, tick, windowSize) {
+  var baseY = (base && base.y) || {};
+  var vars = (baseY.vars || []).slice();
+  var smps = (baseY.smps || []).slice();
+  var rows = (baseY.data || []).map(function (row) { return row.slice(); });
+  var oldCount = smps.length;
+  var tickY = tick.y || {};
+  var newSmps = tickY.smps || [];
+  var tickVars = Array.isArray(tickY.vars) && tickY.vars.length ? tickY.vars : null;
+  var tickRows = tickY.data || [];
+
+  // Adopt tick variables the base doesn't know yet (back-filled with nulls).
+  (tickVars || []).forEach(function (name) {
+    if (vars.indexOf(name) === -1) {
+      vars.push(name);
+      rows.push(new Array(oldCount).fill(null));
+    }
+  });
+
+  rows.forEach(function (row, r) {
+    var source = tickVars ? tickRows[tickVars.indexOf(vars[r])] : tickRows[r];
+    for (var j = 0; j < newSmps.length; j++) {
+      row.push(source && source[j] !== undefined ? source[j] : null);
+    }
+  });
+  smps = smps.concat(newSmps);
+
+  var x = null;
+  var baseX = base && base.x;
+  var tickX = tick.x || {};
+  if (baseX || tick.x) {
+    x = {};
+    var keys = Object.keys(baseX || {});
+    Object.keys(tickX).forEach(function (k) { if (keys.indexOf(k) === -1) keys.push(k); });
+    keys.forEach(function (k) {
+      var column = baseX && baseX[k] ? baseX[k].slice() : new Array(oldCount).fill(null);
+      for (var j = 0; j < newSmps.length; j++) {
+        column.push(tickX[k] && tickX[k][j] !== undefined ? tickX[k][j] : null);
+      }
+      x[k] = column;
+    });
+  }
+
+  var excess = windowSize > 0 ? smps.length - windowSize : 0;
+  if (excess > 0) {
+    smps = smps.slice(excess);
+    rows = rows.map(function (row) { return row.slice(excess); });
+    if (x) Object.keys(x).forEach(function (k) { x[k] = x[k].slice(excess); });
+  }
+
+  var out = { y: { vars: vars, smps: smps, data: rows } };
+  if (x) out.x = x;
+  return out;
 }
 
 /**
@@ -8243,6 +8660,7 @@ function createBuilder(target, options) {
   var pendingBaselines = []; // baseline snapshots waiting for getConfig() to attach
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
   var availableConnectors = []; // connector sources ({name, url}) from options.listConnectorSources
+  var availableLiveSources = []; // live streams ({name, title, url, variables}) from options.listLiveSources
   var liveRefs = {};        // data-source names the current liveHandle was built with
   var savedTextRange = null; // last selection inside a text editor (for format buttons)
 
@@ -8358,6 +8776,14 @@ function createBuilder(target, options) {
         availableConnectors = list || [];
         if (selectedId) renderProps();
       }, function () { /* leave availableConnectors as-is on failure */ });
+    }
+    if (typeof options.listLiveSources === 'function') {
+      // Host-provided live (streaming) sources — offered in the Data dropdown;
+      // picking one binds the panel to a kind:"live" source.
+      Promise.resolve(options.listLiveSources()).then(function (list) {
+        availableLiveSources = list || [];
+        if (selectedId) renderProps();
+      }, function () { /* leave availableLiveSources as-is on failure */ });
     }
     if (!client || typeof client.listDatasets !== 'function') return;
     client.listDatasets().then(function (list) {
@@ -8852,6 +9278,11 @@ function createBuilder(target, options) {
     // use (no editing-only canvasInset) so what you build is what a client
     // sees. Only a spec-level canvasInset (Settings) applies, as everywhere.
     var opts = { CanvasXpress: CX, validate: false, baseUrl: baseUrl, observeResize: false };
+    // Live (streaming) sources: the host's session hook and, for tests / non-browser
+    // hosts, the EventSource and frame scheduler — passed through unchanged.
+    ['prepareLive', 'EventSource', 'requestAnimationFrame'].forEach(function (key) {
+      if (options[key]) opts[key] = options[key];
+    });
     opts.onPanelRendered = decorate;
     opts.onControlRendered = decorateControl;
     // A filter scheme saved in a Filters panel becomes part of the spec.
@@ -9412,6 +9843,11 @@ function createBuilder(target, options) {
     var dsField = buildDataSelect(panel, refs);
     dsField.setAttribute('title', 'Data source');
 
+    // A live (streaming) source adds its Window / Every settings after Data.
+    var boundSource = panel.dataRef ? (spec.data || {})[panel.dataRef] : null;
+    var liveFields = boundSource && boundSource.kind === 'live'
+      ? buildLiveFields(panel.dataRef, boundSource) : [];
+
     // A checkbox to show/hide this panel's title bar.
     var titleToggle = el('label', 'cxb-check');
     var checkbox = el('input');
@@ -9451,7 +9887,7 @@ function createBuilder(target, options) {
     }
 
     // No Delete here — the panel frame already carries a × delete control.
-    append(propsGroup, [titleLabel, titleField, dataLabel, dsField].concat(crossFilter, [titleToggle]));
+    append(propsGroup, [titleLabel, titleField, dataLabel, dsField].concat(liveFields, crossFilter, [titleToggle]));
   }
 
 
@@ -9919,6 +10355,7 @@ function createBuilder(target, options) {
   var STORE_OPT = ' ds:';
   // Sentinel prefix marking a "use a database/connector source" option.
   var CONN_OPT = ' cx:';
+  var LIVE_OPT = ' cx-live:';
 
   /**
    * Build the panel Data dropdown. Every dataset from the store is directly
@@ -9973,6 +10410,12 @@ function createBuilder(target, options) {
       addOption(CONN_OPT + i, '\u{1F5C4} ' + (c.title || c.name));
     });
 
+    // Live (streaming) sources the host exposes — picking one binds the panel
+    // to a kind:"live" source that pushes new samples as they happen.
+    availableLiveSources.forEach(function (s, i) {
+      addOption(LIVE_OPT + i, '\u{1F4E1} ' + (s.title || s.name));
+    });
+
     // Reflect the panel's current binding as the selected option.
     var current = '';
     var curSrc = panel.dataRef ? (spec.data || {})[panel.dataRef] : null;
@@ -9994,6 +10437,19 @@ function createBuilder(target, options) {
           if (select.options[oi].value === panel.dataRef) select.remove(oi);
         }
       }
+    } else if (curSrc && curSrc.kind === 'live') {
+      // Match on the stream path: the query carries per-dashboard settings
+      // (e.g. the interval), which must not make the stream look unlisted.
+      var li = -1;
+      availableLiveSources.forEach(function (s, i) {
+        if (li < 0 && liveStreamPath(s.url) === liveStreamPath(curSrc.url)) li = i;
+      });
+      current = li >= 0 ? LIVE_OPT + li : panel.dataRef;
+      if (li >= 0) {
+        for (var lo = select.options.length - 1; lo >= 0; lo--) {
+          if (select.options[lo].value === panel.dataRef) select.remove(lo);
+        }
+      }
     } else if (curSrc) {
       current = panel.dataRef;   // inline
     }
@@ -10009,6 +10465,11 @@ function createBuilder(target, options) {
       if (v.indexOf(CONN_OPT) === 0) {
         var c = availableConnectors[parseInt(v.slice(CONN_OPT.length), 10)];
         if (c) useConnectorSource(c); else renderProps();
+        return;
+      }
+      if (v.indexOf(LIVE_OPT) === 0) {
+        var s = availableLiveSources[parseInt(v.slice(LIVE_OPT.length), 10)];
+        if (s) useLiveSource(s); else renderProps();
         return;
       }
       // Changing the source re-instantiates this panel's graph.
@@ -10091,6 +10552,101 @@ function createBuilder(target, options) {
     commit(next, false);
     rerenderPanel(selectedId);
     renderProps();
+  }
+
+  /**
+   * Bind the selected panel to a live (streaming) source, reusing a spec source
+   * that already subscribes to the same stream or creating one. A panel still
+   * on the default Bar switches to a vertical Line — a rolling time series.
+   * Always a full rebuild: streams are opened per dashboard render.
+   * @param {object} stream - `{name, title, url, variables}` from options.listLiveSources.
+   * @returns {void}
+   * @private
+   */
+  function useLiveSource(stream) {
+    var existing = spec.data || {};
+    var name = null;
+    Object.keys(existing).forEach(function (ref) {
+      var srcx = existing[ref];
+      if (!name && srcx && srcx.kind === 'live' && liveStreamPath(srcx.url) === liveStreamPath(stream.url)) {
+        name = ref;
+      }
+    });
+    var next = spec;
+    if (!name) {
+      name = uniqueSourceName(stream.name);
+      var source = { kind: 'live', url: stream.url };
+      if (stream.variables && stream.variables.length) source.variables = stream.variables.slice();
+      next = setDataSource(spec, name, source);
+    }
+    next = updatePanel(next, selectedId, { dataRef: name });
+    var config = (next.panels[selectedId] || {}).config || {};
+    var adoptLine = !config.graphType || config.graphType === 'Bar';
+    if (adoptLine) {
+      next = updatePanel(next, selectedId, {
+        config: Object.assign({}, config, { graphType: 'Line', graphOrientation: 'vertical' })
+      });
+    }
+    commit(next, false);
+    // As in useDataset: drop the stale instance so the rebuild's config fold
+    // does not restore the Bar we just replaced.
+    if (adoptLine) delete instByPanel[selectedId];
+    syncLiveConfigs();
+    rebuild();
+  }
+
+  /**
+   * The Window / Every fields for a panel bound to a live source: samples kept
+   * (the source's `window`) and seconds between updates (the stream's
+   * `interval` query parameter, which the stream server clamps). Each change
+   * rebuilds, reopening the stream with the new settings.
+   * @param {string} ref - The live source's name.
+   * @param {object} source - The `kind:"live"` source spec.
+   * @returns {HTMLElement[]} Label/field pairs to append to the props panel.
+   * @private
+   */
+  function buildLiveFields(ref, source) {
+    function numberField(value, placeholder, step, title, onChange) {
+      var input = el('input');
+      input.type = 'number';
+      input.className = 'cxb-tinput';
+      input.min = step;
+      input.step = step;
+      input.value = value == null ? '' : String(value);
+      input.setAttribute('placeholder', placeholder);
+      input.setAttribute('title', title);
+      input.style.width = '5.5em';
+      on(input, 'change', function () { onChange(input.value.trim()); });
+      return input;
+    }
+    function save(nextSource) {
+      commit(setDataSource(spec, ref, nextSource), false);
+      syncLiveConfigs();
+      rebuild();
+    }
+
+    var windowLabel = el('span', 'cxb-tlabel');
+    windowLabel.textContent = 'Window';
+    var windowField = numberField(source.window, '1000', '1',
+      'Samples kept; the oldest are dropped as new ones arrive', function (text) {
+        var next = Object.assign({}, source);
+        var n = parseInt(text, 10);
+        if (n > 0) next.window = n; else delete next.window;
+        save(next);
+      });
+
+    var everyLabel = el('span', 'cxb-tlabel');
+    everyLabel.textContent = 'Every (s)';
+    var everyField = numberField(queryParam(source.url, 'interval'), '1', '0.1',
+      'Seconds between updates (sent to the stream as ?interval=; the server clamps it)',
+      function (text) {
+        var seconds = parseFloat(text);
+        save(Object.assign({}, source, {
+          url: withQueryParam(source.url, 'interval', seconds > 0 ? String(seconds) : null)
+        }));
+      });
+
+    return [windowLabel, windowField, everyLabel, everyField];
   }
 
   /**
@@ -11411,6 +11967,61 @@ function field(labelText, control) {
   wrap.appendChild(l);
   wrap.appendChild(control);
   return wrap;
+}
+
+/**
+ * A live stream's identity: its URL without the query (the query carries
+ * per-dashboard settings such as the interval).
+ * @param {string} url - Stream URL.
+ * @returns {string} The URL up to (not including) `?`.
+ * @private
+ */
+function liveStreamPath(url) {
+  var s = String(url || '');
+  var q = s.indexOf('?');
+  return q >= 0 ? s.slice(0, q) : s;
+}
+
+/**
+ * Read one query parameter from a URL (absolute or relative).
+ * @param {string} url - The URL.
+ * @param {string} key - Parameter name.
+ * @returns {(string|null)} The decoded value, or null when absent.
+ * @private
+ */
+function queryParam(url, key) {
+  var s = String(url || '');
+  var q = s.indexOf('?');
+  if (q < 0) return null;
+  var pairs = s.slice(q + 1).split('&');
+  for (var i = 0; i < pairs.length; i++) {
+    var eq = pairs[i].indexOf('=');
+    var name = decodeURIComponent(eq >= 0 ? pairs[i].slice(0, eq) : pairs[i]);
+    if (name === key) return eq >= 0 ? decodeURIComponent(pairs[i].slice(eq + 1)) : '';
+  }
+  return null;
+}
+
+/**
+ * Set (or, with a null value, remove) one query parameter, leaving the others
+ * exactly as written.
+ * @param {string} url - The URL (absolute or relative).
+ * @param {string} key - Parameter name.
+ * @param {(string|null)} value - New value; null removes the parameter.
+ * @returns {string} The updated URL.
+ * @private
+ */
+function withQueryParam(url, key, value) {
+  var s = String(url || '');
+  var q = s.indexOf('?');
+  var base = q >= 0 ? s.slice(0, q) : s;
+  var pairs = q >= 0 ? s.slice(q + 1).split('&').filter(function (p) { return p; }) : [];
+  pairs = pairs.filter(function (p) {
+    var eq = p.indexOf('=');
+    return decodeURIComponent(eq >= 0 ? p.slice(0, eq) : p) !== key;
+  });
+  if (value != null) pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+  return base + (pairs.length ? '?' + pairs.join('&') : '');
 }
 
 var version = "0.10.0";

@@ -5,6 +5,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { DASHBOARD_SCHEMA_VERSION } from '../src/spec.js';
 import { createBuilder, pointerToCell, csvToCx, buildDataSource } from '../src/builder.js';
 import { blankSpec, setDataSource } from '../src/builderModel.js';
 import { validateSpec } from '../src/validateSpec.js';
@@ -386,7 +387,7 @@ test('saving with no edits returns the spec (derived keys never captured, author
   var config = builder.getSpec().panels.p1.config;
   assert.deepEqual(config, { graphType: 'Bar', smpTextScaleFontFactor: 0.8, decorations: { line: [{ value: 1 }] } },
     'no broadcastFilter/theme/schemaVersion/toolbarSize, no stamped decoration ids; the stale filterSmpBy self-heals');
-  assert.equal(builder.getSpec().schemaVersion, '1.1', 'saved specs are stamped');
+  assert.equal(builder.getSpec().schemaVersion, DASHBOARD_SCHEMA_VERSION, 'saved specs are stamped');
 });
 
 test('a real edit (changed since render) is captured, including an authored transient key', async function () {

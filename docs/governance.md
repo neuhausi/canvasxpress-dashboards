@@ -37,6 +37,12 @@ Every action that matters is recorded:
 - **Dashboards:** save, open, lock, delete and share.
 - **Share links:** each time one is opened.
 - **Datasets:** upload, read, delete and lock.
+- **Database connectors:** the connectors sign-in that bridges your session
+  (`connectors.login`, not counted as a dashboards sign-in) and source changes
+  (`connectors.source.save` / `.delete`).
+- **Live streams:** each subscription (`live.subscribe`): who opened which stream,
+  and whether it was allowed. A subscription is a data read; it is recorded when
+  the stream opens, not per message.
 - **Other activity:** data-function runs, AI-builder calls, sharing and security
   changes, admin actions, and reads of the audit log itself.
 
@@ -226,6 +232,10 @@ hands out. They do not cover:
   data in a stored dataset.
 - **Database connectors** (`kind: "connector"`): they run on each user's own
   database credentials, so the database's own permissions apply.
+- **Live streams** (`kind: "live"`): like connectors, a stream is served by the
+  connectors app with the viewer's own session, so what the stream's source
+  allows is what the viewer gets. A share-link viewer who is not signed in has
+  no such session: live panels show their `initial` data, or stay on *Loading…*.
 - **Joins and data functions**: these combine data *in the browser* from sources
   the viewer already received. They therefore only ever see rows and columns the
   rules let through.
@@ -263,8 +273,9 @@ Lineage answers "what feeds this dashboard?" and "what breaks if this dataset
 changes?". It is read from the specs:
 
 - **Per dashboard:** each data source with its kind (stored dataset, connector,
-  join, data function, inline), what it reads, and which panels use it.
-- **Per stored dataset and per connector:** every dashboard that reads it.
+  live stream, join, data function, inline), what it reads, and which panels use it.
+- **Per stored dataset, per connector and per live stream:** every dashboard that
+  reads it (the API's `datasets`, `connectors` and `live` lists).
 
 Users get it for the dashboards they can open (`GET /api/lineage`). Admins get
 it across everyone's dashboards (`GET /api/admin/lineage`, and Admin →

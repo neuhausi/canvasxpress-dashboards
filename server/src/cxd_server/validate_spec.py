@@ -23,7 +23,7 @@ _STYLE = ("auto", "dropdown", "radio", "buttons", "search", "slider")
 _ALIGN = ("left", "center", "right")
 _VALIGN = ("top", "middle", "bottom")
 _PARAM_TYPES = ("string", "number", "boolean")
-_DATA_KINDS = ("inline", "connector", "dataset", "join", "function")
+_DATA_KINDS = ("inline", "connector", "dataset", "join", "function", "live")
 _FUNCTION_LANGUAGES = ("python", "r")
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _JOIN_TYPES = ("inner", "left", "right", "outer")
@@ -32,7 +32,7 @@ _MARKING_MODES = ("focus", "highlight", "ghost")
 _FIELD_KINDS = ("values", "range", "search")
 # The dashboard spec format version this server reads/writes — keep in sync with
 # DASHBOARD_SCHEMA_VERSION in src/spec.js.
-DASHBOARD_SCHEMA_VERSION = "1.1"
+DASHBOARD_SCHEMA_VERSION = "1.2"
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)$")
 
 
@@ -284,7 +284,7 @@ def _check_data(data: Any, params: Any, errors: list, lenient: Optional[list] = 
             continue
         kind = src.get("kind")
         if kind not in _DATA_KINDS:
-            message = at + '.kind must be "inline", "connector", "dataset", "join", or "function"'
+            message = at + '.kind must be "inline", "connector", "dataset", "join", "function", or "live"'
             if lenient is not None:
                 lenient.append(message + " (unknown kind from a newer format: skipped)")
             else:
@@ -293,6 +293,8 @@ def _check_data(data: Any, params: Any, errors: list, lenient: Optional[list] = 
             errors.append(at + ' of kind "inline" requires a value')
         if kind == "connector" and not _is_str(src.get("url")):
             errors.append(at + ' of kind "connector" requires a url string')
+        if kind == "live":
+            _check_live(src, at, errors)
         if kind == "dataset" and (not _is_str(src.get("id")) or not src.get("id")):
             errors.append(at + ' of kind "dataset" requires an id string')
         if kind == "join":
@@ -326,6 +328,24 @@ def _check_data(data: Any, params: Any, errors: list, lenient: Optional[list] = 
             if cycle and cycle[0] == key:
                 errors.append('spec.data["%s"] %s depends on itself (%s)'
                               % (key, src.get("kind"), " -> ".join(cycle)))
+
+
+def _check_live(src: dict, at: str, errors: list) -> None:
+    """Validate a kind:"live" source (port of ``checkLive`` in src/validateSpec.js): a url
+    string (the connectors SSE stream), an optional positive-integer ``window`` (samples
+    kept), an optional ``variables`` string list, and an optional ``initial`` data object."""
+    if not _is_str(src.get("url")) or not src.get("url"):
+        errors.append(at + ' of kind "live" requires a url string')
+    window = src.get("window")
+    if window is not None and not (_is_int(window) and window > 0):
+        errors.append(at + ".window must be a positive integer")
+    variables = src.get("variables")
+    if variables is not None and not (isinstance(variables, list)
+                                      and all(_is_str(v) for v in variables)):
+        errors.append(at + ".variables must be an array of strings")
+    initial = src.get("initial")
+    if initial is not None and not (_is_obj(initial) and initial.get("y")):
+        errors.append(at + ".initial must be a CanvasXpress data object with a y block")
 
 
 def _check_join(src: dict, at: str, data: dict, errors: list) -> None:

@@ -8,6 +8,49 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 Server features, live on the demo; the client additions ship in the next npm
 release.
 
+### Live data (streaming) ([docs/live-streaming.md](docs/live-streaming.md))
+- **`kind: "live"` source.** A panel subscribes to a canvasxpress-connectors
+  Server-Sent-Events stream (`url`) and each message appends new samples to the
+  chart via the engine's `pushData`, keeping a bounded rolling `window`
+  (default 1000). Optional `variables` and `initial` seed the starting chart;
+  without `initial` the panel shows *Loading…* until the first message.
+- **One redraw per frame:** messages arriving between frames are merged first.
+- **Fallback:** a CanvasXpress build without `pushData`, or a transposing panel,
+  gets `updateData` over the window the renderer keeps.
+- Cookie-authenticated (no credential in the browser); native reconnection
+  keeps the last data on screen; `destroy()` closes the streams.
+- `createDataStore` gains `subscribe()` and an `EventSource` option;
+  `renderDashboard` gains `EventSource` / `requestAnimationFrame` options.
+  `validateSpec` checks `url`, `window`, `variables` and `initial`.
+- **No code:** the builder's Data list offers the server's streams (📡, via the
+  new `listLiveSources` option); a bound panel gets **Window** and **Every (s)**
+  fields. The app lists streams from the connectors app's `GET /api/streams`.
+- **Session:** `renderDashboard` / `createBuilder` take `prepareLive`, run once
+  before streams open; the app passes its connectors bridge, so a live dashboard
+  opened in a fresh session still streams.
+- **Spec format 1.2** (additive): the live source kind, in `src/spec.js`, the
+  server validator and `schema/dashboard.schema.json`. The server now accepts —
+  and the AI builder can author — live dashboards.
+- **Governance:** subscriptions are audited as `live.subscribe` (actor, stream,
+  allowed or refused); lineage lists live streams (`live`). Streams follow the
+  connectors access model; row/column rules stay dataset-only.
+- **Home:** a *Real-time streams* card.
+- **Example:** [Live Ops](examples/live-ops.html) — two live panels over a 24-hour
+  snapshot. Signed in, it streams from the server; on a static host or for an
+  anonymous visitor, the page simulates the same messages in the browser. Works
+  behind a reverse-proxy subpath.
+- A tick that reaches a chart before it has initialised (or that fails) is no
+  longer lost: the chart resyncs from the full window, then continues with
+  increments.
+- A stream that fails for good (e.g. the server has no such stream) marks the
+  panels still waiting for data as *Live stream unavailable* instead of leaving
+  them on *Loading…*.
+- **Audit:** requests into the mounted connectors app are resolved by their full
+  path, so the connectors sign-in (the session bridge) is recorded as
+  `connectors.login` — no longer as a dashboards `auth.login` — and source changes
+  as `connectors.source.save` / `.delete`.
+- Live Ops ships in the app's Dashboards view (seeded like the other examples).
+
 ### Electronic records and signatures ([docs/compliance.md](docs/compliance.md))
 - **Versions.** Every dashboard save appends an immutable version (spec, who,
   when, SHA-256). Versions are kept when the dashboard is deleted; restoring
@@ -215,6 +258,12 @@ release.
   governance, the audit log and scheduling.
 - Fixed: `DashboardStore.create_user` left its transaction open after a
   duplicate username, locking the database for other writers.
+- Fixed: rotating `SESSION_SECRET` locked every user out of their saved database
+  connections. The connectors session bridge now derives its password from
+  `ENCRYPTION_KEY`. Users created with the old `SESSION_SECRET` derivation are
+  re-keyed on their next visit (needs canvasxpress-connectors `Store.set_password`;
+  on an older connectors they keep the old credential). Sign those users in once
+  before a rotation. `CXD_DEMO_DATA_DIR` relocates the demo server's data.
 
 ## 0.10.0 — 2026-09-24
 

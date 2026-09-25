@@ -53,7 +53,7 @@ test('migrateSpec stamps the current version without touching the input', functi
   var out = migrateSpec(input);
   assert.equal(out.from, '1.0');
   assert.equal(out.to, DASHBOARD_SCHEMA_VERSION);
-  assert.deepEqual(out.applied, ['1.0 -> 1.1']);
+  assert.deepEqual(out.applied, ['1.0 -> 1.1', '1.1 -> 1.2']);
   assert.equal(out.spec.schemaVersion, DASHBOARD_SCHEMA_VERSION);
   assert.equal('schemaVersion' in input, false, 'input not modified');
   assert.deepEqual(migrateSpec(out.spec).applied, [], 'idempotent on a current spec');

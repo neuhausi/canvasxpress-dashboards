@@ -46,6 +46,14 @@ var NO_MARKED_ROWS = '\u0000cxd-no-marked-rows';
  *   instance is created, with `{ panelId, item, cell, canvas, body, instance }`.
  *   Used by the builder to attach editing chrome (drag/resize/customize) to
  *   live panels.
+ * @param {function} [options.EventSource] - EventSource constructor for
+ *   `kind:"live"` (streaming) sources; defaults to the global.
+ * @param {function} [options.requestAnimationFrame] - Frame scheduler used to
+ *   coalesce live ticks into at most one redraw per frame; defaults to the
+ *   global, else a ~16ms timeout (so it also works outside a browser).
+ * @param {function} [options.prepareLive] - Called once before live streams
+ *   open (only when the spec has a live source); may return a Promise. Hosts use
+ *   it to establish the stream server's session (e.g. the connectors bridge).
  * @returns {Promise<DashboardHandle>} A handle exposing the created instances
  *   and a `destroy()` cleanup.
  */
@@ -88,7 +96,7 @@ export function renderDashboard(spec, target, options) {
   // different origin than the page (else same-origin `/api/datasets/{id}`).
   var store = createDataStore({
     fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl,
-    busyRetryMs: options.busyRetryMs
+    busyRetryMs: options.busyRetryMs, EventSource: options.EventSource
   });
   // Auto-resize each graph to its cell (via setDimensions) when the container
   // reflows. The builder disables this and re-renders panels itself on resize,
@@ -379,7 +387,97 @@ export function renderDashboard(spec, target, options) {
   var pushedWhere = {};    // pushdown dataRef -> JSON of the filters it was last fetched with
   var refBindings = {};    // dataRef -> [{ instance }] (for scheduled refresh)
   var timers = [];         // refresh interval handles
+  var subscriptions = [];  // live (SSE) stream handles `{close}`, closed on destroy
+  var liveData = {};       // live dataRef -> its current bounded window (CX data object)
+  var liveWaiting = {};    // live dataRef -> [build(currentData)] for panels awaiting a first tick
   var observers = [];      // ResizeObservers keeping canvases sized to their cells
+
+  /**
+   * Whether a source ref is a streaming (`kind:"live"`) source.
+   * @param {string} ref - Source ref name.
+   * @returns {boolean} True for a live source.
+   */
+  function isLiveRef(ref) {
+    var source = ref && (spec.data || {})[ref];
+    return !!(source && source.kind === 'live');
+  }
+
+  /**
+   * Apply one (coalesced) live tick to a live source's panels. The dashboard
+   * keeps the bounded window itself (`liveData[ref]`, so Filters/table controls
+   * and full-data fallbacks see current data), then per bound instance:
+   *  - fast path — the engine's `pushData(tick)` (append + evict +
+   *    soft redraw) when the instance has it and the panel does not transpose;
+   *    `streamWindow` is set from the source's window so the engine evicts too;
+   *  - fallback — `updateData(prepare(window))` for an older engine without
+   *    `pushData`, or a transposing panel (an increment can't be transposed).
+   * Panels still waiting on their first tick are built from the window.
+   * @param {string} ref - The live source ref.
+   * @param {object} tick - A (possibly merged) tick of new samples.
+   * @returns {void}
+   */
+  /**
+   * A live source's stream failed for good (the browser will not reconnect —
+   * e.g. the server has no such stream): mark the panels still waiting for a
+   * first message as errored instead of leaving them on "Loading…".
+   * @param {string} ref - The live source ref.
+   * @returns {void}
+   */
+  function liveStreamClosed(ref) {
+    // Panels still waiting for a first message would otherwise say "Loading…"
+    // forever; panels that already show data keep it (last good state).
+    (liveWaiting[ref] || []).forEach(function (waiter) {
+      if (waiter.cell && waiter.cell.setState) waiter.cell.setState('error', 'Live stream unavailable');
+    });
+  }
+
+  function applyLiveTick(ref, tick) {
+    var windowSize = liveWindowSize((spec.data || {})[ref]);
+    liveData[ref] = appendTick(liveData[ref] || refData[ref], tick, windowSize);
+    refData[ref] = liveData[ref];
+    // Panels built right now start from the full window, so they already hold
+    // this tick — skip them when pushing to the rest below.
+    var justBuilt = [];
+    var waiting = liveWaiting[ref];
+    if (waiting && waiting.length) {
+      delete liveWaiting[ref];
+      waiting.forEach(function (build) {
+        try {
+          var built = build(liveData[ref]);
+          if (built) {
+            built.streamWindow = windowSize;
+            justBuilt.push(built);
+          }
+        } catch (e) { /* keep the others */ }
+      });
+    }
+    (refBindings[ref] || []).forEach(function (b) {
+      var inst = b.instance;
+      // Skip panels just built, and instances destroyed since binding (removePanel
+      // drops them from `instances` but not from their binding).
+      if (!inst || justBuilt.indexOf(inst) !== -1 || instances.indexOf(inst) === -1) return;
+      var transposes = !!(b.prepare && b.prepare.transposed);
+      try {
+        // A tick this instance could not take (it was still initialising — the
+        // CanvasXpress constructor is asynchronous — or the call threw) leaves it
+        // `liveStale`: resync once from the full window before pushing increments
+        // again, or it would keep a gap for as long as the stream runs.
+        if (typeof inst.pushData === 'function' && !transposes && !b.liveStale) {
+          if (inst.streamWindow !== windowSize) inst.streamWindow = windowSize;
+          inst.pushData(tick);
+        } else if (typeof inst.updateData === 'function') {
+          inst.updateData(b.prepare ? b.prepare(liveData[ref]) : liveData[ref], true, false);
+          b.liveStale = false;
+        } else {
+          b.liveStale = true;
+          return;
+        }
+        if (b.cell && b.cell.setState) b.cell.setState('ready');
+      } catch (e) {
+        b.liveStale = true;   // keep last good state; resync on the next tick
+      }
+    });
+  }
 
   /**
    * Resolve a named source once per render (shared object + single request).
@@ -946,19 +1044,43 @@ export function renderDashboard(spec, target, options) {
           return remoteInstance;
         }
         var prepare = panelDataPreparer(panel);
+        /**
+         * Instantiate CanvasXpress on already-prepared data and bind it to the
+         * panel's source (so refresh / live ticks can update it).
+         * @param {object} prepared - Prepared (projected/transposed) data.
+         * @returns {object} The new instance.
+         */
+        function buildInstance(prepared) {
+          sizeCanvasToCell(cell, canvasInset);
+          var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
+          applyDashboardChartStyle(config, spec);   // dashboard-wide font/theme/colors (Settings)
+          var instance = new CX(canvasId, prepared, config, paramClickEvents(panel));
+          instances.push(instance);
+          if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
+          bind(panel && panel.dataRef, instance, cell, undefined, prepare);
+          if (autoResize) observeResize(cell, instance, observers, canvasInset);
+          cell.setState('ready');
+          notify(instance, 'ready');
+          return instance;
+        }
         data = prepare(data);
-        if (isEmptyData(data)) { cell.setState('empty'); notify(null, 'empty'); return null; }
-        sizeCanvasToCell(cell, canvasInset);
-        var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
-        applyDashboardChartStyle(config, spec);   // dashboard-wide font/theme/colors (Settings)
-        var instance = new CX(canvasId, data, config, paramClickEvents(panel));
-        instances.push(instance);
-        if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = instance;
-        bind(panel && panel.dataRef, instance, cell, undefined, prepare);
-        if (autoResize) observeResize(cell, instance, observers, canvasInset);
-        cell.setState('ready');
-        notify(instance, 'ready');
-        return instance;
+        if (isEmptyData(data)) {
+          // A live (streaming) panel starts with no samples: instead of settling
+          // as "No data", wait for its first tick and build the instance then.
+          if (isLiveRef(panel && panel.dataRef)) {
+            cell.setState('loading');
+            var waiter = function (current) {
+              var ready = prepare(current);
+              return isEmptyData(ready) ? null : buildInstance(ready);
+            };
+            waiter.cell = cell;
+            (liveWaiting[panel.dataRef] || (liveWaiting[panel.dataRef] = [])).push(waiter);
+            notify(null, 'loading');
+            return null;
+          }
+          cell.setState('empty'); notify(null, 'empty'); return null;
+        }
+        return buildInstance(data);
       })
       .catch(function (err) {
         cell.setState('error', String(err && err.message || err));
@@ -1938,6 +2060,10 @@ export function renderDashboard(spec, target, options) {
   // --- scheduled refresh: poll connector sources, live-update bound panels ---
   scheduleRefreshes(spec, store, refBindings, timers, CX, refreshJoinsOf);
 
+  // --- live streams: push (SSE) sources, coalesced to <=1 redraw per frame ---
+  subscriptions.push(subscribeLive(spec, store, applyLiveTick,
+    frameScheduler(options.requestAnimationFrame), options.prepareLive, liveStreamClosed));
+
   var handle = {
     spec: spec,
     container: container,
@@ -2038,8 +2164,8 @@ export function renderDashboard(spec, target, options) {
       refreshTemplate();
     },
     /**
-     * Tear down the dashboard: stop refresh timers, destroy CanvasXpress
-     * instances, and clear the DOM.
+     * Tear down the dashboard: stop refresh timers, close live streams, destroy
+     * CanvasXpress instances, and clear the DOM.
      * @returns {void}
      */
     destroy: function () {
@@ -2049,6 +2175,8 @@ export function renderDashboard(spec, target, options) {
       }
       timers.forEach(function (t) { clearInterval(t); });
       timers.length = 0;
+      subscriptions.forEach(function (s) { try { s.close(); } catch (e) { /* noop */ } });
+      subscriptions.length = 0;
       observers.forEach(function (o) { try { o.disconnect(); } catch (e) { /* noop */ } });
       observers.length = 0;
       instances.forEach(function (instance) {
@@ -2102,6 +2230,191 @@ function scheduleRefreshes(spec, store, refBindings, timers, CX, onRefreshed) {
     }, source.refresh * 1000);
     timers.push(handle);
   });
+}
+
+/**
+ * Samples a live source keeps when its spec sets no `window`. Eviction is never
+ * optional for a stream (an unbounded window grows memory forever), so an unset
+ * window still gets this bound.
+ * @type {number}
+ */
+var DEFAULT_LIVE_WINDOW = 1000;
+
+/**
+ * The bounded window (samples kept) for a live source.
+ * @param {object} source - The `kind:"live"` source spec.
+ * @returns {number} Its positive-integer `window`, else {@link DEFAULT_LIVE_WINDOW}.
+ * @private
+ */
+function liveWindowSize(source) {
+  return source && source.window > 0 ? source.window : DEFAULT_LIVE_WINDOW;
+}
+
+/**
+ * Subscribe every `kind:"live"` source (the push counterpart of
+ * {@link scheduleRefreshes}): each SSE tick is buffered per source and flushed on
+ * the next frame, where the ticks that arrived in between are merged into ONE
+ * tick — so a burst costs one redraw per frame, not one per message
+ * (backpressure). Reconnection is native to EventSource; a dropped stream keeps
+ * the panel's last good data.
+ * @param {object} spec - The dashboard spec.
+ * @param {DataStore} store - The data store (owns the SSE transport).
+ * @param {function} apply - `function(ref, tick)` applying a merged tick.
+ * @param {function} schedule - `function(fn)` running `fn` on the next frame.
+ * @param {function} [prepare] - Called once, only when the spec has a live
+ *   source, before any stream opens; may return a Promise (e.g. establishing the
+ *   stream server's session). Streams open once it settles, even if it fails —
+ *   a stream that is still refused reports that itself.
+ * @param {function} [onClosed] - `function(ref)` when a stream fails for good
+ *   (the browser will not reconnect — e.g. the server has no such stream).
+ * @returns {{close: function}} Handle closing every stream and dropping any
+ *   buffered ticks (so a pending frame flushes nothing after destroy).
+ * @private
+ */
+function subscribeLive(spec, store, apply, schedule, prepare, onClosed) {
+  var sources = spec.data || {};
+  var liveRefs = Object.keys(sources).filter(function (ref) {
+    return sources[ref] && sources[ref].kind === 'live';
+  });
+  var streams = [];
+  var pending = {};      // ref -> [tick] received since the last frame
+  var scheduled = false;
+  var stopped = false;
+
+  function flush() {
+    scheduled = false;
+    if (stopped) return;
+    var batch = pending;
+    pending = {};
+    Object.keys(batch).forEach(function (ref) {
+      var ticks = batch[ref];
+      if (!ticks.length) return;
+      var merged = ticks.length === 1 ? ticks[0]
+        : ticks.reduce(function (acc, tick) { return appendTick(acc, tick, 0); }, null);
+      try { apply(ref, merged); } catch (e) { /* keep streaming */ }
+    });
+  }
+
+  function open() {
+    if (stopped) return;   // destroyed while `prepare` was pending
+    liveRefs.forEach(function (ref) {
+      streams.push(store.subscribe(ref, sources[ref], {
+        onError: function (err, errRef, closed) {
+          if (closed && !stopped && typeof onClosed === 'function') onClosed(ref);
+        },
+        onTick: function (tick) {
+          if (stopped || !tick || !tick.y) return;
+          (pending[ref] || (pending[ref] = [])).push(tick);
+          if (!scheduled) {
+            scheduled = true;
+            schedule(flush);
+          }
+        }
+      }));
+    });
+  }
+
+  if (liveRefs.length && typeof prepare === 'function') {
+    var ready;
+    try { ready = Promise.resolve(prepare()); } catch (e) { ready = Promise.resolve(); }
+    ready.then(open, open);
+  } else if (liveRefs.length) {
+    open();
+  }
+
+  return {
+    close: function () {
+      stopped = true;
+      pending = {};
+      streams.forEach(function (s) { try { s.close(); } catch (e) { /* noop */ } });
+      streams.length = 0;
+    }
+  };
+}
+
+/**
+ * A "run on the next frame" scheduler: the given (or global)
+ * requestAnimationFrame, else a ~16ms timeout so coalescing also works outside a
+ * browser (tests, SSR).
+ * @param {function} [raf] - An injected requestAnimationFrame.
+ * @returns {function} `function(fn)` scheduling `fn` once.
+ * @private
+ */
+function frameScheduler(raf) {
+  var host = typeof globalThis !== 'undefined' ? globalThis : undefined;
+  var impl = raf || (host && host.requestAnimationFrame);
+  if (typeof impl === 'function') {
+    return function (fn) { impl.call(host, fn); };
+  }
+  return function (fn) { setTimeout(fn, 16); };
+}
+
+/**
+ * Append a live tick's new samples onto a CanvasXpress data object and trim it
+ * to a window — without mutating `base` (it may be the spec's `initial` seed).
+ * Rows align by variable name when the tick names its vars (positionally
+ * otherwise); a variable new in the tick gets a row back-filled with nulls, and
+ * annotation (`x`) columns stay length-aligned (null-padded). Also merges
+ * several ticks into one (pass `null` as base and `0` as window).
+ * @param {object|null} base - The current data (or null to start empty).
+ * @param {object} tick - `{y:{vars?, smps, data}, x?}` — the new samples.
+ * @param {number} windowSize - Samples to keep (the newest); `0` keeps all.
+ * @returns {object} A new CanvasXpress data object.
+ * @private
+ */
+function appendTick(base, tick, windowSize) {
+  var baseY = (base && base.y) || {};
+  var vars = (baseY.vars || []).slice();
+  var smps = (baseY.smps || []).slice();
+  var rows = (baseY.data || []).map(function (row) { return row.slice(); });
+  var oldCount = smps.length;
+  var tickY = tick.y || {};
+  var newSmps = tickY.smps || [];
+  var tickVars = Array.isArray(tickY.vars) && tickY.vars.length ? tickY.vars : null;
+  var tickRows = tickY.data || [];
+
+  // Adopt tick variables the base doesn't know yet (back-filled with nulls).
+  (tickVars || []).forEach(function (name) {
+    if (vars.indexOf(name) === -1) {
+      vars.push(name);
+      rows.push(new Array(oldCount).fill(null));
+    }
+  });
+
+  rows.forEach(function (row, r) {
+    var source = tickVars ? tickRows[tickVars.indexOf(vars[r])] : tickRows[r];
+    for (var j = 0; j < newSmps.length; j++) {
+      row.push(source && source[j] !== undefined ? source[j] : null);
+    }
+  });
+  smps = smps.concat(newSmps);
+
+  var x = null;
+  var baseX = base && base.x;
+  var tickX = tick.x || {};
+  if (baseX || tick.x) {
+    x = {};
+    var keys = Object.keys(baseX || {});
+    Object.keys(tickX).forEach(function (k) { if (keys.indexOf(k) === -1) keys.push(k); });
+    keys.forEach(function (k) {
+      var column = baseX && baseX[k] ? baseX[k].slice() : new Array(oldCount).fill(null);
+      for (var j = 0; j < newSmps.length; j++) {
+        column.push(tickX[k] && tickX[k][j] !== undefined ? tickX[k][j] : null);
+      }
+      x[k] = column;
+    });
+  }
+
+  var excess = windowSize > 0 ? smps.length - windowSize : 0;
+  if (excess > 0) {
+    smps = smps.slice(excess);
+    rows = rows.map(function (row) { return row.slice(excess); });
+    if (x) Object.keys(x).forEach(function (k) { x[k] = x[k].slice(excess); });
+  }
+
+  var out = { y: { vars: vars, smps: smps, data: rows } };
+  if (x) out.x = x;
+  return out;
 }
 
 /**

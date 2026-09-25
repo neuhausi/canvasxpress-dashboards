@@ -15,7 +15,7 @@ import { FIELD_KINDS } from './filters.js';
 import { specCompatibility, DASHBOARD_SCHEMA_VERSION } from './spec.js';
 
 /** @type {string[]} Data source kinds. */
-var DATA_KINDS = ['inline', 'connector', 'dataset', 'join', 'function'];
+var DATA_KINDS = ['inline', 'connector', 'dataset', 'join', 'function', 'live'];
 
 /** @type {string[]} Languages a data function may be written in. */
 var FUNCTION_LANGUAGES = ['python', 'r'];
@@ -216,7 +216,7 @@ export function validateSpec(spec) {
           return;
         }
         if (DATA_KINDS.indexOf(src.kind) === -1) {
-          var kindMessage = at + '.kind must be "inline", "connector", "dataset", "join", or "function"';
+          var kindMessage = at + '.kind must be "inline", "connector", "dataset", "join", "function", or "live"';
           if (newerMinor) warnings.push(kindMessage + ' (unknown kind from a newer format: skipped)');
           else errors.push(kindMessage);
         }
@@ -226,6 +226,7 @@ export function validateSpec(spec) {
         if (src.kind === 'connector' && typeof src.url !== 'string') {
           errors.push(at + ' of kind "connector" requires a url string');
         }
+        if (src.kind === 'live') checkLive(src, at, errors);
         if (src.kind === 'dataset' && (typeof src.id !== 'string' || src.id.length === 0)) {
           errors.push(at + ' of kind "dataset" requires an id string');
         }
@@ -346,6 +347,34 @@ export function validateSpec(spec) {
   var result = { valid: errors.length === 0, errors: errors };
   if (warnings.length) result.warnings = warnings;
   return result;
+}
+
+/**
+ * Validate a `kind:"live"` source: a `url` string (the connectors SSE endpoint),
+ * an optional positive-integer `window` (samples kept; maps to the engine's
+ * `streamWindow`), an optional `variables` string array, and an optional
+ * `initial` CanvasXpress data object to seed the panel before the first tick.
+ *
+ * @param {object} src - The live source spec.
+ * @param {string} at - Error path prefix.
+ * @param {string[]} errors - Error list to append to.
+ * @returns {void}
+ * @private
+ */
+function checkLive(src, at, errors) {
+  if (typeof src.url !== 'string' || src.url.length === 0) {
+    errors.push(at + ' of kind "live" requires a url string');
+  }
+  if (src.window != null && !(Number.isInteger(src.window) && src.window > 0)) {
+    errors.push(at + '.window must be a positive integer');
+  }
+  if (src.variables != null && !(Array.isArray(src.variables) &&
+      src.variables.every(function (v) { return typeof v === 'string'; }))) {
+    errors.push(at + '.variables must be an array of strings');
+  }
+  if (src.initial != null && (typeof src.initial !== 'object' || !src.initial.y)) {
+    errors.push(at + '.initial must be a CanvasXpress data object with a y block');
+  }
 }
 
 /**

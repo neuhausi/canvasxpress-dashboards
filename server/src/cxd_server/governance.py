@@ -606,6 +606,9 @@ def spec_sources(spec: Dict[str, Any]) -> List[Dict[str, Any]]:
                          owner=source.get("owner"))
         elif kind == "connector":
             entry["url"] = source.get("url")
+        elif kind == "live":
+            entry["url"] = source.get("url")
+            entry["window"] = source.get("window")
         elif kind == "join":
             entry["inputs"] = [s for s in (source.get("left"), source.get("right")) if s]
             entry["how"] = source.get("how") or "inner"
@@ -626,10 +629,12 @@ def build_lineage(dashboards: Iterable[Tuple[str, Dict[str, Any]]],
     :param dashboards: ``(owner, spec)`` pairs.
     :param dataset_owner: ``(dashboard_owner, store, id) -> owner`` for dataset
         sources that name no owner (defaults to the dashboard's owner).
-    :returns: ``{"dashboards": [...], "datasets": [...], "connectors": [...]}``.
+    :returns: ``{"dashboards": [...], "datasets": [...], "connectors": [...], "live": [...]}``
+        (``live``: the streams ``kind:"live"`` sources subscribe to, by url).
     """
     by_dataset: Dict[Tuple[str, str, str], List[Dict[str, str]]] = {}
     by_connector: Dict[str, List[Dict[str, str]]] = {}
+    by_live: Dict[str, List[Dict[str, str]]] = {}
     rows = []
     for owner, spec in dashboards:
         sources = spec_sources(spec)
@@ -642,6 +647,8 @@ def build_lineage(dashboards: Iterable[Tuple[str, Dict[str, Any]]],
                 by_dataset.setdefault((ds_owner, s["store"], s["id"]), []).append(ref)
             elif s["kind"] == "connector" and s.get("url"):
                 by_connector.setdefault(s["url"], []).append(ref)
+            elif s["kind"] == "live" and s.get("url"):
+                by_live.setdefault(s["url"], []).append(ref)
         rows.append(dict(ref, sources=sources))
     return {
         "dashboards": rows,
@@ -649,6 +656,8 @@ def build_lineage(dashboards: Iterable[Tuple[str, Dict[str, Any]]],
                      for (o, s, i), refs in sorted(by_dataset.items())],
         "connectors": [{"url": u, "used_by": _by_ref(refs)}
                        for u, refs in sorted(by_connector.items())],
+        "live": [{"url": u, "used_by": _by_ref(refs)}
+                 for u, refs in sorted(by_live.items())],
     }
 
 

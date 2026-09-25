@@ -46,6 +46,9 @@ var sharedCache = new Map();
  *   resolve `kind:"dataset"` sources via `GET /api/datasets/{id}`.
  * @param {number} [options.busyRetryMs=250] - First wait before retrying a data
  *   function the runtime refused as busy (429); doubles per retry, capped at 2s.
+ * @param {function} [options.EventSource] - EventSource constructor for
+ *   `kind:"live"` subscriptions; defaults to the global (injectable for tests).
+ *   When neither exists (e.g. server-side), `subscribe` is a no-op.
  * @returns {DataStore} The store.
  */
 export function createDataStore(options) {
@@ -56,6 +59,8 @@ export function createDataStore(options) {
   var now = options.now || function () { return Date.now(); };
   var baseUrl = options.baseUrl || '';
   var busyRetryMs = options.busyRetryMs != null ? options.busyRetryMs : 250;
+  var EventSourceImpl = options.EventSource ||
+    (typeof globalThis !== 'undefined' ? globalThis.EventSource : undefined);
   var inflight = {}; // cacheKey -> Promise<data>
 
   /**
@@ -245,6 +250,12 @@ export function createDataStore(options) {
       if (sourceSpec.kind === 'inline') {
         return Promise.resolve(sourceSpec.value);
       }
+      if (sourceSpec.kind === 'live') {
+        // A live source has no snapshot to fetch: its data arrives as ticks over
+        // `subscribe`. Resolve to its `initial` seed, or an empty-but-valid object
+        // so the panel can instantiate and the first tick fills it in.
+        return Promise.resolve(sourceSpec.initial || emptyLiveData(sourceSpec.variables));
+      }
       if (sourceSpec.kind === 'join') {
         var self = this;
         var sqlJoin = sqlJoinUrl(sourceSpec, opts.sources || {}, opts.params);
@@ -302,8 +313,64 @@ export function createDataStore(options) {
      */
     invalidate: function (ref, sourceSpec, params) {
       cache.delete(keyFor(ref, sourceSpec, params));
+    },
+
+    /**
+     * Subscribe to a `kind:"live"` source: open a Server-Sent-Events stream on
+     * its `url` (a canvasxpress-connectors SSE endpoint, cookie-authenticated —
+     * no credential in the browser) and hand each `tick` event's parsed payload
+     * to `handlers.onTick`. Reconnection is native to EventSource (the server
+     * sends a `retry` hint); `onError` reports a dropped connection without
+     * tearing it down, so a panel keeps its last good data while it reconnects.
+     * @param {string} ref - The source ref name (passed back to the handlers).
+     * @param {object} sourceSpec - The live source spec `{kind:"live", url}`.
+     * @param {object} handlers - `{onTick(tick, ref), onError?(err, ref, closed),
+     *   onOpen?(ref)}`; `closed` is true when the browser gave up for good.
+     * @returns {{close: function}} Handle whose `close()` ends the stream; a
+     *   no-op handle when the spec has no url or no EventSource is available.
+     */
+    subscribe: function (ref, sourceSpec, handlers) {
+      var noop = { close: function () {} };
+      if (!sourceSpec || sourceSpec.kind !== 'live' || typeof sourceSpec.url !== 'string') return noop;
+      if (typeof EventSourceImpl !== 'function') return noop;
+      handlers = handlers || {};
+      var url = /^https?:/i.test(sourceSpec.url) ? sourceSpec.url : baseUrl + sourceSpec.url;
+      var es = new EventSourceImpl(url, { withCredentials: true });
+      var closed = false;
+      function onTick(ev) {
+        if (closed) return;
+        var tick = parseJson(ev && ev.data);
+        if (tick && typeof handlers.onTick === 'function') handlers.onTick(tick, ref);
+      }
+      if (typeof es.addEventListener === 'function') es.addEventListener('tick', onTick);
+      es.onopen = function () {
+        if (!closed && typeof handlers.onOpen === 'function') handlers.onOpen(ref);
+      };
+      es.onerror = function (err) {
+        // readyState 2 (CLOSED): the browser gave up (e.g. the stream answered
+        // 404/401) and will not reconnect; otherwise it is retrying on its own.
+        if (!closed && typeof handlers.onError === 'function') handlers.onError(err, ref, es.readyState === 2);
+      };
+      return {
+        close: function () {
+          closed = true;
+          try { es.close(); } catch (e) { /* already closed */ }
+        }
+      };
     }
   };
+}
+
+/**
+ * The empty-but-valid CanvasXpress data object a live source starts from
+ * (before its first tick): the declared variables with no samples yet.
+ * @param {string[]} [variables] - Series names the stream will emit.
+ * @returns {object} `{ y: { vars, smps: [], data: [[], ...] } }`.
+ * @private
+ */
+function emptyLiveData(variables) {
+  var vars = Array.isArray(variables) ? variables.slice() : [];
+  return { y: { vars: vars, smps: [], data: vars.map(function () { return []; }) } };
 }
 
 /**

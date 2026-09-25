@@ -139,8 +139,8 @@
       "properties": {
         "kind": {
           "type": "string",
-          "enum": ["inline", "connector", "dataset", "join", "function"],
-          "description": "inline = literal value; connector = fetched URL; dataset = stored dataset by id; join = two other sources blended on a key; function = an R / Python snippet run by a data-function runtime over other sources."
+          "enum": ["inline", "connector", "dataset", "join", "function", "live"],
+          "description": "inline = literal value; connector = fetched URL; dataset = stored dataset by id; join = two other sources blended on a key; function = an R / Python snippet run by a data-function runtime over other sources; live = a pushed Server-Sent-Events stream whose messages append samples to the bound charts (url, window, variables, initial)."
         },
         "value": { "type": "object" },
         "id": {
@@ -196,7 +196,22 @@
         },
         "url": {
           "type": "string",
-          "description": "Connector endpoint, e.g. /api/data?source=sales, or a signed dataset URL. Fetched with credentials (cookie auth)."
+          "description": "Connector endpoint, e.g. /api/data?source=sales, or a signed dataset URL. Fetched with credentials (cookie auth). kind:live: the Server-Sent-Events stream, e.g. /connectors/api/stream/demo; subscribed with credentials (cookie auth)."
+        },
+        "window": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "kind:live: samples each chart keeps; the oldest are dropped as new ones arrive (default 1000)."
+        },
+        "variables": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "kind:live: the series the stream emits, used for the empty chart before the first message."
+        },
+        "initial": {
+          "type": "object",
+          "required": ["y"],
+          "description": "kind:live: a CanvasXpress data object shown before the first message (else the panel shows Loading…)."
         },
         "ttl": {
           "type": "number",
