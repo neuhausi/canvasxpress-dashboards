@@ -49,17 +49,18 @@ class SqlDashboardStore:
             sa.Column("spec", sa.Text, nullable=False),
             sa.Column("visibility", sa.Text, nullable=False, default="private"),
             sa.Column("share_token", sa.Text, unique=True),
+            sa.Column("locked", sa.Integer, nullable=False, server_default=sa.text("0")),
             sa.Column("updated_at", sa.Text, nullable=False),
         )
         metadata.create_all(self._engine)
-        # Migrate tables created before is_admin existed (no-op if present).
-        try:
-            with self._engine.begin() as conn:
-                conn.execute(sa.text(
-                    "ALTER TABLE cxd_users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"
-                ))
-        except sa.exc.SQLAlchemyError:
-            pass
+        # Migrate tables created before is_admin / locked existed (no-op if present).
+        for ddl in ("ALTER TABLE cxd_users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0",
+                    "ALTER TABLE cxd_dashboards ADD COLUMN locked INTEGER NOT NULL DEFAULT 0"):
+            try:
+                with self._engine.begin() as conn:
+                    conn.execute(sa.text(ddl))
+            except sa.exc.SQLAlchemyError:
+                pass
 
     # ---- users ----
     def create_user(self, username: str, password: str, is_admin: bool = False) -> bool:
@@ -156,7 +157,8 @@ class SqlDashboardStore:
         dash = self._dash
         with self._engine.connect() as conn:
             rows = conn.execute(
-                self._sa.select(dash.c.id, dash.c.title, dash.c.visibility, dash.c.share_token, dash.c.updated_at)
+                self._sa.select(dash.c.id, dash.c.title, dash.c.visibility, dash.c.share_token,
+                               dash.c.locked, dash.c.updated_at)
                 .where(dash.c.owner == owner)
                 .order_by(dash.c.updated_at.desc())
             ).all()
@@ -166,7 +168,8 @@ class SqlDashboardStore:
         dash = self._dash
         with self._engine.connect() as conn:
             row = conn.execute(
-                self._sa.select(dash.c.id, dash.c.title, dash.c.visibility, dash.c.share_token, dash.c.updated_at)
+                self._sa.select(dash.c.id, dash.c.title, dash.c.visibility, dash.c.share_token,
+                               dash.c.locked, dash.c.updated_at)
                 .where((dash.c.owner == owner) & (dash.c.id == dashboard_id))
             ).first()
         return _summary_row(row) if row else None
@@ -179,7 +182,28 @@ class SqlDashboardStore:
             ).first()
         return json.loads(row[0]) if row else None
 
+    def is_locked(self, owner: str, dashboard_id: str) -> bool:
+        """Return True if the dashboard is locked (protected from deletion)."""
+        dash = self._dash
+        with self._engine.connect() as conn:
+            row = conn.execute(
+                self._sa.select(dash.c.locked).where((dash.c.owner == owner) & (dash.c.id == dashboard_id))
+            ).first()
+        return bool(row) and bool(row[0])
+
+    def set_locked(self, owner: str, dashboard_id: str, locked: bool) -> Optional[dict]:
+        """Mark a dashboard locked/unlocked. Returns the updated summary, or None."""
+        if self.get_summary(owner, dashboard_id) is None:
+            return None
+        dash = self._dash
+        with self._engine.begin() as conn:
+            conn.execute(dash.update()
+                         .where((dash.c.owner == owner) & (dash.c.id == dashboard_id))
+                         .values(locked=1 if locked else 0))
+        return self.get_summary(owner, dashboard_id)
+
     def delete_dashboard(self, owner: str, dashboard_id: str) -> None:
+        """Delete unconditionally; lock enforcement lives in the API layer."""
         dash = self._dash
         with self._engine.begin() as conn:
             conn.execute(dash.delete().where((dash.c.owner == owner) & (dash.c.id == dashboard_id)))
@@ -231,7 +255,8 @@ def _summary_row(row) -> dict:
         "title": row[1],
         "visibility": row[2],
         "share_token": row[3],
-        "updated_at": row[4],
+        "locked": bool(row[4]),
+        "updated_at": row[5],
     }
 
 
