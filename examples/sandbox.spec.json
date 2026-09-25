@@ -1,0 +1,308 @@
+{
+  "$schema": "https://canvasxpress.org/schema/dashboard.schema.json",
+  "schemaVersion": "1.1",
+  "id": "sandbox",
+  "title": "Sandbox (anyone can edit)",
+  "version": 1,
+  "broadcastGroup": "sandbox",
+  "theme": "auto",
+  "layout": {
+    "cols": 12,
+    "rowHeight": 40,
+    "gap": 12,
+    "items": [
+      {
+        "panel": "about",
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 3
+      },
+      {
+        "panel": "sales",
+        "x": 0,
+        "y": 3,
+        "w": 6,
+        "h": 8
+      },
+      {
+        "panel": "price",
+        "x": 6,
+        "y": 3,
+        "w": 6,
+        "h": 8
+      }
+    ]
+  },
+  "data": {
+    "sales": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": [
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4"
+          ],
+          "smps": [
+            "North",
+            "South",
+            "East",
+            "West"
+          ],
+          "data": [
+            [
+              120,
+              90,
+              140,
+              80
+            ],
+            [
+              135,
+              101,
+              150,
+              88
+            ],
+            [
+              150,
+              96,
+              165,
+              94
+            ],
+            [
+              160,
+              110,
+              180,
+              100
+            ]
+          ]
+        },
+        "x": {
+          "Segment": [
+            "Enterprise",
+            "SMB",
+            "Enterprise",
+            "Consumer"
+          ]
+        }
+      }
+    },
+    "products": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": [
+            "Price",
+            "Units"
+          ],
+          "smps": [
+            "P01",
+            "P02",
+            "P03",
+            "P04",
+            "P05",
+            "P06",
+            "P07",
+            "P08",
+            "P09",
+            "P10",
+            "P11",
+            "P12",
+            "P13",
+            "P14",
+            "P15",
+            "P16",
+            "P17",
+            "P18",
+            "P19",
+            "P20",
+            "P21",
+            "P22",
+            "P23",
+            "P24",
+            "P25",
+            "P26",
+            "P27",
+            "P28",
+            "P29",
+            "P30",
+            "P31",
+            "P32",
+            "P33",
+            "P34",
+            "P35",
+            "P36",
+            "P37",
+            "P38",
+            "P39",
+            "P40"
+          ],
+          "data": [
+            [
+              10.0,
+              49.5,
+              46.7,
+              41.4,
+              35.7,
+              32.1,
+              31.2,
+              31.0,
+              29.0,
+              24.2,
+              18.4,
+              14.0,
+              12.4,
+              12.3,
+              51.0,
+              47.0,
+              41.1,
+              36.1,
+              33.7,
+              33.4,
+              32.7,
+              29.5,
+              24.0,
+              18.5,
+              15.3,
+              14.6,
+              14.3,
+              51.9,
+              46.8,
+              41.0,
+              37.0,
+              35.8,
+              35.7,
+              34.0,
+              29.6,
+              23.7,
+              19.0,
+              17.1,
+              16.9,
+              15.9
+            ],
+            [
+              820,
+              199,
+              188,
+              343,
+              452,
+              414,
+              420,
+              513,
+              525,
+              506,
+              626,
+              763,
+              728,
+              668,
+              200,
+              298,
+              296,
+              346,
+              469,
+              470,
+              391,
+              462,
+              621,
+              651,
+              626,
+              701,
+              758,
+              153,
+              191,
+              360,
+              427,
+              353,
+              367,
+              478,
+              504,
+              509,
+              630,
+              720,
+              652,
+              621
+            ]
+          ]
+        },
+        "x": {
+          "Region": [
+            "North",
+            "South",
+            "East",
+            "West",
+            "North",
+            "South",
+            "East",
+            "West",
+            "North",
+            "South",
+            "East",
+            "West",
+            "North",
+            "South",
+            "East",
+            "West",
+            "North",
+            "South",
+            "East",
+            "West",
+            "North",
+            "South",
+            "East",
+            "West",
+            "North",
+            "South",
+            "East",
+            "West",
+            "North",
+            "South",
+            "East",
+            "West",
+            "North",
+            "South",
+            "East",
+            "West",
+            "North",
+            "South",
+            "East",
+            "West"
+          ]
+        }
+      }
+    }
+  },
+  "panels": {
+    "about": {
+      "type": "text",
+      "text": "Sandbox — a scratch dashboard anyone can change\n\nOpen it in the Builder and experiment: add panels, change charts, rearrange, Save. Everyone shares this one copy, so your changes are visible to others and may be overwritten. Anyone may also delete it; the server recreates it (like this) the next time it restarts or is updated."
+    },
+    "sales": {
+      "title": "Quarterly sales by region",
+      "dataRef": "sales",
+      "config": {
+        "graphType": "Bar",
+        "graphOrientation": "vertical",
+        "title": false,
+        "xAxisTitle": "Sales"
+      }
+    },
+    "price": {
+      "title": "Price vs units sold",
+      "dataRef": "products",
+      "config": {
+        "graphType": "Scatter2D",
+        "xAxis": [
+          "Price"
+        ],
+        "yAxis": [
+          "Units"
+        ],
+        "colorBy": "Region",
+        "title": false,
+        "xAxisTitle": "Price",
+        "yAxisTitle": "Units sold"
+      }
+    }
+  }
+}

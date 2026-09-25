@@ -44,6 +44,8 @@ var sharedCache = new Map();
  *   (injectable for tests).
  * @param {string} [options.baseUrl=''] - Base URL of the cxd_server, used to
  *   resolve `kind:"dataset"` sources via `GET /api/datasets/{id}`.
+ * @param {number} [options.busyRetryMs=250] - First wait before retrying a data
+ *   function the runtime refused as busy (429); doubles per retry, capped at 2s.
  * @returns {DataStore} The store.
  */
 export function createDataStore(options) {
@@ -53,6 +55,7 @@ export function createDataStore(options) {
   var defaultTtl = options.ttl != null ? options.ttl : 0;
   var now = options.now || function () { return Date.now(); };
   var baseUrl = options.baseUrl || '';
+  var busyRetryMs = options.busyRetryMs != null ? options.busyRetryMs : 250;
   var inflight = {}; // cacheKey -> Promise<data>
 
   /**
@@ -256,7 +259,7 @@ export function createDataStore(options) {
       }
       if (sourceSpec.kind === 'function') {
         return resolveFunction(this, ref, sourceSpec, opts, {
-          fetch: fetchImpl, baseUrl: baseUrl, params: opts.params
+          fetch: fetchImpl, baseUrl: baseUrl, params: opts.params, busyRetryMs: busyRetryMs
         });
       }
       if (sourceSpec.kind !== 'connector' && sourceSpec.kind !== 'dataset') {
@@ -358,7 +361,7 @@ function resolveJoin(store, ref, sourceSpec, opts) {
  * @param {string} ref - The function's ref name.
  * @param {object} sourceSpec - `{language, code, inputs, args?, runtime?, axis?}`.
  * @param {object} opts - The options passed to `resolve`.
- * @param {object} env - `{fetch, baseUrl, params}` from the store.
+ * @param {object} env - `{fetch, baseUrl, params, busyRetryMs}` from the store.
  * @returns {Promise<object>} The function's result data.
  * @private
  */
@@ -395,23 +398,38 @@ function resolveFunction(store, ref, sourceSpec, opts, env) {
     // Call fetch unbound: the native window.fetch throws "Illegal invocation"
     // when invoked as a method of another object.
     var doFetch = env.fetch;
-    return doFetch(url, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).then(function (res) {
-      return res.text().then(function (text) {
-        var body = parseJson(text);
-        if (!res.ok) {
-          throw new DataError(functionErrorMessage(res.status, body, !!sourceSpec.runtime), res.status);
+    var body = JSON.stringify(payload);
+    // The runtime caps concurrent runs and answers 429 when full (a dashboard
+    // with more functions than slots): wait and retry rather than fail.
+    function attempt(retry) {
+      return doFetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: body
+      }).then(function (res) {
+        if (res.status === 429 && retry < FUNCTION_BUSY_RETRIES) {
+          var wait = Math.min(2000, (env.busyRetryMs || 0) * Math.pow(2, retry));
+          return new Promise(function (done) { setTimeout(done, wait); }).then(function () {
+            return attempt(retry + 1);
+          });
         }
-        if (!body || !body.data) throw new DataError('data function "' + ref + '" returned no data', res.status);
-        return body.data;
+        return res.text().then(function (text) {
+          var parsed = parseJson(text);
+          if (!res.ok) {
+            throw new DataError(functionErrorMessage(res.status, parsed, !!sourceSpec.runtime), res.status);
+          }
+          if (!parsed || !parsed.data) throw new DataError('data function "' + ref + '" returned no data', res.status);
+          return parsed.data;
+        });
       });
-    });
+    }
+    return attempt(0);
   });
 }
+
+/** Retries of a data function the runtime refused as busy (429) before failing. */
+var FUNCTION_BUSY_RETRIES = 6;
 
 /**
  * A readable message for a failed data-function call. The default runtime

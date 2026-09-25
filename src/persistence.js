@@ -242,9 +242,14 @@ export function createDashboardClient(options) {
     /**
      * Delete a dashboard by id.
      * @param {string} id - Dashboard id.
+     * @param {object} [opts] - `{owner}` to delete another owner's dashboard
+     *   (an admin, or anyone for a disposable scratch dashboard).
      * @returns {Promise<object[]>} The remaining summaries.
      */
-    remove: function (id) { return request('DELETE', '/api/dashboards/' + encodeURIComponent(id)).then(function (r) { return r.dashboards; }); },
+    remove: function (id, opts) {
+      return request('DELETE', '/api/dashboards/' + encodeURIComponent(id) + queryString({ owner: opts && opts.owner }))
+        .then(function (r) { return r.dashboards; });
+    },
     /**
      * Set a dashboard's share visibility.
      * @param {string} id - Dashboard id.

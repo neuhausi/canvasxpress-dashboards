@@ -95,8 +95,15 @@ datasets only; data written into a spec travels with the spec. **Lineage**
 read which datasets and connectors.
 
 **Data functions** (`kind:"function"` sources — R / Python snippets) run in
-this server only when `CXD_FUNCTIONS=admin` (administrators) or `users` (any
-logged-in user); the default is `off`. Each run is a sandboxed subprocess with a
+this server only when `CXD_FUNCTIONS=admin` or `users`; the default is `off`.
+In `admin` mode (recommended) only administrators may **write** functions — run
+code of their own, use the Builder's *+ Function* and the code editor's Apply —
+while code saved in a dashboard owned by an administrator runs for **any**
+signed-in user: the server checks the exact language + code against the stored
+admin dashboards on every call, so everyone sees those charts (and their
+read-only `</> Code` recipe) but cannot run code of their own. In `users` mode
+any logged-in user whose role has `function.run` may write functions.
+`GET /api/functions/status` reports `canAuthor` for the caller. Each run is a sandboxed subprocess with a
 timeout, resource limits and — where the OS supports it — no network; see the
 main README's *Data functions* section for every `CXD_FUNCTIONS_*` knob, and
 `GET /api/functions/status` for what is in effect. It executes user-supplied
@@ -105,15 +112,19 @@ code: run `users` mode only inside a container / VM you trust.
 To turn them on for a deployed demo (e.g. so the shipped Cohort Explorer's R
 panel computes): install the interpreters' packages on the host (`pip install
 pandas` for `CXD_FUNCTIONS_PYTHON`, `install.packages("jsonlite")` for R), add
-`CXD_FUNCTIONS=users` to the server's `.env`, restart, and check
+`CXD_FUNCTIONS=admin` to the server's `.env`, restart, and check
 `GET /api/functions/status` — `languages` lists what can run and
 `networkIsolation` the sandbox actually in effect (`none` means run it in a
-container). `CXD_FUNCTIONS=admin` works too, but then only administrators see
-functions computed; every other viewer gets the panel's error message.
+container). The demo seeds its two function showcases (Cohort Explorer,
+Dose–Response Lab) under the `admin` account, locked and shared view-only with
+everyone, so every visitor sees them computed.
 
-`CXD_CANVASXPRESS_URL` points the served app at a (self-hosted) CanvasXpress
-build; `CXD_CANVASXPRESS_LICENSE` is injected as `window.cX` before the library
-loads to remove the watermark. `CXD_LLM_API_KEY` (for the future
+`CXD_CANVASXPRESS_URL` points every served page — the app, the example boards,
+`view.html` and `shared.html` — at a (self-hosted) CanvasXpress build: the base
+URL holding `canvasXpress.min.js` + `canvasXpress.css` (e.g.
+`http://localhost:8080/dist` to test a local engine build before it is
+published). `CXD_CANVASXPRESS_LICENSE` is injected as `window.cX` before the
+library loads to remove the watermark. Unset, pages load the public CDN. `CXD_LLM_API_KEY` (for the future
 natural-language builder) stays server-side — it is never sent to the browser;
 the page only learns whether an LLM is configured (`GET /api/llm/status`).
 

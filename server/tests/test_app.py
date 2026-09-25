@@ -412,3 +412,122 @@ def test_health_and_readiness(tmp_path):
     # A store that fails makes it not ready, and says which.
     app.state.governance.group_names = None
     assert "failed" in TestClient(app).get("/readyz").json()["checks"]["governance"]
+
+
+# ---- engine URL/license applied to every served page (EngineMiddleware) ----
+def test_static_pages_use_configured_engine(served_app):
+    client = _client(served_app)
+    for page in ("/view.html", "/shared.html"):
+        r = client.get(page)
+        assert r.status_code == 200
+        assert "https://cdn.example.com/cx/canvasXpress.min.js" in r.text
+        assert "www.canvasxpress.org/dist/canvasXpress.min.js" not in r.text
+        # license injected once, before the engine script
+        assert r.text.count("window.cX=") == 1
+        assert r.text.index("window.cX") < r.text.index("canvasXpress.min.js")
+        assert int(r.headers["content-length"]) == len(r.content)
+        assert "etag" not in r.headers
+
+
+def test_index_not_double_injected(served_app):
+    assert _client(served_app).get("/").text.count("window.cX=") == 1
+
+
+def test_static_pages_untouched_by_default(tmp_path):
+    app = create_dashboards_app(
+        store=DashboardStore(str(tmp_path / "d.db")), session_secret="s",
+        serve_static=True, dataset_store_uri="file://" + str(tmp_path / "ds"),
+    )
+    body = _client(app).get("/view.html").text
+    assert "https://www.canvasxpress.org/dist/canvasXpress.min.js" in body
+    assert "window.cX" not in body
+
+
+def test_rewrite_engine_html_escapes_license():
+    from cxd_server.engine import rewrite_engine_html
+    page = ('<link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />\n'
+            '  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>')
+    out = rewrite_engine_html(page, "http://localhost:8080/dist/", "a</script>b")
+    assert 'href="http://localhost:8080/dist/canvasXpress.css"' in out
+    assert 'src="http://localhost:8080/dist/canvasXpress.min.js"' in out
+    assert "a</script>b" not in out and 'window.cX="a<\\/script>b"' in out
+
+
+# ---- disposable scratch dashboards + sharedWith in the list ----
+def test_disposable_dashboard_anyone_can_edit_and_delete(tmp_path):
+    app = create_dashboards_app(
+        store=DashboardStore(str(tmp_path / "dash.db")), session_secret="s", serve_static=False,
+        dataset_store_uri="file://" + str(tmp_path / "ds"),
+        disposable_dashboards=[("owner1", "sandbox")],
+    )
+    owner = _client(app)
+    _signup(owner, "owner1")
+    assert owner.post("/api/dashboards", json=_spec("sandbox", "Sandbox")).status_code == 200
+    assert owner.post("/api/dashboards", json=_spec("private", "Private")).status_code == 200
+    other = _client(app)
+    _signup(other, "bob")
+    # Anyone may open and save it back to its owner ...
+    assert other.get("/api/dashboards/sandbox?owner=owner1").status_code == 200
+    r = other.post("/api/dashboards?owner=owner1", json=_spec("sandbox", "Bob was here"))
+    assert r.status_code == 200
+    assert owner.get("/api/dashboards/sandbox").json()["title"] == "Bob was here"
+    # ... and delete it; a normal dashboard of the same owner stays protected.
+    assert other.delete("/api/dashboards/private?owner=owner1").status_code == 403
+    assert other.delete("/api/dashboards/sandbox?owner=owner1").status_code == 200
+    assert owner.get("/api/dashboards/sandbox").status_code == 404
+
+
+def test_list_reports_disposable_and_own_grants(tmp_path):
+    app = create_dashboards_app(
+        store=DashboardStore(str(tmp_path / "dash.db")), session_secret="s", serve_static=False,
+        dataset_store_uri="file://" + str(tmp_path / "ds"),
+        disposable_dashboards=[("owner1", "sandbox")],
+    )
+    owner = _client(app)
+    _signup(owner, "owner1")
+    owner.post("/api/dashboards", json=_spec("sandbox", "Sandbox"))
+    owner.post("/api/dashboards", json=_spec("board", "Board"))
+    r = owner.post("/api/dashboards/board/grants", json={"principal": "*", "level": "view"})
+    assert r.status_code == 200, r.text
+    rows = {d["id"]: d for d in owner.get("/api/dashboards").json()["dashboards"]}
+    assert rows["board"]["sharedWith"] == [{"principal": "*", "level": "view"}]
+    assert "sharedWith" not in rows["sandbox"] and rows["sandbox"]["disposable"] is True
+    assert "disposable" not in rows["board"]
+
+
+def test_new_dashboard_cannot_take_a_visible_foreign_id(tmp_path):
+    app = create_dashboards_app(
+        store=DashboardStore(str(tmp_path / "dash.db")), session_secret="s", serve_static=False,
+        dataset_store_uri="file://" + str(tmp_path / "ds"),
+    )
+    owner = _client(app)
+    _signup(owner, "owner1")
+    owner.post("/api/dashboards", json=_spec("board", "Board"))
+    owner.post("/api/dashboards/board/grants", json={"principal": "*", "level": "view"})
+    other = _client(app)
+    _signup(other, "bob")
+    # Same id as a board shared with bob: refused, nothing forked.
+    r = other.post("/api/dashboards", json=_spec("board", "Board"))
+    assert r.status_code == 409 and "owner: owner1" in r.json()["detail"]
+    assert [d for d in other.get("/api/dashboards").json()["dashboards"] if d["owner"] == "bob"] == []
+    # Another name is fine, and so is re-saving a dashboard bob already owns.
+    assert other.post("/api/dashboards", json=_spec("board-copy", "Board (copy)")).status_code == 200
+    assert other.post("/api/dashboards", json=_spec("board-copy", "Board (copy) v2")).status_code == 200
+    # The owner keeps saving their own board normally.
+    assert owner.post("/api/dashboards", json=_spec("board", "Board v2")).status_code == 200
+
+
+def test_directory_omits_admins_who_always_have_full_access(admin_app):
+    root = _client(admin_app)
+    assert root.post("/auth/login", json={"username": "root", "password": "secret1"}).status_code == 200
+    alice = _client(admin_app)
+    _signup(alice, "alice")
+    alice.post("/api/dashboards", json=_spec("private-board", "Private"))
+    users = alice.get("/api/directory").json()["users"]
+    assert "root" not in users and "alice" in users
+    # The admin can view, change and delete a user's private dashboard anyway.
+    assert root.get("/api/dashboards/private-board?owner=alice").status_code == 200
+    assert root.post("/api/dashboards?owner=alice", json=_spec("private-board", "Edited")).status_code == 200
+    assert alice.get("/api/dashboards/private-board").json()["title"] == "Edited"
+    assert root.delete("/api/dashboards/private-board?owner=alice").status_code == 200
+    assert alice.get("/api/dashboards/private-board").status_code == 404

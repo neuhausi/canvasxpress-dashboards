@@ -314,6 +314,29 @@ test('a runtime error surfaces as a DataError with its detail', async function (
   await assert.rejects(store.resolve('g', { kind: 'function', language: 'python', code: 'x', inputs: ['ghost'] }, { sources: sources }), /input "ghost" not found/);
 });
 
+test('a busy runtime (429) is retried, then gives up with its detail', async function () {
+  var sources = { clin: { kind: 'inline', value: LEFT }, f: { kind: 'function', language: 'r', code: 'x', inputs: ['clin'] } };
+  function reply(status, body) {
+    return Promise.resolve({ ok: status < 300, status: status, text: function () { return Promise.resolve(JSON.stringify(body)); } });
+  }
+  var calls = 0;
+  var busyTwice = function () {
+    calls++;
+    return calls <= 2 ? reply(429, { detail: 'Data-function runtime is busy; try again shortly' })
+      : reply(200, { data: { y: { vars: ['v'], smps: ['s'], data: [[1]] } } });
+  };
+  var store = createDataStore({ fetch: busyTwice, cache: new Map(), busyRetryMs: 0 });
+  var data = await store.resolve('f', sources.f, { sources: sources });
+  assert.equal(calls, 3, 'two retries, then success');
+  assert.deepEqual(data.y.vars, ['v']);
+
+  var always = 0;
+  var alwaysBusy = function () { always++; return reply(429, { detail: 'Data-function runtime is busy; try again shortly' }); };
+  var stuck = createDataStore({ fetch: alwaysBusy, cache: new Map(), busyRetryMs: 0 });
+  await assert.rejects(stuck.resolve('f', sources.f, { sources: sources }), /runtime is busy/);
+  assert.equal(always, 7, 'first try + 6 retries');
+});
+
 test('a function source calls fetch unbound (native fetch rejects a foreign `this`)', async function () {
   var sawThis = 'unset';
   var fetchStub = function (url, init) {

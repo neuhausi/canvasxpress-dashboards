@@ -10,6 +10,7 @@ Nothing here is production config — it uses a fixed dev SESSION_SECRET and a
 local ``examples/.cxd-demo/`` data dir (gitignored). Stop with Ctrl-C.
 """
 
+import copy
 import datetime
 import os
 import sys
@@ -52,10 +53,15 @@ os.environ.setdefault("APP_DB_PATH", DB_PATH)
 os.environ.setdefault("CXD_DATASET_STORE", DATASET_URI)
 # The app account owns the shared, locked example artifacts.
 os.environ.setdefault("CXD_EXAMPLES_OWNER", "app")
+# The shared scratch dashboard (owner/id) anyone signed in may edit and delete;
+# _seed recreates it whenever it is missing (every restart / deploy).
+SANDBOX_OWNER, SANDBOX_ID = "admin", "sandbox"
+os.environ.setdefault("CXD_DISPOSABLE_DASHBOARDS", SANDBOX_OWNER + "/" + SANDBOX_ID)
 # Bridge log: every request/response to the canvasxpress-mcp server, as JSONL.
 os.environ.setdefault("CXD_MCP_LOG", os.path.join(DATA_DIR, "mcp-bridge.log"))
 
 from cxd_server.app import create_dashboards_app          # noqa: E402
+from cxd_server.governance import EVERYONE, open_governance  # noqa: E402
 from cxd_server.datasets import DatasetStore, reshape_to_cx  # noqa: E402
 from cxd_server.objectstore import open_store             # noqa: E402
 from cxd_server.store import DashboardStore               # noqa: E402
@@ -303,6 +309,34 @@ def _add_row_ids(csv_text):
     return "\n".join(out) + "\n"
 
 
+def _seed_admin_board(dashboards, datasets, gov, now, spec, prefix, label):
+    """Seed an example owned by the admin and shared view-only with everyone:
+    its inline tables move into the admin's dataset store, the board is saved
+    under the admin, locked, and granted ``view`` to ``*``. An earlier copy
+    under the examples owner (``app``) is removed. Idempotent."""
+    if not spec:
+        return
+    board_id = spec["id"]
+    if dashboards.get_summary(EXAMPLES_OWNER, board_id) is not None:
+        dashboards.delete_dashboard(EXAMPLES_OWNER, board_id)      # was app-owned
+        print("  [seed] moved %s from %s to %s" % (board_id, EXAMPLES_OWNER, ADMIN_USER))
+    if dashboards.get_summary(ADMIN_USER, board_id) is None:
+        spec = copy.deepcopy(spec)
+        have = {d["id"] for d in datasets.list(ADMIN_USER)}
+        for ref, source in spec.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            dataset_id = prefix + ref
+            if dataset_id not in have:
+                datasets.create(ADMIN_USER, source["value"], now,
+                                title=label + ref, dataset_id=dataset_id, locked=True)
+            spec["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+        dashboards.save_dashboard(ADMIN_USER, spec, now)
+        dashboards.set_locked(ADMIN_USER, board_id, True)
+        print("  [seed] shipped dashboard: %s (owner %s)" % (board_id, ADMIN_USER))
+    gov.set_grant("dashboard", ADMIN_USER, board_id, EVERYONE, "view")
+
+
 def _seed():
     """Create the demo user + demo datasets + shipped dashboards (idempotent)."""
     dashboards = DashboardStore(DB_PATH)
@@ -419,25 +453,25 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.set_locked(EXAMPLES_OWNER, genomics["id"], True)
         print("  [seed] shipped dashboard: %s" % genomics["id"])
 
-    # Cohort Explorer (the blending showcase): clinical, expression and labs move into
-    # the dataset store; the join, the R data function, the relationship and the
-    # Filters panel stay as authored and bind to those refs. Its R panel runs only
-    # when the server enables data functions (CXD_FUNCTIONS=users; with =admin
-    # only administrators see it computed).
-    cohort = load_spec("cohort-explorer.spec.json")
-    if cohort and cohort["id"] not in saved:
-        cohort = copy.deepcopy(cohort)
-        for ref, source in cohort.get("data", {}).items():
-            if source.get("kind") != "inline":
-                continue
-            dataset_id = "cohort-" + ref
-            if dataset_id not in have:
-                datasets.create(EXAMPLES_OWNER, source["value"], now,
-                                title="Cohort: " + ref, dataset_id=dataset_id, locked=True)
-            cohort["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
-        dashboards.save_dashboard(EXAMPLES_OWNER, cohort, now)
-        dashboards.set_locked(EXAMPLES_OWNER, cohort["id"], True)
-        print("  [seed] shipped dashboard: %s" % cohort["id"])
+    # The two data-function showcases — Cohort Explorer (join + relationship +
+    # Filters panel + an R function) and Dose-Response Lab (an R nls() fit and two
+    # Python pandas summaries) — are owned by the ADMIN and shared view-only with
+    # everyone. With CXD_FUNCTIONS=admin only administrators may write functions,
+    # but code saved in an administrator's dashboard runs for any signed-in user,
+    # so everyone sees these charts (and their "</> Code" recipe, read-only).
+    gov = open_governance(dashboards, DB_PATH)
+    for spec_file, prefix, label in (("cohort-explorer.spec.json", "cohort-", "Cohort: "),
+                                     ("dose-response-lab.spec.json", "doselab-", "Dose-Response Lab: ")):
+        _seed_admin_board(dashboards, datasets, gov, now, load_spec(spec_file), prefix, label)
+
+    # The Sandbox: a disposable scratch dashboard anyone may edit or delete
+    # (CXD_DISPOSABLE_DASHBOARDS). Recreated from examples/sandbox.spec.json
+    # whenever it is missing; an existing (edited) copy is left as it is.
+    sandbox = load_spec("sandbox.spec.json")
+    if sandbox and dashboards.get_summary(SANDBOX_OWNER, SANDBOX_ID) is None:
+        dashboards.save_dashboard(SANDBOX_OWNER, dict(sandbox, id=SANDBOX_ID), now)
+        print("  [seed] recreated disposable dashboard: %s/%s" % (SANDBOX_OWNER, SANDBOX_ID))
+    gov.set_grant("dashboard", SANDBOX_OWNER, SANDBOX_ID, EVERYONE, "edit")
 
     # Biomarker Cohort: 60-sample immuno-oncology board (two boxplots with
     # individual points, a scatter, a heatmap; Sex/Timepoint filter controls).

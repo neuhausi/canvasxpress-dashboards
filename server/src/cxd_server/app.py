@@ -36,6 +36,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from . import mcp_bridge
 from .datasets import DatasetStore, reshape_to_cx, filter_cx_data
+from .engine import DEFAULT_CANVASXPRESS_URL, EngineMiddleware, engine_is_default
 from .audit import (AuditLog, NullAuditLog, SqlAuditLog, SqliteAuditLog, action_for, iter_actions,
                     open_audit_log, target_from)
 from .functions import FunctionError, FunctionsConfig, functions_status, run_function
@@ -351,6 +352,7 @@ def create_dashboards_app(
     https_only: Optional[bool] = None,
     admins: Optional[set] = None,
     examples_owner: Optional[str] = None,
+    disposable_dashboards: Optional[list] = None,
     serve_static: bool = True,
     dataset_store: Optional[DatasetStore] = None,
     dataset_store_uri: Optional[str] = None,
@@ -381,6 +383,10 @@ def create_dashboards_app(
         ``CXD_HTTPS_ONLY`` (default off).
     :param admins: Usernames granted the user-management API; falls back to the
         comma-separated ``CXD_ADMINS`` env var (default none).
+    :param disposable_dashboards: ``(owner, id)`` pairs of scratch dashboards any
+        signed-in user may view, save and **delete** (e.g. a demo sandbox the
+        deployment recreates when missing); falls back to
+        ``CXD_DISPOSABLE_DASHBOARDS`` (comma-separated ``owner/id``).
     :param examples_owner: Username whose datasets/dashboards are the shared,
         read-only "examples" merged into every user's lists; falls back to
         ``CXD_EXAMPLES_OWNER`` (default ``"app"``). Only an admin may edit/delete
@@ -399,7 +405,8 @@ def create_dashboards_app(
         ``gdrive://`` stores, passed through to the registry.
     :param canvasxpress_url: Base URL of the CanvasXpress library (loads
         ``<base>/canvasXpress.css`` + ``<base>/canvasXpress.min.js`` into the
-        served app); falls back to ``CXD_CANVASXPRESS_URL`` (default the CDN).
+        served app and, via :class:`EngineMiddleware`, every other served HTML
+        page); falls back to ``CXD_CANVASXPRESS_URL`` (default the CDN).
     :param canvasxpress_license: CanvasXpress license key injected as
         ``window.cX`` before the library loads (hides the watermark); falls back
         to ``CXD_CANVASXPRESS_LICENSE``.
@@ -461,6 +468,15 @@ def create_dashboards_app(
     # edit or delete them. Config-only; falls back to CXD_EXAMPLES_OWNER ("app").
     if examples_owner is None:
         examples_owner = (os.getenv("CXD_EXAMPLES_OWNER", "app") or "").strip() or None
+    if disposable_dashboards is None:
+        disposable_dashboards = [tuple(pair.strip().split("/", 1))
+                                 for pair in os.getenv("CXD_DISPOSABLE_DASHBOARDS", "").split(",")
+                                 if pair.strip().count("/") == 1]
+    disposable = {(str(o), str(i)) for o, i in disposable_dashboards}
+
+    def is_disposable(owner: Optional[str], dashboard_id: Optional[str]) -> bool:
+        """A scratch dashboard anyone signed in may view, save and delete."""
+        return (owner, dashboard_id) in disposable
     # Dashboards: stdlib SQLite by default (zero-dep), or Postgres/SQLite via
     # SQLAlchemy when CXD_DASHBOARD_STORE names a postgres:// URL.
     store = store or open_dashboard_store(os.getenv("CXD_DASHBOARD_STORE"), db_path=db_path)
@@ -472,7 +488,7 @@ def create_dashboards_app(
     publish_base_url = publish_base_url or os.getenv("CXD_PUBLISH_BASE_URL")
     # Served-app runtime config (injected into index.html at serve time).
     canvasxpress_url = (canvasxpress_url or os.getenv("CXD_CANVASXPRESS_URL")
-                        or "https://www.canvasxpress.org/dist")
+                        or DEFAULT_CANVASXPRESS_URL)
     canvasxpress_license = canvasxpress_license or os.getenv("CXD_CANVASXPRESS_LICENSE")
     # LLM config stays server-side (secret). The client only learns it's enabled.
     llm_api_key = llm_api_key or os.getenv("CXD_LLM_API_KEY")
@@ -569,6 +585,11 @@ def create_dashboards_app(
         SessionMiddleware, secret_key=session_secret, same_site="lax", https_only=https_only,
         session_cookie="cxd_session",  # distinct name so co-hosted apps (e.g. connectors) don't clobber it
     )
+    # Every other served page (examples, view.html, shared.html, the demo builder)
+    # hardcodes the CDN engine: rewrite it to the configured engine + license.
+    if not engine_is_default(canvasxpress_url, canvasxpress_license):
+        app.add_middleware(EngineMiddleware, canvasxpress_url=canvasxpress_url,
+                           canvasxpress_license=canvasxpress_license)
     # LLM config lives on app.state for the (future) NL builder; the key never
     # leaves the server.
     app.state.llm = {"api_key": llm_api_key, "model": llm_model}
@@ -912,7 +933,7 @@ def create_dashboards_app(
         ``examples_owner``); so may a user with an ``edit`` grant on that
         dashboard, unless it is locked. 403 otherwise."""
         if owner and owner != user:
-            if user_is_admin(user):
+            if user_is_admin(user) or is_disposable(owner, dashboard_id):
                 return owner
             if dashboard_id and governance.access_level(
                     user, "dashboard", owner, dashboard_id) == "edit":
@@ -922,11 +943,29 @@ def create_dashboards_app(
             raise HTTPException(status_code=403, detail="Admin access required")
         return user
 
+    def foreign_dashboard_owner(user: str, dashboard_id: str) -> Optional[str]:
+        """The owner of a dashboard with this id that ``user`` sees but does
+        not own (a shipped example or one shared with them), else None."""
+        if examples_owner and examples_owner != user \
+                and store.get_summary(examples_owner, dashboard_id) is not None:
+            return examples_owner
+        for g in governance.shared_with(user, "dashboard"):
+            if g["id"] == dashboard_id and g["owner"] != user:
+                return g["owner"]
+        return None
+
     # ---- dashboard CRUD (owner-isolated; examples read-merged) ----
     @app.get("/api/dashboards")
     def list_dashboards(request: Request):
         user = require_user(request)
-        rows = [dict(d, owner=user) for d in store.list_dashboards(user)]
+        rows = []
+        for d in store.list_dashboards(user):
+            row = dict(d, owner=user)
+            # Who the owner shared it with (for the list's share icon / tooltip).
+            grants = governance.grants_on("dashboard", user, d["id"])
+            if grants:
+                row["sharedWith"] = grants
+            rows.append(row)
         # Merge the shared example dashboards (read-only unless the viewer is admin).
         if examples_owner and examples_owner != user:
             own_ids = {d["id"] for d in rows}
@@ -944,6 +983,9 @@ def create_dashboards_app(
             if summary is not None:
                 rows.append(dict(summary, owner=g["owner"], shared=True, access=g["level"],
                                  readOnly=g["level"] != "edit"))
+        for row in rows:
+            if is_disposable(row["owner"], row["id"]):
+                row["disposable"] = True
         return {"dashboards": rows}
 
     @app.post("/api/dashboards")
@@ -953,6 +995,16 @@ def create_dashboards_app(
         if not isinstance(spec, dict) or not spec.get("id"):
             raise HTTPException(status_code=400, detail="Body must be a dashboard spec with an id")
         target = resolve_write_owner(user, owner, spec["id"])
+        # A NEW dashboard of yours may not take the id of one you can see but do
+        # not own (a shipped example, one shared with you, a locked board): that
+        # would silently fork it under the same name. Save it under another name
+        # (or, with edit access, save back to its owner via ?owner=).
+        if target == user and store.get_summary(user, spec["id"]) is None:
+            taken_by = foreign_dashboard_owner(user, spec["id"])
+            if taken_by:
+                raise HTTPException(status_code=409, detail=(
+                    'A dashboard named "%s" already exists (owner: %s). Save your '
+                    "changes under another name." % (spec["id"], taken_by)))
         if target == user and "dashboard.create" not in permissions_of(user):
             raise HTTPException(status_code=403, detail="Your role does not allow this: "
                                 + PERMISSIONS["dashboard.create"].lower())
@@ -977,7 +1029,7 @@ def create_dashboards_app(
         if owner and owner != user:
             # Another owner's dashboard: admins, the examples, or a grant.
             spec_owner = owner
-            if (user_is_admin(user) or owner == examples_owner
+            if (user_is_admin(user) or owner == examples_owner or is_disposable(owner, dashboard_id)
                     or governance.access_level(user, "dashboard", owner, dashboard_id)):
                 spec = store.get_dashboard(owner, dashboard_id)
         else:
@@ -1019,12 +1071,14 @@ def create_dashboards_app(
         # Owner-only delete; an admin may target another user's dashboard via ?owner=.
         target = user
         if owner and owner != user:
-            if not user_is_admin(user):
+            # A disposable scratch dashboard may be deleted by anyone signed in.
+            if not (user_is_admin(user) or is_disposable(owner, dashboard_id)):
                 raise HTTPException(status_code=403, detail="Admin access required")
             target = owner
         # Locked dashboards are protected; only an admin may delete them.
         note(request, owner=target)
-        if store.is_locked(target, dashboard_id) and not user_is_admin(user):
+        if (store.is_locked(target, dashboard_id) and not user_is_admin(user)
+                and not is_disposable(target, dashboard_id)):
             raise HTTPException(status_code=403, detail="Dashboard is locked")
         store.delete_dashboard(target, dashboard_id)
         governance.forget_resource("dashboard", target, dashboard_id)
@@ -1282,9 +1336,11 @@ def create_dashboards_app(
 
     @app.get("/api/directory")
     def directory(request: Request):
-        """Users and groups a dashboard/dataset can be shared with."""
+        """Users and groups a dashboard/dataset can be shared with. Administrators
+        are left out: they always have full access (view, change, delete)."""
         require_user(request)
-        return {"users": store.list_users(), "groups": governance.group_names()}
+        users = [u for u in store.list_users() if not user_is_admin(u)]
+        return {"users": users, "groups": governance.group_names()}
 
     @app.get("/api/dashboards/{dashboard_id}/grants")
     def dashboard_grants(request: Request, dashboard_id: str, owner: Optional[str] = None):
@@ -1768,29 +1824,51 @@ def create_dashboards_app(
         return {"user": username, "email": email}
 
     # ---- data functions (kind:"function" sources) ----
-    def require_function_user(request: Request) -> str:
-        """The caller, if this server lets them run data functions."""
+    def can_author_functions(user: Optional[str]) -> bool:
+        """May ``user`` run code of their own (write or edit data functions)?
+        ``users`` mode: anyone whose role has ``function.run``; ``admin`` mode:
+        administrators only."""
+        if functions.mode == "off" or not user:
+            return False
+        if functions.mode == "admin" and not user_is_admin(user):
+            return False
+        return "function.run" in permissions_of(user)
+
+    def approved_function(language, code) -> bool:
+        """Is this exact function (language + code) saved in a dashboard owned by
+        an administrator? Such code runs for any signed-in user, so everyone can
+        view those charts while only authors may run code of their own. Checked
+        on every call against the stored specs (the browser's copy is not trusted)."""
+        if not isinstance(language, str) or not isinstance(code, str):
+            return False
+        owners = set(store.list_users()) | set(admins)
+        for owner in owners:
+            if not user_is_admin(owner):
+                continue
+            for summary in store.list_dashboards(owner):
+                spec = store.get_dashboard(owner, summary["id"]) or {}
+                for source in (spec.get("data") or {}).values():
+                    if (isinstance(source, dict) and source.get("kind") == "function"
+                            and source.get("language") == language
+                            and source.get("code") == code):
+                        return True
+        return False
+
+    @app.get("/api/functions/status")
+    def function_status(request: Request):
+        user = require_user(request)
+        # canAuthor: may write / edit functions (the builder enables + Function
+        # and the code editor's Apply only then); everyone else may still run
+        # the functions of administrators' dashboards.
+        return dict(functions_status(functions), canAuthor=can_author_functions(user))
+
+    @app.post("/api/functions/run")
+    async def function_run(request: Request):
         user = require_user(request)
         if functions.mode == "off":
             raise HTTPException(
                 status_code=403,
                 detail="Data functions are disabled on this server (set CXD_FUNCTIONS)")
-        if functions.mode == "admin" and not user_is_admin(user):
-            raise HTTPException(status_code=403,
-                                detail="Data functions are limited to administrators")
-        if "function.run" not in permissions_of(user):
-            raise HTTPException(status_code=403, detail="Your role does not allow this: "
-                                + PERMISSIONS["function.run"].lower())
-        return user
-
-    @app.get("/api/functions/status")
-    def function_status(request: Request):
-        require_user(request)
-        return functions_status(functions)
-
-    @app.post("/api/functions/run")
-    async def function_run(request: Request):
-        user = require_function_user(request)
         try:
             payload = await request.json()
         except ValueError:
@@ -1798,6 +1876,13 @@ def create_dashboards_app(
         # The code itself is not stored — a hash identifies which snippet ran.
         body = payload if isinstance(payload, dict) else {}
         code = body.get("code")
+        if not can_author_functions(user) and not approved_function(body.get("language"), code):
+            if functions.mode == "admin" and not user_is_admin(user):
+                detail = ("Only administrators can write data functions; this code is not "
+                          "part of an administrator's dashboard")
+            else:
+                detail = "Your role does not allow this: " + PERMISSIONS["function.run"].lower()
+            raise HTTPException(status_code=403, detail=detail)
         inputs = body.get("inputs")
         note(request, language=body.get("language"),
              code_sha256=(hashlib.sha256(code.encode("utf-8")).hexdigest()[:16]

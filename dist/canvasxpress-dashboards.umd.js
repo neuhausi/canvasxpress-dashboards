@@ -24,6 +24,45 @@ var dashboardCss = [
   '.cxd-panel-title { flex: 0 0 auto; padding: 6px 10px; font: 600 16px/1.3 var(--cxd-font, system-ui, sans-serif);',
   '  color: var(--cxd-title, #2a2f36); border-bottom: 1px solid var(--cxd-border, #e2e5ea);',
   '  background: var(--cxd-title-bg, #f7f8fa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+  // "Code" button on a chart fed by a data function, and the recipe dialog it opens.
+  '.cxd-panel-title-actions { display: flex; align-items: center; gap: 8px; }',
+  '.cxd-panel-title-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }',
+  '.cxd-code-btn { flex: 0 0 auto; padding: 1px 8px; border: 1px solid var(--cxd-border, #d0d4da); border-radius: 6px;',
+  '  background: var(--cxd-panel-bg, #fff); color: var(--cxd-muted, #6b7280); font: 500 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; cursor: pointer; }',
+  '.cxd-code-btn:hover { color: var(--cxd-title, #2a2f36); border-color: var(--cxd-muted, #8a9099); }',
+  '.cxd-code-backdrop { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center;',
+  '  padding: 16px; background: rgba(0,0,0,.35); }',
+  '.cxd-code-dialog { display: flex; flex-direction: column; width: min(760px, 100%); max-height: min(85vh, 900px);',
+  '  border: 1px solid var(--cxd-border, #e2e5ea); border-radius: 10px; background: var(--cxd-panel-bg, #fff);',
+  '  color: var(--cxd-title, #2a2f36); box-shadow: 0 12px 40px rgba(0,0,0,.28); font: 14px/1.45 var(--cxd-font, system-ui, sans-serif); }',
+  '.cxd-code-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--cxd-border, #e2e5ea); }',
+  '.cxd-code-heading { flex: 1 1 auto; min-width: 0; font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
+  '.cxd-code-close { border: none; background: none; color: var(--cxd-muted, #6b7280); font-size: 22px; line-height: 1; cursor: pointer; }',
+  '.cxd-code-body { overflow: auto; padding: 6px 14px 14px; }',
+  '.cxd-code-step { padding-top: 10px; }',
+  '.cxd-code-step-title { font-weight: 600; }',
+  '.cxd-code-step-detail { color: var(--cxd-muted, #6b7280); font-size: 13px; margin-top: 2px; }',
+  '.cxd-code-block { position: relative; margin-top: 6px; }',
+  '.cxd-code-block pre { margin: 0; padding: 10px 12px; overflow: auto; max-height: 340px; border-radius: 6px;',
+  '  border: 1px solid var(--cxd-border, #e2e5ea); background: var(--cxd-title-bg, #f7f8fa);',
+  '  font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; tab-size: 2; }',
+  '.cxd-code-copy { position: absolute; top: 6px; right: 6px; padding: 1px 8px; border: 1px solid var(--cxd-border, #d0d4da);',
+  '  border-radius: 5px; background: var(--cxd-panel-bg, #fff); color: var(--cxd-muted, #6b7280); font-size: 12px; cursor: pointer; }',
+  '.cxd-code-edit { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; resize: vertical; border-radius: 6px;',
+  '  border: 1px solid var(--cxd-border, #d0d4da); background: var(--cxd-title-bg, #f7f8fa); color: inherit;',
+  '  font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; tab-size: 2; }',
+  '.cxd-code-edit:focus { outline: 2px solid var(--cx-toggle-switch-background-color, #087ad1); outline-offset: -1px; }',
+  '.cxd-code-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 6px; }',
+  '.cxd-code-status { font-size: 12.5px; color: var(--cxd-muted, #6b7280); }',
+  '.cxd-code-status.cxd-code-error { color: var(--cxd-error, #c0392b); }',
+  '.cxd-code-apply { padding: 4px 14px; border: none; border-radius: 6px; background: var(--cx-toggle-switch-background-color, #087ad1);',
+  '  color: #fff; font: 600 13px/1.4 var(--cxd-font, system-ui, sans-serif); cursor: pointer; }',
+  '.cxd-code-apply:disabled { opacity: .45; cursor: not-allowed; }',
+  '.cxd-code-edit[readonly] { cursor: text; }',
+  '.cxd-code-edit[readonly]:focus { outline: 1px dashed var(--cxd-border, #d0d4da); }',
+  /* In the builder the title-bar Code button sits under the floating panel
+     toolbar; the builder offers it (editable) from that toolbar instead. */
+  '.cxb-cell .cxd-code-btn { display: none; }',
   // Centre the graph canvas in the body so any leftover space (the few px a
   // graph leaves, or a reserved canvasInset margin) is even on ALL sides rather
   // than pooling at the right and bottom. Text/control panels set their own
@@ -49,11 +88,18 @@ var dashboardCss = [
   // collision resolution lets graphs compact through their rows, and without
   // the raise a control ends up hidden behind whichever panel slid over it.
   '.cxd-annctl-cell { border: none; background: transparent; overflow: visible; z-index: 3; }',
+  /* While a chart is maximized / in its customizer / data filters, CanvasXpress
+     marks <body> .has-fullscreen and fixes that chart's DOM over the page at
+     z-index 1 (it hides other CanvasXpress charts itself). Cells that carry a
+     z-index (text, image, controls, a selected builder cell) would otherwise
+     paint over it — or, for the chart's own cell, trap it in a stacking context
+     below its neighbours — so drop every cell's z-index for the duration. */
+  'body.has-fullscreen .cxd-panel { z-index: auto !important; }',
   // Filters panel: a titled panel whose body scrolls a stack of field sections.
   '.cxd-filters-cell .cxd-panel-body { align-items: stretch; justify-content: flex-start; overflow: auto; }',
   '.cxd-filters { width: 100%; padding: 8px 10px; font: 13px/1.35 var(--cxd-font, system-ui, sans-serif); color: var(--cxd-title, #2a2f36); }',
   '.cxd-filters-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }',
-  '.cxd-filters-bar select, .cxd-filters-bar input, .cxd-filters-bar button, .cxd-filters-range input, .cxd-filters-text {',
+  '.cxd-filters-bar select, .cxd-filters-bar input, .cxd-filters-bar button, .cxd-filters-range-plain input, .cxd-filters-text {',
   '  padding: 3px 6px; border: 1px solid var(--cxd-ctrl-border,var(--cxd-border,#d0d4da)); border-radius: 6px;',
   '  font: inherit; background: var(--cxd-ctrl-bg,#fff); color: inherit; }',
   '.cxd-filters-scheme-name { width: 110px; }',
@@ -62,8 +108,38 @@ var dashboardCss = [
   '.cxd-filters-label { font-weight: 600; margin-bottom: 4px; }',
   '.cxd-filters-values { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow: auto; }',
   '.cxd-filters-check { display: flex; align-items: center; gap: 6px; cursor: pointer; }',
-  '.cxd-filters-range { display: flex; align-items: center; gap: 6px; }',
-  '.cxd-filters-range input { width: 0; flex: 1 1 0; min-width: 60px; }',
+  '.cxd-filters-range-plain { display: flex; align-items: center; gap: 6px; }',
+  '.cxd-filters-range-plain input { width: 0; flex: 1 1 0; min-width: 60px; }',
+  /* Range slider, styled like the CanvasXpress Data Filter range (15-range-slider.css):
+     values on top, a thick accent bar with round thumbs, a tick ruler below. The
+     accent follows the engine theme (--cx-toggle-switch-background-color, set on
+     :root by canvasXpress.css). Two invisible native range inputs sit over the
+     track and take the drags; only their thumbs catch the pointer. Selectors are
+     qualified with input[type=range] to outrank canvasXpress.css's global
+     `input[type=range]` rules. */
+  '.cxd-filters-range { padding: 0 10px 2px; --cxd-accent: var(--cx-toggle-switch-background-color, #087ad1); }',
+  '.cxd-range-values { display: flex; justify-content: space-between; margin: 0 -10px 6px; }',
+  '.cxd-range-values input { width: 45%; padding: 2px 0; border: none; border-radius: 4px; background: transparent;',
+  '  font: 15px/1.2 var(--cxd-font, system-ui, sans-serif); color: inherit; -moz-appearance: textfield; }',
+  '.cxd-range-values input:focus { outline: 1px solid var(--cxd-accent); background: var(--cxd-ctrl-bg,#fff); }',
+  '.cxd-range-values input.cxd-filters-max { text-align: right; }',
+  '.cxd-range-values input::-webkit-inner-spin-button, .cxd-range-values input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }',
+  '.cxd-range-slider { position: relative; height: 8px; margin: 5px 0; isolation: isolate; }',
+  '.cxd-range-track { position: absolute; inset: 0; border-radius: 4px; background: var(--cxd-border, #eeeeee); }',
+  '.cxd-range-fill { position: absolute; top: 0; bottom: 0; left: 0; right: 0; border-radius: 4px; background: var(--cxd-accent); }',
+  '.cxd-range-thumb { position: absolute; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%;',
+  '  background: var(--cxd-accent); box-shadow: 0 0 0 0 rgba(8,122,209,.15); transition: box-shadow .15s ease-in-out; pointer-events: none; }',
+  '.cxd-range-slider:hover .cxd-range-thumb { box-shadow: 0 0 0 6px rgba(8,122,209,.15); }',
+  'input[type=range].cxd-range-input { position: absolute; z-index: 3; left: -9px; top: -5px; width: calc(100% + 18px); height: 18px;',
+  '  margin: 0; padding: 0; opacity: 0; pointer-events: none; -webkit-appearance: none; appearance: none; background: none; }',
+  'input[type=range].cxd-range-input::-webkit-slider-thumb { pointer-events: all; width: 18px; height: 18px; border-radius: 50%;',
+  '  cursor: grab; -webkit-appearance: none; appearance: none; }',
+  'input[type=range].cxd-range-input::-moz-range-thumb { pointer-events: all; width: 18px; height: 18px; border: 0; border-radius: 50%; cursor: grab; }',
+  '.cxd-range-ticks { position: relative; height: 26px; margin-top: 8px; }',
+  '.cxd-range-tick { position: absolute; top: 0; width: 1px; height: 5px; background: var(--cxd-accent); }',
+  '.cxd-range-tick-major { height: 10px; }',
+  '.cxd-range-tick-label { position: absolute; top: 11px; left: 0; transform: translateX(-50%); white-space: nowrap;',
+  '  font-size: 12px; line-height: 1.2; color: inherit; }',
   '.cxd-filters-text { width: 100%; }',
   '.cxd-filters-hint { color: var(--cxd-muted,#8a9099); }',
   '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
@@ -151,6 +227,9 @@ var dashboardCss = [
   // Cells clip exactly like the viewer (the hover chrome sits inside the cell).
   '.cxb-cell { position: relative; }',
   '.cxb-cell.cxb-selected { outline: 2px solid #2f6feb; outline-offset: -1px; z-index: 1; }',
+  /* The floating panel toolbar and resize handles (z-index 10006+) would show
+     through a maximized chart / its customizer: hide them meanwhile. */
+  'body.has-fullscreen .cxb-chrome, body.has-fullscreen .cxb-resize { display: none !important; }',
   // A held (dragged) cell floats above everything, semi-transparent: crossing
   // another panel reads as "in motion", and the board underneath stays visible.
   '.cxb-cell.cxb-dragging { opacity: .65; z-index: 10; box-shadow: 0 8px 24px rgba(0,0,0,.25); }',
@@ -175,6 +254,7 @@ var dashboardCss = [
   '.cxb-tool { width: 26px; height: 26px; line-height: 24px; text-align: center; border-radius: 5px;',
   '  cursor: pointer; font-size: 19px; color: var(--cxd-muted,#6b7280); }',
   '.cxb-tool:hover { background: rgba(0,0,0,.08); color: inherit; }',
+  '.cxb-tool.cxb-tool-code { width: auto; padding: 0 5px; font: 600 12px/26px ui-monospace, SFMono-Regular, Menlo, monospace; }',
   '.cxb-resize { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize;',
   '  background: linear-gradient(135deg, transparent 50%, #2f6feb 50%); border-bottom-right-radius: 8px; z-index: 10006;',
   '  opacity: 0; transition: opacity .12s ease; }',
@@ -230,7 +310,28 @@ var dashboardCss = [
   '  padding: 7px 9px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px; font: inherit;',
   '  background: var(--cxd-panel-bg,#fff); color: inherit; }',
   '.cxb-modal-json { font-family: ui-monospace, Menlo, monospace; font-size:14px; min-height: 130px; resize: vertical; }',
+  /* Dialog dropdowns: our own chevron, inset from the right border (the native
+     arrow sits almost on it). The dialog card is always light. */
+  '.cxb-modal select { -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 32px;',
+  '  background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22%3E%3Cpath d=%22M1 1.5l5 5 5-5%22 fill=%22none%22 stroke=%22%2357606a%22 stroke-width=%221.6%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E");',
+  '  background-repeat: no-repeat; background-position: right 11px center; background-size: 12px 8px; cursor: pointer; }',
+  '.cxb-save-note { font-size: 13px; color: var(--cxd-muted,#6b7280); margin-top: -6px; }',
   '.cxb-modal-err { color: var(--cxd-error,#c0392b); font-size:14px; min-height: 17px; }',
+  // Save / Save-a-copy dialog: name + access (private, everyone, specific people).
+  '.cxb-save-intro { font-size: 14px; line-height: 1.45; color: var(--cxd-muted,#6b7280); }',
+  '.cxb-save-people { display: flex; flex-direction: column; gap: 6px; }',
+  // The generic `.cxb-modal select { width: 100% }` would make both selects
+  // claim the whole row (collapsing the first, pushing Add out): size them here.
+  '.cxb-modal .cxb-save-pick { display: flex; gap: 6px; align-items: center; width: 100%; }',
+  '.cxb-modal .cxb-save-pick select { width: auto; min-width: 0; }',
+  '.cxb-modal .cxb-save-pick .cxb-save-who { flex: 1 1 0; }',
+  '.cxb-modal .cxb-save-pick .cxb-save-level { flex: 0 0 112px; }',
+  '.cxb-modal .cxb-save-pick .cxb-btn { flex: 0 0 auto; }',
+  '.cxb-save-chips { display: flex; flex-wrap: wrap; gap: 6px; }',
+  '.cxb-save-chip { display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px 2px 10px; border-radius: 99px;',
+  '  background: #eaf3fb; color: #0b5ea8; font-size: 13px; }',
+  '.cxb-save-chip-x { border: none; background: none; color: inherit; font-size: 15px; line-height: 1; cursor: pointer; padding: 0 4px; }',
+  '.cxb-save-none { font-size: 13px; color: var(--cxd-muted,#6b7280); }',
   /* Whole-spec JSON editor (✎ next to the dashboard title): a line-number
      gutter + a highlight.js-style colorized layer under a transparent-text
      textarea that owns editing and scrolling. */
@@ -1706,6 +1807,8 @@ var sharedCache = new Map();
  *   (injectable for tests).
  * @param {string} [options.baseUrl=''] - Base URL of the cxd_server, used to
  *   resolve `kind:"dataset"` sources via `GET /api/datasets/{id}`.
+ * @param {number} [options.busyRetryMs=250] - First wait before retrying a data
+ *   function the runtime refused as busy (429); doubles per retry, capped at 2s.
  * @returns {DataStore} The store.
  */
 function createDataStore(options) {
@@ -1715,6 +1818,7 @@ function createDataStore(options) {
   var defaultTtl = options.ttl != null ? options.ttl : 0;
   var now = options.now || function () { return Date.now(); };
   var baseUrl = options.baseUrl || '';
+  var busyRetryMs = options.busyRetryMs != null ? options.busyRetryMs : 250;
   var inflight = {}; // cacheKey -> Promise<data>
 
   /**
@@ -1918,7 +2022,7 @@ function createDataStore(options) {
       }
       if (sourceSpec.kind === 'function') {
         return resolveFunction(this, ref, sourceSpec, opts, {
-          fetch: fetchImpl, baseUrl: baseUrl, params: opts.params
+          fetch: fetchImpl, baseUrl: baseUrl, params: opts.params, busyRetryMs: busyRetryMs
         });
       }
       if (sourceSpec.kind !== 'connector' && sourceSpec.kind !== 'dataset') {
@@ -2020,7 +2124,7 @@ function resolveJoin(store, ref, sourceSpec, opts) {
  * @param {string} ref - The function's ref name.
  * @param {object} sourceSpec - `{language, code, inputs, args?, runtime?, axis?}`.
  * @param {object} opts - The options passed to `resolve`.
- * @param {object} env - `{fetch, baseUrl, params}` from the store.
+ * @param {object} env - `{fetch, baseUrl, params, busyRetryMs}` from the store.
  * @returns {Promise<object>} The function's result data.
  * @private
  */
@@ -2057,23 +2161,38 @@ function resolveFunction(store, ref, sourceSpec, opts, env) {
     // Call fetch unbound: the native window.fetch throws "Illegal invocation"
     // when invoked as a method of another object.
     var doFetch = env.fetch;
-    return doFetch(url, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).then(function (res) {
-      return res.text().then(function (text) {
-        var body = parseJson(text);
-        if (!res.ok) {
-          throw new DataError(functionErrorMessage(res.status, body, !!sourceSpec.runtime), res.status);
+    var body = JSON.stringify(payload);
+    // The runtime caps concurrent runs and answers 429 when full (a dashboard
+    // with more functions than slots): wait and retry rather than fail.
+    function attempt(retry) {
+      return doFetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: body
+      }).then(function (res) {
+        if (res.status === 429 && retry < FUNCTION_BUSY_RETRIES) {
+          var wait = Math.min(2000, (env.busyRetryMs || 0) * Math.pow(2, retry));
+          return new Promise(function (done) { setTimeout(done, wait); }).then(function () {
+            return attempt(retry + 1);
+          });
         }
-        if (!body || !body.data) throw new DataError('data function "' + ref + '" returned no data', res.status);
-        return body.data;
+        return res.text().then(function (text) {
+          var parsed = parseJson(text);
+          if (!res.ok) {
+            throw new DataError(functionErrorMessage(res.status, parsed, !!sourceSpec.runtime), res.status);
+          }
+          if (!parsed || !parsed.data) throw new DataError('data function "' + ref + '" returned no data', res.status);
+          return parsed.data;
+        });
       });
-    });
+    }
+    return attempt(0);
   });
 }
+
+/** Retries of a data function the runtime refused as busy (429) before failing. */
+var FUNCTION_BUSY_RETRIES = 6;
 
 /**
  * A readable message for a failed data-function call. The default runtime
@@ -3331,7 +3450,8 @@ function renderDashboard(spec, target, options) {
   // `baseUrl` lets `kind:"dataset"` sources resolve against a cxd_server on a
   // different origin than the page (else same-origin `/api/datasets/{id}`).
   var store = createDataStore({
-    fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl
+    fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl,
+    busyRetryMs: options.busyRetryMs
   });
   // Auto-resize each graph to its cell (via setDimensions) when the container
   // reflows. The builder disables this and re-renders panels itself on resize,
@@ -4126,6 +4246,15 @@ function renderDashboard(spec, target, options) {
     var canvasId = makeCanvasId(spec.id, 'panel', item.panel, panelIdCounter.n++);
     cell.canvas.id = canvasId;
 
+    // A chart fed (directly or through a join) by a data function gets a
+    // "Code" button showing its recipe: the function code and the chart config.
+    if (cell.header && panel && panel.showCode !== false && typeof panel.dataRef === 'string') {
+      var lineage = sourceLineage(spec.data || {}, panel.dataRef);
+      if (lineage.some(function (ref) { return (spec.data[ref] || {}).kind === 'function'; })) {
+        addCodeButton(cell.header, container, title, panel, lineage, spec.data);
+      }
+    }
+
     // The host (e.g. the builder) must hear about EVERY settled panel — empty
     // and errored ones included — or it cannot decorate them (select/move/
     // delete chrome). `instance` is null and `state` says why.
@@ -4544,21 +4673,163 @@ function renderDashboard(spec, target, options) {
       }
 
       /**
-       * Min / max number inputs (blank = unbounded), hinted with the data range.
+       * A dual-thumb range slider styled like the CanvasXpress Data Filter
+       * range: editable min / max values on top, a track with two thumbs, and
+       * a tick ruler over the "pretty" extent of the data. A thumb at its end
+       * (or a blank value) is unbounded; with both unbounded there is no filter.
+       * Dragging updates the values live and filters on release.
        * @param {object} f - Resolved field.
        * @param {(object|null)} current - Its current predicate.
        * @returns {HTMLElement} The range widget.
        */
       function buildRange(f, current) {
+        var curMin = current && typeof current.min === 'number' ? current.min : null;
+        var curMax = current && typeof current.max === 'number' ? current.max : null;
+        var dataMin = typeof f.summary.min === 'number' ? f.summary.min : curMin;
+        var dataMax = typeof f.summary.max === 'number' ? f.summary.max : curMax;
+        if (dataMin === null || dataMax === null) return buildRangeInputs(f, current);
+        if (curMin !== null) dataMin = Math.min(dataMin, curMin);
+        if (curMax !== null) dataMax = Math.max(dataMax, curMax);
+        var ticks = prettyTicks(dataMin, dataMax, 4);
+        var lo = ticks.values[0];
+        var hi = ticks.values[ticks.values.length - 1];
+        var decimals = Math.max(0, -Math.floor(Math.log(ticks.step / 10) / Math.LN10 + 1e-9));
+        var step = Math.pow(10, -decimals);
+
         var wrap = document.createElement('div');
         wrap.className = 'cxd-filters-range';
+        var values = document.createElement('div');
+        values.className = 'cxd-range-values';
+        var minBox = document.createElement('input');
+        var maxBox = document.createElement('input');
+        var slider = document.createElement('div');
+        slider.className = 'cxd-range-slider';
+        var track = document.createElement('div');
+        track.className = 'cxd-range-track';
+        var fill = document.createElement('div');
+        fill.className = 'cxd-range-fill';
+        var thumbLo = document.createElement('div');
+        thumbLo.className = 'cxd-range-thumb';
+        var thumbHi = document.createElement('div');
+        thumbHi.className = 'cxd-range-thumb';
+        var minRange = document.createElement('input');
+        var maxRange = document.createElement('input');
+        [[minBox, 'min', curMin === null ? lo : curMin], [maxBox, 'max', curMax === null ? hi : curMax]].forEach(function (s) {
+          s[0].type = 'number';
+          s[0].className = 'cxd-filters-' + s[1];
+          s[0].step = 'any';
+          s[0].value = formatBound(s[2]);
+          s[0].setAttribute('aria-label', f.label + ' ' + s[1]);
+        });
+        [minRange, maxRange].forEach(function (r, i) {
+          r.type = 'range';
+          r.className = 'cxd-range-input';
+          r.min = String(lo);
+          r.max = String(hi);
+          r.step = String(step);
+          r.tabIndex = -1;                 // the number boxes are the keyboard path
+          r.value = i === 0 ? minBox.value : maxBox.value;
+        });
+
+        function formatBound(v) {
+          return String(Number(Number(v).toFixed(decimals)));
+        }
+        function pct(v) {
+          return hi === lo ? 0 : (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * 100;
+        }
+        // Mirror the two values onto the fill and thumbs; keep min <= max.
+        function paint() {
+          var a = Number(minRange.value);
+          var b = Number(maxRange.value);
+          fill.style.left = pct(a) + '%';
+          fill.style.right = (100 - pct(b)) + '%';
+          thumbLo.style.left = pct(a) + '%';
+          thumbHi.style.left = pct(b) + '%';
+          // Past halfway the min thumb must sit on top, or it cannot leave the max.
+          minRange.style.zIndex = pct(a) > 50 ? '4' : '3';
+        }
+        function apply() {
+          var a = parseBound(minBox.value);
+          var b = parseBound(maxBox.value);
+          if (a !== null && b !== null && a > b) { var t = a; a = b; b = t; }
+          var pred = {};
+          if (a !== null && a > lo) pred.min = a;
+          if (b !== null && b < hi) pred.max = b;
+          setFilterPredicate(f.dataRef, f.field,
+            pred.min === undefined && pred.max === undefined ? null : pred);
+        }
+        minRange.addEventListener('input', function () {
+          if (Number(minRange.value) > Number(maxRange.value)) minRange.value = maxRange.value;
+          minBox.value = formatBound(minRange.value);
+          paint();
+        });
+        maxRange.addEventListener('input', function () {
+          if (Number(maxRange.value) < Number(minRange.value)) maxRange.value = minRange.value;
+          maxBox.value = formatBound(maxRange.value);
+          paint();
+        });
+        minRange.addEventListener('change', apply);
+        maxRange.addEventListener('change', apply);
+        [[minBox, minRange, lo], [maxBox, maxRange, hi]].forEach(function (s) {
+          s[0].addEventListener('change', function () {
+            if (parseBound(s[0].value) === null) s[0].value = formatBound(s[2]);   // blank = unbounded
+            s[1].value = s[0].value;
+            paint();
+            apply();
+          });
+        });
+
+        values.appendChild(minBox);
+        values.appendChild(maxBox);
+        slider.appendChild(track);
+        slider.appendChild(fill);
+        slider.appendChild(thumbLo);
+        slider.appendChild(thumbHi);
+        slider.appendChild(minRange);
+        slider.appendChild(maxRange);
+        var ruler = document.createElement('div');
+        ruler.className = 'cxd-range-ticks';
+        ticks.values.forEach(function (v, i) {
+          var major = document.createElement('span');
+          major.className = 'cxd-range-tick cxd-range-tick-major';
+          major.style.left = pct(v) + '%';
+          var text = document.createElement('span');
+          text.className = 'cxd-range-tick-label';
+          text.textContent = String(v);
+          major.appendChild(text);
+          ruler.appendChild(major);
+          if (i === ticks.values.length - 1) return;
+          for (var k = 1; k < 5; k++) {
+            var minor = document.createElement('span');
+            minor.className = 'cxd-range-tick';
+            minor.style.left = pct(v + ticks.step * k / 5) + '%';
+            ruler.appendChild(minor);
+          }
+        });
+        wrap.appendChild(values);
+        wrap.appendChild(slider);
+        wrap.appendChild(ruler);
+        paint();
+        return wrap;
+      }
+
+      /**
+       * Fallback for a range field without a numeric extent: min / max number
+       * inputs (blank = unbounded).
+       * @param {object} f - Resolved field.
+       * @param {(object|null)} current - Its current predicate.
+       * @returns {HTMLElement} The range widget.
+       */
+      function buildRangeInputs(f, current) {
+        var wrap = document.createElement('div');
+        wrap.className = 'cxd-filters-range cxd-filters-range-plain';
         var min = document.createElement('input');
         var max = document.createElement('input');
-        [[min, 'min', f.summary.min], [max, 'max', f.summary.max]].forEach(function (spec3) {
+        [[min, 'min'], [max, 'max']].forEach(function (spec3) {
           var input = spec3[0];
           input.type = 'number';
           input.className = 'cxd-filters-' + spec3[1];
-          input.placeholder = spec3[2] == null ? spec3[1] : String(spec3[2]);
+          input.placeholder = spec3[1];
           input.value = current && typeof current[spec3[1]] === 'number' ? String(current[spec3[1]]) : '';
           input.addEventListener('change', function () {
             var lo = parseBound(min.value);
@@ -5263,6 +5534,35 @@ function parseBound(text) {
 }
 
 /**
+ * "Pretty" tick values covering [min, max] (like R's pretty(), which the
+ * CanvasXpress range slider uses): a 1 / 2 / 5 x 10^k step near
+ * (max - min) / n, with the ends rounded outward to it.
+ * @param {number} min - Data minimum.
+ * @param {number} max - Data maximum.
+ * @param {number} n - Desired number of intervals.
+ * @returns {{values: number[], step: number}} Ticks (ascending) and their step.
+ * @private
+ */
+function prettyTicks(min, max, n) {
+  if (!(max > min)) {
+    var pad = min === 0 ? 1 : Math.abs(min) / 10;
+    min -= pad;
+    max += pad;
+  }
+  var raw = (max - min) / n;
+  var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+  var step = mag;
+  [1, 2, 5, 10].forEach(function (m) {
+    if (Math.abs(m * mag - raw) < Math.abs(step - raw)) step = m * mag;
+  });
+  var lo = Math.floor(min / step + 1e-9) * step;
+  var hi = Math.ceil(max / step - 1e-9) * step;
+  var values = [];
+  for (var v = lo; v <= hi + step / 2; v += step) values.push(Number(v.toPrecision(12)));
+  return { values: values, step: step };
+}
+
+/**
  * Resolve a target that may be an element or an element id.
  * @param {(HTMLElement|string)} target - Element or id.
  * @returns {HTMLElement|null} The resolved element.
@@ -5858,6 +6158,235 @@ function placeCell(el, item) {
 }
 
 /**
+ * Every source a ref is computed from, itself included, in dependency order
+ * (a source after the ones it reads). Unknown refs and cycles are skipped.
+ * @param {object} sources - The spec's `data` map.
+ * @param {string} ref - The source a panel reads.
+ * @returns {string[]} Refs, inputs first.
+ */
+function sourceLineage(sources, ref) {
+  var out = [];
+  var visiting = {};
+  (function visit(r) {
+    if (!Object.prototype.hasOwnProperty.call(sources, r) || visiting[r] || out.indexOf(r) !== -1) return;
+    visiting[r] = true;
+    sourceInputs(sources[r]).forEach(visit);
+    visiting[r] = false;
+    out.push(r);
+  })(ref);
+  return out;
+}
+
+/**
+ * Add a "Code" button to a panel title that opens the panel's recipe.
+ * @param {HTMLElement} header - The panel title bar.
+ * @param {HTMLElement} container - Dashboard container (hosts the dialog, carries the theme).
+ * @param {string} title - Panel title.
+ * @param {object} panel - Panel definition.
+ * @param {string[]} lineage - The panel's sources, inputs first (see sourceLineage).
+ * @param {object} sources - The spec's `data` map.
+ * @returns {void}
+ * @private
+ */
+function addCodeButton(header, container, title, panel, lineage, sources) {
+  var button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'cxd-code-btn';
+  button.textContent = '</> Code';
+  button.title = 'How this chart is built: the data-function code and the chart config';
+  button.addEventListener('click', function (ev) {
+    if (ev && ev.stopPropagation) ev.stopPropagation();
+    showCodeDialog(container, title, panel, lineage, sources);
+  });
+  // The title bar is a drag handle in the builder: a press on the button is not a drag.
+  button.addEventListener('pointerdown', function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); });
+  // Keep the title as the first child (the builder renames it through childNodes[0])
+  // in its own span so it can still ellipsize beside the button.
+  var text = document.createElement('span');
+  text.className = 'cxd-panel-title-text';
+  text.textContent = header.textContent;
+  header.textContent = '';
+  header.appendChild(text);
+  header.classList.add('cxd-panel-title-actions');
+  header.appendChild(button);
+}
+
+/**
+ * Open a dialog with a chart's recipe, step by step: each source it reads
+ * (data functions with their full code), then the CanvasXpress config that
+ * draws it. Closes on the close button, the backdrop, or Escape. With
+ * `opts.editable` (the builder) the function code and the chart config are
+ * editable, each with an Apply button handing the new text to a callback.
+ * @param {HTMLElement} container - Element hosting the dialog (carries the theme).
+ * @param {string} title - Panel title.
+ * @param {object} panel - Panel definition.
+ * @param {string[]} lineage - The panel's sources, inputs first.
+ * @param {object} sources - The spec's `data` map.
+ * @param {object} [opts] - `{editable, lockedReason, onApplyCode(ref, code), onApplyConfig(config)}`;
+ *   the callbacks return an error message, or a falsy value on success. With a
+ *   `lockedReason` the editors are read-only and Apply is disabled (the reason
+ *   is shown) — the user can read and copy how the chart is built, not change it.
+ * @returns {HTMLElement} The dialog backdrop (removed on close).
+ */
+function showCodeDialog(container, title, panel, lineage, sources, opts) {
+  opts = opts || {};
+  var editable = !!opts.editable;
+  var locked = editable && !!opts.lockedReason;
+  var backdrop = document.createElement('div');
+  backdrop.className = 'cxd-code-backdrop';
+  var dialog = document.createElement('div');
+  dialog.className = 'cxd-code-dialog';
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-label', 'How this chart is built');
+
+  var head = document.createElement('div');
+  head.className = 'cxd-code-head';
+  var heading = document.createElement('div');
+  heading.className = 'cxd-code-heading';
+  heading.textContent = (editable && !locked ? 'Edit how this chart is built' : 'How this chart is built') +
+    (title ? ' — ' + title : '');
+  var close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'cxd-code-close';
+  close.textContent = '×';
+  close.setAttribute('aria-label', 'Close');
+  head.appendChild(heading);
+  head.appendChild(close);
+  dialog.appendChild(head);
+
+  var body = document.createElement('div');
+  body.className = 'cxd-code-body';
+  var n = 0;
+  function step(label, detail) {
+    var section = document.createElement('div');
+    section.className = 'cxd-code-step';
+    var h = document.createElement('div');
+    h.className = 'cxd-code-step-title';
+    h.textContent = (++n) + '. ' + label;
+    section.appendChild(h);
+    if (detail) {
+      var d = document.createElement('div');
+      d.className = 'cxd-code-step-detail';
+      d.textContent = detail;
+      section.appendChild(d);
+    }
+    body.appendChild(section);
+    return section;
+  }
+  // A read-only code block with Copy, or (with `apply`) an editable one with Apply.
+  function codeBlock(section, text, apply) {
+    var wrap = document.createElement('div');
+    wrap.className = 'cxd-code-block';
+    if (apply) {
+      var area = document.createElement('textarea');
+      area.className = 'cxd-code-edit';
+      area.spellcheck = false;
+      area.value = text;
+      area.readOnly = locked;
+      area.rows = Math.min(18, Math.max(4, text.split('\n').length + 1));
+      area.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Tab') {                       // indent instead of leaving the box
+          ev.preventDefault();
+          var at = area.selectionStart;
+          area.value = area.value.slice(0, at) + '  ' + area.value.slice(area.selectionEnd);
+          area.selectionStart = area.selectionEnd = at + 2;
+        }
+      });
+      var bar = document.createElement('div');
+      bar.className = 'cxd-code-actions';
+      var status = document.createElement('span');
+      status.className = 'cxd-code-status';
+      var applyBtn = document.createElement('button');
+      applyBtn.type = 'button';
+      applyBtn.className = 'cxd-code-apply';
+      applyBtn.textContent = 'Apply';
+      if (locked) {
+        applyBtn.disabled = true;
+        applyBtn.title = opts.lockedReason;
+        status.textContent = opts.lockedReason;
+      }
+      applyBtn.addEventListener('click', function () {
+        if (locked) return;
+        var error = apply(area.value);
+        status.textContent = error ? String(error) : 'Applied — the chart is re-rendering';
+        status.className = 'cxd-code-status' + (error ? ' cxd-code-error' : '');
+      });
+      bar.appendChild(status);
+      bar.appendChild(applyBtn);
+      wrap.appendChild(area);
+      wrap.appendChild(bar);
+      section.appendChild(wrap);
+      return;
+    }
+    var pre = document.createElement('pre');
+    pre.textContent = text;
+    var copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'cxd-code-copy';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', function () {
+      var done = function () { copy.textContent = 'Copied'; setTimeout(function () { copy.textContent = 'Copy'; }, 1200); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () {});
+    });
+    wrap.appendChild(copy);
+    wrap.appendChild(pre);
+    section.appendChild(wrap);
+  }
+
+  lineage.forEach(function (ref) {
+    var src = sources[ref] || {};
+    if (src.kind === 'function') {
+      var language = src.language === 'r' ? 'R' : src.language === 'python' ? 'Python' : String(src.language);
+      var inputs = sourceInputs(src);
+      var section = step('“' + ref + '” — computed by a ' + language + ' data function',
+        (inputs.length ? 'Receives ' + inputs.join(', ') + ' as ' +
+          (src.language === 'python' ? 'pandas DataFrames' : 'data frames') + '. ' : '') +
+        'Runs on the server; the table it assigns to result is the chart data.');
+      codeBlock(section, String(src.code || ''), editable && opts.onApplyCode ? (function (fnRef) {
+        return function (code) { return opts.onApplyCode(fnRef, code); };
+      })(ref) : null);
+    } else if (src.kind === 'join') {
+      var on = src.on || {};
+      step('“' + ref + '” — ' + (src.how || 'inner') + ' join of ' + src.left + ' and ' + src.right,
+        on.left || on.right ? 'Matched on ' + src.left + '.' + on.left + ' = ' + src.right + '.' + on.right + '.' : '');
+    } else {
+      step('“' + ref + '” — ' + (src.kind || 'inline') + ' data');
+    }
+  });
+  var chart = step('The chart — CanvasXpress config',
+    'Drawn with new CanvasXpress(canvasId, data, config), where data is “' + panel.dataRef + '”.');
+  codeBlock(chart, JSON.stringify(panel.config || {}, null, 2), editable && opts.onApplyConfig ? function (text) {
+    var config;
+    try { config = JSON.parse(text); } catch (e) { return 'Invalid JSON: ' + e.message; }
+    if (!config || typeof config !== 'object' || Array.isArray(config)) return 'The config must be a JSON object';
+    return opts.onApplyConfig(config);
+  } : null);
+  dialog.appendChild(body);
+  backdrop.appendChild(dialog);
+
+  var canListen = typeof document.addEventListener === 'function';
+  function dismiss() {
+    if (canListen) document.removeEventListener('keydown', onKey, true);
+    if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+  }
+  // Capture Escape so it closes the dialog without also resetting the dashboard.
+  // In an editor box Escape only stops there (no accidental loss of edits).
+  function onKey(ev) {
+    if (ev.key === 'Escape' || ev.keyCode === 27) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (!(ev.target && ev.target.tagName === 'TEXTAREA')) dismiss();
+    }
+  }
+  close.addEventListener('click', dismiss);
+  backdrop.addEventListener('click', function (ev) { if (ev.target === backdrop) dismiss(); });
+  if (canListen) document.addEventListener('keydown', onKey, true);
+  container.appendChild(backdrop);
+  if (typeof close.focus === 'function') close.focus();
+  return backdrop;
+}
+
+/**
  * Build a panel cell (title bar, canvas, state overlay).
  * @param {string} [title] - Optional panel title.
  * @returns {{root: HTMLElement, canvas: HTMLElement, setState: function, pending: (Promise|null)}}
@@ -5868,8 +6397,9 @@ function buildCell(title) {
   var root = document.createElement('div');
   root.className = 'cxd-panel';
 
+  var header = null;
   if (title) {
-    var header = document.createElement('div');
+    header = document.createElement('div');
     header.className = 'cxd-panel-title';
     header.textContent = title;
     root.appendChild(header);
@@ -5890,6 +6420,7 @@ function buildCell(title) {
 
   return {
     root: root,
+    header: header,
     canvas: canvas,
     body: body,
     pending: null,
@@ -6566,9 +7097,14 @@ function createDashboardClient(options) {
     /**
      * Delete a dashboard by id.
      * @param {string} id - Dashboard id.
+     * @param {object} [opts] - `{owner}` to delete another owner's dashboard
+     *   (an admin, or anyone for a disposable scratch dashboard).
      * @returns {Promise<object[]>} The remaining summaries.
      */
-    remove: function (id) { return request('DELETE', '/api/dashboards/' + encodeURIComponent(id)).then(function (r) { return r.dashboards; }); },
+    remove: function (id, opts) {
+      return request('DELETE', '/api/dashboards/' + encodeURIComponent(id) + queryString({ owner: opts && opts.owner }))
+        .then(function (r) { return r.dashboards; });
+    },
     /**
      * Set a dashboard's share visibility.
      * @param {string} id - Dashboard id.
@@ -7697,6 +8233,9 @@ function createBuilder(target, options) {
   var limitDatasetsToSpec = !!options.limitDatasetsToSpec;
   var addPanelBtn = null;   // disabled while no data source is declared (see updateAddPanelState)
   var addControlBtn = null; // disabled until the dashboard has data AND a graph panel
+  var addFunctionBtn = null; // shown when the server runs data functions; needs a source to read
+  var functionStatusPromise = null;   // memoized GET /api/functions/status (see functionStatus)
+  var canAuthorFunctions = false;     // may this user write / edit data functions?
   var addFiltersBtn = null; // same rule as addControlBtn
   var baseUrl = options.baseUrl || '';   // cxd_server origin for kind:"dataset" sources
   var CX = options.CanvasXpress || (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
@@ -7759,10 +8298,19 @@ function createBuilder(target, options) {
     var editJsonBtn = button('✎', function () { doEditJson(); });
     editJsonBtn.setAttribute('title', 'Edit dashboard JSON');
     editJsonBtn.setAttribute('aria-label', 'Edit dashboard JSON');
+    // "+ Function" appears only once the server says it runs data functions
+    // for this user (the check is async; hidden until then).
+    addFunctionBtn = button('+ Function', function () { doAddFunction(); });
+    addFunctionBtn.setAttribute('title', 'Add a panel computed by an R / Python data function');
+    addFunctionBtn.style.display = 'none';
+    functionStatus().then(function (status) {
+      if (status.languages.length) addFunctionBtn.style.display = '';
+      updateAddPanelState();
+    });
     var createActions = [titleInput, editJsonBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }),
       button('+ Image', function () { doAddImage(); }),
-      addControlBtn, addFiltersBtn];
+      addControlBtn, addFiltersBtn, addFunctionBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
     append(row1, createActions);
@@ -7829,13 +8377,28 @@ function createBuilder(target, options) {
    * @returns {void}
    */
   function doAddPanel() {
+    addPanelBound(Object.keys(spec.data || {})[0]);
+  }
+
+  /**
+   * Add a Bar panel bound to a source and select it.
+   * @param {string} [dataRef] - The source the panel reads.
+   * @param {boolean} [newSource] - The source was just added: the live
+   *   dashboard does not know it yet, so rebuild instead of adding in place.
+   * @returns {void}
+   * @private
+   */
+  function addPanelBound(dataRef, newSource) {
     var id = uniquePanelId(spec);
-    var firstRef = Object.keys(spec.data || {})[0];
-    commit(addPanel(spec, { id: id, title: 'Panel ' + id.replace(/\D/g, ''), dataRef: firstRef, w: 6, h: 12, config: { graphType: 'Bar' } }), false);
+    commit(addPanel(spec, { id: id, title: newSource ? dataRef : 'Panel ' + id.replace(/\D/g, ''), dataRef: dataRef, w: 6, h: 12,
+      config: { graphType: 'Bar', graphOrientation: 'vertical', title: false } }), false);
     selectedId = id;
     // Add incrementally so existing panels (and their live customizer state) are
     // never destroyed — a full re-render would reset them.
-    if (liveHandle && liveHandle.addPanel && gridEl) {
+    if (newSource) {
+      syncLiveConfigs();
+      rebuild();
+    } else if (liveHandle && liveHandle.addPanel && gridEl) {
       lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
     } else {
       rebuild();
@@ -7929,7 +8492,9 @@ function createBuilder(target, options) {
       ? client.listDatasets().then(function (d) { return d; }, function () { return []; })
       : Promise.resolve([]);
     // Offer "Data function" only when the server runs them for this user.
-    var functionsPromise = functionLanguages();
+    var functionsPromise = functionStatus().then(function (status) {
+      return status.canAuthor ? status.languages : [];
+    });
     Promise.all([storesPromise, datasetsPromise, functionsPromise]).then(function (res) {
       openDataDialog(doc, Object.keys(spec.data || {}),
         { client: client, stores: res[0], datasets: res[1], functionLanguages: res[2] }).then(function (result) {
@@ -7942,18 +8507,47 @@ function createBuilder(target, options) {
   }
 
   /**
-   * The data-function languages this server runs for the current user
-   * (`GET <baseUrl>/api/functions/status`), or none when disabled/unreachable.
-   * @returns {Promise<string[]>} e.g. `["python", "r"]`.
+   * "+ Function": write an R / Python data function over the dashboard's
+   * sources, add it as a source, and add a panel that charts its result.
+   * @returns {void}
+   * @private
    */
-  function functionLanguages() {
+  function doAddFunction() {
+    var doc = container.ownerDocument || document;
+    functionStatus().then(function (status) {
+      var langs = status.canAuthor ? status.languages : [];
+      if (!langs.length) return;
+      openDataDialog(doc, Object.keys(spec.data || {}), { functionLanguages: langs, onlyFunction: true }).then(function (result) {
+        if (!result) return;
+        commit(setDataSource(spec, result.name, result.source), false);
+        addPanelBound(result.name, true);
+      });
+    });
+  }
+
+  /**
+   * What the server's data-function runtime offers the current user
+   * (`GET <baseUrl>/api/functions/status`), fetched once per builder:
+   * `languages` it runs (empty when disabled/unreachable) and `canAuthor`
+   * — whether this user may write / edit functions (everyone else may only
+   * view them and run administrators' saved code).
+   * @returns {Promise<{languages: string[], canAuthor: boolean}>} The status.
+   * @private
+   */
+  function functionStatus() {
+    if (functionStatusPromise) return functionStatusPromise;
+    var none = { languages: [], canAuthor: false };
     var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
-    if (!client || typeof fetchImpl !== 'function') return Promise.resolve([]);
-    return fetchImpl(baseUrl + '/api/functions/status', { credentials: 'include' }).then(function (res) {
+    if (!client || typeof fetchImpl !== 'function') return Promise.resolve(none);
+    functionStatusPromise = fetchImpl(baseUrl + '/api/functions/status', { credentials: 'include' }).then(function (res) {
       return res.ok ? res.json() : null;
     }).then(function (status) {
-      return status && status.enabled && Array.isArray(status.languages) ? status.languages : [];
-    }, function () { return []; });
+      var out = status && status.enabled && Array.isArray(status.languages)
+        ? { languages: status.languages, canAuthor: status.canAuthor !== false } : none;
+      canAuthorFunctions = out.canAuthor;
+      return out;
+    }, function () { return none; });
+    return functionStatusPromise;
   }
 
   /**
@@ -7962,26 +8556,96 @@ function createBuilder(target, options) {
    */
   function doSave() {
     if (!client) return showError('No persistence client configured.');
-    // The store keys dashboards by spec.id — re-derive it from the (possibly
-    // renamed) title so "save under a new name" creates a NEW dashboard
-    // instead of silently overwriting the last one. An unchanged name keeps
-    // the id, so re-saving still updates in place.
     // Editing a dashboard shared by another owner keeps its id (the edit grant
     // covers that dashboard only) and saves back to that owner.
     var owner = options.owner && spec.id === ownerSpecId ? options.owner : null;
-    var slug = String(spec.title || '').toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    if (!owner && slug && slug !== spec.id) {
-      var next = Object.assign({}, spec, { id: slug });
-      // A broadcastGroup that just mirrored the old id follows the rename, so
-      // separately-saved dashboards don't share a coordination domain.
-      if (spec.broadcastGroup === spec.id) next.broadcastGroup = slug;
-      spec = next;
-      if (options.onChange) { try { options.onChange(getSpec()); } catch (e) { /* noop */ } }
+    if (owner) {
+      setMsg('Saving…');
+      client.save(getSpec(), { owner: owner }).then(function () {
+        setMsg('Saved “' + spec.id + '” for ' + owner + '.');
+      }, showError);
+      return;
     }
+    // The store keys dashboards by spec.id, derived from the title, so a new
+    // name creates a NEW dashboard. Re-saving one of your own dashboards saves
+    // straight away; anything else (a new dashboard, or one you can see but not
+    // change — a shipped example, a view-only share) opens the Save dialog: a
+    // name that is not taken, and who may access it. The server enforces the
+    // same rule (409 for a foreign id).
+    var slug = slugOf(spec.title) || spec.id;
+    var doc = container.ownerDocument || document;
+    var listing = typeof client.list === 'function' ? client.list() : Promise.resolve([]);
+    listing.then(function (rows) { return rows || []; }, function () { return null; }).then(function (rows) {
+      if (rows === null) return saveAs(spec.title || slug, slug, []);   // no listing: plain save
+      // Whose each dashboard is, by id (ownership), and the names in use, by id
+      // AND title slug (an id need not match its title's slug, e.g.
+      // "biomarker-cohort" titled "Immuno-Oncology Biomarker Cohort").
+      var ownIds = {};
+      var foreignIds = {};
+      var own = {};
+      var taken = {};
+      rows.forEach(function (d) {
+        var mine = !(d.shared || d.example);
+        if (mine) ownIds[d.id] = true; else foreignIds[d.id] = d.owner;
+        [d.id, slugOf(d.title)].forEach(function (key) {
+          if (key) { if (mine) own[key] = true; else taken[key] = d.owner; }
+        });
+      });
+      // Re-saving your own dashboard (or saving it under another of your ids).
+      if (ownIds[slug] && !foreignIds[spec.id]) return saveAs(spec.title || slug, slug, []);
+      // Opened someone else's board, or renamed onto one of their names: a copy.
+      var foreignOwner = foreignIds[spec.id] || (!ownIds[slug] && taken[slug]) || null;
+      var directory = typeof client.directory === 'function'
+        ? client.directory().then(null, function () { return null; }) : Promise.resolve(null);
+      // Leave the signed-in user out of the people to share with.
+      var me = typeof client.me === 'function'
+        ? client.me().then(function (r) { return r && r.user; }, function () { return null; }) : Promise.resolve(null);
+      directory = Promise.all([directory, me]).then(function (res) {
+        var dir = res[0];
+        if (dir && res[1]) dir = { users: (dir.users || []).filter(function (u) { return u !== res[1]; }), groups: dir.groups || [] };
+        return dir;
+      });
+      return directory.then(function (dir) {
+        return openSaveDialog(doc, {
+          title: spec.title || slug, foreignOwner: foreignOwner,
+          own: own, taken: taken, directory: dir
+        });
+      }).then(function (result) {
+        if (result) saveAs(result.title, slugOf(result.title), result.grants);
+      });
+    });
+  }
+
+  /**
+   * Save the dashboard as the caller's own under a title (and its id), then
+   * apply the chosen access grants.
+   * @param {string} title - Dashboard title.
+   * @param {string} id - Its id (slug of the title).
+   * @param {object[]} grants - `[{principal, level}]` to share it with.
+   * @returns {void}
+   * @private
+   */
+  function saveAs(title, id, grants) {
+    var next = Object.assign({}, spec, { title: title, id: id });
+    // A broadcastGroup that just mirrored the old id follows the rename, so
+    // separately-saved dashboards don't share a coordination domain.
+    if (spec.broadcastGroup === spec.id) next.broadcastGroup = id;
+    var renamed = next.id !== spec.id || next.title !== spec.title;
+    spec = next;
+    if (titleInput.value !== title) titleInput.value = title;
+    if (renamed && options.onChange) { try { options.onChange(getSpec()); } catch (e) { /* noop */ } }
     setMsg('Saving…');
-    client.save(getSpec(), owner ? { owner: owner } : undefined).then(function () {
-      setMsg('Saved “' + spec.id + '”' + (owner ? ' for ' + owner : '') + '.');
+    client.save(getSpec()).then(function () {
+      return Promise.all((grants || []).map(function (g) {
+        return client.setGrant('dashboard', id, g.principal, g.level).then(function () { return null; },
+          function (e) { return principalName(g.principal) + ': ' + ((e && e.message) || e); });
+      }));
+    }).then(function (errors) {
+      var failed = errors.filter(Boolean);
+      var shared = (grants || []).length
+        ? ' · shared with ' + grants.map(function (g) { return principalName(g.principal) + ' (' + g.level + ')'; }).join(', ')
+        : '';
+      setMsg('Saved “' + id + '”' + shared + (failed.length ? ' — sharing failed: ' + failed.join('; ') : '') + '.');
     }, showError);
   }
 
@@ -8319,6 +8983,17 @@ function createBuilder(target, options) {
       });
       on(gear, 'pointerdown', stop);
       append(tools, [gear]);
+      var codePanel = spec.panels[info.panelId] || {};
+      if (typeof codePanel.dataRef === 'string' &&
+          sourceLineage(spec.data || {}, codePanel.dataRef).some(function (ref) { return spec.data[ref].kind === 'function'; })) {
+        var codeBtn = iconBtn('</>', 'Code: edit the data function and the chart config', function (ev) {
+          stop(ev);
+          openCodeEditor(info.panelId);
+        });
+        codeBtn.classList.add('cxb-tool-code');
+        on(codeBtn, 'pointerdown', stop);
+        append(tools, [codeBtn]);
+      }
     }
     var del = iconBtn('×', 'Delete', function (ev) { stop(ev); removePanelById(info.panelId); });
     on(del, 'pointerdown', stop);
@@ -9697,6 +10372,54 @@ function createBuilder(target, options) {
   }
 
   /**
+   * Open a panel's recipe (data-function code + chart config) as an editor.
+   * Applying code rewrites that function source and rebuilds the stage (it may
+   * feed several panels); applying the config re-renders just this panel.
+   * @param {string} panelId - Panel id.
+   * @returns {void}
+   * @private
+   */
+  function openCodeEditor(panelId) {
+    functionStatus().then(function () { openCodeDialogFor(panelId); });
+  }
+
+  /**
+   * Show the code dialog for a panel, editable only for function authors.
+   * @param {string} panelId - Panel id.
+   * @returns {void}
+   * @private
+   */
+  function openCodeDialogFor(panelId) {
+    syncLiveConfigs();                     // show the config with live customizer edits
+    var panel = spec.panels[panelId];
+    if (!panel) return;
+    showCodeDialog(root, panel.title || panelId, panel, sourceLineage(spec.data || {}, panel.dataRef), spec.data, {
+      editable: true,
+      // Everyone can read how the chart is built; only authors may change it.
+      lockedReason: canAuthorFunctions ? null : FUNCTION_AUTHOR_ONLY,
+      onApplyCode: function (ref, code) {
+        var src = spec.data[ref];
+        if (!src) return 'Source "' + ref + '" no longer exists';
+        var next = {};
+        for (var k in src) {
+          if (Object.prototype.hasOwnProperty.call(src, k)) next[k] = src[k];
+        }
+        next.code = code;
+        syncLiveConfigs();
+        commit(setDataSource(spec, ref, next), false);
+        rebuild();
+        return null;
+      },
+      onApplyConfig: function (config) {
+        if (!spec.panels[panelId]) return 'The panel no longer exists';
+        commit(updatePanel(spec, panelId, { config: config }), true);
+        rerenderPanel(panelId);
+        return null;
+      }
+    });
+  }
+
+  /**
    * Re-render just one panel (used when its data source changes — it needs a new
    * instance, but the other panels must be left intact).
    * @param {string} panelId - Panel id.
@@ -9824,6 +10547,12 @@ function createBuilder(target, options) {
    */
   function updateAddPanelState() {
     var hasData = Object.keys(spec.data || {}).length > 0;
+    if (addFunctionBtn) {
+      addFunctionBtn.disabled = !hasData || !canAuthorFunctions;
+      addFunctionBtn.title = !canAuthorFunctions ? FUNCTION_AUTHOR_ONLY
+        : hasData ? 'Add a panel computed by an R / Python data function'
+          : 'Select a dataset first (a function reads the dashboard\'s data)';
+    }
     if (addPanelBtn && limitDatasetsToSpec) {
       addPanelBtn.disabled = !hasData;
       addPanelBtn.title = hasData ? '' : 'Select a dataset first';
@@ -9958,6 +10687,10 @@ function createBuilder(target, options) {
  * of these keys it is kept, except the SELF_HEALING_KEYS below.
  * @type {Object<string, boolean>}
  */
+/** Why a non-author sees the data-function controls disabled. */
+var FUNCTION_AUTHOR_ONLY = 'Only administrators can create or edit data functions ' +
+  '(you can still view the code and the charts). Contact your administrator to get access.';
+
 var TRANSIENT_CONFIG_KEYS = {
   filterSmpBy: true, filterVarBy: true,
   broadcastGroup: true,            // the renderer re-injects the spec's group
@@ -10184,6 +10917,170 @@ function stop(ev) {
 }
 
 /**
+ * The dashboard id for a title: lower-case words joined by dashes.
+ * @param {string} title - Title.
+ * @returns {string} The slug ('' when the title has no letters/digits).
+ */
+function slugOf(title) {
+  return String(title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/**
+ * A readable name for a grant principal.
+ * @param {string} principal - `*`, `user:<name>` or `group:<name>`.
+ * @returns {string} The label.
+ */
+function principalName(principal) {
+  if (principal === '*') return 'everyone';
+  if (principal.indexOf('group:') === 0) return 'group ' + principal.slice(6);
+  return principal.replace(/^user:/, '');
+}
+
+/**
+ * The Save dialog for a dashboard that is not yet the caller's own: a name
+ * (checked against the caller's dashboards and those they can see but not
+ * change) and who may access it — private, everyone (view / edit) or specific
+ * users and groups. For a dashboard the caller cannot change (`foreignOwner`)
+ * it is a "Save a copy" dialog prefilled with "<title> (copy)".
+ * @param {Document} doc - The owning document.
+ * @param {object} opts - `{title, foreignOwner, own: {id: true}, taken: {id: owner}, directory: {users, groups}|null}`.
+ * @returns {Promise<{title: string, grants: object[]}|null>} The choice, or null when cancelled.
+ * @private
+ */
+function openSaveDialog(doc, opts) {
+  return new Promise(function (resolve) {
+    var overlay = el('div', 'cxb-modal-overlay');
+    var modal = el('div', 'cxb-modal');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = opts.foreignOwner ? 'Save a copy' : 'Save dashboard';
+    var intro = el('div', 'cxb-save-intro');
+    intro.textContent = opts.foreignOwner
+      ? '“' + opts.title + '” belongs to ' + opts.foreignOwner + ' and you cannot change it. ' +
+        'Save your changes as your own dashboard under a new name.'
+      : 'Name your dashboard and choose who can open it. You can change sharing later from the Dashboards page (People).';
+
+    var nameInput = el('input');
+    nameInput.type = 'text';
+    nameInput.value = opts.foreignOwner ? opts.title + ' (copy)' : opts.title;
+    var nameMsg = el('div', 'cxb-modal-err');
+
+    // Access: private, everyone (view / edit), or specific users and groups.
+    var access = el('select');
+    [['private', 'Private — only you'], ['everyone-view', 'Everyone signed in can view'],
+      ['everyone-edit', 'Everyone signed in can edit'], ['people', 'Specific people and groups…']].forEach(function (pair) {
+      var o = doc.createElement('option');
+      o.value = pair[0];
+      o.textContent = pair[1];
+      access.appendChild(o);
+    });
+    var dir = opts.directory || { users: [], groups: [] };
+    var peopleWrap = el('div', 'cxb-save-people');
+    var who = el('select', 'cxb-save-who');
+    (dir.groups || []).forEach(function (g) {
+      var o = doc.createElement('option');
+      o.value = 'group:' + g;
+      o.textContent = '👥 ' + g;
+      who.appendChild(o);
+    });
+    (dir.users || []).forEach(function (u) {
+      var o = doc.createElement('option');
+      o.value = 'user:' + u;
+      o.textContent = '👤 ' + u;
+      who.appendChild(o);
+    });
+    var level = el('select', 'cxb-save-level');
+    [['view', 'can view'], ['edit', 'can edit']].forEach(function (pair) {
+      var o = doc.createElement('option');
+      o.value = pair[0];
+      o.textContent = pair[1];
+      level.appendChild(o);
+    });
+    var chosen = [];
+    var chips = el('div', 'cxb-save-chips');
+    function renderChips() {
+      chips.innerHTML = '';
+      if (!chosen.length) {
+        var none = el('span', 'cxb-save-none');
+        none.textContent = 'No one added yet.';
+        chips.appendChild(none);
+      }
+      chosen.forEach(function (g, i) {
+        var chip = el('span', 'cxb-save-chip');
+        chip.textContent = principalName(g.principal) + ' · ' + g.level + ' ';
+        var x = el('button', 'cxb-save-chip-x');
+        x.type = 'button';
+        x.textContent = '×';
+        x.setAttribute('aria-label', 'Remove');
+        on(x, 'click', function () { chosen.splice(i, 1); renderChips(); });
+        chip.appendChild(x);
+        chips.appendChild(chip);
+      });
+    }
+    var addBtn = button('Add', function () {
+      if (!who.value) return;
+      chosen = chosen.filter(function (g) { return g.principal !== who.value; });
+      chosen.push({ principal: who.value, level: level.value });
+      renderChips();
+    });
+    var pickRow = el('div', 'cxb-save-pick');
+    append(pickRow, [who, level, addBtn]);
+    if (!who.options.length) {
+      pickRow.style.display = 'none';
+      var unavailable = el('span', 'cxb-save-none');
+      unavailable.textContent = 'The user list is not available; share later from the Dashboards page.';
+      peopleWrap.appendChild(unavailable);
+    }
+    append(peopleWrap, [pickRow, chips]);
+    renderChips();
+    function syncAccess() { peopleWrap.style.display = access.value === 'people' ? '' : 'none'; }
+    on(access, 'change', syncAccess);
+    syncAccess();
+
+    var saveBtn = button('Save', function () { onSave(); }, 'cxb-btn-primary');
+    // The name must give an id that is neither someone else's visible dashboard
+    // nor (for a new dashboard) one of yours.
+    function checkName() {
+      var slug = slugOf(nameInput.value);
+      var problem = '';
+      if (!slug) problem = 'Enter a name with letters or digits.';
+      else if (opts.taken[slug]) problem = 'That name is taken by ' + opts.taken[slug] + '’s dashboard — pick another.';
+      else if (opts.own[slug]) problem = 'You already have a dashboard with that name — pick another.';
+      nameMsg.textContent = problem;
+      nameMsg.style.display = problem ? '' : 'none';   // no reserved gap when the name is fine
+      saveBtn.disabled = !!problem;
+      return !problem;
+    }
+    on(nameInput, 'input', checkName);
+    checkName();
+
+    function onSave() {
+      if (!checkName()) return;
+      var grants = access.value === 'everyone-view' ? [{ principal: '*', level: 'view' }]
+        : access.value === 'everyone-edit' ? [{ principal: '*', level: 'edit' }]
+          : access.value === 'people' ? chosen.slice() : [];
+      close({ title: String(nameInput.value).trim(), grants: grants });
+    }
+    on(nameInput, 'keydown', function (ev) { if (ev.key === 'Enter') onSave(); });
+
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [button('Cancel', function () { close(null); }), saveBtn]);
+    var adminNote = el('div', 'cxb-save-note');
+    adminNote.textContent = 'Administrators always have full access (view, change, delete).';
+    append(modal, [heading, intro, field('Name', nameInput), nameMsg, field('Access', access), adminNote, peopleWrap, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    if (typeof nameInput.focus === 'function') nameInput.focus();
+    if (typeof nameInput.select === 'function') nameInput.select();
+
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
  * Open a modal "Add data source" dialog. Input modes: paste CanvasXpress JSON,
  * upload a `.json`/`.csv` file as inline data, point at a connector URL, or —
  * when a persistence client + configured dataset stores are available — upload a
@@ -10200,6 +11097,7 @@ function stop(ev) {
  * @param {object[]} [opts.stores] - Configured dataset stores `[{name, default}]`.
  * @param {string[]} [opts.functionLanguages] - Data-function languages the
  *   server offers (enables the "Data function" mode).
+ * @param {boolean} [opts.onlyFunction] - Offer only the "Data function" mode.
  * @returns {Promise<{name: string, source: object}|null>} The chosen source.
  * @private
  */
@@ -10218,11 +11116,11 @@ function openDataDialog(doc, existingNames, opts) {
     var modal = el('div', 'cxb-modal');
 
     var heading = el('h3', 'cxb-modal-title');
-    heading.textContent = 'Add data source';
+    heading.textContent = opts.onlyFunction ? 'Add a data function' : 'Add data source';
 
     var nameInput = el('input');
     nameInput.type = 'text';
-    nameInput.value = 'data' + (existingNames.length + 1);
+    nameInput.value = (opts.onlyFunction ? 'fn' : 'data') + (existingNames.length + 1);
     nameInput.setAttribute('placeholder', 'Name (e.g. sales)');
 
     // Existing stored datasets come first so binding to seeded/uploaded data is
@@ -10233,6 +11131,7 @@ function openDataDialog(doc, existingNames, opts) {
     if (canUseStore) modes.push(['store', 'Upload CSV / JSON to a store']);
     modes.push(['connector', 'Connector URL']);
     if (canUseFunction) modes.push(['function', 'Data function (R / Python)']);
+    if (opts.onlyFunction && canUseFunction) modes = [['function', 'Data function (R / Python)']];
     var typeSel = el('select');
     modes.forEach(function (pair) {
       var o = doc.createElement('option');

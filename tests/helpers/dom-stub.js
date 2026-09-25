@@ -97,6 +97,17 @@ class StubElement {
   }
 
   /**
+   * @param {StubElement} child - Child to remove.
+   * @returns {StubElement} The child.
+   */
+  removeChild(child) {
+    var idx = this.children.indexOf(child);
+    if (idx !== -1) this.children.splice(idx, 1);
+    child.parentNode = null;
+    return child;
+  }
+
+  /**
    * @param {string} name - Attribute name.
    * @param {string} value - Attribute value.
    * @returns {void}

@@ -33,6 +33,74 @@ release.
 - A guide for several processes and hosts: requirements, the scheduler, health
   checks, rolling upgrades, backups.
 
+### Data functions: see the code, survive a busy runtime
+- A chart fed (directly or through a join) by a `kind:"function"` source gets a
+  **`</> Code`** button in its title bar: a dialog lists each source step (data,
+  join, the R / Python code with Copy) and the CanvasXpress config that draws
+  it. Opt out per panel with `showCode: false`.
+- In the **Builder** the button moves into the panel toolbar (next to ⚙, where
+  the title-bar button was covered) and the dialog is an **editor**: change the
+  R / Python code or the chart config JSON and Apply to re-run and re-render
+  (invalid JSON is reported, not applied). Save as usual to keep the edits.
+- **Admin-authored functions for everyone.** In `CXD_FUNCTIONS=admin` mode,
+  code saved in an administrator's dashboard (exact language + code, checked
+  server-side on every call) now runs for any signed-in user; other code stays
+  admin-only. `GET /api/functions/status` adds `canAuthor`; for non-authors the
+  Builder's *+ Function* and the code editor's Apply are disabled (the code stays
+  readable). The demo seeds Cohort Explorer and Dose–Response Lab under `admin`,
+  locked and shared view-only with everyone (an earlier `app`-owned copy is moved).
+- **Dashboards list:** the "👥 from <owner> · view only" pill is now a small icon
+  describing *your* access, with the owner and permissions on hover: 🔒 = view
+  only; 👥 = you can edit a board shared with you, or you own a board you shared
+  (tooltip lists who, from the new `sharedWith` on your own rows in
+  `GET /api/dashboards`); no icon = yours / editable and unshared. The two
+  data-function showcases are pinned 2nd (Cohort Explorer) and 4th
+  (Dose–Response Lab).
+- **Disposable dashboards** (`CXD_DISPOSABLE_DASHBOARDS=owner/id,…`): any
+  signed-in user may view, save and **delete** them (list rows carry
+  `disposable`). The demo ships a **Sandbox** (`admin/sandbox`, shared edit with
+  everyone) that it recreates from `examples/sandbox.spec.json` whenever it is
+  missing — on every restart / deploy; an edited copy is kept as is.
+- **Admin view in tabs:** Users, roles & groups · Lineage · Default examples ·
+  Audit log (the last tab is remembered).
+- **No silent same-name forks.** Saving a NEW dashboard under the id of one you
+  can see but not change (a shipped example, a view-only share, another
+  owner's board) is refused with `409` ("owner: …; save under another name").
+  In the Builder, Save on such a board opens **Save a copy** (prefilled
+  "<title> (copy)"; names taken by a visible dashboard's id **or title** are
+  blocked, and the board you opened is recognised by its id, not its title's
+  slug); the first save of a new dashboard
+  opens **Save dashboard** with its name and **access** — private, everyone
+  (view / edit) or specific users and groups (applied as grants). Re-saving your
+  own dashboard, or one shared with you for editing, saves straight away. Admins
+  are not offered in share lists (`/api/directory` omits them): they always
+  have full access. Dialog dropdowns draw their chevron inset from the border. An
+  admin editing a shipped example now saves back to its owner (`?owner=app`).
+- **Maximized charts cover the whole dashboard again.** While a chart is maximized
+  or shows its customizer / data filters (CanvasXpress `body.has-fullscreen`, the
+  chart fixed at z-index 1), text / image / control cells and a selected builder
+  cell no longer paint over it (cells drop their z-index), and the builder's
+  panel toolbar and resize handles are hidden.
+- **+ Function** in the Builder toolbar (shown when the server runs data
+  functions for the user): pick R or Python, tick the input sources, write the
+  code; it adds the function as a source and a panel charting its result.
+- A function the runtime refuses as busy (`429`, more functions than
+  `CXD_FUNCTIONS_MAX_CONCURRENT`) is retried with backoff instead of failing.
+- New example **Dose–Response Lab** (`examples/dose-response-lab.html`, seeded
+  in the demo): an R `nls()` Emax fit and two Python pandas summaries.
+
+### Filters panel range slider
+- Numeric (range) fields are now a dual-thumb slider styled like the
+  CanvasXpress Data Filter range: editable min / max on top, a tick ruler over
+  the "pretty" data extent; drag to filter on release, a thumb at its end is
+  unbounded. Fields without a numeric extent keep the min / max boxes.
+
+### CanvasXpress engine on every page
+- `CXD_CANVASXPRESS_URL` and `CXD_CANVASXPRESS_LICENSE` now apply to every
+  served HTML page (example boards, `view.html`, `shared.html`, the demo
+  builder), not only the app shell — e.g. `http://localhost:8080/dist` to test
+  a local engine build. Unset, nothing changes (public CDN).
+
 ### Single sign-on ([docs/sso.md](docs/sso.md))
 - **OpenID Connect sign-in** (authorization code + PKCE) with ID tokens verified
   against the provider's keys (signature, iss, aud, exp, nonce; no `none` / HMAC).

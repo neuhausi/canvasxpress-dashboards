@@ -1003,7 +1003,45 @@ test('filter schemes: pick a declared scheme, save the current state as a new on
   // setFilterState restores a view programmatically and repaints the panel.
   handle.setFilterState([{ dataRef: 'clin', field: 'Arm', values: ['placebo'] }]);
   assert.equal(valueBox(container, 'drug').checked, false);
-  assert.equal(container.querySelector('.cxd-filters-min').value, '');
+  // No Age bound: the min box shows the slider's lower end (pretty(48..70) = 45..70).
+  assert.equal(container.querySelector('.cxd-filters-min').value, '45');
+  handle.destroy();
+});
+
+test('filters range slider: drag a thumb to filter, back to its end to clear', async function () {
+  var live = [];
+  var CX = markingCX(live);
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var handle = await renderDashboard(filtersSpec(), container, { CanvasXpress: CX });
+  await handle.ready;
+  var ranges = container.querySelectorAll('.cxd-range-input');
+  assert.equal(ranges.length, 2, 'two thumbs');
+  assert.deepEqual([ranges[0].min, ranges[0].max], ['45', '70'], 'pretty extent of Age 48..70');
+  var ticks = container.querySelectorAll('.cxd-range-tick-label').map(function (t) { return t.textContent; });
+  assert.deepEqual(ticks, ['45', '50', '55', '60', '65', '70']);
+
+  // Dragging updates the value live; releasing filters.
+  ranges[0].value = '60';
+  ranges[0].dispatchEvent('input');
+  assert.equal(container.querySelector('.cxd-filters-min').value, '60');
+  assert.deepEqual(handle.getFilterState(), [], 'no filter until release');
+  ranges[0].dispatchEvent('change');
+  assert.deepEqual(handle.getFilterState(), [{ dataRef: 'clin', field: 'Age', min: 60 }]);
+
+  // The max thumb cannot pass the min thumb.
+  ranges[1].value = '50';
+  ranges[1].dispatchEvent('input');
+  assert.equal(container.querySelector('.cxd-filters-max').value, '60');
+
+  // Back to the ends = unbounded = no filter.
+  ranges = container.querySelectorAll('.cxd-range-input');
+  ranges[1].value = '70';
+  ranges[1].dispatchEvent('input');
+  ranges[0].value = '45';
+  ranges[0].dispatchEvent('input');
+  ranges[0].dispatchEvent('change');
+  assert.deepEqual(handle.getFilterState(), []);
   handle.destroy();
 });
 
@@ -1047,6 +1085,55 @@ test('a function panel re-runs when its $param arg or an input changes', async f
   await handle.setParam('region', 'EMEA');  // re-queries its input, then re-runs it
   assert.equal(runs.length, 3);
   assert.deepEqual(live[0].updates[1].y.data, [[4]]);
+  handle.destroy();
+});
+
+test('a chart fed by a data function has a Code button showing the function and the config', async function () {
+  var live = [];
+  function fetchStub() {
+    var text = JSON.stringify({ data: { y: { vars: ['rho'], smps: ['A', 'B'], data: [[0.1, -0.2]] } } });
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(text); } });
+  }
+  var spec = {
+    id: 'fncode',
+    layout: { cols: 12, items: [
+      { panel: 'out', x: 0, y: 0, w: 6, h: 3 },
+      { panel: 'raw', x: 6, y: 0, w: 6, h: 3 },
+      { panel: 'quiet', x: 0, y: 3, w: 6, h: 3 }
+    ] },
+    data: {
+      a: { kind: 'inline', value: { y: { vars: ['v'], smps: ['s1'], data: [[1]] } } },
+      b: { kind: 'inline', value: { y: { vars: ['w'], smps: ['s1'], data: [[2]] } } },
+      ab: { kind: 'join', left: 'a', right: 'b', on: { left: 'smps', right: 'smps' } },
+      scored: { kind: 'function', language: 'r', code: 'result <- ab', inputs: ['ab'] }
+    },
+    panels: {
+      out: { title: 'Scored', dataRef: 'scored', config: { graphType: 'Bar' } },
+      raw: { title: 'Raw', dataRef: 'a', config: { graphType: 'Bar' } },
+      quiet: { title: 'Quiet', dataRef: 'scored', showCode: false, config: { graphType: 'Bar' } }
+    }
+  };
+  var container = document.createElement('div');
+  var handle = await renderDashboard(spec, container, { CanvasXpress: recordingCX(live), fetch: fetchStub, cache: new Map() });
+  await handle.ready;
+  var buttons = container.querySelectorAll('.cxd-code-btn');
+  assert.equal(buttons.length, 1, 'only the function-fed panel without showCode:false');
+  assert.equal(container.querySelectorAll('.cxd-panel-title-text')[0].textContent, 'Scored');
+
+  buttons[0].dispatchEvent('click');
+  var dialog = container.querySelector('.cxd-code-dialog');
+  assert.ok(dialog, 'dialog opened');
+  var steps = container.querySelectorAll('.cxd-code-step-title').map(function (s) { return s.textContent; });
+  assert.equal(steps.length, 5, 'a, b, the join, the function, the chart');
+  assert.ok(/join of a and b/.test(steps[2]));
+  assert.ok(/R data function/.test(steps[3]));
+  var blocks = container.querySelectorAll('.cxd-code-block').map(function (b) {
+    return (b.childNodes || b.children)[1].textContent;   // [Copy button, pre]
+  });
+  assert.deepEqual(blocks, ['result <- ab', JSON.stringify({ graphType: 'Bar' }, null, 2)]);
+
+  container.querySelector('.cxd-code-close').dispatchEvent('click');
+  assert.equal(container.querySelector('.cxd-code-dialog'), null, 'closed');
   handle.destroy();
 });
 

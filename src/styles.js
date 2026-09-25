@@ -16,6 +16,45 @@ export var dashboardCss = [
   '.cxd-panel-title { flex: 0 0 auto; padding: 6px 10px; font: 600 16px/1.3 var(--cxd-font, system-ui, sans-serif);',
   '  color: var(--cxd-title, #2a2f36); border-bottom: 1px solid var(--cxd-border, #e2e5ea);',
   '  background: var(--cxd-title-bg, #f7f8fa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+  // "Code" button on a chart fed by a data function, and the recipe dialog it opens.
+  '.cxd-panel-title-actions { display: flex; align-items: center; gap: 8px; }',
+  '.cxd-panel-title-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }',
+  '.cxd-code-btn { flex: 0 0 auto; padding: 1px 8px; border: 1px solid var(--cxd-border, #d0d4da); border-radius: 6px;',
+  '  background: var(--cxd-panel-bg, #fff); color: var(--cxd-muted, #6b7280); font: 500 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; cursor: pointer; }',
+  '.cxd-code-btn:hover { color: var(--cxd-title, #2a2f36); border-color: var(--cxd-muted, #8a9099); }',
+  '.cxd-code-backdrop { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center;',
+  '  padding: 16px; background: rgba(0,0,0,.35); }',
+  '.cxd-code-dialog { display: flex; flex-direction: column; width: min(760px, 100%); max-height: min(85vh, 900px);',
+  '  border: 1px solid var(--cxd-border, #e2e5ea); border-radius: 10px; background: var(--cxd-panel-bg, #fff);',
+  '  color: var(--cxd-title, #2a2f36); box-shadow: 0 12px 40px rgba(0,0,0,.28); font: 14px/1.45 var(--cxd-font, system-ui, sans-serif); }',
+  '.cxd-code-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--cxd-border, #e2e5ea); }',
+  '.cxd-code-heading { flex: 1 1 auto; min-width: 0; font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
+  '.cxd-code-close { border: none; background: none; color: var(--cxd-muted, #6b7280); font-size: 22px; line-height: 1; cursor: pointer; }',
+  '.cxd-code-body { overflow: auto; padding: 6px 14px 14px; }',
+  '.cxd-code-step { padding-top: 10px; }',
+  '.cxd-code-step-title { font-weight: 600; }',
+  '.cxd-code-step-detail { color: var(--cxd-muted, #6b7280); font-size: 13px; margin-top: 2px; }',
+  '.cxd-code-block { position: relative; margin-top: 6px; }',
+  '.cxd-code-block pre { margin: 0; padding: 10px 12px; overflow: auto; max-height: 340px; border-radius: 6px;',
+  '  border: 1px solid var(--cxd-border, #e2e5ea); background: var(--cxd-title-bg, #f7f8fa);',
+  '  font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; tab-size: 2; }',
+  '.cxd-code-copy { position: absolute; top: 6px; right: 6px; padding: 1px 8px; border: 1px solid var(--cxd-border, #d0d4da);',
+  '  border-radius: 5px; background: var(--cxd-panel-bg, #fff); color: var(--cxd-muted, #6b7280); font-size: 12px; cursor: pointer; }',
+  '.cxd-code-edit { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; resize: vertical; border-radius: 6px;',
+  '  border: 1px solid var(--cxd-border, #d0d4da); background: var(--cxd-title-bg, #f7f8fa); color: inherit;',
+  '  font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; tab-size: 2; }',
+  '.cxd-code-edit:focus { outline: 2px solid var(--cx-toggle-switch-background-color, #087ad1); outline-offset: -1px; }',
+  '.cxd-code-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 6px; }',
+  '.cxd-code-status { font-size: 12.5px; color: var(--cxd-muted, #6b7280); }',
+  '.cxd-code-status.cxd-code-error { color: var(--cxd-error, #c0392b); }',
+  '.cxd-code-apply { padding: 4px 14px; border: none; border-radius: 6px; background: var(--cx-toggle-switch-background-color, #087ad1);',
+  '  color: #fff; font: 600 13px/1.4 var(--cxd-font, system-ui, sans-serif); cursor: pointer; }',
+  '.cxd-code-apply:disabled { opacity: .45; cursor: not-allowed; }',
+  '.cxd-code-edit[readonly] { cursor: text; }',
+  '.cxd-code-edit[readonly]:focus { outline: 1px dashed var(--cxd-border, #d0d4da); }',
+  /* In the builder the title-bar Code button sits under the floating panel
+     toolbar; the builder offers it (editable) from that toolbar instead. */
+  '.cxb-cell .cxd-code-btn { display: none; }',
   // Centre the graph canvas in the body so any leftover space (the few px a
   // graph leaves, or a reserved canvasInset margin) is even on ALL sides rather
   // than pooling at the right and bottom. Text/control panels set their own
@@ -41,11 +80,18 @@ export var dashboardCss = [
   // collision resolution lets graphs compact through their rows, and without
   // the raise a control ends up hidden behind whichever panel slid over it.
   '.cxd-annctl-cell { border: none; background: transparent; overflow: visible; z-index: 3; }',
+  /* While a chart is maximized / in its customizer / data filters, CanvasXpress
+     marks <body> .has-fullscreen and fixes that chart's DOM over the page at
+     z-index 1 (it hides other CanvasXpress charts itself). Cells that carry a
+     z-index (text, image, controls, a selected builder cell) would otherwise
+     paint over it — or, for the chart's own cell, trap it in a stacking context
+     below its neighbours — so drop every cell's z-index for the duration. */
+  'body.has-fullscreen .cxd-panel { z-index: auto !important; }',
   // Filters panel: a titled panel whose body scrolls a stack of field sections.
   '.cxd-filters-cell .cxd-panel-body { align-items: stretch; justify-content: flex-start; overflow: auto; }',
   '.cxd-filters { width: 100%; padding: 8px 10px; font: 13px/1.35 var(--cxd-font, system-ui, sans-serif); color: var(--cxd-title, #2a2f36); }',
   '.cxd-filters-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }',
-  '.cxd-filters-bar select, .cxd-filters-bar input, .cxd-filters-bar button, .cxd-filters-range input, .cxd-filters-text {',
+  '.cxd-filters-bar select, .cxd-filters-bar input, .cxd-filters-bar button, .cxd-filters-range-plain input, .cxd-filters-text {',
   '  padding: 3px 6px; border: 1px solid var(--cxd-ctrl-border,var(--cxd-border,#d0d4da)); border-radius: 6px;',
   '  font: inherit; background: var(--cxd-ctrl-bg,#fff); color: inherit; }',
   '.cxd-filters-scheme-name { width: 110px; }',
@@ -54,8 +100,38 @@ export var dashboardCss = [
   '.cxd-filters-label { font-weight: 600; margin-bottom: 4px; }',
   '.cxd-filters-values { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow: auto; }',
   '.cxd-filters-check { display: flex; align-items: center; gap: 6px; cursor: pointer; }',
-  '.cxd-filters-range { display: flex; align-items: center; gap: 6px; }',
-  '.cxd-filters-range input { width: 0; flex: 1 1 0; min-width: 60px; }',
+  '.cxd-filters-range-plain { display: flex; align-items: center; gap: 6px; }',
+  '.cxd-filters-range-plain input { width: 0; flex: 1 1 0; min-width: 60px; }',
+  /* Range slider, styled like the CanvasXpress Data Filter range (15-range-slider.css):
+     values on top, a thick accent bar with round thumbs, a tick ruler below. The
+     accent follows the engine theme (--cx-toggle-switch-background-color, set on
+     :root by canvasXpress.css). Two invisible native range inputs sit over the
+     track and take the drags; only their thumbs catch the pointer. Selectors are
+     qualified with input[type=range] to outrank canvasXpress.css's global
+     `input[type=range]` rules. */
+  '.cxd-filters-range { padding: 0 10px 2px; --cxd-accent: var(--cx-toggle-switch-background-color, #087ad1); }',
+  '.cxd-range-values { display: flex; justify-content: space-between; margin: 0 -10px 6px; }',
+  '.cxd-range-values input { width: 45%; padding: 2px 0; border: none; border-radius: 4px; background: transparent;',
+  '  font: 15px/1.2 var(--cxd-font, system-ui, sans-serif); color: inherit; -moz-appearance: textfield; }',
+  '.cxd-range-values input:focus { outline: 1px solid var(--cxd-accent); background: var(--cxd-ctrl-bg,#fff); }',
+  '.cxd-range-values input.cxd-filters-max { text-align: right; }',
+  '.cxd-range-values input::-webkit-inner-spin-button, .cxd-range-values input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }',
+  '.cxd-range-slider { position: relative; height: 8px; margin: 5px 0; isolation: isolate; }',
+  '.cxd-range-track { position: absolute; inset: 0; border-radius: 4px; background: var(--cxd-border, #eeeeee); }',
+  '.cxd-range-fill { position: absolute; top: 0; bottom: 0; left: 0; right: 0; border-radius: 4px; background: var(--cxd-accent); }',
+  '.cxd-range-thumb { position: absolute; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%;',
+  '  background: var(--cxd-accent); box-shadow: 0 0 0 0 rgba(8,122,209,.15); transition: box-shadow .15s ease-in-out; pointer-events: none; }',
+  '.cxd-range-slider:hover .cxd-range-thumb { box-shadow: 0 0 0 6px rgba(8,122,209,.15); }',
+  'input[type=range].cxd-range-input { position: absolute; z-index: 3; left: -9px; top: -5px; width: calc(100% + 18px); height: 18px;',
+  '  margin: 0; padding: 0; opacity: 0; pointer-events: none; -webkit-appearance: none; appearance: none; background: none; }',
+  'input[type=range].cxd-range-input::-webkit-slider-thumb { pointer-events: all; width: 18px; height: 18px; border-radius: 50%;',
+  '  cursor: grab; -webkit-appearance: none; appearance: none; }',
+  'input[type=range].cxd-range-input::-moz-range-thumb { pointer-events: all; width: 18px; height: 18px; border: 0; border-radius: 50%; cursor: grab; }',
+  '.cxd-range-ticks { position: relative; height: 26px; margin-top: 8px; }',
+  '.cxd-range-tick { position: absolute; top: 0; width: 1px; height: 5px; background: var(--cxd-accent); }',
+  '.cxd-range-tick-major { height: 10px; }',
+  '.cxd-range-tick-label { position: absolute; top: 11px; left: 0; transform: translateX(-50%); white-space: nowrap;',
+  '  font-size: 12px; line-height: 1.2; color: inherit; }',
   '.cxd-filters-text { width: 100%; }',
   '.cxd-filters-hint { color: var(--cxd-muted,#8a9099); }',
   '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
@@ -143,6 +219,9 @@ export var dashboardCss = [
   // Cells clip exactly like the viewer (the hover chrome sits inside the cell).
   '.cxb-cell { position: relative; }',
   '.cxb-cell.cxb-selected { outline: 2px solid #2f6feb; outline-offset: -1px; z-index: 1; }',
+  /* The floating panel toolbar and resize handles (z-index 10006+) would show
+     through a maximized chart / its customizer: hide them meanwhile. */
+  'body.has-fullscreen .cxb-chrome, body.has-fullscreen .cxb-resize { display: none !important; }',
   // A held (dragged) cell floats above everything, semi-transparent: crossing
   // another panel reads as "in motion", and the board underneath stays visible.
   '.cxb-cell.cxb-dragging { opacity: .65; z-index: 10; box-shadow: 0 8px 24px rgba(0,0,0,.25); }',
@@ -167,6 +246,7 @@ export var dashboardCss = [
   '.cxb-tool { width: 26px; height: 26px; line-height: 24px; text-align: center; border-radius: 5px;',
   '  cursor: pointer; font-size: 19px; color: var(--cxd-muted,#6b7280); }',
   '.cxb-tool:hover { background: rgba(0,0,0,.08); color: inherit; }',
+  '.cxb-tool.cxb-tool-code { width: auto; padding: 0 5px; font: 600 12px/26px ui-monospace, SFMono-Regular, Menlo, monospace; }',
   '.cxb-resize { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize;',
   '  background: linear-gradient(135deg, transparent 50%, #2f6feb 50%); border-bottom-right-radius: 8px; z-index: 10006;',
   '  opacity: 0; transition: opacity .12s ease; }',
@@ -222,7 +302,28 @@ export var dashboardCss = [
   '  padding: 7px 9px; border: 1px solid var(--cxd-border,#d0d4da); border-radius: 6px; font: inherit;',
   '  background: var(--cxd-panel-bg,#fff); color: inherit; }',
   '.cxb-modal-json { font-family: ui-monospace, Menlo, monospace; font-size:14px; min-height: 130px; resize: vertical; }',
+  /* Dialog dropdowns: our own chevron, inset from the right border (the native
+     arrow sits almost on it). The dialog card is always light. */
+  '.cxb-modal select { -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 32px;',
+  '  background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22%3E%3Cpath d=%22M1 1.5l5 5 5-5%22 fill=%22none%22 stroke=%22%2357606a%22 stroke-width=%221.6%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E");',
+  '  background-repeat: no-repeat; background-position: right 11px center; background-size: 12px 8px; cursor: pointer; }',
+  '.cxb-save-note { font-size: 13px; color: var(--cxd-muted,#6b7280); margin-top: -6px; }',
   '.cxb-modal-err { color: var(--cxd-error,#c0392b); font-size:14px; min-height: 17px; }',
+  // Save / Save-a-copy dialog: name + access (private, everyone, specific people).
+  '.cxb-save-intro { font-size: 14px; line-height: 1.45; color: var(--cxd-muted,#6b7280); }',
+  '.cxb-save-people { display: flex; flex-direction: column; gap: 6px; }',
+  // The generic `.cxb-modal select { width: 100% }` would make both selects
+  // claim the whole row (collapsing the first, pushing Add out): size them here.
+  '.cxb-modal .cxb-save-pick { display: flex; gap: 6px; align-items: center; width: 100%; }',
+  '.cxb-modal .cxb-save-pick select { width: auto; min-width: 0; }',
+  '.cxb-modal .cxb-save-pick .cxb-save-who { flex: 1 1 0; }',
+  '.cxb-modal .cxb-save-pick .cxb-save-level { flex: 0 0 112px; }',
+  '.cxb-modal .cxb-save-pick .cxb-btn { flex: 0 0 auto; }',
+  '.cxb-save-chips { display: flex; flex-wrap: wrap; gap: 6px; }',
+  '.cxb-save-chip { display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px 2px 10px; border-radius: 99px;',
+  '  background: #eaf3fb; color: #0b5ea8; font-size: 13px; }',
+  '.cxb-save-chip-x { border: none; background: none; color: inherit; font-size: 15px; line-height: 1; cursor: pointer; padding: 0 4px; }',
+  '.cxb-save-none { font-size: 13px; color: var(--cxd-muted,#6b7280); }',
   /* Whole-spec JSON editor (✎ next to the dashboard title): a line-number
      gutter + a highlight.js-style colorized layer under a transparent-text
      textarea that owns editing and scrolling. */

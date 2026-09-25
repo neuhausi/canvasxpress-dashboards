@@ -87,7 +87,8 @@ export function renderDashboard(spec, target, options) {
   // `baseUrl` lets `kind:"dataset"` sources resolve against a cxd_server on a
   // different origin than the page (else same-origin `/api/datasets/{id}`).
   var store = createDataStore({
-    fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl
+    fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl,
+    busyRetryMs: options.busyRetryMs
   });
   // Auto-resize each graph to its cell (via setDimensions) when the container
   // reflows. The builder disables this and re-renders panels itself on resize,
@@ -882,6 +883,15 @@ export function renderDashboard(spec, target, options) {
     var canvasId = makeCanvasId(spec.id, 'panel', item.panel, panelIdCounter.n++);
     cell.canvas.id = canvasId;
 
+    // A chart fed (directly or through a join) by a data function gets a
+    // "Code" button showing its recipe: the function code and the chart config.
+    if (cell.header && panel && panel.showCode !== false && typeof panel.dataRef === 'string') {
+      var lineage = sourceLineage(spec.data || {}, panel.dataRef);
+      if (lineage.some(function (ref) { return (spec.data[ref] || {}).kind === 'function'; })) {
+        addCodeButton(cell.header, container, title, panel, lineage, spec.data);
+      }
+    }
+
     // The host (e.g. the builder) must hear about EVERY settled panel — empty
     // and errored ones included — or it cannot decorate them (select/move/
     // delete chrome). `instance` is null and `state` says why.
@@ -1300,21 +1310,163 @@ export function renderDashboard(spec, target, options) {
       }
 
       /**
-       * Min / max number inputs (blank = unbounded), hinted with the data range.
+       * A dual-thumb range slider styled like the CanvasXpress Data Filter
+       * range: editable min / max values on top, a track with two thumbs, and
+       * a tick ruler over the "pretty" extent of the data. A thumb at its end
+       * (or a blank value) is unbounded; with both unbounded there is no filter.
+       * Dragging updates the values live and filters on release.
        * @param {object} f - Resolved field.
        * @param {(object|null)} current - Its current predicate.
        * @returns {HTMLElement} The range widget.
        */
       function buildRange(f, current) {
+        var curMin = current && typeof current.min === 'number' ? current.min : null;
+        var curMax = current && typeof current.max === 'number' ? current.max : null;
+        var dataMin = typeof f.summary.min === 'number' ? f.summary.min : curMin;
+        var dataMax = typeof f.summary.max === 'number' ? f.summary.max : curMax;
+        if (dataMin === null || dataMax === null) return buildRangeInputs(f, current);
+        if (curMin !== null) dataMin = Math.min(dataMin, curMin);
+        if (curMax !== null) dataMax = Math.max(dataMax, curMax);
+        var ticks = prettyTicks(dataMin, dataMax, 4);
+        var lo = ticks.values[0];
+        var hi = ticks.values[ticks.values.length - 1];
+        var decimals = Math.max(0, -Math.floor(Math.log(ticks.step / 10) / Math.LN10 + 1e-9));
+        var step = Math.pow(10, -decimals);
+
         var wrap = document.createElement('div');
         wrap.className = 'cxd-filters-range';
+        var values = document.createElement('div');
+        values.className = 'cxd-range-values';
+        var minBox = document.createElement('input');
+        var maxBox = document.createElement('input');
+        var slider = document.createElement('div');
+        slider.className = 'cxd-range-slider';
+        var track = document.createElement('div');
+        track.className = 'cxd-range-track';
+        var fill = document.createElement('div');
+        fill.className = 'cxd-range-fill';
+        var thumbLo = document.createElement('div');
+        thumbLo.className = 'cxd-range-thumb';
+        var thumbHi = document.createElement('div');
+        thumbHi.className = 'cxd-range-thumb';
+        var minRange = document.createElement('input');
+        var maxRange = document.createElement('input');
+        [[minBox, 'min', curMin === null ? lo : curMin], [maxBox, 'max', curMax === null ? hi : curMax]].forEach(function (s) {
+          s[0].type = 'number';
+          s[0].className = 'cxd-filters-' + s[1];
+          s[0].step = 'any';
+          s[0].value = formatBound(s[2]);
+          s[0].setAttribute('aria-label', f.label + ' ' + s[1]);
+        });
+        [minRange, maxRange].forEach(function (r, i) {
+          r.type = 'range';
+          r.className = 'cxd-range-input';
+          r.min = String(lo);
+          r.max = String(hi);
+          r.step = String(step);
+          r.tabIndex = -1;                 // the number boxes are the keyboard path
+          r.value = i === 0 ? minBox.value : maxBox.value;
+        });
+
+        function formatBound(v) {
+          return String(Number(Number(v).toFixed(decimals)));
+        }
+        function pct(v) {
+          return hi === lo ? 0 : (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * 100;
+        }
+        // Mirror the two values onto the fill and thumbs; keep min <= max.
+        function paint() {
+          var a = Number(minRange.value);
+          var b = Number(maxRange.value);
+          fill.style.left = pct(a) + '%';
+          fill.style.right = (100 - pct(b)) + '%';
+          thumbLo.style.left = pct(a) + '%';
+          thumbHi.style.left = pct(b) + '%';
+          // Past halfway the min thumb must sit on top, or it cannot leave the max.
+          minRange.style.zIndex = pct(a) > 50 ? '4' : '3';
+        }
+        function apply() {
+          var a = parseBound(minBox.value);
+          var b = parseBound(maxBox.value);
+          if (a !== null && b !== null && a > b) { var t = a; a = b; b = t; }
+          var pred = {};
+          if (a !== null && a > lo) pred.min = a;
+          if (b !== null && b < hi) pred.max = b;
+          setFilterPredicate(f.dataRef, f.field,
+            pred.min === undefined && pred.max === undefined ? null : pred);
+        }
+        minRange.addEventListener('input', function () {
+          if (Number(minRange.value) > Number(maxRange.value)) minRange.value = maxRange.value;
+          minBox.value = formatBound(minRange.value);
+          paint();
+        });
+        maxRange.addEventListener('input', function () {
+          if (Number(maxRange.value) < Number(minRange.value)) maxRange.value = minRange.value;
+          maxBox.value = formatBound(maxRange.value);
+          paint();
+        });
+        minRange.addEventListener('change', apply);
+        maxRange.addEventListener('change', apply);
+        [[minBox, minRange, lo], [maxBox, maxRange, hi]].forEach(function (s) {
+          s[0].addEventListener('change', function () {
+            if (parseBound(s[0].value) === null) s[0].value = formatBound(s[2]);   // blank = unbounded
+            s[1].value = s[0].value;
+            paint();
+            apply();
+          });
+        });
+
+        values.appendChild(minBox);
+        values.appendChild(maxBox);
+        slider.appendChild(track);
+        slider.appendChild(fill);
+        slider.appendChild(thumbLo);
+        slider.appendChild(thumbHi);
+        slider.appendChild(minRange);
+        slider.appendChild(maxRange);
+        var ruler = document.createElement('div');
+        ruler.className = 'cxd-range-ticks';
+        ticks.values.forEach(function (v, i) {
+          var major = document.createElement('span');
+          major.className = 'cxd-range-tick cxd-range-tick-major';
+          major.style.left = pct(v) + '%';
+          var text = document.createElement('span');
+          text.className = 'cxd-range-tick-label';
+          text.textContent = String(v);
+          major.appendChild(text);
+          ruler.appendChild(major);
+          if (i === ticks.values.length - 1) return;
+          for (var k = 1; k < 5; k++) {
+            var minor = document.createElement('span');
+            minor.className = 'cxd-range-tick';
+            minor.style.left = pct(v + ticks.step * k / 5) + '%';
+            ruler.appendChild(minor);
+          }
+        });
+        wrap.appendChild(values);
+        wrap.appendChild(slider);
+        wrap.appendChild(ruler);
+        paint();
+        return wrap;
+      }
+
+      /**
+       * Fallback for a range field without a numeric extent: min / max number
+       * inputs (blank = unbounded).
+       * @param {object} f - Resolved field.
+       * @param {(object|null)} current - Its current predicate.
+       * @returns {HTMLElement} The range widget.
+       */
+      function buildRangeInputs(f, current) {
+        var wrap = document.createElement('div');
+        wrap.className = 'cxd-filters-range cxd-filters-range-plain';
         var min = document.createElement('input');
         var max = document.createElement('input');
-        [[min, 'min', f.summary.min], [max, 'max', f.summary.max]].forEach(function (spec3) {
+        [[min, 'min'], [max, 'max']].forEach(function (spec3) {
           var input = spec3[0];
           input.type = 'number';
           input.className = 'cxd-filters-' + spec3[1];
-          input.placeholder = spec3[2] == null ? spec3[1] : String(spec3[2]);
+          input.placeholder = spec3[1];
           input.value = current && typeof current[spec3[1]] === 'number' ? String(current[spec3[1]]) : '';
           input.addEventListener('change', function () {
             var lo = parseBound(min.value);
@@ -2019,6 +2171,35 @@ function parseBound(text) {
 }
 
 /**
+ * "Pretty" tick values covering [min, max] (like R's pretty(), which the
+ * CanvasXpress range slider uses): a 1 / 2 / 5 x 10^k step near
+ * (max - min) / n, with the ends rounded outward to it.
+ * @param {number} min - Data minimum.
+ * @param {number} max - Data maximum.
+ * @param {number} n - Desired number of intervals.
+ * @returns {{values: number[], step: number}} Ticks (ascending) and their step.
+ * @private
+ */
+function prettyTicks(min, max, n) {
+  if (!(max > min)) {
+    var pad = min === 0 ? 1 : Math.abs(min) / 10;
+    min -= pad;
+    max += pad;
+  }
+  var raw = (max - min) / n;
+  var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+  var step = mag;
+  [1, 2, 5, 10].forEach(function (m) {
+    if (Math.abs(m * mag - raw) < Math.abs(step - raw)) step = m * mag;
+  });
+  var lo = Math.floor(min / step + 1e-9) * step;
+  var hi = Math.ceil(max / step - 1e-9) * step;
+  var values = [];
+  for (var v = lo; v <= hi + step / 2; v += step) values.push(Number(v.toPrecision(12)));
+  return { values: values, step: step };
+}
+
+/**
  * Resolve a target that may be an element or an element id.
  * @param {(HTMLElement|string)} target - Element or id.
  * @returns {HTMLElement|null} The resolved element.
@@ -2614,6 +2795,235 @@ function placeCell(el, item) {
 }
 
 /**
+ * Every source a ref is computed from, itself included, in dependency order
+ * (a source after the ones it reads). Unknown refs and cycles are skipped.
+ * @param {object} sources - The spec's `data` map.
+ * @param {string} ref - The source a panel reads.
+ * @returns {string[]} Refs, inputs first.
+ */
+export function sourceLineage(sources, ref) {
+  var out = [];
+  var visiting = {};
+  (function visit(r) {
+    if (!Object.prototype.hasOwnProperty.call(sources, r) || visiting[r] || out.indexOf(r) !== -1) return;
+    visiting[r] = true;
+    sourceInputs(sources[r]).forEach(visit);
+    visiting[r] = false;
+    out.push(r);
+  })(ref);
+  return out;
+}
+
+/**
+ * Add a "Code" button to a panel title that opens the panel's recipe.
+ * @param {HTMLElement} header - The panel title bar.
+ * @param {HTMLElement} container - Dashboard container (hosts the dialog, carries the theme).
+ * @param {string} title - Panel title.
+ * @param {object} panel - Panel definition.
+ * @param {string[]} lineage - The panel's sources, inputs first (see sourceLineage).
+ * @param {object} sources - The spec's `data` map.
+ * @returns {void}
+ * @private
+ */
+function addCodeButton(header, container, title, panel, lineage, sources) {
+  var button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'cxd-code-btn';
+  button.textContent = '</> Code';
+  button.title = 'How this chart is built: the data-function code and the chart config';
+  button.addEventListener('click', function (ev) {
+    if (ev && ev.stopPropagation) ev.stopPropagation();
+    showCodeDialog(container, title, panel, lineage, sources);
+  });
+  // The title bar is a drag handle in the builder: a press on the button is not a drag.
+  button.addEventListener('pointerdown', function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); });
+  // Keep the title as the first child (the builder renames it through childNodes[0])
+  // in its own span so it can still ellipsize beside the button.
+  var text = document.createElement('span');
+  text.className = 'cxd-panel-title-text';
+  text.textContent = header.textContent;
+  header.textContent = '';
+  header.appendChild(text);
+  header.classList.add('cxd-panel-title-actions');
+  header.appendChild(button);
+}
+
+/**
+ * Open a dialog with a chart's recipe, step by step: each source it reads
+ * (data functions with their full code), then the CanvasXpress config that
+ * draws it. Closes on the close button, the backdrop, or Escape. With
+ * `opts.editable` (the builder) the function code and the chart config are
+ * editable, each with an Apply button handing the new text to a callback.
+ * @param {HTMLElement} container - Element hosting the dialog (carries the theme).
+ * @param {string} title - Panel title.
+ * @param {object} panel - Panel definition.
+ * @param {string[]} lineage - The panel's sources, inputs first.
+ * @param {object} sources - The spec's `data` map.
+ * @param {object} [opts] - `{editable, lockedReason, onApplyCode(ref, code), onApplyConfig(config)}`;
+ *   the callbacks return an error message, or a falsy value on success. With a
+ *   `lockedReason` the editors are read-only and Apply is disabled (the reason
+ *   is shown) — the user can read and copy how the chart is built, not change it.
+ * @returns {HTMLElement} The dialog backdrop (removed on close).
+ */
+export function showCodeDialog(container, title, panel, lineage, sources, opts) {
+  opts = opts || {};
+  var editable = !!opts.editable;
+  var locked = editable && !!opts.lockedReason;
+  var backdrop = document.createElement('div');
+  backdrop.className = 'cxd-code-backdrop';
+  var dialog = document.createElement('div');
+  dialog.className = 'cxd-code-dialog';
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-label', 'How this chart is built');
+
+  var head = document.createElement('div');
+  head.className = 'cxd-code-head';
+  var heading = document.createElement('div');
+  heading.className = 'cxd-code-heading';
+  heading.textContent = (editable && !locked ? 'Edit how this chart is built' : 'How this chart is built') +
+    (title ? ' — ' + title : '');
+  var close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'cxd-code-close';
+  close.textContent = '×';
+  close.setAttribute('aria-label', 'Close');
+  head.appendChild(heading);
+  head.appendChild(close);
+  dialog.appendChild(head);
+
+  var body = document.createElement('div');
+  body.className = 'cxd-code-body';
+  var n = 0;
+  function step(label, detail) {
+    var section = document.createElement('div');
+    section.className = 'cxd-code-step';
+    var h = document.createElement('div');
+    h.className = 'cxd-code-step-title';
+    h.textContent = (++n) + '. ' + label;
+    section.appendChild(h);
+    if (detail) {
+      var d = document.createElement('div');
+      d.className = 'cxd-code-step-detail';
+      d.textContent = detail;
+      section.appendChild(d);
+    }
+    body.appendChild(section);
+    return section;
+  }
+  // A read-only code block with Copy, or (with `apply`) an editable one with Apply.
+  function codeBlock(section, text, apply) {
+    var wrap = document.createElement('div');
+    wrap.className = 'cxd-code-block';
+    if (apply) {
+      var area = document.createElement('textarea');
+      area.className = 'cxd-code-edit';
+      area.spellcheck = false;
+      area.value = text;
+      area.readOnly = locked;
+      area.rows = Math.min(18, Math.max(4, text.split('\n').length + 1));
+      area.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Tab') {                       // indent instead of leaving the box
+          ev.preventDefault();
+          var at = area.selectionStart;
+          area.value = area.value.slice(0, at) + '  ' + area.value.slice(area.selectionEnd);
+          area.selectionStart = area.selectionEnd = at + 2;
+        }
+      });
+      var bar = document.createElement('div');
+      bar.className = 'cxd-code-actions';
+      var status = document.createElement('span');
+      status.className = 'cxd-code-status';
+      var applyBtn = document.createElement('button');
+      applyBtn.type = 'button';
+      applyBtn.className = 'cxd-code-apply';
+      applyBtn.textContent = 'Apply';
+      if (locked) {
+        applyBtn.disabled = true;
+        applyBtn.title = opts.lockedReason;
+        status.textContent = opts.lockedReason;
+      }
+      applyBtn.addEventListener('click', function () {
+        if (locked) return;
+        var error = apply(area.value);
+        status.textContent = error ? String(error) : 'Applied — the chart is re-rendering';
+        status.className = 'cxd-code-status' + (error ? ' cxd-code-error' : '');
+      });
+      bar.appendChild(status);
+      bar.appendChild(applyBtn);
+      wrap.appendChild(area);
+      wrap.appendChild(bar);
+      section.appendChild(wrap);
+      return;
+    }
+    var pre = document.createElement('pre');
+    pre.textContent = text;
+    var copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'cxd-code-copy';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', function () {
+      var done = function () { copy.textContent = 'Copied'; setTimeout(function () { copy.textContent = 'Copy'; }, 1200); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () {});
+    });
+    wrap.appendChild(copy);
+    wrap.appendChild(pre);
+    section.appendChild(wrap);
+  }
+
+  lineage.forEach(function (ref) {
+    var src = sources[ref] || {};
+    if (src.kind === 'function') {
+      var language = src.language === 'r' ? 'R' : src.language === 'python' ? 'Python' : String(src.language);
+      var inputs = sourceInputs(src);
+      var section = step('“' + ref + '” — computed by a ' + language + ' data function',
+        (inputs.length ? 'Receives ' + inputs.join(', ') + ' as ' +
+          (src.language === 'python' ? 'pandas DataFrames' : 'data frames') + '. ' : '') +
+        'Runs on the server; the table it assigns to result is the chart data.');
+      codeBlock(section, String(src.code || ''), editable && opts.onApplyCode ? (function (fnRef) {
+        return function (code) { return opts.onApplyCode(fnRef, code); };
+      })(ref) : null);
+    } else if (src.kind === 'join') {
+      var on = src.on || {};
+      step('“' + ref + '” — ' + (src.how || 'inner') + ' join of ' + src.left + ' and ' + src.right,
+        on.left || on.right ? 'Matched on ' + src.left + '.' + on.left + ' = ' + src.right + '.' + on.right + '.' : '');
+    } else {
+      step('“' + ref + '” — ' + (src.kind || 'inline') + ' data');
+    }
+  });
+  var chart = step('The chart — CanvasXpress config',
+    'Drawn with new CanvasXpress(canvasId, data, config), where data is “' + panel.dataRef + '”.');
+  codeBlock(chart, JSON.stringify(panel.config || {}, null, 2), editable && opts.onApplyConfig ? function (text) {
+    var config;
+    try { config = JSON.parse(text); } catch (e) { return 'Invalid JSON: ' + e.message; }
+    if (!config || typeof config !== 'object' || Array.isArray(config)) return 'The config must be a JSON object';
+    return opts.onApplyConfig(config);
+  } : null);
+  dialog.appendChild(body);
+  backdrop.appendChild(dialog);
+
+  var canListen = typeof document.addEventListener === 'function';
+  function dismiss() {
+    if (canListen) document.removeEventListener('keydown', onKey, true);
+    if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+  }
+  // Capture Escape so it closes the dialog without also resetting the dashboard.
+  // In an editor box Escape only stops there (no accidental loss of edits).
+  function onKey(ev) {
+    if (ev.key === 'Escape' || ev.keyCode === 27) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (!(ev.target && ev.target.tagName === 'TEXTAREA')) dismiss();
+    }
+  }
+  close.addEventListener('click', dismiss);
+  backdrop.addEventListener('click', function (ev) { if (ev.target === backdrop) dismiss(); });
+  if (canListen) document.addEventListener('keydown', onKey, true);
+  container.appendChild(backdrop);
+  if (typeof close.focus === 'function') close.focus();
+  return backdrop;
+}
+
+/**
  * Build a panel cell (title bar, canvas, state overlay).
  * @param {string} [title] - Optional panel title.
  * @returns {{root: HTMLElement, canvas: HTMLElement, setState: function, pending: (Promise|null)}}
@@ -2624,8 +3034,9 @@ function buildCell(title) {
   var root = document.createElement('div');
   root.className = 'cxd-panel';
 
+  var header = null;
   if (title) {
-    var header = document.createElement('div');
+    header = document.createElement('div');
     header.className = 'cxd-panel-title';
     header.textContent = title;
     root.appendChild(header);
@@ -2646,6 +3057,7 @@ function buildCell(title) {
 
   return {
     root: root,
+    header: header,
     canvas: canvas,
     body: body,
     pending: null,

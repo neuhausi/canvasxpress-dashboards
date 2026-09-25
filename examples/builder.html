@@ -183,6 +183,12 @@
       .hero { background: linear-gradient(120deg, #12283a, #1a1d24); }
       .notice { background: #16181d; }
     }
+      .access-icon { font-size: 14px; cursor: help; vertical-align: middle; margin-left: 2px; }
+      .admin-tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--rail-border); margin: 0 0 16px; }
+    .admin-tab { padding: 8px 14px; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px;
+      background: none; color: var(--muted); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .admin-tab:hover { color: inherit; }
+    .admin-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -870,10 +876,22 @@
 
     // The Admin view: list users, create accounts, reset passwords, delete users.
     // Admin-only (gated client-side by isAdmin and server-side by CXD_ADMINS).
+    // The Admin view's selected tab (restored from the last visit).
+    var adminTab = (function () {
+      try { return localStorage.getItem('cxd-admin-tab') || 'people'; } catch (e) { return 'people'; }
+    })();
+
     function showAdmin() {
       teardown();
       toolbarEl.innerHTML = '<h2 class="view-title">Admin</h2>';
       viewEl.innerHTML =
+        '<div class="admin-tabs" role="tablist">' +
+          '<button class="admin-tab" role="tab" data-tab="people">Users, roles & groups</button>' +
+          '<button class="admin-tab" role="tab" data-tab="lineage">Lineage</button>' +
+          '<button class="admin-tab" role="tab" data-tab="examples">Default examples</button>' +
+          '<button class="admin-tab" role="tab" data-tab="audit">Audit log</button>' +
+        '</div>' +
+        '<div class="admin-pane" data-pane="people">' +
         '<h3 style="margin:0 0 8px">Users</h3>' +
         '<div class="settings">' +
           '<div class="settings-form" style="flex:0 0 280px">' +
@@ -920,11 +938,11 @@
           '<div class="settings-preview" style="flex:1 1 420px"><div class="data-list" style="width:auto">' +
             '<div id="gov-groups"><div class="placeholder">Loading…</div></div></div></div>' +
         '</div>' +
-        '<h3 style="margin:24px 0 4px">Lineage</h3>' +
+        '</div><div class="admin-pane" data-pane="lineage">' +
         '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">Which dashboards read which stored datasets and ' +
           'database connectors, across every user.</p>' +
         '<div id="gov-lineage" style="font-size:14px"><div class="placeholder">Loading…</div></div>' +
-        '<h3 style="margin:24px 0 4px">Default examples</h3>' +
+        '</div><div class="admin-pane" data-pane="examples">' +
         '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">Datasets and dashboards owned by the <b>app</b> account. ' +
           'They are shared read-only to every user and are locked so they survive code updates. ' +
           'Only you (admin) can unlock or delete them here.</p>' +
@@ -941,7 +959,7 @@
               '<div class="placeholder">Loading…</div></div></div>' +
           '</div>' +
         '</div>' +
-        '<h3 style="margin:24px 0 4px">Audit log</h3>' +
+        '</div><div class="admin-pane" data-pane="audit">' +
         '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">Every sign-in, change, share, ' +
           'share-link view and data-function run, newest first. Append-only and hash-chained: ' +
           '<b>Verify chain</b> detects any edited or deleted entry.</p>' +
@@ -964,7 +982,27 @@
             '<tbody id="audit-rows"><tr><td colspan="6" style="padding:8px">Loading…</td></tr></tbody>' +
           '</table>' +
         '</div>' +
-        '<button id="audit-more" style="margin-top:8px;display:none">Load older</button>';
+        '<button id="audit-more" style="margin-top:8px;display:none">Load older</button>' +
+        '</div>';
+
+      // Tabs: every pane stays in the DOM (all the wiring below finds its
+      // elements); only the selected one is shown. The choice is remembered.
+      function selectAdminTab(name) {
+        adminTab = name;
+        try { localStorage.setItem('cxd-admin-tab', name); } catch (e) { /* storage blocked */ }
+        [].forEach.call(viewEl.querySelectorAll('.admin-pane'), function (pane) {
+          pane.style.display = pane.getAttribute('data-pane') === name ? '' : 'none';
+        });
+        [].forEach.call(viewEl.querySelectorAll('.admin-tab'), function (tab) {
+          var on = tab.getAttribute('data-tab') === name;
+          tab.classList.toggle('active', on);
+          tab.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      }
+      [].forEach.call(viewEl.querySelectorAll('.admin-tab'), function (tab) {
+        tab.onclick = function () { selectAdminTab(tab.getAttribute('data-tab')); };
+      });
+      selectAdminTab(viewEl.querySelector('.admin-pane[data-pane="' + adminTab + '"]') ? adminTab : 'people');
 
       var errEl = document.getElementById('admin-err');
       function fail(err) { errEl.textContent = (err && err.message) || String(err); }
@@ -2869,13 +2907,35 @@
       loadDashList();
     }
 
+    // Shipped dashboards pinned to fixed places in the Dashboards list (1-based,
+    // top to bottom) — the two data-function showcases — whatever their owner
+    // or save date (plus the disposable Sandbox); every other dashboard keeps the
+    // server's order around them.
+    var FEATURED_DASHBOARD_POSITIONS = { 'cohort-explorer': 2, 'dose-response-lab': 4, 'sandbox': 5 };
+
+    /**
+     * Move the featured dashboards to their fixed list positions.
+     * @param {object[]} rows - Dashboard summaries in server order.
+     * @param {object} positions - id -> 1-based position.
+     * @returns {object[]} The reordered rows (a new array).
+     */
+    function placeFeatured(rows, positions) {
+      var rest = rows.filter(function (d) { return !Object.prototype.hasOwnProperty.call(positions, d.id); });
+      var pinned = rows.filter(function (d) { return Object.prototype.hasOwnProperty.call(positions, d.id); })
+        .sort(function (a, b) { return positions[a.id] - positions[b.id]; });
+      pinned.forEach(function (d) {
+        rest.splice(Math.min(positions[d.id] - 1, rest.length), 0, d);
+      });
+      return rest;
+    }
+
     var selectedDashboardId = null;   // last previewed dashboard (survives view switches)
 
     function loadDashList() {
       var listEl = document.getElementById('dash-list');
       if (!listEl) return;
       client.list().then(function (rows) {
-        rows = (rows && rows.dashboards) || rows || [];
+        rows = placeFeatured((rows && rows.dashboards) || rows || [], FEATURED_DASHBOARD_POSITIONS);
         if (!rows.length) {
           listEl.innerHTML = '<div class="placeholder">No dashboards yet — build one in the Builder (or describe one in Chat) and Save.</div>';
           return;
@@ -2894,9 +2954,34 @@
             ? ' <span style="font-size:13px;font-weight:600;color:var(--accent);background:#eaf3fb;border-radius:99px;padding:1px 8px;vertical-align:middle">🔗 shared' +
               (d.visibility === 'auth' ? ' (sign-in)' : '') + '</span>'
             : '';
-          if (fromOther) {
-            sharedBadge += ' <span style="font-size:13px;font-weight:600;color:#6b4fbb;background:#f1ecfb;border-radius:99px;padding:1px 8px;vertical-align:middle">👥 from ' +
-              esc(d.owner) + ' · ' + (d.access === 'edit' ? 'can edit' : 'view only') + '</span>';
+          // A compact access icon describing YOUR access; hovering shows the owner
+          // and permissions. 🔒 = you can only view; 👥 = shared (you may edit it,
+          // or you own it and shared it); nothing = yours / editable and unshared.
+          var accessIcon = '', accessTip = '';
+          var canEdit = mine || (fromOther && d.access === 'edit') || (d.example && !d.readOnly);
+          var grants = d.sharedWith || [];
+          if (d.disposable) {
+            accessIcon = '👥';
+            accessTip = 'Owner: ' + d.owner + '\nPermissions: anyone can edit or delete \u2014 a disposable ' +
+              'scratch dashboard, recreated when the server restarts if it is missing';
+          } else if (!canEdit) {
+            accessIcon = '🔒';
+            accessTip = d.example
+              ? 'Owner: ' + d.owner + ' (shipped example)\nPermissions: view only (only an administrator can change it)'
+              : 'Owner: ' + d.owner + '\nPermissions: view only (you can open it and read how it is built; saving is disabled)';
+          } else if (fromOther) {
+            accessIcon = '👥';
+            accessTip = 'Owner: ' + d.owner + '\nPermissions: can edit (your saves update the owner\'s dashboard)';
+          } else if (mine && grants.length) {
+            accessIcon = '👥';
+            accessTip = 'Owner: you\nShared with: ' + grants.map(function (g) {
+              var who = g.principal === '*' ? 'everyone' : g.principal.replace(/^user:/, '').replace(/^group:/, 'group ');
+              return who + ' (' + (g.level === 'edit' ? 'can edit' : 'view') + ')';
+            }).join(', ') + (d.locked ? '\nProtected from deletion' : '');
+          }
+          if (accessIcon) {
+            sharedBadge += ' <span class="access-icon" title="' + esc(accessTip) + '" aria-label="' + esc(accessTip) + '">' +
+              accessIcon + '</span>';
           }
           item.innerHTML =
             '<div style="font-weight:600">' + (d.title || d.id) + sharedBadge + '</div>' +
@@ -2918,7 +3003,7 @@
               (hasPerm('schedule.create')
                 ? '<button class="cta" data-act="subscribe" title="Email this dashboard on a schedule" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Subscribe</button>'
                 : '') +
-              (mine
+              (mine || d.disposable
                 ? '<button class="cta" data-act="del" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Delete</button>'
                 : '') +
             '</div>' +
@@ -2931,10 +3016,13 @@
               // Full-page render in a new tab — like opening an example page.
               window.open(API_BASE + '/examples/view.html?id=' + encodeURIComponent(d.id), '_blank');
             } else if (act === 'open') {
-              // Edit access saves back to the owner; view access saves your own copy.
-              client.load(d.id, fromOther ? { owner: d.owner } : undefined).then(function (spec) {
+              // Edit access saves back to the owner (a shared board with an edit
+              // grant, or a shipped example an admin maintains); view access saves
+              // your own copy under a new name (the Builder's Save dialog).
+              var writesToOwner = (fromOther && d.access === 'edit') || (d.example && !d.readOnly);
+              client.load(d.id, fromOther || d.example ? { owner: d.owner } : undefined).then(function (spec) {
                 currentSpec = spec;
-                currentOwner = fromOther && d.access === 'edit' ? d.owner : null;
+                currentOwner = writesToOwner ? d.owner : null;
                 activate('Builder');
               });
             } else if (act === 'people') {
@@ -2951,7 +3039,7 @@
               client.share(d.id, 'private').then(loadDashList);
             } else if (act === 'del') {
               if (!confirm('Delete "' + (d.title || d.id) + '"?')) return;
-              client.remove(d.id).then(loadDashList);
+              client.remove(d.id, d.owner && d.owner !== currentUser ? { owner: d.owner } : undefined).then(loadDashList);
             } else if (!e.target.closest('.dash-share')) {
               previewDashboard(d);
             }

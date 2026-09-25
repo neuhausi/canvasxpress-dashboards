@@ -13,7 +13,7 @@
  */
 
 import { injectStyles } from './styles.js';
-import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames } from './renderDashboard.js';
+import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames, sourceLineage, showCodeDialog } from './renderDashboard.js';
 import { validateSpec } from './validateSpec.js';
 import { migrateSpec, DASHBOARD_SCHEMA_VERSION } from './spec.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
@@ -221,6 +221,9 @@ export function createBuilder(target, options) {
   var limitDatasetsToSpec = !!options.limitDatasetsToSpec;
   var addPanelBtn = null;   // disabled while no data source is declared (see updateAddPanelState)
   var addControlBtn = null; // disabled until the dashboard has data AND a graph panel
+  var addFunctionBtn = null; // shown when the server runs data functions; needs a source to read
+  var functionStatusPromise = null;   // memoized GET /api/functions/status (see functionStatus)
+  var canAuthorFunctions = false;     // may this user write / edit data functions?
   var addFiltersBtn = null; // same rule as addControlBtn
   var baseUrl = options.baseUrl || '';   // cxd_server origin for kind:"dataset" sources
   var CX = options.CanvasXpress || (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
@@ -283,10 +286,19 @@ export function createBuilder(target, options) {
     var editJsonBtn = button('✎', function () { doEditJson(); });
     editJsonBtn.setAttribute('title', 'Edit dashboard JSON');
     editJsonBtn.setAttribute('aria-label', 'Edit dashboard JSON');
+    // "+ Function" appears only once the server says it runs data functions
+    // for this user (the check is async; hidden until then).
+    addFunctionBtn = button('+ Function', function () { doAddFunction(); });
+    addFunctionBtn.setAttribute('title', 'Add a panel computed by an R / Python data function');
+    addFunctionBtn.style.display = 'none';
+    functionStatus().then(function (status) {
+      if (status.languages.length) addFunctionBtn.style.display = '';
+      updateAddPanelState();
+    });
     var createActions = [titleInput, editJsonBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }),
       button('+ Image', function () { doAddImage(); }),
-      addControlBtn, addFiltersBtn];
+      addControlBtn, addFiltersBtn, addFunctionBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
     append(row1, createActions);
@@ -353,13 +365,28 @@ export function createBuilder(target, options) {
    * @returns {void}
    */
   function doAddPanel() {
+    addPanelBound(Object.keys(spec.data || {})[0]);
+  }
+
+  /**
+   * Add a Bar panel bound to a source and select it.
+   * @param {string} [dataRef] - The source the panel reads.
+   * @param {boolean} [newSource] - The source was just added: the live
+   *   dashboard does not know it yet, so rebuild instead of adding in place.
+   * @returns {void}
+   * @private
+   */
+  function addPanelBound(dataRef, newSource) {
     var id = uniquePanelId(spec);
-    var firstRef = Object.keys(spec.data || {})[0];
-    commit(addPanel(spec, { id: id, title: 'Panel ' + id.replace(/\D/g, ''), dataRef: firstRef, w: 6, h: 12, config: { graphType: 'Bar' } }), false);
+    commit(addPanel(spec, { id: id, title: newSource ? dataRef : 'Panel ' + id.replace(/\D/g, ''), dataRef: dataRef, w: 6, h: 12,
+      config: { graphType: 'Bar', graphOrientation: 'vertical', title: false } }), false);
     selectedId = id;
     // Add incrementally so existing panels (and their live customizer state) are
     // never destroyed — a full re-render would reset them.
-    if (liveHandle && liveHandle.addPanel && gridEl) {
+    if (newSource) {
+      syncLiveConfigs();
+      rebuild();
+    } else if (liveHandle && liveHandle.addPanel && gridEl) {
       lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
     } else {
       rebuild();
@@ -453,7 +480,9 @@ export function createBuilder(target, options) {
       ? client.listDatasets().then(function (d) { return d; }, function () { return []; })
       : Promise.resolve([]);
     // Offer "Data function" only when the server runs them for this user.
-    var functionsPromise = functionLanguages();
+    var functionsPromise = functionStatus().then(function (status) {
+      return status.canAuthor ? status.languages : [];
+    });
     Promise.all([storesPromise, datasetsPromise, functionsPromise]).then(function (res) {
       openDataDialog(doc, Object.keys(spec.data || {}),
         { client: client, stores: res[0], datasets: res[1], functionLanguages: res[2] }).then(function (result) {
@@ -466,18 +495,47 @@ export function createBuilder(target, options) {
   }
 
   /**
-   * The data-function languages this server runs for the current user
-   * (`GET <baseUrl>/api/functions/status`), or none when disabled/unreachable.
-   * @returns {Promise<string[]>} e.g. `["python", "r"]`.
+   * "+ Function": write an R / Python data function over the dashboard's
+   * sources, add it as a source, and add a panel that charts its result.
+   * @returns {void}
+   * @private
    */
-  function functionLanguages() {
+  function doAddFunction() {
+    var doc = container.ownerDocument || document;
+    functionStatus().then(function (status) {
+      var langs = status.canAuthor ? status.languages : [];
+      if (!langs.length) return;
+      openDataDialog(doc, Object.keys(spec.data || {}), { functionLanguages: langs, onlyFunction: true }).then(function (result) {
+        if (!result) return;
+        commit(setDataSource(spec, result.name, result.source), false);
+        addPanelBound(result.name, true);
+      });
+    });
+  }
+
+  /**
+   * What the server's data-function runtime offers the current user
+   * (`GET <baseUrl>/api/functions/status`), fetched once per builder:
+   * `languages` it runs (empty when disabled/unreachable) and `canAuthor`
+   * — whether this user may write / edit functions (everyone else may only
+   * view them and run administrators' saved code).
+   * @returns {Promise<{languages: string[], canAuthor: boolean}>} The status.
+   * @private
+   */
+  function functionStatus() {
+    if (functionStatusPromise) return functionStatusPromise;
+    var none = { languages: [], canAuthor: false };
     var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
-    if (!client || typeof fetchImpl !== 'function') return Promise.resolve([]);
-    return fetchImpl(baseUrl + '/api/functions/status', { credentials: 'include' }).then(function (res) {
+    if (!client || typeof fetchImpl !== 'function') return Promise.resolve(none);
+    functionStatusPromise = fetchImpl(baseUrl + '/api/functions/status', { credentials: 'include' }).then(function (res) {
       return res.ok ? res.json() : null;
     }).then(function (status) {
-      return status && status.enabled && Array.isArray(status.languages) ? status.languages : [];
-    }, function () { return []; });
+      var out = status && status.enabled && Array.isArray(status.languages)
+        ? { languages: status.languages, canAuthor: status.canAuthor !== false } : none;
+      canAuthorFunctions = out.canAuthor;
+      return out;
+    }, function () { return none; });
+    return functionStatusPromise;
   }
 
   /**
@@ -486,26 +544,96 @@ export function createBuilder(target, options) {
    */
   function doSave() {
     if (!client) return showError('No persistence client configured.');
-    // The store keys dashboards by spec.id — re-derive it from the (possibly
-    // renamed) title so "save under a new name" creates a NEW dashboard
-    // instead of silently overwriting the last one. An unchanged name keeps
-    // the id, so re-saving still updates in place.
     // Editing a dashboard shared by another owner keeps its id (the edit grant
     // covers that dashboard only) and saves back to that owner.
     var owner = options.owner && spec.id === ownerSpecId ? options.owner : null;
-    var slug = String(spec.title || '').toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    if (!owner && slug && slug !== spec.id) {
-      var next = Object.assign({}, spec, { id: slug });
-      // A broadcastGroup that just mirrored the old id follows the rename, so
-      // separately-saved dashboards don't share a coordination domain.
-      if (spec.broadcastGroup === spec.id) next.broadcastGroup = slug;
-      spec = next;
-      if (options.onChange) { try { options.onChange(getSpec()); } catch (e) { /* noop */ } }
+    if (owner) {
+      setMsg('Saving…');
+      client.save(getSpec(), { owner: owner }).then(function () {
+        setMsg('Saved “' + spec.id + '” for ' + owner + '.');
+      }, showError);
+      return;
     }
+    // The store keys dashboards by spec.id, derived from the title, so a new
+    // name creates a NEW dashboard. Re-saving one of your own dashboards saves
+    // straight away; anything else (a new dashboard, or one you can see but not
+    // change — a shipped example, a view-only share) opens the Save dialog: a
+    // name that is not taken, and who may access it. The server enforces the
+    // same rule (409 for a foreign id).
+    var slug = slugOf(spec.title) || spec.id;
+    var doc = container.ownerDocument || document;
+    var listing = typeof client.list === 'function' ? client.list() : Promise.resolve([]);
+    listing.then(function (rows) { return rows || []; }, function () { return null; }).then(function (rows) {
+      if (rows === null) return saveAs(spec.title || slug, slug, []);   // no listing: plain save
+      // Whose each dashboard is, by id (ownership), and the names in use, by id
+      // AND title slug (an id need not match its title's slug, e.g.
+      // "biomarker-cohort" titled "Immuno-Oncology Biomarker Cohort").
+      var ownIds = {};
+      var foreignIds = {};
+      var own = {};
+      var taken = {};
+      rows.forEach(function (d) {
+        var mine = !(d.shared || d.example);
+        if (mine) ownIds[d.id] = true; else foreignIds[d.id] = d.owner;
+        [d.id, slugOf(d.title)].forEach(function (key) {
+          if (key) { if (mine) own[key] = true; else taken[key] = d.owner; }
+        });
+      });
+      // Re-saving your own dashboard (or saving it under another of your ids).
+      if (ownIds[slug] && !foreignIds[spec.id]) return saveAs(spec.title || slug, slug, []);
+      // Opened someone else's board, or renamed onto one of their names: a copy.
+      var foreignOwner = foreignIds[spec.id] || (!ownIds[slug] && taken[slug]) || null;
+      var directory = typeof client.directory === 'function'
+        ? client.directory().then(null, function () { return null; }) : Promise.resolve(null);
+      // Leave the signed-in user out of the people to share with.
+      var me = typeof client.me === 'function'
+        ? client.me().then(function (r) { return r && r.user; }, function () { return null; }) : Promise.resolve(null);
+      directory = Promise.all([directory, me]).then(function (res) {
+        var dir = res[0];
+        if (dir && res[1]) dir = { users: (dir.users || []).filter(function (u) { return u !== res[1]; }), groups: dir.groups || [] };
+        return dir;
+      });
+      return directory.then(function (dir) {
+        return openSaveDialog(doc, {
+          title: spec.title || slug, foreignOwner: foreignOwner,
+          own: own, taken: taken, directory: dir
+        });
+      }).then(function (result) {
+        if (result) saveAs(result.title, slugOf(result.title), result.grants);
+      });
+    });
+  }
+
+  /**
+   * Save the dashboard as the caller's own under a title (and its id), then
+   * apply the chosen access grants.
+   * @param {string} title - Dashboard title.
+   * @param {string} id - Its id (slug of the title).
+   * @param {object[]} grants - `[{principal, level}]` to share it with.
+   * @returns {void}
+   * @private
+   */
+  function saveAs(title, id, grants) {
+    var next = Object.assign({}, spec, { title: title, id: id });
+    // A broadcastGroup that just mirrored the old id follows the rename, so
+    // separately-saved dashboards don't share a coordination domain.
+    if (spec.broadcastGroup === spec.id) next.broadcastGroup = id;
+    var renamed = next.id !== spec.id || next.title !== spec.title;
+    spec = next;
+    if (titleInput.value !== title) titleInput.value = title;
+    if (renamed && options.onChange) { try { options.onChange(getSpec()); } catch (e) { /* noop */ } }
     setMsg('Saving…');
-    client.save(getSpec(), owner ? { owner: owner } : undefined).then(function () {
-      setMsg('Saved “' + spec.id + '”' + (owner ? ' for ' + owner : '') + '.');
+    client.save(getSpec()).then(function () {
+      return Promise.all((grants || []).map(function (g) {
+        return client.setGrant('dashboard', id, g.principal, g.level).then(function () { return null; },
+          function (e) { return principalName(g.principal) + ': ' + ((e && e.message) || e); });
+      }));
+    }).then(function (errors) {
+      var failed = errors.filter(Boolean);
+      var shared = (grants || []).length
+        ? ' · shared with ' + grants.map(function (g) { return principalName(g.principal) + ' (' + g.level + ')'; }).join(', ')
+        : '';
+      setMsg('Saved “' + id + '”' + shared + (failed.length ? ' — sharing failed: ' + failed.join('; ') : '') + '.');
     }, showError);
   }
 
@@ -843,6 +971,17 @@ export function createBuilder(target, options) {
       });
       on(gear, 'pointerdown', stop);
       append(tools, [gear]);
+      var codePanel = spec.panels[info.panelId] || {};
+      if (typeof codePanel.dataRef === 'string' &&
+          sourceLineage(spec.data || {}, codePanel.dataRef).some(function (ref) { return spec.data[ref].kind === 'function'; })) {
+        var codeBtn = iconBtn('</>', 'Code: edit the data function and the chart config', function (ev) {
+          stop(ev);
+          openCodeEditor(info.panelId);
+        });
+        codeBtn.classList.add('cxb-tool-code');
+        on(codeBtn, 'pointerdown', stop);
+        append(tools, [codeBtn]);
+      }
     }
     var del = iconBtn('×', 'Delete', function (ev) { stop(ev); removePanelById(info.panelId); });
     on(del, 'pointerdown', stop);
@@ -2221,6 +2360,54 @@ export function createBuilder(target, options) {
   }
 
   /**
+   * Open a panel's recipe (data-function code + chart config) as an editor.
+   * Applying code rewrites that function source and rebuilds the stage (it may
+   * feed several panels); applying the config re-renders just this panel.
+   * @param {string} panelId - Panel id.
+   * @returns {void}
+   * @private
+   */
+  function openCodeEditor(panelId) {
+    functionStatus().then(function () { openCodeDialogFor(panelId); });
+  }
+
+  /**
+   * Show the code dialog for a panel, editable only for function authors.
+   * @param {string} panelId - Panel id.
+   * @returns {void}
+   * @private
+   */
+  function openCodeDialogFor(panelId) {
+    syncLiveConfigs();                     // show the config with live customizer edits
+    var panel = spec.panels[panelId];
+    if (!panel) return;
+    showCodeDialog(root, panel.title || panelId, panel, sourceLineage(spec.data || {}, panel.dataRef), spec.data, {
+      editable: true,
+      // Everyone can read how the chart is built; only authors may change it.
+      lockedReason: canAuthorFunctions ? null : FUNCTION_AUTHOR_ONLY,
+      onApplyCode: function (ref, code) {
+        var src = spec.data[ref];
+        if (!src) return 'Source "' + ref + '" no longer exists';
+        var next = {};
+        for (var k in src) {
+          if (Object.prototype.hasOwnProperty.call(src, k)) next[k] = src[k];
+        }
+        next.code = code;
+        syncLiveConfigs();
+        commit(setDataSource(spec, ref, next), false);
+        rebuild();
+        return null;
+      },
+      onApplyConfig: function (config) {
+        if (!spec.panels[panelId]) return 'The panel no longer exists';
+        commit(updatePanel(spec, panelId, { config: config }), true);
+        rerenderPanel(panelId);
+        return null;
+      }
+    });
+  }
+
+  /**
    * Re-render just one panel (used when its data source changes — it needs a new
    * instance, but the other panels must be left intact).
    * @param {string} panelId - Panel id.
@@ -2348,6 +2535,12 @@ export function createBuilder(target, options) {
    */
   function updateAddPanelState() {
     var hasData = Object.keys(spec.data || {}).length > 0;
+    if (addFunctionBtn) {
+      addFunctionBtn.disabled = !hasData || !canAuthorFunctions;
+      addFunctionBtn.title = !canAuthorFunctions ? FUNCTION_AUTHOR_ONLY
+        : hasData ? 'Add a panel computed by an R / Python data function'
+          : 'Select a dataset first (a function reads the dashboard\'s data)';
+    }
     if (addPanelBtn && limitDatasetsToSpec) {
       addPanelBtn.disabled = !hasData;
       addPanelBtn.title = hasData ? '' : 'Select a dataset first';
@@ -2482,6 +2675,10 @@ export function createBuilder(target, options) {
  * of these keys it is kept, except the SELF_HEALING_KEYS below.
  * @type {Object<string, boolean>}
  */
+/** Why a non-author sees the data-function controls disabled. */
+var FUNCTION_AUTHOR_ONLY = 'Only administrators can create or edit data functions ' +
+  '(you can still view the code and the charts). Contact your administrator to get access.';
+
 var TRANSIENT_CONFIG_KEYS = {
   filterSmpBy: true, filterVarBy: true,
   broadcastGroup: true,            // the renderer re-injects the spec's group
@@ -2708,6 +2905,170 @@ function stop(ev) {
 }
 
 /**
+ * The dashboard id for a title: lower-case words joined by dashes.
+ * @param {string} title - Title.
+ * @returns {string} The slug ('' when the title has no letters/digits).
+ */
+function slugOf(title) {
+  return String(title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/**
+ * A readable name for a grant principal.
+ * @param {string} principal - `*`, `user:<name>` or `group:<name>`.
+ * @returns {string} The label.
+ */
+function principalName(principal) {
+  if (principal === '*') return 'everyone';
+  if (principal.indexOf('group:') === 0) return 'group ' + principal.slice(6);
+  return principal.replace(/^user:/, '');
+}
+
+/**
+ * The Save dialog for a dashboard that is not yet the caller's own: a name
+ * (checked against the caller's dashboards and those they can see but not
+ * change) and who may access it — private, everyone (view / edit) or specific
+ * users and groups. For a dashboard the caller cannot change (`foreignOwner`)
+ * it is a "Save a copy" dialog prefilled with "<title> (copy)".
+ * @param {Document} doc - The owning document.
+ * @param {object} opts - `{title, foreignOwner, own: {id: true}, taken: {id: owner}, directory: {users, groups}|null}`.
+ * @returns {Promise<{title: string, grants: object[]}|null>} The choice, or null when cancelled.
+ * @private
+ */
+function openSaveDialog(doc, opts) {
+  return new Promise(function (resolve) {
+    var overlay = el('div', 'cxb-modal-overlay');
+    var modal = el('div', 'cxb-modal');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = opts.foreignOwner ? 'Save a copy' : 'Save dashboard';
+    var intro = el('div', 'cxb-save-intro');
+    intro.textContent = opts.foreignOwner
+      ? '“' + opts.title + '” belongs to ' + opts.foreignOwner + ' and you cannot change it. ' +
+        'Save your changes as your own dashboard under a new name.'
+      : 'Name your dashboard and choose who can open it. You can change sharing later from the Dashboards page (People).';
+
+    var nameInput = el('input');
+    nameInput.type = 'text';
+    nameInput.value = opts.foreignOwner ? opts.title + ' (copy)' : opts.title;
+    var nameMsg = el('div', 'cxb-modal-err');
+
+    // Access: private, everyone (view / edit), or specific users and groups.
+    var access = el('select');
+    [['private', 'Private — only you'], ['everyone-view', 'Everyone signed in can view'],
+      ['everyone-edit', 'Everyone signed in can edit'], ['people', 'Specific people and groups…']].forEach(function (pair) {
+      var o = doc.createElement('option');
+      o.value = pair[0];
+      o.textContent = pair[1];
+      access.appendChild(o);
+    });
+    var dir = opts.directory || { users: [], groups: [] };
+    var peopleWrap = el('div', 'cxb-save-people');
+    var who = el('select', 'cxb-save-who');
+    (dir.groups || []).forEach(function (g) {
+      var o = doc.createElement('option');
+      o.value = 'group:' + g;
+      o.textContent = '👥 ' + g;
+      who.appendChild(o);
+    });
+    (dir.users || []).forEach(function (u) {
+      var o = doc.createElement('option');
+      o.value = 'user:' + u;
+      o.textContent = '👤 ' + u;
+      who.appendChild(o);
+    });
+    var level = el('select', 'cxb-save-level');
+    [['view', 'can view'], ['edit', 'can edit']].forEach(function (pair) {
+      var o = doc.createElement('option');
+      o.value = pair[0];
+      o.textContent = pair[1];
+      level.appendChild(o);
+    });
+    var chosen = [];
+    var chips = el('div', 'cxb-save-chips');
+    function renderChips() {
+      chips.innerHTML = '';
+      if (!chosen.length) {
+        var none = el('span', 'cxb-save-none');
+        none.textContent = 'No one added yet.';
+        chips.appendChild(none);
+      }
+      chosen.forEach(function (g, i) {
+        var chip = el('span', 'cxb-save-chip');
+        chip.textContent = principalName(g.principal) + ' · ' + g.level + ' ';
+        var x = el('button', 'cxb-save-chip-x');
+        x.type = 'button';
+        x.textContent = '×';
+        x.setAttribute('aria-label', 'Remove');
+        on(x, 'click', function () { chosen.splice(i, 1); renderChips(); });
+        chip.appendChild(x);
+        chips.appendChild(chip);
+      });
+    }
+    var addBtn = button('Add', function () {
+      if (!who.value) return;
+      chosen = chosen.filter(function (g) { return g.principal !== who.value; });
+      chosen.push({ principal: who.value, level: level.value });
+      renderChips();
+    });
+    var pickRow = el('div', 'cxb-save-pick');
+    append(pickRow, [who, level, addBtn]);
+    if (!who.options.length) {
+      pickRow.style.display = 'none';
+      var unavailable = el('span', 'cxb-save-none');
+      unavailable.textContent = 'The user list is not available; share later from the Dashboards page.';
+      peopleWrap.appendChild(unavailable);
+    }
+    append(peopleWrap, [pickRow, chips]);
+    renderChips();
+    function syncAccess() { peopleWrap.style.display = access.value === 'people' ? '' : 'none'; }
+    on(access, 'change', syncAccess);
+    syncAccess();
+
+    var saveBtn = button('Save', function () { onSave(); }, 'cxb-btn-primary');
+    // The name must give an id that is neither someone else's visible dashboard
+    // nor (for a new dashboard) one of yours.
+    function checkName() {
+      var slug = slugOf(nameInput.value);
+      var problem = '';
+      if (!slug) problem = 'Enter a name with letters or digits.';
+      else if (opts.taken[slug]) problem = 'That name is taken by ' + opts.taken[slug] + '’s dashboard — pick another.';
+      else if (opts.own[slug]) problem = 'You already have a dashboard with that name — pick another.';
+      nameMsg.textContent = problem;
+      nameMsg.style.display = problem ? '' : 'none';   // no reserved gap when the name is fine
+      saveBtn.disabled = !!problem;
+      return !problem;
+    }
+    on(nameInput, 'input', checkName);
+    checkName();
+
+    function onSave() {
+      if (!checkName()) return;
+      var grants = access.value === 'everyone-view' ? [{ principal: '*', level: 'view' }]
+        : access.value === 'everyone-edit' ? [{ principal: '*', level: 'edit' }]
+          : access.value === 'people' ? chosen.slice() : [];
+      close({ title: String(nameInput.value).trim(), grants: grants });
+    }
+    on(nameInput, 'keydown', function (ev) { if (ev.key === 'Enter') onSave(); });
+
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [button('Cancel', function () { close(null); }), saveBtn]);
+    var adminNote = el('div', 'cxb-save-note');
+    adminNote.textContent = 'Administrators always have full access (view, change, delete).';
+    append(modal, [heading, intro, field('Name', nameInput), nameMsg, field('Access', access), adminNote, peopleWrap, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    if (typeof nameInput.focus === 'function') nameInput.focus();
+    if (typeof nameInput.select === 'function') nameInput.select();
+
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
  * Open a modal "Add data source" dialog. Input modes: paste CanvasXpress JSON,
  * upload a `.json`/`.csv` file as inline data, point at a connector URL, or —
  * when a persistence client + configured dataset stores are available — upload a
@@ -2724,6 +3085,7 @@ function stop(ev) {
  * @param {object[]} [opts.stores] - Configured dataset stores `[{name, default}]`.
  * @param {string[]} [opts.functionLanguages] - Data-function languages the
  *   server offers (enables the "Data function" mode).
+ * @param {boolean} [opts.onlyFunction] - Offer only the "Data function" mode.
  * @returns {Promise<{name: string, source: object}|null>} The chosen source.
  * @private
  */
@@ -2742,11 +3104,11 @@ function openDataDialog(doc, existingNames, opts) {
     var modal = el('div', 'cxb-modal');
 
     var heading = el('h3', 'cxb-modal-title');
-    heading.textContent = 'Add data source';
+    heading.textContent = opts.onlyFunction ? 'Add a data function' : 'Add data source';
 
     var nameInput = el('input');
     nameInput.type = 'text';
-    nameInput.value = 'data' + (existingNames.length + 1);
+    nameInput.value = (opts.onlyFunction ? 'fn' : 'data') + (existingNames.length + 1);
     nameInput.setAttribute('placeholder', 'Name (e.g. sales)');
 
     // Existing stored datasets come first so binding to seeded/uploaded data is
@@ -2757,6 +3119,7 @@ function openDataDialog(doc, existingNames, opts) {
     if (canUseStore) modes.push(['store', 'Upload CSV / JSON to a store']);
     modes.push(['connector', 'Connector URL']);
     if (canUseFunction) modes.push(['function', 'Data function (R / Python)']);
+    if (opts.onlyFunction && canUseFunction) modes = [['function', 'Data function (R / Python)']];
     var typeSel = el('select');
     modes.forEach(function (pair) {
       var o = doc.createElement('option');

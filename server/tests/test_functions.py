@@ -143,6 +143,37 @@ def test_admin_mode_limits_to_admins(tmp_path):
 
 
 @requires_pandas
+def test_admin_mode_runs_admin_dashboard_code_for_everyone(tmp_path):
+    app = _app(tmp_path, "admin")
+    admin = TestClient(app)
+    _login(admin, "first")          # admin
+    other = TestClient(app)
+    _login(other, "second")
+    assert admin.get("/api/functions/status").json()["canAuthor"] is True
+    assert other.get("/api/functions/status").json()["canAuthor"] is False
+
+    # Not yet in an admin's dashboard: the non-admin cannot run it.
+    r = other.post("/api/functions/run", json=BODY)
+    assert r.status_code == 403 and "Only administrators" in r.json()["detail"]
+    spec = {"id": "fn-board", "title": "F", "layout": {"cols": 12, "items": []}, "panels": {},
+            "data": {"clin": {"kind": "inline", "value": CLIN},
+                     "f": {"kind": "function", "language": "python", "code": BODY["code"],
+                           "inputs": ["clin"]}}}
+    assert admin.post("/api/dashboards", json=spec).status_code == 200
+    # Saved by the admin: the same code now runs for anyone signed in ...
+    assert other.post("/api/functions/run", json=BODY).status_code == 200
+    # ... but only that exact code, and only in the saved language.
+    edited = dict(BODY, code=BODY["code"] + "\nresult = result.head(1)")
+    assert other.post("/api/functions/run", json=edited).status_code == 403
+    assert other.post("/api/functions/run", json=dict(BODY, language="r")).status_code == 403
+    # A non-admin's own dashboard does not approve code.
+    mine = dict(spec, id="mine")
+    mine["data"] = dict(spec["data"], f=dict(spec["data"]["f"], code=edited["code"]))
+    assert other.post("/api/dashboards", json=mine).status_code == 200
+    assert other.post("/api/functions/run", json=edited).status_code == 403
+
+
+@requires_pandas
 def test_users_mode_runs_and_reports_snippet_errors(tmp_path):
     client = TestClient(_app(tmp_path, "users"))
     _login(client, "alice")
