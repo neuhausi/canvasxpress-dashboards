@@ -2462,6 +2462,7 @@ def create_dashboards_app(
             canvasxpress_url=canvasxpress_url,
             canvasxpress_license=canvasxpress_license,
             client_config={"llmEnabled": bool(llm_api_key)},
+            banner=(os.getenv("CXD_BANNER") or "").strip() or None,
         )
         if index_html is not None:
             @app.get("/", response_class=HTMLResponse)
@@ -2478,8 +2479,25 @@ def create_dashboards_app(
     return app
 
 
+_BANNER_STYLE = (
+    ".cxd-banner{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);"
+    "z-index:10000;max-width:min(90vw,720px);padding:8px 34px 8px 14px;border-radius:8px;"
+    "background:#fff7e0;border:1px solid #f0c36d;color:#5c4400;"
+    "font:14px/1.4 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.12)}"
+    ".cxd-banner button{position:absolute;top:4px;right:6px;border:0;background:none;"
+    "color:inherit;font-size:16px;cursor:pointer}")
+
+_BANNER_SCRIPT = (
+    "document.addEventListener('DOMContentLoaded',function(){"
+    "var b=document.createElement('div');b.className='cxd-banner';"
+    "b.setAttribute('role','status');b.textContent=%s;"
+    "var x=document.createElement('button');x.type='button';x.textContent='\\u00d7';"
+    "x.title='Dismiss';x.onclick=function(){b.remove();};b.appendChild(x);"
+    "document.body.appendChild(b);});")
+
+
 def _render_index(canvasxpress_url: str, canvasxpress_license: Optional[str],
-                  client_config: dict) -> Optional[str]:
+                  client_config: dict, banner: Optional[str] = None) -> Optional[str]:
     """Read the served app shell and inject runtime config into its head.
 
     Replaces the ``<!--CXD_HEAD_START-->…<!--CXD_HEAD_END-->`` block with the
@@ -2490,6 +2508,8 @@ def _render_index(canvasxpress_url: str, canvasxpress_license: Optional[str],
     :param canvasxpress_url: Base URL for the CanvasXpress library assets.
     :param canvasxpress_license: License key, or None to keep the watermark.
     :param client_config: Non-secret config exposed to the browser.
+    :param banner: Plain text shown to every visitor in a dismissible notice
+        (``CXD_BANNER``), e.g. that saved work is not kept yet; None for none.
     :returns: The HTML string, or None when there is no index.html to render.
     """
     index_path = os.path.join(_STATIC_DIR, "index.html")
@@ -2508,6 +2528,11 @@ def _render_index(canvasxpress_url: str, canvasxpress_license: Optional[str],
     parts.append('<link href="%s" rel="stylesheet" />' % css_url)
     parts.append('<script src="%s"></script>' % js_url)
     parts.append("<script>window.__CXD_CONFIG__=%s;</script>" % json.dumps(client_config))
+    if banner:
+        # "<" escaped so the text can never close the <script> it sits in.
+        text = json.dumps(banner).replace("<", "\\u003c")
+        parts.append("<style>%s</style>" % _BANNER_STYLE)
+        parts.append("<script>%s</script>" % (_BANNER_SCRIPT % text))
     injected = "\n  ".join(parts)
 
     # Use a function replacement so backslashes in the config aren't treated as
