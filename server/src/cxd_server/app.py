@@ -24,6 +24,7 @@ import json
 import os
 import re
 import secrets
+import threading
 import time
 import warnings
 from typing import Optional
@@ -616,20 +617,38 @@ def create_dashboards_app(
             status = response.status_code
             return response
         finally:
-            _record_request(audit, request, before, status)
+            # A database write per audited request: in a thread, off the loop.
+            await run_in_threadpool(_record_request, audit, request, before, status)
+
+    connect_account_lock = threading.Lock()
 
     def connect_account(connect_name: str):
         """``(username, created)`` for a Connect user, creating and linking the account
         on first visit. The username is None when a same-named account exists that
-        it may not take over."""
+        it may not take over.
+
+        A new user's first requests often arrive together (two tabs, the page and
+        its first fetch). Between one request creating the account and linking it,
+        another would see an unlinked same-named account and refuse the user. The
+        lock prevents that within a process; across processes, a refusal re-checks
+        once, after the other process has had time to link.
+        """
+        with connect_account_lock:
+            username, created = connect_account_once(connect_name)
+        if username is None:
+            time.sleep(0.25)
+            username = identities.username_for(posit_connect.ISSUER, connect_name)
+        return username, created
+
+    def connect_account_once(connect_name: str):
         username = identities.username_for(posit_connect.ISSUER, connect_name)
         if username:
             return username, False
         created = connect_name not in store.list_users()
         if not created and (identities.is_linked(connect_name) or not connect_link_existing):
             return None, False
-        if created:
-            store.create_user(connect_name, secrets.token_urlsafe(32))
+        if created and not store.create_user(connect_name, secrets.token_urlsafe(32)):
+            created = False   # another process created it just now
         identities.link(posit_connect.ISSUER, connect_name, connect_name, _now_iso())
         return connect_name, created
 
@@ -1288,6 +1307,10 @@ def create_dashboards_app(
     async def create_dataset(request: Request):
         user = require_user(request)
         body = await request.json()
+        # Parsing and storing a large upload takes a while: keep it off the loop.
+        return await run_in_threadpool(create_dataset_work, request, user, body)
+
+    def create_dataset_work(request: Request, user: str, body):
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="Body must be a JSON object")
         fmt = body.get("format", "json")
@@ -2058,6 +2081,12 @@ def create_dashboards_app(
         """
         user = require_permission(request, "llm.use")
         body = await request.json()
+        # The work (reading every dataset, the MCP and LLM round trips) blocks
+        # for seconds, so it runs in a worker thread, not on the event loop
+        # every other request is waiting on.
+        return await run_in_threadpool(llm_dashboard_work, request, user, body)
+
+    def llm_dashboard_work(request: Request, user: str, body):
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="Body must be a JSON object")
         message = (body.get("message") or "").strip()
