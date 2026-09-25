@@ -779,6 +779,9 @@ def create_dashboards_app(
         check("datasets", lambda: dataset_store_for(None).list("__readyz__"))
         if scheduler_enabled:
             checks["scheduler"] = "ok" if scheduler.running else "failed: not running"
+        if mcp_bridge.required():
+            problem = mcp_bridge.ping()
+            checks["mcp"] = "ok" if problem is None else "failed: %s" % problem
         ready = all(v == "ok" for v in checks.values())
         return JSONResponse({"status": "ready" if ready else "not ready", "checks": checks},
                             status_code=200 if ready else 503)
@@ -2106,7 +2109,10 @@ def create_dashboards_app(
         if mcp_bridge.enabled() and fresh and len(catalog) == 1 and not llm_api_key:
             entry = catalog[0]
             headers, column_types = mcp_bridge.dataset_columns(data_by_id[entry["id"]])
-            mcp = mcp_bridge.generate_config(message, headers, column_types)
+            try:
+                mcp = mcp_bridge.generate_config(message, headers, column_types)
+            except mcp_bridge.BridgeError as exc:
+                raise HTTPException(status_code=502, detail=str(exc))
             if mcp:
                 config = mcp["config"]
                 config.setdefault("title", False)
@@ -2392,6 +2398,8 @@ def create_dashboards_app(
             raise HTTPException(status_code=502, detail="LLM error: %s" % exc.message)
         except anthropic.APIConnectionError:
             raise HTTPException(status_code=502, detail="Could not reach the LLM API")
+        except mcp_bridge.BridgeError as exc:
+            raise HTTPException(status_code=502, detail=str(exc))
 
         total = cost_tally["cost_usd"] + cost_tally["mcp_cost_usd"]
         note(request, model=model, cost_usd=round(total, 5), produced_spec=spec is not None)
