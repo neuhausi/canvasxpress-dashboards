@@ -24,6 +24,7 @@ import json
 import os
 import re
 import secrets
+import threading
 import time
 import warnings
 from typing import Optional
@@ -45,6 +46,7 @@ from .governance import (PERMISSIONS, Governance, GovernanceError, apply_policy,
 from .jobs import Jobs
 from .mailer import SmtpMailer
 from .records import RecordError, RecordStore
+from . import posit_connect
 from .oidc import (IdentityStore, OidcClient, OidcConfig, OidcError, groups_from, pkce_pair,
                    username_from)
 from .scheduler import Cron, ScheduleError, ScheduleStore, Scheduler
@@ -252,6 +254,22 @@ def _usage_cost(usage, model):
             + get("cache_creation_input_tokens") * pin * _CACHE_WRITE_RATIO) / 1e6
 
 
+def _anthropic_client_kwargs(api_key: str, base_url: Optional[str] = None,
+                             key_header: Optional[str] = None) -> dict:
+    """Keyword arguments for ``anthropic.Anthropic``.
+
+    ``base_url`` points the client at an Anthropic-compatible gateway instead of
+    api.anthropic.com. ``key_header`` names an extra header that carries the same
+    API key, for gateways that read the key from their own header.
+    """
+    kwargs = {"api_key": api_key}
+    if base_url:
+        kwargs["base_url"] = base_url
+    if key_header:
+        kwargs["default_headers"] = {key_header: api_key}
+    return kwargs
+
+
 def _log_usage(response, model=None, tally=None):
     """Print token usage for one model call, including cache effectiveness.
 
@@ -375,6 +393,8 @@ def create_dashboards_app(
     canvasxpress_license: Optional[str] = None,
     llm_api_key: Optional[str] = None,
     llm_model: Optional[str] = None,
+    llm_base_url: Optional[str] = None,
+    llm_key_header: Optional[str] = None,
     functions: Optional[FunctionsConfig] = None,
     audit: Optional[AuditLog] = None,
     governance: Optional[Governance] = None,
@@ -383,6 +403,7 @@ def create_dashboards_app(
     origin_fetchers: Optional[dict] = None,
     scheduler_enabled: Optional[bool] = None,
     oidc: Optional[OidcClient] = None,
+    posit_connect_auth: Optional[bool] = None,
 ) -> FastAPI:
     """Build the dashboards FastAPI app.
 
@@ -425,6 +446,10 @@ def create_dashboards_app(
         builder; falls back to ``CXD_LLM_API_KEY``. Kept server-side — never sent
         to the browser (the client only learns whether an LLM is configured).
     :param llm_model: LLM model id; falls back to ``CXD_LLM_MODEL``.
+    :param llm_base_url: Anthropic-compatible API base URL, e.g. a gateway; falls
+        back to ``CXD_LLM_BASE_URL`` (default api.anthropic.com).
+    :param llm_key_header: Name of an extra header that also carries the API key,
+        for gateways that expect it there; falls back to ``CXD_LLM_KEY_HEADER``.
     :param functions: Data-function runtime settings; built from the
         ``CXD_FUNCTIONS*`` env vars if omitted (``CXD_FUNCTIONS`` defaults to
         ``off``; ``admin`` or ``users`` enables ``POST /api/functions/run``).
@@ -444,6 +469,11 @@ def create_dashboards_app(
         Also reachable as ``app.state.origin_fetchers`` to register later.
     :param oidc: Single sign-on (OpenID Connect); built from ``CXD_OIDC_*`` if
         omitted (off without ``CXD_OIDC_ISSUER``).
+    :param posit_connect_auth: Sign visitors in as the user Posit Connect has
+        already authenticated (its ``RStudio-Connect-Credentials`` header),
+        creating the account on first visit; falls back to
+        ``CXD_POSIT_CONNECT_AUTH`` (default off). Only for deployments on Posit
+        Connect, where no request reaches the app without passing Connect.
     :param scheduler_enabled: Run due schedules in a background thread while
         the app runs; falls back to ``CXD_SCHEDULER`` (default on).
     :returns: The configured FastAPI application.
@@ -504,6 +534,8 @@ def create_dashboards_app(
     # LLM config stays server-side (secret). The client only learns it's enabled.
     llm_api_key = llm_api_key or os.getenv("CXD_LLM_API_KEY")
     llm_model = llm_model or os.getenv("CXD_LLM_MODEL")
+    llm_base_url = llm_base_url or os.getenv("CXD_LLM_BASE_URL")
+    llm_key_header = llm_key_header or os.getenv("CXD_LLM_KEY_HEADER")
     # Data functions (R/Python snippets) run user code: off unless configured.
     functions = functions or FunctionsConfig.from_env()
     # Audit log: append-only, hash-chained, next to the dashboard store.
@@ -567,6 +599,18 @@ def create_dashboards_app(
         oidc_config = OidcConfig.from_env()
         oidc = OidcClient(oidc_config) if oidc_config else None
     identities = IdentityStore(governance._db)
+    if posit_connect_auth is None:
+        posit_connect_auth = os.getenv("CXD_POSIT_CONNECT_AUTH", "off").lower() in (
+            "on", "1", "true", "yes")
+    connect_link_existing = os.getenv("CXD_POSIT_CONNECT_LINK_EXISTING", "off").lower() in (
+        "on", "1", "true", "yes")
+    # Posit Connect only: no password sign-in or signup at all. Unlike
+    # CXD_OIDC_ONLY there is no break-glass for CXD_ADMINS: nothing reaches the
+    # app without passing Connect's own sign-in, so a password would only ever
+    # be a second way in.
+    connect_only = bool(posit_connect_auth) and os.getenv(
+        "CXD_POSIT_CONNECT_ONLY", "off").lower() in ("on", "1", "true", "yes")
+    password_login = not ((oidc and oidc.config.only) or connect_only)
     # Electronic records: dashboard version history and e-signatures.
     records = RecordStore(governance._db)
     app.state.records = records
@@ -592,7 +636,74 @@ def create_dashboards_app(
             status = response.status_code
             return response
         finally:
-            _record_request(audit, request, before, status, base)
+            # A database write per audited request: in a thread, off the loop.
+            await run_in_threadpool(_record_request, audit, request, before, status, base)
+
+    connect_account_lock = threading.Lock()
+
+    def connect_account(connect_name: str):
+        """``(username, created)`` for a Connect user, creating and linking the account
+        on first visit. The username is None when a same-named account exists that
+        it may not take over.
+
+        A new user's first requests often arrive together (two tabs, the page and
+        its first fetch). Between one request creating the account and linking it,
+        another would see an unlinked same-named account and refuse the user. The
+        lock prevents that within a process; across processes, a refusal re-checks
+        once, after the other process has had time to link.
+        """
+        with connect_account_lock:
+            username, created = connect_account_once(connect_name)
+        if username is None:
+            time.sleep(0.25)
+            username = identities.username_for(posit_connect.ISSUER, connect_name)
+        return username, created
+
+    def connect_account_once(connect_name: str):
+        username = identities.username_for(posit_connect.ISSUER, connect_name)
+        if username:
+            return username, False
+        created = connect_name not in store.list_users()
+        if not created and (identities.is_linked(connect_name) or not connect_link_existing):
+            return None, False
+        if created and not store.create_user(connect_name, secrets.token_urlsafe(32)):
+            created = False   # another process created it just now
+        identities.link(posit_connect.ISSUER, connect_name, connect_name, _now_iso())
+        return connect_name, created
+
+    def audit_connect_signin(request: Request, username: str, status: int, **detail) -> None:
+        """Record a Connect sign-in as ``auth.sso``, like an OIDC callback."""
+        if not audit.enabled:
+            return
+        try:
+            audit.record("auth.sso", actor=username if status < 300 else None, target=username,
+                         status=status, ip=request.client.host if request.client else None,
+                         detail=dict(issuer=posit_connect.ISSUER, **detail))
+        except Exception as exc:  # noqa: BLE001 - never fail the request over the log
+            print("[audit] FAILED to record auth.sso by %s: %s" % (username, exc), flush=True)
+
+    # Registered between the audit middleware and the session middleware, so the
+    # session exists here and the audit log sees who was signed in.
+    if posit_connect_auth:
+        @app.middleware("http")
+        async def posit_connect_signin(request: Request, call_next):
+            connect_name = posit_connect.connect_user(request.headers)
+            if connect_name and request.session.get("user") != connect_name:
+                username, created = await run_in_threadpool(connect_account, connect_name)
+                if username is None:
+                    request.session.clear()
+                    await run_in_threadpool(audit_connect_signin, request, connect_name, 409,
+                                            error="account exists")
+                    return sso_error("An account named '%s' already exists here. Ask an "
+                                     "administrator to link it." % connect_name, 409)
+                if request.session.get("user") != username:
+                    request.session.clear()   # a fresh session for the signed-in user
+                    request.session["user"] = username
+                    request.session["sso"] = posit_connect.ISSUER
+                    request.session["auth_at"] = int(time.time())
+                    await run_in_threadpool(audit_connect_signin, request, username, 200,
+                                            created=created or None)
+            return await call_next(request)
     app.add_middleware(
         SessionMiddleware, secret_key=session_secret, same_site="lax", https_only=https_only,
         session_cookie="cxd_session",  # distinct name so co-hosted apps (e.g. connectors) don't clobber it
@@ -706,6 +817,9 @@ def create_dashboards_app(
         check("datasets", lambda: dataset_store_for(None).list("__readyz__"))
         if scheduler_enabled:
             checks["scheduler"] = "ok" if scheduler.running else "failed: not running"
+        if mcp_bridge.required():
+            problem = mcp_bridge.ping()
+            checks["mcp"] = "ok" if problem is None else "failed: %s" % problem
         ready = all(v == "ok" for v in checks.values())
         return JSONResponse({"status": "ready" if ready else "not ready", "checks": checks},
                             status_code=200 if ready else 503)
@@ -713,13 +827,14 @@ def create_dashboards_app(
     @app.get("/auth/config")
     def auth_config():
         """How users sign in here (the login page adapts to it)."""
-        return {"password": not (oidc and oidc.config.only),
-                "signup": bool(allow_signup) and not (oidc and oidc.config.only),
-                "oidc": {"enabled": bool(oidc), "name": oidc.config.name if oidc else None}}
+        return {"password": password_login,
+                "signup": bool(allow_signup) and password_login,
+                "oidc": {"enabled": bool(oidc), "name": oidc.config.name if oidc else None},
+                "posit_connect": bool(posit_connect_auth)}
 
     @app.post("/auth/signup")
     async def signup(request: Request):
-        if not allow_signup or (oidc and oidc.config.only):
+        if not allow_signup or not password_login:
             raise HTTPException(status_code=403, detail="Signup disabled")
         body = await request.json()
         username, password = body.get("username", ""), body.get("password", "")
@@ -740,6 +855,8 @@ def create_dashboards_app(
         body = await request.json()
         username, password = body.get("username", ""), body.get("password", "")
         note(request, target=username)   # also recorded when the attempt fails
+        if connect_only:
+            raise HTTPException(status_code=403, detail="Sign in through Posit Connect")
         # With single sign-on only, passwords are for the break-glass admins in CXD_ADMINS.
         if oidc and oidc.config.only and username not in admins:
             raise HTTPException(status_code=403, detail="Sign in with %s" % oidc.config.name)
@@ -1211,6 +1328,10 @@ def create_dashboards_app(
     async def create_dataset(request: Request):
         user = require_user(request)
         body = await request.json()
+        # Parsing and storing a large upload takes a while: keep it off the loop.
+        return await run_in_threadpool(create_dataset_work, request, user, body)
+
+    def create_dataset_work(request: Request, user: str, body):
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="Body must be a JSON object")
         fmt = body.get("format", "json")
@@ -1981,6 +2102,12 @@ def create_dashboards_app(
         """
         user = require_permission(request, "llm.use")
         body = await request.json()
+        # The work (reading every dataset, the MCP and LLM round trips) blocks
+        # for seconds, so it runs in a worker thread, not on the event loop
+        # every other request is waiting on.
+        return await run_in_threadpool(llm_dashboard_work, request, user, body)
+
+    def llm_dashboard_work(request: Request, user: str, body):
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="Body must be a JSON object")
         message = (body.get("message") or "").strip()
@@ -2032,7 +2159,10 @@ def create_dashboards_app(
         if mcp_bridge.enabled() and fresh and len(catalog) == 1 and not llm_api_key:
             entry = catalog[0]
             headers, column_types = mcp_bridge.dataset_columns(data_by_id[entry["id"]])
-            mcp = mcp_bridge.generate_config(message, headers, column_types)
+            try:
+                mcp = mcp_bridge.generate_config(message, headers, column_types)
+            except mcp_bridge.BridgeError as exc:
+                raise HTTPException(status_code=502, detail=str(exc))
             if mcp:
                 config = mcp["config"]
                 config.setdefault("title", False)
@@ -2170,7 +2300,8 @@ def create_dashboards_app(
                  "required": ["config", "instruction", "dataset_id"]}},
         ]
 
-        client = anthropic.Anthropic(api_key=llm_api_key)
+        client = anthropic.Anthropic(
+            **_anthropic_client_kwargs(llm_api_key, llm_base_url, llm_key_header))
         model = llm_model or "claude-opus-5"
         request_kwargs = dict(
             model=model,
@@ -2317,6 +2448,8 @@ def create_dashboards_app(
             raise HTTPException(status_code=502, detail="LLM error: %s" % exc.message)
         except anthropic.APIConnectionError:
             raise HTTPException(status_code=502, detail="Could not reach the LLM API")
+        except mcp_bridge.BridgeError as exc:
+            raise HTTPException(status_code=502, detail=str(exc))
 
         total = cost_tally["cost_usd"] + cost_tally["mcp_cost_usd"]
         note(request, model=model, cost_usd=round(total, 5), produced_spec=spec is not None)
@@ -2341,6 +2474,7 @@ def create_dashboards_app(
             canvasxpress_url=canvasxpress_url,
             canvasxpress_license=canvasxpress_license,
             client_config={"llmEnabled": bool(llm_api_key)},
+            banner=(os.getenv("CXD_BANNER") or "").strip() or None,
         )
         if index_html is not None:
             @app.get("/", response_class=HTMLResponse)
@@ -2357,8 +2491,25 @@ def create_dashboards_app(
     return app
 
 
+_BANNER_STYLE = (
+    ".cxd-banner{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);"
+    "z-index:10000;max-width:min(90vw,720px);padding:8px 34px 8px 14px;border-radius:8px;"
+    "background:#fff7e0;border:1px solid #f0c36d;color:#5c4400;"
+    "font:14px/1.4 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.12)}"
+    ".cxd-banner button{position:absolute;top:4px;right:6px;border:0;background:none;"
+    "color:inherit;font-size:16px;cursor:pointer}")
+
+_BANNER_SCRIPT = (
+    "document.addEventListener('DOMContentLoaded',function(){"
+    "var b=document.createElement('div');b.className='cxd-banner';"
+    "b.setAttribute('role','status');b.textContent=%s;"
+    "var x=document.createElement('button');x.type='button';x.textContent='\\u00d7';"
+    "x.title='Dismiss';x.onclick=function(){b.remove();};b.appendChild(x);"
+    "document.body.appendChild(b);});")
+
+
 def _render_index(canvasxpress_url: str, canvasxpress_license: Optional[str],
-                  client_config: dict) -> Optional[str]:
+                  client_config: dict, banner: Optional[str] = None) -> Optional[str]:
     """Read the served app shell and inject runtime config into its head.
 
     Replaces the ``<!--CXD_HEAD_START-->…<!--CXD_HEAD_END-->`` block with the
@@ -2369,6 +2520,8 @@ def _render_index(canvasxpress_url: str, canvasxpress_license: Optional[str],
     :param canvasxpress_url: Base URL for the CanvasXpress library assets.
     :param canvasxpress_license: License key, or None to keep the watermark.
     :param client_config: Non-secret config exposed to the browser.
+    :param banner: Plain text shown to every visitor in a dismissible notice
+        (``CXD_BANNER``), e.g. that saved work is not kept yet; None for none.
     :returns: The HTML string, or None when there is no index.html to render.
     """
     index_path = os.path.join(_STATIC_DIR, "index.html")
@@ -2387,6 +2540,11 @@ def _render_index(canvasxpress_url: str, canvasxpress_license: Optional[str],
     parts.append('<link href="%s" rel="stylesheet" />' % css_url)
     parts.append('<script src="%s"></script>' % js_url)
     parts.append("<script>window.__CXD_CONFIG__=%s;</script>" % json.dumps(client_config))
+    if banner:
+        # "<" escaped so the text can never close the <script> it sits in.
+        text = json.dumps(banner).replace("<", "\\u003c")
+        parts.append("<style>%s</style>" % _BANNER_STYLE)
+        parts.append("<script>%s</script>" % (_BANNER_SCRIPT % text))
     injected = "\n  ".join(parts)
 
     # Use a function replacement so backslashes in the config aren't treated as

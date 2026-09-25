@@ -117,11 +117,41 @@ Every SSO sign-in, and every refused one, is recorded as `auth.sso` in the
 [audit log](governance.md#audit-log), with the username, the issuer, the
 number of groups, whether the account was created, and why a sign-in failed.
 
+## Posit Connect
+
+Deployed as [Posit Connect](https://posit.co/products/enterprise/connect/)
+content, the app needs no identity provider of its own: Connect has already
+signed the visitor in before the request arrives, and it says who they are in
+the `RStudio-Connect-Credentials` header. With `CXD_POSIT_CONNECT_AUTH=on`:
+
+- the visitor is signed in as their Connect username, and the account is
+  created on their first visit, so there is no second login;
+- a request without the header (e.g. `access_type: all`, anyone may open the
+  app) falls back to the normal login page;
+- a local account with the same name is **not** taken over (the visitor sees
+  "ask an administrator") unless `CXD_POSIT_CONNECT_LINK_EXISTING=on`;
+- admins come from `CXD_ADMINS`, by Connect username. Connect's groups are not
+  synced;
+- each new session is recorded as `auth.sso` in the audit log, with issuer
+  `posit-connect`.
+
+With `CXD_POSIT_CONNECT_ONLY=on` as well, password sign-in and signup are off
+entirely, for everyone. There is no break-glass password for `CXD_ADMINS` as
+there is with `CXD_OIDC_ONLY`: nothing reaches the app without passing
+Connect's own sign-in, so a password would only be a second way in.
+
+**Only turn this on behind Connect.** Anywhere else the header is whatever the
+client sends, so anyone could claim to be anyone.
+
+Sign-out ends the dashboards session only; the next request signs the visitor
+straight back in as their Connect user. Signing out of Connect itself is done
+in Connect.
+
 ## Endpoints
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/auth/config` | `{password, signup, oidc: {enabled, name}}`: how users sign in here |
+| `GET` | `/auth/config` | `{password, signup, oidc: {enabled, name}, posit_connect}`: how users sign in here |
 | `GET` | `/auth/oidc/login` | Start single sign-on |
 | `GET` | `/auth/oidc/callback` | The redirect URI |
 | `POST` | `/auth/logout` | Sign out; returns `logout_url` after an SSO session |
