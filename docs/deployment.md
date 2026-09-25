@@ -35,7 +35,7 @@ exactly once and sends one email.
 | `CXD_PUBLISH_BASE_URL` | the public URL | the public URL (links in emails, the single sign-on redirect) |
 | Single sign-on | nothing extra | nothing extra (state rides in the signed cookie) |
 
-Install the drivers with the extras: `pip install 'canvasxpress-dashboards-server[web,postgres,sso]'`
+Install the drivers with the extras: `pip install 'canvasxpress-dashboards-server[web,postgres,sso,llm]'` (`llm` for the natural-language builder)
 (add `s3` for an S3 dataset store). `docker-compose.postgres.yml` layers a
 Postgres service onto the compose stack and points both stores at it.
 

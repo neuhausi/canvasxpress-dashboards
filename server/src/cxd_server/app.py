@@ -248,6 +248,22 @@ def _usage_cost(usage, model):
             + get("cache_creation_input_tokens") * pin * _CACHE_WRITE_RATIO) / 1e6
 
 
+def _anthropic_client_kwargs(api_key: str, base_url: Optional[str] = None,
+                             key_header: Optional[str] = None) -> dict:
+    """Keyword arguments for ``anthropic.Anthropic``.
+
+    ``base_url`` points the client at an Anthropic-compatible gateway instead of
+    api.anthropic.com. ``key_header`` names an extra header that carries the same
+    API key, for gateways that read the key from their own header.
+    """
+    kwargs = {"api_key": api_key}
+    if base_url:
+        kwargs["base_url"] = base_url
+    if key_header:
+        kwargs["default_headers"] = {key_header: api_key}
+    return kwargs
+
+
 def _log_usage(response, model=None, tally=None):
     """Print token usage for one model call, including cache effectiveness.
 
@@ -365,6 +381,8 @@ def create_dashboards_app(
     canvasxpress_license: Optional[str] = None,
     llm_api_key: Optional[str] = None,
     llm_model: Optional[str] = None,
+    llm_base_url: Optional[str] = None,
+    llm_key_header: Optional[str] = None,
     functions: Optional[FunctionsConfig] = None,
     audit: Optional[AuditLog] = None,
     governance: Optional[Governance] = None,
@@ -416,6 +434,10 @@ def create_dashboards_app(
         builder; falls back to ``CXD_LLM_API_KEY``. Kept server-side — never sent
         to the browser (the client only learns whether an LLM is configured).
     :param llm_model: LLM model id; falls back to ``CXD_LLM_MODEL``.
+    :param llm_base_url: Anthropic-compatible API base URL, e.g. a gateway; falls
+        back to ``CXD_LLM_BASE_URL`` (default api.anthropic.com).
+    :param llm_key_header: Name of an extra header that also carries the API key,
+        for gateways that expect it there; falls back to ``CXD_LLM_KEY_HEADER``.
     :param functions: Data-function runtime settings; built from the
         ``CXD_FUNCTIONS*`` env vars if omitted (``CXD_FUNCTIONS`` defaults to
         ``off``; ``admin`` or ``users`` enables ``POST /api/functions/run``).
@@ -500,6 +522,8 @@ def create_dashboards_app(
     # LLM config stays server-side (secret). The client only learns it's enabled.
     llm_api_key = llm_api_key or os.getenv("CXD_LLM_API_KEY")
     llm_model = llm_model or os.getenv("CXD_LLM_MODEL")
+    llm_base_url = llm_base_url or os.getenv("CXD_LLM_BASE_URL")
+    llm_key_header = llm_key_header or os.getenv("CXD_LLM_KEY_HEADER")
     # Data functions (R/Python snippets) run user code: off unless configured.
     functions = functions or FunctionsConfig.from_env()
     # Audit log: append-only, hash-chained, next to the dashboard store.
@@ -2220,7 +2244,8 @@ def create_dashboards_app(
                  "required": ["config", "instruction", "dataset_id"]}},
         ]
 
-        client = anthropic.Anthropic(api_key=llm_api_key)
+        client = anthropic.Anthropic(
+            **_anthropic_client_kwargs(llm_api_key, llm_base_url, llm_key_header))
         model = llm_model or "claude-opus-5"
         request_kwargs = dict(
             model=model,
