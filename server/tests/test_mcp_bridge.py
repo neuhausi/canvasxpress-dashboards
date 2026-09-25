@@ -15,7 +15,7 @@ CONFIG = {"graphType": "Bar", "xAxis": ["sales"]}
 
 
 class FakeMcp(BaseHTTPRequestHandler):
-    """/generate and /cache-stats, behind an optional required Authorization value."""
+    """/generate and /params, behind an optional required Authorization value."""
 
     auth = None     # the Authorization value the server demands (None = open)
     seen = []       # Authorization headers received, in order
@@ -28,8 +28,14 @@ class FakeMcp(BaseHTTPRequestHandler):
             self.end_headers()
             return
         path = self.path.split("?", 1)[0]
-        body = ({"success": True, "config": dict(CONFIG), "warnings": []}
-                if path == "/generate" else {"hits": 0})
+        if path == "/generate":
+            body = {"success": True, "config": dict(CONFIG), "warnings": []}
+        elif path == "/params":
+            body = {"found": True, "param": "graphType"}
+        else:                       # like the real server: unknown routes 404
+            self.send_response(404)
+            self.end_headers()
+            return
         data = json.dumps(body).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")

@@ -64,12 +64,13 @@ def _open(url: str):
 def ping() -> Optional[str]:
     """None when the MCP server answers an authenticated request, else why not.
 
-    Uses ``/cache-stats``: a cheap GET that makes no LLM call.
+    Looks up one parameter's docs: a small GET that makes no LLM call, on a
+    route every canvasxpress-mcp version has (``/cache-stats`` is newer).
     """
     if not enabled():
         return "disabled (CXD_MCP_ENABLED)"
     try:
-        with _open(base_url() + "/cache-stats") as resp:
+        with _open(base_url() + "/params?param_name=graphType") as resp:
             json.loads(resp.read().decode("utf-8"))
     except Exception as exc:  # noqa: BLE001 - reported, never raised
         return "%s: %s" % (type(exc).__name__, exc)
