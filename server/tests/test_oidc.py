@@ -100,7 +100,8 @@ def test_round_trip_creates_links_and_syncs(tmp_path, idp):
     app = make_app(tmp_path, idp)
     client = TestClient(app)
     assert client.get("/auth/config").json() == {"password": True, "signup": True,
-                                                 "oidc": {"enabled": True, "name": "Acme SSO"}}
+                                                 "oidc": {"enabled": True, "name": "Acme SSO"},
+                                                 "posit_connect": False}
     loc = client.get("/auth/oidc/login", follow_redirects=False).headers["location"]
     q = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(loc).query))
     assert q["redirect_uri"] == BASE + "/auth/oidc/callback"

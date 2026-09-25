@@ -45,6 +45,7 @@ from .governance import (PERMISSIONS, Governance, GovernanceError, apply_policy,
 from .jobs import Jobs
 from .mailer import SmtpMailer
 from .records import RecordError, RecordStore
+from . import posit_connect
 from .oidc import (IdentityStore, OidcClient, OidcConfig, OidcError, groups_from, pkce_pair,
                    username_from)
 from .scheduler import Cron, ScheduleError, ScheduleStore, Scheduler
@@ -372,6 +373,7 @@ def create_dashboards_app(
     origin_fetchers: Optional[dict] = None,
     scheduler_enabled: Optional[bool] = None,
     oidc: Optional[OidcClient] = None,
+    posit_connect_auth: Optional[bool] = None,
 ) -> FastAPI:
     """Build the dashboards FastAPI app.
 
@@ -433,6 +435,11 @@ def create_dashboards_app(
         Also reachable as ``app.state.origin_fetchers`` to register later.
     :param oidc: Single sign-on (OpenID Connect); built from ``CXD_OIDC_*`` if
         omitted (off without ``CXD_OIDC_ISSUER``).
+    :param posit_connect_auth: Sign visitors in as the user Posit Connect has
+        already authenticated (its ``RStudio-Connect-Credentials`` header),
+        creating the account on first visit; falls back to
+        ``CXD_POSIT_CONNECT_AUTH`` (default off). Only for deployments on Posit
+        Connect, where no request reaches the app without passing Connect.
     :param scheduler_enabled: Run due schedules in a background thread while
         the app runs; falls back to ``CXD_SCHEDULER`` (default on).
     :returns: The configured FastAPI application.
@@ -556,6 +563,11 @@ def create_dashboards_app(
         oidc_config = OidcConfig.from_env()
         oidc = OidcClient(oidc_config) if oidc_config else None
     identities = IdentityStore(governance._db)
+    if posit_connect_auth is None:
+        posit_connect_auth = os.getenv("CXD_POSIT_CONNECT_AUTH", "off").lower() in (
+            "on", "1", "true", "yes")
+    connect_link_existing = os.getenv("CXD_POSIT_CONNECT_LINK_EXISTING", "off").lower() in (
+        "on", "1", "true", "yes")
     # Electronic records: dashboard version history and e-signatures.
     records = RecordStore(governance._db)
     app.state.records = records
@@ -581,6 +593,55 @@ def create_dashboards_app(
             return response
         finally:
             _record_request(audit, request, before, status)
+
+    def connect_account(connect_name: str):
+        """``(username, created)`` for a Connect user, creating and linking the account
+        on first visit. The username is None when a same-named account exists that
+        it may not take over."""
+        username = identities.username_for(posit_connect.ISSUER, connect_name)
+        if username:
+            return username, False
+        created = connect_name not in store.list_users()
+        if not created and (identities.is_linked(connect_name) or not connect_link_existing):
+            return None, False
+        if created:
+            store.create_user(connect_name, secrets.token_urlsafe(32))
+        identities.link(posit_connect.ISSUER, connect_name, connect_name, _now_iso())
+        return connect_name, created
+
+    def audit_connect_signin(request: Request, username: str, status: int, **detail) -> None:
+        """Record a Connect sign-in as ``auth.sso``, like an OIDC callback."""
+        if not audit.enabled:
+            return
+        try:
+            audit.record("auth.sso", actor=username if status < 300 else None, target=username,
+                         status=status, ip=request.client.host if request.client else None,
+                         detail=dict(issuer=posit_connect.ISSUER, **detail))
+        except Exception as exc:  # noqa: BLE001 - never fail the request over the log
+            print("[audit] FAILED to record auth.sso by %s: %s" % (username, exc), flush=True)
+
+    # Registered between the audit middleware and the session middleware, so the
+    # session exists here and the audit log sees who was signed in.
+    if posit_connect_auth:
+        @app.middleware("http")
+        async def posit_connect_signin(request: Request, call_next):
+            connect_name = posit_connect.connect_user(request.headers)
+            if connect_name and request.session.get("user") != connect_name:
+                username, created = await run_in_threadpool(connect_account, connect_name)
+                if username is None:
+                    request.session.clear()
+                    await run_in_threadpool(audit_connect_signin, request, connect_name, 409,
+                                            error="account exists")
+                    return sso_error("An account named '%s' already exists here. Ask an "
+                                     "administrator to link it." % connect_name, 409)
+                if request.session.get("user") != username:
+                    request.session.clear()   # a fresh session for the signed-in user
+                    request.session["user"] = username
+                    request.session["sso"] = posit_connect.ISSUER
+                    request.session["auth_at"] = int(time.time())
+                    await run_in_threadpool(audit_connect_signin, request, username, 200,
+                                            created=created or None)
+            return await call_next(request)
     app.add_middleware(
         SessionMiddleware, secret_key=session_secret, same_site="lax", https_only=https_only,
         session_cookie="cxd_session",  # distinct name so co-hosted apps (e.g. connectors) don't clobber it
@@ -703,7 +764,8 @@ def create_dashboards_app(
         """How users sign in here (the login page adapts to it)."""
         return {"password": not (oidc and oidc.config.only),
                 "signup": bool(allow_signup) and not (oidc and oidc.config.only),
-                "oidc": {"enabled": bool(oidc), "name": oidc.config.name if oidc else None}}
+                "oidc": {"enabled": bool(oidc), "name": oidc.config.name if oidc else None},
+                "posit_connect": bool(posit_connect_auth)}
 
     @app.post("/auth/signup")
     async def signup(request: Request):
