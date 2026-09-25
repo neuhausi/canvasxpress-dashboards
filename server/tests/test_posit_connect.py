@@ -136,3 +136,30 @@ def test_signins_are_audited_once_per_session(tmp_path, monkeypatch):
     got = [(e["target"], e["status"], (e.get("detail") or {}).get("created")) for e in events]
     assert got == [("bob", 409, None), ("alice", 200, None), ("alice", 200, True)]
     assert all(e["detail"]["issuer"] == "posit-connect" for e in events)
+
+
+def test_connect_only_turns_passwords_off_even_for_admins(tmp_path, monkeypatch):
+    monkeypatch.setenv("CXD_POSIT_CONNECT_ONLY", "on")
+    store = DashboardStore(str(tmp_path / "dash.db"))
+    store.create_user("alice", "secret1")
+    app = create_dashboards_app(store=store, session_secret="s", serve_static=False,
+                                dataset_store_uri="file://" + str(tmp_path / "datasets"),
+                                scheduler_enabled=False, posit_connect_auth=True,
+                                admins={"alice"})
+    client = TestClient(app)
+    assert client.get("/auth/config").json()["password"] is False
+    assert client.get("/auth/config").json()["signup"] is False
+    r = client.post("/auth/login", json={"username": "alice", "password": "secret1"})
+    assert r.status_code == 403 and "Posit Connect" in r.text
+    assert client.post("/auth/signup", json={"username": "carol", "password": "secret1"}
+                       ).status_code == 403
+    assert client.get("/auth/me", headers=creds("bob")).json()["user"] == "bob"
+
+
+def test_connect_only_needs_connect_auth(tmp_path, monkeypatch):
+    monkeypatch.setenv("CXD_POSIT_CONNECT_ONLY", "on")
+    monkeypatch.delenv("CXD_POSIT_CONNECT_AUTH", raising=False)
+    client = TestClient(make_app(tmp_path))
+    assert client.get("/auth/config").json()["password"] is True
+    assert client.post("/auth/signup", json={"username": "carol", "password": "secret1"}
+                       ).status_code == 200

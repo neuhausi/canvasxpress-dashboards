@@ -135,6 +135,11 @@ the `RStudio-Connect-Credentials` header. With `CXD_POSIT_CONNECT_AUTH=on`:
 - each new session is recorded as `auth.sso` in the audit log, with issuer
   `posit-connect`.
 
+With `CXD_POSIT_CONNECT_ONLY=on` as well, password sign-in and signup are off
+entirely, for everyone. There is no break-glass password for `CXD_ADMINS` as
+there is with `CXD_OIDC_ONLY`: nothing reaches the app without passing
+Connect's own sign-in, so a password would only be a second way in.
+
 **Only turn this on behind Connect.** Anywhere else the header is whatever the
 client sends, so anyone could claim to be anyone.
 

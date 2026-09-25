@@ -593,6 +593,13 @@ def create_dashboards_app(
             "on", "1", "true", "yes")
     connect_link_existing = os.getenv("CXD_POSIT_CONNECT_LINK_EXISTING", "off").lower() in (
         "on", "1", "true", "yes")
+    # Posit Connect only: no password sign-in or signup at all. Unlike
+    # CXD_OIDC_ONLY there is no break-glass for CXD_ADMINS: nothing reaches the
+    # app without passing Connect's own sign-in, so a password would only ever
+    # be a second way in.
+    connect_only = bool(posit_connect_auth) and os.getenv(
+        "CXD_POSIT_CONNECT_ONLY", "off").lower() in ("on", "1", "true", "yes")
+    password_login = not ((oidc and oidc.config.only) or connect_only)
     # Electronic records: dashboard version history and e-signatures.
     records = RecordStore(governance._db)
     app.state.records = records
@@ -808,14 +815,14 @@ def create_dashboards_app(
     @app.get("/auth/config")
     def auth_config():
         """How users sign in here (the login page adapts to it)."""
-        return {"password": not (oidc and oidc.config.only),
-                "signup": bool(allow_signup) and not (oidc and oidc.config.only),
+        return {"password": password_login,
+                "signup": bool(allow_signup) and password_login,
                 "oidc": {"enabled": bool(oidc), "name": oidc.config.name if oidc else None},
                 "posit_connect": bool(posit_connect_auth)}
 
     @app.post("/auth/signup")
     async def signup(request: Request):
-        if not allow_signup or (oidc and oidc.config.only):
+        if not allow_signup or not password_login:
             raise HTTPException(status_code=403, detail="Signup disabled")
         body = await request.json()
         username, password = body.get("username", ""), body.get("password", "")
@@ -836,6 +843,8 @@ def create_dashboards_app(
         body = await request.json()
         username, password = body.get("username", ""), body.get("password", "")
         note(request, target=username)   # also recorded when the attempt fails
+        if connect_only:
+            raise HTTPException(status_code=403, detail="Sign in through Posit Connect")
         # With single sign-on only, passwords are for the break-glass admins in CXD_ADMINS.
         if oidc and oidc.config.only and username not in admins:
             raise HTTPException(status_code=403, detail="Sign in with %s" % oidc.config.name)
