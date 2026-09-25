@@ -20,9 +20,11 @@ web = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "itsdangerous>=2.1", "python
 s3 = ["boto3>=1.34"]
 # SQL object + dashboard stores (postgres:// / sqlite://). SQLite needs no
 # driver; for Postgres add a driver too — or use the `postgres` extra below,
-# which bundles one so `postgresql://` URLs work out of the box.
+# which bundles one so `postgresql://` URLs work out of the box. It carries both
+# drivers because SQLAlchemy 2.0 maps `postgresql://` to psycopg2 and 2.1 maps it
+# to psycopg (v3).
 sql = ["SQLAlchemy>=2.0"]
-postgres = ["SQLAlchemy>=2.0", "psycopg2-binary>=2.9"]
+postgres = ["SQLAlchemy>=2.0", "psycopg2-binary>=2.9", "psycopg[binary]>=3.1"]
 # Google Drive store (gdrive://folderId). OAuth reuses canvasxpress-connectors.
 gdrive = ["google-api-python-client>=2.0", "google-auth>=2.0"]
 # Python reference runtime for kind:"function" (/api/functions/run). The snippet
