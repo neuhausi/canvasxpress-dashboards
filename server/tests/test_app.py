@@ -374,6 +374,18 @@ def test_index_defaults_without_config(tmp_path):
     assert "window.cX" not in body                            # watermark stays
     assert "www.canvasxpress.org/dist/canvasXpress.min.js" in body
     assert '"llmEnabled": false' in body
+    assert "cxd-banner" not in body
+
+
+def test_index_shows_the_configured_banner(tmp_path, monkeypatch):
+    monkeypatch.setenv("CXD_BANNER", "Nothing is kept yet </script><b>x</b>")
+    app = create_dashboards_app(
+        store=DashboardStore(str(tmp_path / "d.db")), session_secret="s",
+        serve_static=True, dataset_store_uri="file://" + str(tmp_path / "ds"),
+    )
+    body = _client(app).get("/").text
+    assert "b.textContent=\"Nothing is kept yet \\u003c/script>\\u003cb>x\\u003c/b>\"" in body
+    assert "</script><b>" not in body          # the text cannot break out of its script
 
 
 def test_dataset_config_round_trips(app):

@@ -89,6 +89,20 @@ def test_update_preserves_share_token(store):
     assert summary["title"] == "Renamed"
 
 
+def test_lock_roundtrip_survives_resave(store):
+    store.save_dashboard("alice", _spec(), "t1")
+    assert not store.is_locked("alice", "d1")
+    assert store.get_summary("alice", "d1")["locked"] is False
+    assert store.set_locked("alice", "d1", True)["locked"] is True
+    assert store.is_locked("alice", "d1")
+    assert not store.is_locked("bob", "d1")
+    # Re-saving must not silently unlock.
+    store.save_dashboard("alice", _spec(title="Renamed"), "t2")
+    assert store.list_dashboards("alice")[0]["locked"] is True
+    assert store.set_locked("alice", "absent", True) is None
+    assert not store.is_locked("alice", "absent")
+
+
 def test_share_token_resolves_and_private_clears(store):
     store.save_dashboard("alice", _spec(), "t1")
     shared = store.set_visibility("alice", "d1", "public")

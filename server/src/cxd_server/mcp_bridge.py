@@ -12,9 +12,17 @@ Configuration (all via environment / .env):
     CXD_MCP_ENABLED   "1"/"true" (default) or "0"/"false" to disable entirely.
     CXD_MCP_URL       Base URL of the MCP server (default http://127.0.0.1:8100).
     CXD_MCP_TIMEOUT   Per-request timeout in seconds (default 90).
+    CXD_MCP_AUTH      Authorization header value sent on every call, for an MCP
+                      server behind an authenticating proxy (e.g. "Bearer <token>",
+                      or "Key <api key>" on Posit Connect). Default: none.
+    CXD_MCP_REQUIRED  "1"/"on" to fail loudly: a call that cannot reach the server
+                      (network error, HTTP error such as 401) raises BridgeError
+                      instead of returning None, and /readyz checks the server.
+                      Default off.
 
-Every call degrades gracefully: any failure returns None and the caller falls
-back to the LLM planner, so the app never hard-depends on the MCP server.
+By default every call degrades gracefully: any failure returns None and the
+caller falls back to the LLM planner, so the app never hard-depends on the MCP
+server. That also hides a misconfigured deployment, hence CXD_MCP_REQUIRED.
 """
 
 from __future__ import annotations
@@ -26,6 +34,10 @@ import urllib.request
 from typing import Optional
 
 
+class BridgeError(RuntimeError):
+    """The bridge is required (CXD_MCP_REQUIRED) but the MCP server could not be used."""
+
+
 def _truthy(value: Optional[str], default: bool = True) -> bool:
     if value is None or value == "":
         return default
@@ -35,6 +47,34 @@ def _truthy(value: Optional[str], default: bool = True) -> bool:
 def enabled() -> bool:
     """Whether the MCP bridge is turned on (CXD_MCP_ENABLED)."""
     return _truthy(os.getenv("CXD_MCP_ENABLED"), True)
+
+
+def required() -> bool:
+    """Whether a failure to reach the MCP server is an error (CXD_MCP_REQUIRED)."""
+    return _truthy(os.getenv("CXD_MCP_REQUIRED"), False)
+
+
+def _open(url: str):
+    """urlopen with the configured Authorization header (CXD_MCP_AUTH), if any."""
+    auth = os.getenv("CXD_MCP_AUTH")
+    request = urllib.request.Request(url, headers={"Authorization": auth} if auth else {})
+    return urllib.request.urlopen(request, timeout=timeout_seconds())
+
+
+def ping() -> Optional[str]:
+    """None when the MCP server answers an authenticated request, else why not.
+
+    Looks up one parameter's docs: a small GET that makes no LLM call, on a
+    route every canvasxpress-mcp version has (``/cache-stats`` is newer).
+    """
+    if not enabled():
+        return "disabled (CXD_MCP_ENABLED)"
+    try:
+        with _open(base_url() + "/params?param_name=graphType") as resp:
+            json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:  # noqa: BLE001 - reported, never raised
+        return "%s: %s" % (type(exc).__name__, exc)
+    return None
 
 
 def base_url() -> str:
@@ -109,7 +149,8 @@ def clear_log() -> bool:
 
 
 def _get(path: str, params: dict) -> Optional[dict]:
-    """GET a REST endpoint on the MCP server; None on any failure.
+    """GET a REST endpoint on the MCP server; None on any failure, or
+    :class:`BridgeError` when the bridge is required.
 
     Every exchange is recorded to the bridge log (CXD_MCP_LOG): the endpoint,
     the exact request parameters, and the full response or the error.
@@ -121,11 +162,13 @@ def _get(path: str, params: dict) -> Optional[dict]:
         k: (json.loads(v) if k in ("column_types", "config") else v)
         for k, v in params.items()}}
     try:
-        with urllib.request.urlopen(url, timeout=timeout_seconds()) as resp:
+        with _open(url) as resp:
             body = json.loads(resp.read().decode("utf-8"))
     except Exception as exc:
         record["error"] = "%s: %s" % (type(exc).__name__, exc)
         _log(record)
+        if required():
+            raise BridgeError("canvasxpress-mcp %s failed: %s" % (path, record["error"]))
         return None
     record["response"] = body if isinstance(body, dict) else {"raw": str(body)[:2000]}
     _log(record)
