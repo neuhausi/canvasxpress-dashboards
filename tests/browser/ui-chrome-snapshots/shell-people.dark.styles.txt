@@ -739,11 +739,6 @@ span#data-preview-regional-sales-cX-DataTable-Dimensions [618,810 114x18]
 div#data-preview-regional-sales-cX-Container-Workflow [569,835 794x0] 
 div#data-preview-regional-sales-cX-Version-Info-Trigger [569,159 25x25] z=10000
 div#data-preview-regional-sales-cX-Version-Info-Container [601,191 160x78] font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#data-preview-regional-sales-cX-Version-Info-Container>b:1 [610,200 117x20] font-weight=700
-div#data-preview-regional-sales-cX-Version-Info-Container>br:1 [727,200 0x20] 
-div#data-preview-regional-sales-cX-Version-Info-Container>b:2 [610,220 26x20] font-weight=700
-div#data-preview-regional-sales-cX-Version-Info-Container>br:2 [678,220 0x20] 
-div#data-preview-regional-sales-cX-Version-Info-Container>b:3 [610,240 37x20] font-weight=700
 table#data-preview-regional-sales-cX-a11y-table [568,158 209x86] 
 table#data-preview-regional-sales-cX-a11y-table>caption [568,158 209x18] 
 table#data-preview-regional-sales-cX-a11y-table>thead [570,178 205x20] 

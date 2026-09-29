@@ -210,11 +210,6 @@ div#cxd-cohort-explorer-panel-km-0-cX-Canvas-Container [362,69 560x416]
 div#cxd-cohort-explorer-panel-km-0-cX-Container-Workflow [362,485 560x0] 
 div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Trigger [362,69 25x25] z=10000
 div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container [394,101 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container>b:1 [403,110 117x20] font-weight=700
-div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container>br:1 [520,110 0x20] 
-div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container>b:2 [403,130 26x20] font-weight=700
-div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container>br:2 [471,130 0x20] 
-div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container>b:3 [403,150 37x20] font-weight=700
 table#cxd-cohort-explorer-panel-km-0-cX-a11y-table [361,68 656x1362] 
 table#cxd-cohort-explorer-panel-km-0-cX-a11y-table>caption [361,68 656x18] 
 table#cxd-cohort-explorer-panel-km-0-cX-a11y-table>thead [363,88 652x20] 
@@ -1057,11 +1052,6 @@ div#cxd-cohort-explorer-panel-pdl1-1-cX-Canvas-Container [941,69 444x416]
 div#cxd-cohort-explorer-panel-pdl1-1-cX-Container-Workflow [941,485 444x0] 
 div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Trigger [941,69 25x25] z=10000
 div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container [973,101 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container>b:1 [982,110 117x20] font-weight=700
-div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container>br:1 [1098,110 0x20] 
-div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container>b:2 [982,130 26x20] font-weight=700
-div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container>br:2 [1049,130 0x20] 
-div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container>b:3 [982,150 37x20] font-weight=700
 table#cxd-cohort-explorer-panel-pdl1-1-cX-a11y-table [940,68 656x1362] 
 table#cxd-cohort-explorer-panel-pdl1-1-cX-a11y-table>caption [940,68 656x18] 
 table#cxd-cohort-explorer-panel-pdl1-1-cX-a11y-table>thead [942,88 652x20] 
@@ -1903,11 +1893,6 @@ div#cxd-cohort-explorer-panel-myc-2-cX-Canvas-Container [362,537 560x416]
 div#cxd-cohort-explorer-panel-myc-2-cX-Container-Workflow [362,953 560x0] 
 div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Trigger [362,537 25x25] z=10000
 div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container [394,569 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container>b:1 [403,578 117x20] font-weight=700
-div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container>br:1 [520,578 0x20] 
-div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container>b:2 [403,598 26x20] font-weight=700
-div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container>br:2 [471,598 0x20] 
-div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container>b:3 [403,618 37x20] font-weight=700
 table#cxd-cohort-explorer-panel-myc-2-cX-a11y-table [361,536 2212x284] 
 table#cxd-cohort-explorer-panel-myc-2-cX-a11y-table>caption [361,536 2212x18] 
 table#cxd-cohort-explorer-panel-myc-2-cX-a11y-table>thead [363,556 2208x20] 
@@ -2581,11 +2566,6 @@ div#cxd-cohort-explorer-panel-crp-3-cX-Canvas-Container [941,537 444x416]
 div#cxd-cohort-explorer-panel-crp-3-cX-Container-Workflow [941,953 444x0] 
 div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Trigger [941,537 25x25] z=10000
 div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container [973,569 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container>b:1 [982,578 117x20] font-weight=700
-div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container>br:1 [1098,578 0x20] 
-div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container>b:2 [982,598 26x20] font-weight=700
-div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container>br:2 [1049,598 0x20] 
-div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container>b:3 [982,618 37x20] font-weight=700
 table#cxd-cohort-explorer-panel-crp-3-cX-a11y-table [940,536 140x4002] 
 table#cxd-cohort-explorer-panel-crp-3-cX-a11y-table>caption [940,536 140x18] 
 table#cxd-cohort-explorer-panel-crp-3-cX-a11y-table>thead [942,556 136x20] 

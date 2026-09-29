@@ -73,11 +73,6 @@ div#cxd-sales-overview-panel-revenue-bar-0-cX-Canvas-Container [15,236 676x374]
 div#cxd-sales-overview-panel-revenue-bar-0-cX-Container-Workflow [15,610 676x0] 
 div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Trigger [15,236 25x25] z=10000
 div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container [47,268 160x78] font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container>b:1 [56,277 117x20] font-weight=700
-div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container>br:1 [173,277 0x20] 
-div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container>b:2 [56,297 26x20] font-weight=700
-div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container>br:2 [124,297 0x20] 
-div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container>b:3 [56,317 37x20] font-weight=700
 table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table [14,235 313x64] 
 table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>caption [14,235 313x18] 
 table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>thead [16,255 309x20] 
@@ -140,11 +135,6 @@ div#cxd-sales-overview-panel-region-pie-1-cX-Canvas-Container [709,236 676x374]
 div#cxd-sales-overview-panel-region-pie-1-cX-Container-Workflow [709,610 676x0] 
 div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Trigger [709,236 25x25] z=10000
 div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container [741,268 160x78] font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container>b:1 [750,277 117x20] font-weight=700
-div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container>br:1 [867,277 0x20] 
-div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container>b:2 [750,297 26x20] font-weight=700
-div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container>br:2 [818,297 0x20] 
-div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container>b:3 [750,317 37x20] font-weight=700
 table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table [708,235 140x152] 
 table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>caption [708,235 140x18] 
 table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>thead [710,255 136x20] 
@@ -211,11 +201,6 @@ div#cxd-sales-overview-panel-trend-line-2-cX-Canvas-Container [15,662 1370x374]
 div#cxd-sales-overview-panel-trend-line-2-cX-Container-Workflow [15,1036 1370x0] 
 div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Trigger [15,662 25x25] z=10000
 div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container [47,694 160x78] font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container>b:1 [56,703 117x20] font-weight=700
-div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container>br:1 [173,703 0x20] 
-div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container>b:2 [56,723 26x20] font-weight=700
-div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container>br:2 [124,723 0x20] 
-div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container>b:3 [56,743 37x20] font-weight=700
 table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table [14,661 194x152] 
 table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>caption [14,661 194x18] 
 table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>thead [16,681 190x20] 
@@ -909,11 +894,6 @@ span#cxd-sales-overview-control-table-0-cX-DataTable-Dimensions [64,1422 114x18]
 div#cxd-sales-overview-control-table-0-cX-Container-Workflow [15,1448 1370x0] 
 div#cxd-sales-overview-control-table-0-cX-Version-Info-Trigger [15,1088 25x25] z=10000
 div#cxd-sales-overview-control-table-0-cX-Version-Info-Container [47,1120 160x78] font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-sales-overview-control-table-0-cX-Version-Info-Container>b:1 [56,1129 117x20] font-weight=700
-div#cxd-sales-overview-control-table-0-cX-Version-Info-Container>br:1 [173,1129 0x20] 
-div#cxd-sales-overview-control-table-0-cX-Version-Info-Container>b:2 [56,1149 26x20] font-weight=700
-div#cxd-sales-overview-control-table-0-cX-Version-Info-Container>br:2 [124,1149 0x20] 
-div#cxd-sales-overview-control-table-0-cX-Version-Info-Container>b:3 [56,1169 37x20] font-weight=700
 table#cxd-sales-overview-control-table-0-cX-a11y-table [14,1087 313x64] 
 table#cxd-sales-overview-control-table-0-cX-a11y-table>caption [14,1087 313x18] 
 table#cxd-sales-overview-control-table-0-cX-a11y-table>thead [16,1107 309x20] 

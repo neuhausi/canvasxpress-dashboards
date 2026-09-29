@@ -225,11 +225,6 @@ div#cxd-cohort-explorer-panel-km-0-cX-Canvas-Container [362,279 560x416]
 div#cxd-cohort-explorer-panel-km-0-cX-Container-Workflow [362,695 560x0] 
 div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Trigger [362,279 25x25] z=10000
 div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container [394,311 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
-div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container>b:1 [403,320 117x20] font-weight=700
-div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container>br:1 [520,320 0x20] 
-div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container>b:2 [403,340 26x20] font-weight=700
-div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container>br:2 [471,340 0x20] 
-div#cxd-cohort-explorer-panel-km-0-cX-Version-Info-Container>b:3 [403,360 37x20] font-weight=700
 table#cxd-cohort-explorer-panel-km-0-cX-a11y-table [361,278 656x1362] 
 table#cxd-cohort-explorer-panel-km-0-cX-a11y-table>caption [361,278 656x18] 
 table#cxd-cohort-explorer-panel-km-0-cX-a11y-table>thead [363,298 652x20] 
@@ -1072,11 +1067,6 @@ div#cxd-cohort-explorer-panel-pdl1-1-cX-Canvas-Container [941,279 444x416]
 div#cxd-cohort-explorer-panel-pdl1-1-cX-Container-Workflow [941,695 444x0] 
 div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Trigger [941,279 25x25] z=10000
 div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container [973,311 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
-div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container>b:1 [982,320 117x20] font-weight=700
-div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container>br:1 [1098,320 0x20] 
-div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container>b:2 [982,340 26x20] font-weight=700
-div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container>br:2 [1049,340 0x20] 
-div#cxd-cohort-explorer-panel-pdl1-1-cX-Version-Info-Container>b:3 [982,360 37x20] font-weight=700
 table#cxd-cohort-explorer-panel-pdl1-1-cX-a11y-table [940,278 656x1362] 
 table#cxd-cohort-explorer-panel-pdl1-1-cX-a11y-table>caption [940,278 656x18] 
 table#cxd-cohort-explorer-panel-pdl1-1-cX-a11y-table>thead [942,298 652x20] 
@@ -1918,11 +1908,6 @@ div#cxd-cohort-explorer-panel-myc-2-cX-Canvas-Container [362,747 560x416]
 div#cxd-cohort-explorer-panel-myc-2-cX-Container-Workflow [362,1163 560x0] 
 div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Trigger [362,747 25x25] z=10000
 div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container [394,779 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
-div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container>b:1 [403,788 117x20] font-weight=700
-div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container>br:1 [520,788 0x20] 
-div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container>b:2 [403,808 26x20] font-weight=700
-div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container>br:2 [471,808 0x20] 
-div#cxd-cohort-explorer-panel-myc-2-cX-Version-Info-Container>b:3 [403,828 37x20] font-weight=700
 table#cxd-cohort-explorer-panel-myc-2-cX-a11y-table [361,746 2212x284] 
 table#cxd-cohort-explorer-panel-myc-2-cX-a11y-table>caption [361,746 2212x18] 
 table#cxd-cohort-explorer-panel-myc-2-cX-a11y-table>thead [363,766 2208x20] 
@@ -2596,11 +2581,6 @@ div#cxd-cohort-explorer-panel-crp-3-cX-Canvas-Container [941,747 444x416]
 div#cxd-cohort-explorer-panel-crp-3-cX-Container-Workflow [941,1163 444x0] 
 div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Trigger [941,747 25x25] z=10000
 div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container [973,779 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
-div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container>b:1 [982,788 117x20] font-weight=700
-div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container>br:1 [1098,788 0x20] 
-div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container>b:2 [982,808 26x20] font-weight=700
-div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container>br:2 [1049,808 0x20] 
-div#cxd-cohort-explorer-panel-crp-3-cX-Version-Info-Container>b:3 [982,828 37x20] font-weight=700
 table#cxd-cohort-explorer-panel-crp-3-cX-a11y-table [940,746 140x4002] 
 table#cxd-cohort-explorer-panel-crp-3-cX-a11y-table>caption [940,746 140x18] 
 table#cxd-cohort-explorer-panel-crp-3-cX-a11y-table>thead [942,766 136x20] 

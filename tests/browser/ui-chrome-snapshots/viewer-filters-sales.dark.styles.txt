@@ -44,11 +44,6 @@ div#cxd-sales-model-panel-scatter-0-cX-Canvas-Container [15,69 907x416]
 div#cxd-sales-model-panel-scatter-0-cX-Container-Workflow [15,485 907x0] 
 div#cxd-sales-model-panel-scatter-0-cX-Version-Info-Trigger [15,69 25x25] z=10000
 div#cxd-sales-model-panel-scatter-0-cX-Version-Info-Container [47,101 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-sales-model-panel-scatter-0-cX-Version-Info-Container>b:1 [56,110 117x20] font-weight=700
-div#cxd-sales-model-panel-scatter-0-cX-Version-Info-Container>br:1 [173,110 0x20] 
-div#cxd-sales-model-panel-scatter-0-cX-Version-Info-Container>b:2 [56,130 26x20] font-weight=700
-div#cxd-sales-model-panel-scatter-0-cX-Version-Info-Container>br:2 [124,130 0x20] 
-div#cxd-sales-model-panel-scatter-0-cX-Version-Info-Container>b:3 [56,150 37x20] font-weight=700
 table#cxd-sales-model-panel-scatter-0-cX-a11y-table [14,68 334x570] 
 table#cxd-sales-model-panel-scatter-0-cX-a11y-table>caption [14,68 334x18] 
 table#cxd-sales-model-panel-scatter-0-cX-a11y-table>thead [16,88 330x20] 
@@ -345,11 +340,6 @@ div#cxd-sales-model-panel-products-1-cX-Canvas-Container [15,537 676x364]
 div#cxd-sales-model-panel-products-1-cX-Container-Workflow [15,901 676x0] 
 div#cxd-sales-model-panel-products-1-cX-Version-Info-Trigger [15,537 25x25] z=10000
 div#cxd-sales-model-panel-products-1-cX-Version-Info-Container [47,569 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-sales-model-panel-products-1-cX-Version-Info-Container>b:1 [56,578 117x20] font-weight=700
-div#cxd-sales-model-panel-products-1-cX-Version-Info-Container>br:1 [173,578 0x20] 
-div#cxd-sales-model-panel-products-1-cX-Version-Info-Container>b:2 [56,598 26x20] font-weight=700
-div#cxd-sales-model-panel-products-1-cX-Version-Info-Container>br:2 [124,598 0x20] 
-div#cxd-sales-model-panel-products-1-cX-Version-Info-Container>b:3 [56,618 37x20] font-weight=700
 table#cxd-sales-model-panel-products-1-cX-a11y-table [14,536 281x86] 
 table#cxd-sales-model-panel-products-1-cX-a11y-table>caption [14,536 281x18] 
 table#cxd-sales-model-panel-products-1-cX-a11y-table>thead [16,556 277x20] 
@@ -413,11 +403,6 @@ div#cxd-sales-model-panel-customers-2-cX-Canvas-Container [709,537 676x364]
 div#cxd-sales-model-panel-customers-2-cX-Container-Workflow [709,901 676x0] 
 div#cxd-sales-model-panel-customers-2-cX-Version-Info-Trigger [709,537 25x25] z=10000
 div#cxd-sales-model-panel-customers-2-cX-Version-Info-Container [741,569 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-sales-model-panel-customers-2-cX-Version-Info-Container>b:1 [750,578 117x20] font-weight=700
-div#cxd-sales-model-panel-customers-2-cX-Version-Info-Container>br:1 [867,578 0x20] 
-div#cxd-sales-model-panel-customers-2-cX-Version-Info-Container>b:2 [750,598 26x20] font-weight=700
-div#cxd-sales-model-panel-customers-2-cX-Version-Info-Container>br:2 [818,598 0x20] 
-div#cxd-sales-model-panel-customers-2-cX-Version-Info-Container>b:3 [750,618 37x20] font-weight=700
 table#cxd-sales-model-panel-customers-2-cX-a11y-table [708,536 244x64] 
 table#cxd-sales-model-panel-customers-2-cX-a11y-table>caption [708,536 244x18] 
 table#cxd-sales-model-panel-customers-2-cX-a11y-table>thead [710,556 240x20] 
@@ -486,11 +471,6 @@ div#cxd-sales-model-panel-segments-3-cX-Canvas-Container [15,953 1370x364]
 div#cxd-sales-model-panel-segments-3-cX-Container-Workflow [15,1317 1370x0] 
 div#cxd-sales-model-panel-segments-3-cX-Version-Info-Trigger [15,953 25x25] z=10000
 div#cxd-sales-model-panel-segments-3-cX-Version-Info-Container [47,985 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
-div#cxd-sales-model-panel-segments-3-cX-Version-Info-Container>b:1 [56,994 117x20] font-weight=700
-div#cxd-sales-model-panel-segments-3-cX-Version-Info-Container>br:1 [173,994 0x20] 
-div#cxd-sales-model-panel-segments-3-cX-Version-Info-Container>b:2 [56,1014 26x20] font-weight=700
-div#cxd-sales-model-panel-segments-3-cX-Version-Info-Container>br:2 [124,1014 0x20] 
-div#cxd-sales-model-panel-segments-3-cX-Version-Info-Container>b:3 [56,1034 37x20] font-weight=700
 table#cxd-sales-model-panel-segments-3-cX-a11y-table [14,952 934x174] 
 table#cxd-sales-model-panel-segments-3-cX-a11y-table>caption [14,952 934x18] 
 table#cxd-sales-model-panel-segments-3-cX-a11y-table>thead [16,972 930x20] 

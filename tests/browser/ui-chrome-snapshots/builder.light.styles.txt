@@ -124,11 +124,6 @@ div#cxd-quality-metrics-panel-yield-meter-0-cX-Canvas-Container [35,325 319x260]
 div#cxd-quality-metrics-panel-yield-meter-0-cX-Container-Workflow [35,585 319x0] 
 div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Trigger [35,325 25x25] z=10000
 div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container [67,357 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
-div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container>b:1 [76,366 117x20] font-weight=700
-div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container>br:1 [193,366 0x20] 
-div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container>b:2 [76,386 26x20] font-weight=700
-div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container>br:2 [144,386 0x20] 
-div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container>b:3 [76,406 37x20] font-weight=700
 table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table [34,324 3663x64] 
 table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>caption [34,324 3663x18] 
 table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead [36,344 3659x20] 
@@ -287,11 +282,6 @@ div#cxd-quality-metrics-panel-defect-meter-1-cX-Canvas-Container [372,325 319x26
 div#cxd-quality-metrics-panel-defect-meter-1-cX-Container-Workflow [372,585 319x0] 
 div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Trigger [372,325 25x25] z=10000
 div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container [404,357 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
-div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container>b:1 [413,366 117x20] font-weight=700
-div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container>br:1 [530,366 0x20] 
-div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container>b:2 [413,386 26x20] font-weight=700
-div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container>br:2 [481,386 0x20] 
-div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container>b:3 [413,406 37x20] font-weight=700
 table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table [371,324 3684x64] 
 table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>caption [371,324 3684x18] 
 table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead [373,344 3680x20] 
@@ -450,11 +440,6 @@ div#cxd-quality-metrics-panel-ontime-meter-2-cX-Canvas-Container [709,325 319x26
 div#cxd-quality-metrics-panel-ontime-meter-2-cX-Container-Workflow [709,585 319x0] 
 div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Trigger [709,325 25x25] z=10000
 div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container [741,357 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
-div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container>b:1 [750,366 117x20] font-weight=700
-div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container>br:1 [867,366 0x20] 
-div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container>b:2 [750,386 26x20] font-weight=700
-div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container>br:2 [818,386 0x20] 
-div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container>b:3 [750,406 37x20] font-weight=700
 table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table [708,324 3683x64] 
 table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>caption [708,324 3683x18] 
 table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead [710,344 3679x20] 
@@ -613,11 +598,6 @@ div#cxd-quality-metrics-panel-count-meter-3-cX-Canvas-Container [1046,325 319x26
 div#cxd-quality-metrics-panel-count-meter-3-cX-Container-Workflow [1046,585 319x0] 
 div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Trigger [1046,325 25x25] z=10000
 div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container [1078,357 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
-div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container>b:1 [1087,366 117x20] font-weight=700
-div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container>br:1 [1204,366 0x20] 
-div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container>b:2 [1087,386 26x20] font-weight=700
-div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container>br:2 [1155,386 0x20] 
-div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container>b:3 [1087,406 37x20] font-weight=700
 table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table [1045,324 3714x64] 
 table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>caption [1045,324 3714x18] 
 table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead [1047,344 3710x20] 
@@ -776,11 +756,6 @@ div#cxd-quality-metrics-panel-trend-4-cX-Canvas-Container [35,637 1330x364]
 div#cxd-quality-metrics-panel-trend-4-cX-Container-Workflow [35,1001 1330x0] 
 div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Trigger [35,637 25x25] z=10000
 div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container [67,669 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
-div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container>b:1 [76,678 117x20] font-weight=700
-div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container>br:1 [193,678 0x20] 
-div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container>b:2 [76,698 26x20] font-weight=700
-div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container>br:2 [144,698 0x20] 
-div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container>b:3 [76,718 37x20] font-weight=700
 table#cxd-quality-metrics-panel-trend-4-cX-a11y-table [34,636 2376x130] 
 table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>caption [34,636 2376x18] 
 table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead [36,656 2372x20] 
@@ -1095,11 +1070,6 @@ div#cxd-quality-metrics-panel-defects-bar-5-cX-Canvas-Container [35,1053 1330x36
 div#cxd-quality-metrics-panel-defects-bar-5-cX-Container-Workflow [35,1417 1330x0] 
 div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Trigger [35,1053 25x25] z=10000
 div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container [67,1085 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
-div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container>b:1 [76,1094 117x20] font-weight=700
-div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container>br:1 [193,1094 0x20] 
-div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container>b:2 [76,1114 26x20] font-weight=700
-div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container>br:2 [144,1114 0x20] 
-div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container>b:3 [76,1134 37x20] font-weight=700
 table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table [34,1052 3684x64] 
 table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>caption [34,1052 3684x18] 
 table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead [36,1072 3680x20] 

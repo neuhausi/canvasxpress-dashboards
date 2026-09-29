@@ -552,6 +552,13 @@ function fingerprint() {
     if (tag === 'canvas' || tag === 'script' || tag === 'style' || el.ownerSVGElement) {
       continue;
     }
+    // The version box's contents are the engine version text, which moves with every release; the
+    // box itself (its themed background and border) is still fingerprinted.
+    var vbox = el.parentElement && el.parentElement.closest ?
+      el.parentElement.closest('[id$="-cX-Version-Info-Container"]') : null;
+    if (vbox) {
+      continue;
+    }
     var cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility === 'hidden') {
       continue;
