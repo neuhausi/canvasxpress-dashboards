@@ -30,4 +30,4 @@ export {
 export { runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS } from './pushdown.js';
 
 /** @type {string} Package version. */
-export var version = '0.10.0';
+export var version = '0.11.0';

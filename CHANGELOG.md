@@ -3,10 +3,7 @@
 Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 (`cxd_server`). Versions follow the package version.
 
-## Unreleased
-
-Server features, live on the demo; the client additions ship in the next npm
-release.
+## 0.11.0 — 2026-09-29
 
 ### One look with CanvasXpress (UI design system)
 - **The dashboard styles use the CanvasXpress design tokens.** `dashboardCss` reads the engine's
