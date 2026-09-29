@@ -169,14 +169,16 @@ def main(argv=None) -> int:
         )
         return 1
 
-    from .app import create_dashboards_app
-
     # Build eagerly so misconfiguration surfaces here (not on first request);
     # --reload needs an import string, so hand uvicorn a factory in that mode.
     if args.reload:
         target = "cxd_server.__main__:_app_factory"
     else:
-        target = create_dashboards_app()
+        try:
+            target = _build_app()
+        except RuntimeError as exc:
+            sys.stderr.write("  %s\n" % exc)
+            return 1
 
     dashboard_store, dataset_store = _effective_stores()
     print("\n  CanvasXpress Dashboards server")
@@ -189,10 +191,19 @@ def main(argv=None) -> int:
     return 0
 
 
+def _build_app():
+    """The dashboards app, with database sources when ``CXD_CONNECTORS`` is on
+    (raises RuntimeError when that is misconfigured)."""
+    from .app import create_dashboards_app
+    from .connectors import install_from_env
+    app = create_dashboards_app()
+    install_from_env(app)
+    return app
+
+
 def _app_factory():
     """Import-string target used only under ``--reload``."""
-    from .app import create_dashboards_app
-    return create_dashboards_app()
+    return _build_app()
 
 
 if __name__ == "__main__":

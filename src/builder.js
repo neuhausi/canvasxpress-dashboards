@@ -17,8 +17,12 @@ import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames, sourceL
 import { validateSpec } from './validateSpec.js';
 import { migrateSpec, DASHBOARD_SCHEMA_VERSION } from './spec.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
-import { addPanel, removePanel, movePanel, resizePanel, resolveCollisions, resolveDrop, updatePanel, setDataSource, setParam, setSourceQuery, blankSpec, DEFAULT_COLS }
+import { addPanel, removePanel, movePanel, resizePanel, resolveCollisions, resolveDrop, updatePanel, setDataSource, setParam, setSourceQuery, blankSpec, DEFAULT_COLS,
+  addRelationship, removeRelationship, setMarkingMode, buildJoinSource, describeLink, MARKING_MODES,
+  setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown }
   from './builderModel.js';
+import { tableFields, sourceAxis, JOIN_TYPES } from './join.js';
+import { runPushdown, PUSHDOWN_FUNCTIONS } from './pushdown.js';
 
 // MS-Word-style colour-control icons (the coloured bar is rendered separately).
 var FONT_COLOR_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">' +
@@ -225,6 +229,9 @@ export function createBuilder(target, options) {
   var functionStatusPromise = null;   // memoized GET /api/functions/status (see functionStatus)
   var canAuthorFunctions = false;     // may this user write / edit data functions?
   var addFiltersBtn = null; // same rule as addControlBtn
+  var linksBtn = null;      // disabled until there are two data sources to link
+  var fieldsBtn = null;     // disabled until there is a (non-live) data source
+  var shapeBtn = null;      // same rule as fieldsBtn
   var baseUrl = options.baseUrl || '';   // cxd_server origin for kind:"dataset" sources
   var CX = options.CanvasXpress || (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
   var selectedId = null;
@@ -296,10 +303,19 @@ export function createBuilder(target, options) {
       if (status.languages.length) addFunctionBtn.style.display = '';
       updateAddPanelState();
     });
+    // "Links": how a selection in one panel marks the related rows of panels
+    // built on other sources (spec.relationships + spec.markingMode).
+    linksBtn = button('🔗 Links', function () { doEditLinks(); });
+    // "ƒx Fields": calculated fields computed once on a source, so every panel,
+    // filter, join and link on it can use them (data.<ref>.calculatedFields).
+    fieldsBtn = button('ƒx Fields', function () { doEditFields(); });
+    // "Shape data": filter, keep columns or summarize, sort and limit a
+    // source's rows (its `pushdown` query; in its database when it has one).
+    shapeBtn = button('▦ Shape data', function () { doShapeData(); });
     var createActions = [titleInput, editJsonBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }),
       button('+ Image', function () { doAddImage(); }),
-      addControlBtn, addFiltersBtn, addFunctionBtn];
+      addControlBtn, addFiltersBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
     append(row1, createActions);
@@ -494,8 +510,16 @@ export function createBuilder(target, options) {
     });
     Promise.all([storesPromise, datasetsPromise, functionsPromise]).then(function (res) {
       openDataDialog(doc, Object.keys(spec.data || {}),
-        { client: client, stores: res[0], datasets: res[1], functionLanguages: res[2] }).then(function (result) {
+        { client: client, stores: res[0], datasets: res[1], functionLanguages: res[2], spec: spec, dataOf: sourceData }).then(function (result) {
         if (!result) return;
+        if (result.source.kind === 'join') {
+          // A join also links its two inputs for marking, and the renderer
+          // builds that graph per render: fold live edits, then rebuild.
+          syncLiveConfigs();
+          commit(setDataSource(spec, result.name, result.source), false);
+          rebuild();
+          return;
+        }
         commit(setDataSource(spec, result.name, result.source), false);
         renderProps();
         loadDatasets();   // a store upload may have created a new dataset
@@ -520,6 +544,134 @@ export function createBuilder(target, options) {
         addPanelBound(result.name, true);
       });
     });
+  }
+
+  /**
+   * "🔗 Links": edit how a selection marks related rows across sources — the
+   * marking mode and the declared relationships. Applying folds live
+   * customizer edits first, then rebuilds: the renderer builds its marking
+   * graph once per render, so new links only take effect after a rebuild.
+   * @returns {void}
+   * @private
+   */
+  function doEditLinks() {
+    var doc = container.ownerDocument || document;
+    syncLiveConfigs();
+    openLinksDialog(doc, rawSpec(), sourceData).then(function (edited) {
+      if (!edited) return;
+      var next = rawSpec();
+      if (edited.relationships && edited.relationships.length) next.relationships = edited.relationships;
+      else delete next.relationships;
+      if (edited.markingMode) next.markingMode = edited.markingMode;
+      else delete next.markingMode;
+      commit(next, false);
+      rebuild();
+      setMsg(describeLinkCount(next));
+    });
+  }
+
+  /**
+   * "ƒx Fields": add, replace or remove the calculated fields of the data
+   * sources. Applying folds live customizer edits, writes each changed source's
+   * `calculatedFields`, then rebuilds so every panel resolves the new columns.
+   * @returns {void}
+   * @private
+   */
+  function doEditFields() {
+    var doc = container.ownerDocument || document;
+    syncLiveConfigs();
+    openFieldsDialog(doc, rawSpec(), sourceRawData, CX).then(function (edited) {
+      if (!edited) return;
+      var next = rawSpec();
+      Object.keys(edited).forEach(function (ref) {
+        if (!next.data[ref]) return;
+        if (edited[ref] && edited[ref].length) next.data[ref].calculatedFields = edited[ref];
+        else delete next.data[ref].calculatedFields;
+      });
+      commit(next, false);
+      rebuild();
+      var count = Object.keys(next.data || {}).reduce(function (n, ref) {
+        return n + ((next.data[ref].calculatedFields || []).length);
+      }, 0);
+      setMsg(count === 1 ? '1 calculated field.' : count + ' calculated fields.');
+    });
+  }
+
+  /**
+   * "▦ Shape data": set a source's `pushdown` query. Applying folds live
+   * customizer edits, writes the query, then rebuilds so the panels on the
+   * source resolve its new rows.
+   * @returns {void}
+   * @private
+   */
+  function doShapeData() {
+    var doc = container.ownerDocument || document;
+    syncLiveConfigs();
+    openShapeDialog(doc, rawSpec(), unshapedData).then(function (edited) {
+      if (!edited) return;
+      var next;
+      try {
+        next = setSourcePushdown(rawSpec(), edited.ref, edited.query);
+      } catch (e) {
+        showError(e);
+        return;
+      }
+      commit(next, false);
+      rebuild();
+      setMsg(next.data[edited.ref].pushdown ? 'Shaped "' + edited.ref + '".' : 'Removed the shaping of "' + edited.ref + '".');
+    });
+  }
+
+  /**
+   * A source's rows before its pushdown query, for the Shape dialog's column
+   * lists and preview: a browser source resolved without its query; a
+   * connector source asked for a 50-row sample (its query runs in its
+   * database, so the dialog never pulls the whole table).
+   * @param {string} ref - Source ref.
+   * @returns {Promise<?object>} The data object, or null when it can't be resolved.
+   * @private
+   */
+  function unshapedData(ref) {
+    var source = (spec.data || {})[ref];
+    if (!source || !liveHandle || !liveHandle.store) return Promise.resolve(null);
+    var copy = Object.assign({}, source);
+    if (source.kind === 'connector') copy.pushdown = { limit: 50 };
+    else delete copy.pushdown;
+    return liveHandle.store.resolveSource(ref, copy, { sources: spec.data }).then(function (data) {
+      return data || null;
+    }, function () { return null; });
+  }
+
+  /**
+   * Resolve a data source's data as fetched, WITHOUT its calculated fields (the
+   * Fields dialog re-applies the fields being edited on top of it).
+   * @param {string} ref - Source ref.
+   * @returns {Promise<?object>} The data object, or null when it can't be resolved.
+   * @private
+   */
+  function sourceRawData(ref) {
+    var source = (spec.data || {})[ref];
+    if (!source || !liveHandle || !liveHandle.store) return Promise.resolve(null);
+    return liveHandle.store.resolveSource(ref, source, { sources: spec.data }).then(function (data) {
+      return data || null;
+    }, function () { return null; });
+  }
+
+  /**
+   * Resolve a data source's data object, for offering its key columns. Always
+   * the SOURCE data (what joins and marking read), never a panel instance's
+   * data, which may be transposed or projected to a subset of columns.
+   * @param {string} ref - Source ref.
+   * @returns {Promise<?object>} The data object, or null when it can't be resolved.
+   * @private
+   */
+  function sourceData(ref) {
+    var source = (spec.data || {})[ref];
+    if (!source || !liveHandle || !liveHandle.store) return Promise.resolve(null);
+    // `sources` lets a join source resolve its inputs.
+    return liveHandle.store.resolve(ref, source, { sources: spec.data }).then(function (data) {
+      return data || null;
+    }, function () { return null; });
   }
 
   /**
@@ -2674,6 +2826,26 @@ export function createBuilder(target, options) {
    */
   function updateAddPanelState() {
     var hasData = Object.keys(spec.data || {}).length > 0;
+    if (fieldsBtn) {
+      fieldsBtn.disabled = !Object.keys(spec.data || {}).some(function (ref) {
+        return spec.data[ref] && spec.data[ref].kind !== 'live';
+      });
+      fieldsBtn.title = fieldsBtn.disabled
+        ? 'Add a data source to define calculated fields on it'
+        : 'Calculated fields: computed once on a source, usable by every panel, filter and link on it';
+    }
+    if (shapeBtn) {
+      shapeBtn.disabled = fieldsBtn ? fieldsBtn.disabled : true;
+      shapeBtn.title = shapeBtn.disabled
+        ? 'Add a data source to shape its rows'
+        : 'Filter, keep columns or summarize, sort and limit a source\'s rows';
+    }
+    if (linksBtn) {
+      linksBtn.disabled = Object.keys(spec.data || {}).length < 2;
+      linksBtn.title = linksBtn.disabled
+        ? 'Add a second data source to link selections across sources'
+        : 'Link data sources so a selection in one panel marks related rows in the others';
+    }
     if (addFunctionBtn) {
       addFunctionBtn.disabled = !hasData || !canAuthorFunctions;
       addFunctionBtn.title = !canAuthorFunctions ? FUNCTION_AUTHOR_ONLY
@@ -3237,6 +3409,8 @@ function openDataDialog(doc, existingNames, opts) {
   var canPickDataset = datasets.length > 0;
   var functionLangs = (opts.functionLanguages || []).filter(function (l) { return l === 'python' || l === 'r'; });
   var canUseFunction = functionLangs.length > 0 && existingNames.length > 0;
+  // A join blends two existing sources; it needs the spec for their row axes.
+  var canJoin = !!opts.spec && existingNames.length >= 2;
 
   return new Promise(function (resolve) {
     var overlay = el('div', 'cxb-modal-overlay');
@@ -3257,6 +3431,7 @@ function openDataDialog(doc, existingNames, opts) {
     modes.push(['json', 'Paste CanvasXpress JSON'], ['csv', 'Upload CSV / JSON file (inline)']);
     if (canUseStore) modes.push(['store', 'Upload CSV / JSON to a store']);
     modes.push(['connector', 'Connector URL']);
+    if (canJoin) modes.push(['join', 'Join two sources']);
     if (canUseFunction) modes.push(['function', 'Data function (R / Python)']);
     if (opts.onlyFunction && canUseFunction) modes = [['function', 'Data function (R / Python)']];
     var typeSel = el('select');
@@ -3309,8 +3484,10 @@ function openDataDialog(doc, existingNames, opts) {
     urlInput.setAttribute('placeholder', '/api/data?source=sales');
 
     var fn = buildFunctionBody(doc, existingNames, functionLangs);
+    var joinBody = canJoin ? buildJoinBody(doc, existingNames, opts.spec, opts.dataOf) : null;
 
-    var bodies = { dataset: datasetWrap, json: jsonArea, csv: fileInput, store: storeWrap, connector: urlInput, function: fn.root };
+    var bodies = { dataset: datasetWrap, json: jsonArea, csv: fileInput, store: storeWrap, connector: urlInput, function: fn.root,
+      join: joinBody && joinBody.root };
     var bodyWrap = el('div', 'cxb-modal-body');
     Object.keys(bodies).forEach(function (k) { if (bodies[k]) bodyWrap.appendChild(bodies[k]); });
     function showBody() {
@@ -3369,6 +3546,12 @@ function openDataDialog(doc, existingNames, opts) {
         var fsrc = fn.source();
         if (typeof fsrc === 'string') return fail(fsrc);
         return close({ name: name, source: fsrc });
+      }
+
+      if (mode === 'join') {
+        try {
+          return close({ name: name, source: joinBody.source() });
+        } catch (e) { return fail(e.message); }
       }
 
       if (mode === 'store') {
@@ -3510,6 +3693,889 @@ function buildFunctionBody(doc, refs, languages) {
 function identifierFor(ref) {
   var id = String(ref).replace(/[^A-Za-z0-9_]/g, '_');
   return /^[A-Za-z_]/.test(id) ? id : '_' + id;
+}
+
+/**
+ * A data-source select paired with a key select listing that source's key
+ * columns — its row id, then its row annotations and columns (the names a
+ * join or relationship `on` accepts along the source's row axis). The key
+ * list fills asynchronously once the source's data resolves; until then, or
+ * when it can't resolve, only the row id is offered.
+ * @param {string[]} refs - Source names to offer.
+ * @param {string} initialRef - The initially selected source.
+ * @param {object} sources - The spec's `data` map (for each source's row axis).
+ * @param {function(string): Promise<?object>} [dataOf] - Resolves a source's data.
+ * @returns {{sourceSel: HTMLElement, keySel: HTMLElement, value: function}} The
+ *   two selects, and `value()` -> `{ref, key}` (`key` '' = the row id).
+ * @private
+ */
+function sourceKeyPicker(refs, initialRef, sources, dataOf) {
+  var keySel = el('select');
+  keySel.setAttribute('title', 'Key: the row id, an annotation, or a column');
+  var token = 0;   // ignores a slow resolve that a newer source pick superseded
+  var sourceSel = selectField(refs, initialRef, function () { fillKeys(); });
+  sourceSel.setAttribute('title', 'Data source');
+
+  /**
+   * Append an option.
+   * @param {HTMLElement} host - A select or optgroup.
+   * @param {string} value - Option value.
+   * @param {string} label - Option text.
+   * @returns {void}
+   */
+  function addOption(host, value, label) {
+    var o = el('option');
+    o.value = value;
+    o.textContent = label;
+    host.appendChild(o);
+  }
+
+  /**
+   * Refill the key list for the selected source.
+   * @returns {void}
+   */
+  function fillKeys() {
+    var ref = sourceSel.value;
+    var mine = ++token;
+    keySel.innerHTML = '';
+    addOption(keySel, '', 'Row id');
+    keySel.value = '';
+    Promise.resolve(dataOf ? dataOf(ref) : null).then(function (data) {
+      if (mine !== token || !data) return;
+      var fields;
+      try {
+        fields = tableFields(data, sourceAxis(ref, sources));
+      } catch (e) {
+        return;
+      }
+      [['Annotations', fields.annotations], ['Columns', fields.columns]].forEach(function (pair) {
+        if (!pair[1].length) return;
+        var group = el('optgroup');
+        group.label = pair[0];
+        pair[1].forEach(function (name) { addOption(group, name, name); });
+        keySel.appendChild(group);
+      });
+      keySel.value = '';
+    });
+  }
+  fillKeys();
+
+  return {
+    sourceSel: sourceSel,
+    keySel: keySel,
+    value: function () { return { ref: sourceSel.value, key: keySel.value || '' }; }
+  };
+}
+
+/**
+ * The "Join two sources" body of the Add-data dialog: a source + key picker
+ * for each side and the join type.
+ * @param {Document} doc - The owning document.
+ * @param {string[]} refs - Existing source names (at least two).
+ * @param {object} spec - The current spec (for each source's row axis).
+ * @param {function(string): Promise<?object>} [dataOf] - Resolves a source's data.
+ * @returns {{root: HTMLElement, source: function}} The body, and a builder that
+ *   returns the `kind:"join"` source (throws with a message when incomplete).
+ * @private
+ */
+function buildJoinBody(doc, refs, spec, dataOf) {
+  var root = el('div', 'cxb-modal-join');
+  var leftPick = sourceKeyPicker(refs, refs[0], spec.data || {}, dataOf);
+  var rightPick = sourceKeyPicker(refs, refs[1], spec.data || {}, dataOf);
+  var leftRow = el('div', 'cxb-links-pick');
+  append(leftRow, [leftPick.sourceSel, leftPick.keySel]);
+  var rightRow = el('div', 'cxb-links-pick');
+  append(rightRow, [rightPick.sourceSel, rightPick.keySel]);
+  var howSel = selectField(JOIN_TYPES, 'inner', function () { /* read on Add */ });
+  labelOptions(howSel, {
+    inner: 'Only rows that match on both sides',
+    left: 'Every left row (blank where unmatched)',
+    right: 'Every right row (blank where unmatched)',
+    outer: 'Every row from both sides'
+  });
+  append(root, [field('Left source and key', leftRow), field('Right source and key', rightRow), field('Keep', howSel)]);
+  return {
+    root: root,
+    source: function () {
+      var left = leftPick.value();
+      var right = rightPick.value();
+      return buildJoinSource(spec, { left: left.ref, right: right.ref, leftKey: left.key, rightKey: right.key, how: howSel.value });
+    }
+  };
+}
+
+/**
+ * The "Links" dialog: how a selection shows in related panels (the marking
+ * mode), the declared cross-source links (each removable), and pickers to
+ * link two more sources on a key. Edits apply to a working copy; nothing
+ * changes until Apply.
+ * @param {Document} doc - The owning document.
+ * @param {object} spec - The current spec (not modified).
+ * @param {function(string): Promise<?object>} [dataOf] - Resolves a source's data.
+ * @returns {Promise<?{relationships: (Array|undefined), markingMode: (string|undefined)}>}
+ *   The edited links, or null when cancelled.
+ * @private
+ */
+function openLinksDialog(doc, spec, dataOf) {
+  var refs = Object.keys(spec.data || {});
+  var working = spec;
+  return new Promise(function (resolve) {
+    var overlay = el('div', 'cxb-modal-overlay');
+    var modal = el('div', 'cxb-modal');
+
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Linked selection';
+    var intro = el('p', 'cxb-links-intro');
+    intro.textContent = 'Link two data sources on a key: selecting marks in a panel on one source then marks ' +
+      'the related rows in panels on the other. Sources combined with “+ Data → Join two sources” are linked already.';
+
+    var modeSel = selectField(MARKING_MODES, working.markingMode || 'focus', function (value) {
+      working = setMarkingMode(working, value);
+    });
+    labelOptions(modeSel, {
+      focus: 'Focus: grey out everything else',
+      highlight: 'Highlight: outline the related rows',
+      ghost: 'Ghost: fade everything else'
+    });
+
+    var errEl = el('div', 'cxb-modal-err');
+    var list = el('div', 'cxb-links-list');
+
+    /**
+     * Redraw the list of declared links.
+     * @returns {void}
+     */
+    function renderList() {
+      list.innerHTML = '';
+      var rels = working.relationships || [];
+      if (!rels.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = 'No links yet.';
+        list.appendChild(none);
+      }
+      rels.forEach(function (rel, i) {
+        var row = el('div', 'cxb-links-row');
+        var text = el('span');
+        text.textContent = describeLink(working, rel);
+        var remove = button('×', function () {
+          working = removeRelationship(working, i);
+          renderList();
+        });
+        remove.setAttribute('title', 'Remove this link');
+        remove.setAttribute('aria-label', 'Remove link ' + text.textContent);
+        append(row, [text, remove]);
+        list.appendChild(row);
+      });
+    }
+    renderList();
+
+    var leftPick = sourceKeyPicker(refs, refs[0], spec.data || {}, dataOf);
+    var rightPick = sourceKeyPicker(refs, refs[1], spec.data || {}, dataOf);
+    var leftRow = el('div', 'cxb-links-pick');
+    append(leftRow, [leftPick.sourceSel, leftPick.keySel]);
+    var rightRow = el('div', 'cxb-links-pick');
+    append(rightRow, [rightPick.sourceSel, rightPick.keySel]);
+    var linkBtn = button('+ Link', function () {
+      var left = leftPick.value();
+      var right = rightPick.value();
+      try {
+        working = addRelationship(working, { left: left.ref, right: right.ref, leftKey: left.key, rightKey: right.key });
+      } catch (e) {
+        errEl.textContent = e.message;
+        return;
+      }
+      errEl.textContent = '';
+      renderList();
+    });
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var applyBtn = button('Apply', function () {
+      close({ relationships: working.relationships, markingMode: working.markingMode });
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, applyBtn]);
+
+    append(modal, [heading, intro, field('When you select marks', modeSel), field('Links', list),
+      field('Link this source and key', leftRow), field('to this source and key', rightRow), linkBtn, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+
+    /**
+     * Close the dialog with a result.
+     * @param {*} result - Resolution value.
+     * @returns {void}
+     */
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
+ * The "ƒx Fields" dialog: per data source, list its calculated fields (each
+ * removable) and add one — a formula over the source's fields, or bins of a
+ * numeric column — with live validation and a preview computed by the engine's
+ * own static API (`CanvasXpress.validateCalculatedField` /
+ * `applyCalculatedFields`). Without that API (an older CanvasXpress) the
+ * dialog explains why fields can't be added. Edits apply to a working copy.
+ * @param {Document} doc - The owning document.
+ * @param {object} spec - The current spec (not modified).
+ * @param {function(string): Promise<?object>} rawDataOf - A source's data
+ *   without its calculated fields.
+ * @param {function} [CX] - The CanvasXpress library.
+ * @returns {Promise<?object>} ref -> the source's new `calculatedFields`
+ *   (empty to remove) for every source touched, or null when cancelled.
+ * @private
+ */
+function openFieldsDialog(doc, spec, rawDataOf, CX) {
+  var refs = Object.keys(spec.data || {}).filter(function (ref) {
+    return spec.data[ref] && spec.data[ref].kind !== 'live';
+  });
+  var engineReady = !!(CX && typeof CX.applyCalculatedFields === 'function' &&
+    typeof CX.validateCalculatedField === 'function');
+  var working = spec;
+  var touched = {};
+  var raw = null;          // the selected source's data without fields
+  var token = 0;           // ignores a slow resolve superseded by a newer pick
+  return new Promise(function (resolve) {
+    var overlay = el('div', 'cxb-modal-overlay');
+    var modal = el('div', 'cxb-modal');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Calculated fields';
+    var intro = el('p', 'cxb-links-intro');
+    intro.textContent = 'A field is computed once on a data source, so every panel, Filters panel, join and ' +
+      'link on that source can use it, like a column in the source itself.';
+
+    var sourceSel = selectField(refs, refs[0], function () { loadSource(); });
+    var list = el('div', 'cxb-links-list');
+    var nameInput = el('input');
+    nameInput.type = 'text';
+    nameInput.setAttribute('placeholder', 'Field name (e.g. PerUnit)');
+    var targetSel = selectField(['variable', 'sampleAnnotation'], 'variable', function () { check(); });
+    labelOptions(targetSel, { variable: 'A number column', sampleAnnotation: 'A category (annotation)' });
+    var modeSel = selectField(['formula', 'bin'], 'formula', function () { showMode(); check(); });
+    labelOptions(modeSel, { formula: 'A formula', bin: 'Bins of a number column' });
+    var formula = el('textarea', 'cxb-modal-json');
+    formula.setAttribute('placeholder', 'e.g. Revenue / Units   ·   Revenue / sum(Revenue)   ·   Age >= 50 ? "50+" : "<50"');
+    on(formula, 'input', function () { check(); });
+    var palette = el('div', 'cxb-links-none');
+    var binField = el('select');
+    var binMethod = selectField(['equalWidth', 'quantile', 'percentile'], 'equalWidth', function () { check(); });
+    labelOptions(binMethod, { equalWidth: 'Equal width', quantile: 'Quantiles (equal counts)', percentile: 'Percent of range' });
+    var binCount = el('input');
+    binCount.type = 'number';
+    binCount.min = '1';
+    binCount.value = '4';
+    on(binField, 'change', function () { check(); });
+    on(binCount, 'input', function () { check(); });
+    var formulaWrap = el('div');
+    append(formulaWrap, [field('Formula', formula), palette]);
+    var binWrap = el('div', 'cxb-links-pick');
+    append(binWrap, [binField, binMethod, binCount]);
+    var status = el('div', 'cxb-links-none');
+    var errEl = el('div', 'cxb-modal-err');
+    var addBtn = button('+ Add field', function () { onAdd(); });
+
+    /**
+     * The definition described by the inputs.
+     * @returns {object} A calculated-field definition.
+     */
+    function candidate() {
+      var name = (nameInput.value || '').trim();
+      if (modeSel.value === 'bin') {
+        var bins = parseInt(binCount.value, 10);
+        return { name: name, target: 'sampleAnnotation',
+          bin: { field: binField.value, method: binMethod.value, bins: bins > 0 ? bins : 4 } };
+      }
+      var def = { name: name, formula: formula.value || '' };
+      if (targetSel.value !== 'variable') def.target = targetSel.value;
+      return def;
+    }
+
+    /**
+     * The selected source's fields as saved in the working copy.
+     * @returns {Array} Its calculated-field definitions.
+     */
+    function currentDefs() {
+      return (working.data[sourceSel.value] && working.data[sourceSel.value].calculatedFields) || [];
+    }
+
+    /**
+     * The field names a formula can use: the source's variables and sample
+     * annotations, including the fields already defined on it.
+     * @returns {string[]} Names.
+     */
+    function fieldNames() {
+      if (!raw || !engineReady) return [];
+      var data = CX.applyCalculatedFields(raw, currentDefs()).data;
+      return data.y.vars.concat(Object.keys(data.x || {}));
+    }
+
+    /**
+     * Show the formula or the bin inputs.
+     * @returns {void}
+     */
+    function showMode() {
+      var bin = modeSel.value === 'bin';
+      formulaWrap.style.display = bin ? 'none' : '';
+      binWrap.style.display = bin ? '' : 'none';
+      targetSel.disabled = bin;   // bins are categories
+    }
+
+    /**
+     * Validate the inputs and show a preview of the first values.
+     * @returns {boolean} True when the field can be added.
+     */
+    function check() {
+      errEl.textContent = '';
+      if (!engineReady) {
+        status.textContent = 'This CanvasXpress version cannot compute dashboard fields ' +
+          '(it needs CanvasXpress.applyCalculatedFields). Update CanvasXpress to add them.';
+        addBtn.disabled = true;
+        return false;
+      }
+      if (!raw) {
+        status.textContent = 'Loading the source’s data…';
+        addBtn.disabled = true;
+        return false;
+      }
+      var def = candidate();
+      if (modeSel.value !== 'bin') {
+        if (!def.formula.trim()) { status.textContent = ''; addBtn.disabled = true; return false; }
+        var verdict = CX.validateCalculatedField(def.formula, fieldNames());
+        if (!verdict.ok) { status.textContent = '✗ ' + verdict.error; addBtn.disabled = true; return false; }
+      } else if (!def.bin.field) {
+        status.textContent = 'Choose a number column to bin.';
+        addBtn.disabled = true;
+        return false;
+      }
+      var probe = Object.assign({}, def, { name: def.name || '__preview__' });
+      var result = CX.applyCalculatedFields(raw, currentDefs().concat([probe]));
+      if (result.errors.length) {
+        status.textContent = '✗ ' + result.errors[result.errors.length - 1].message;
+        addBtn.disabled = true;
+        return false;
+      }
+      var data = result.data;
+      var values = (def.target === 'sampleAnnotation' || def.bin)
+        ? data.x[probe.name] : data.y.data[data.y.vars.indexOf(probe.name)];
+      status.textContent = '✓ ' + data.y.smps.slice(0, 4).map(function (s, i) {
+        var v = values[i];
+        return s + ': ' + (typeof v === 'number' ? Math.round(v * 1000) / 1000 : v);
+      }).join(' · ') + (data.y.smps.length > 4 ? ' …' : '');
+      addBtn.disabled = false;
+      return true;
+    }
+
+    /**
+     * Redraw the selected source's field list.
+     * @returns {void}
+     */
+    function renderList() {
+      list.innerHTML = '';
+      var defs = currentDefs();
+      if (!defs.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = 'No calculated fields on this source yet.';
+        list.appendChild(none);
+      }
+      defs.forEach(function (def) {
+        var row = el('div', 'cxb-links-row');
+        var text = el('span');
+        text.textContent = describeCalculatedField(def);
+        var remove = button('×', function () {
+          working = removeCalculatedField(working, sourceSel.value, def.name);
+          touched[sourceSel.value] = true;
+          renderList();
+          check();
+        });
+        remove.setAttribute('title', 'Remove this field');
+        remove.setAttribute('aria-label', 'Remove field ' + def.name);
+        append(row, [text, remove]);
+        list.appendChild(row);
+      });
+    }
+
+    /**
+     * Load the selected source's data, then refresh the list, palette and bins.
+     * @returns {void}
+     */
+    function loadSource() {
+      var ref = sourceSel.value;
+      var mine = ++token;
+      raw = null;
+      renderList();
+      check();
+      Promise.resolve(rawDataOf ? rawDataOf(ref) : null).then(function (data) {
+        if (mine !== token) return;
+        raw = data;
+        var names = fieldNames();
+        palette.textContent = names.length ? 'Fields: ' + names.join(', ') +
+          '. Functions: sum, mean, median, sd, count, min, max (over the column), log2, sqrt, abs, round…' : '';
+        binField.innerHTML = '';
+        var numeric = raw && engineReady ? CX.applyCalculatedFields(raw, currentDefs()).data.y.vars : [];
+        numeric.forEach(function (n) {
+          var o = el('option');
+          o.value = n;
+          o.textContent = n;
+          binField.appendChild(o);
+        });
+        binField.value = numeric[0] || '';
+        check();
+      });
+    }
+
+    /**
+     * Add (or replace) the described field in the working copy.
+     * @returns {void}
+     */
+    function onAdd() {
+      if (!check()) return;
+      var def = candidate();
+      if (!def.name) { errEl.textContent = 'Give the field a name'; return; }
+      try {
+        working = setCalculatedField(working, sourceSel.value, def);
+      } catch (e) {
+        errEl.textContent = e.message;
+        return;
+      }
+      touched[sourceSel.value] = true;
+      nameInput.value = '';
+      formula.value = '';
+      renderList();
+      loadSource();
+    }
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var applyBtn = button('Apply', function () {
+      var out = {};
+      Object.keys(touched).forEach(function (ref) {
+        out[ref] = (working.data[ref] && working.data[ref].calculatedFields) || [];
+      });
+      close(out);
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, applyBtn]);
+
+    append(modal, [heading, intro, field('Data source', sourceSel), field('Fields', list),
+      field('New field', nameInput), field('Makes', targetSel), field('From', modeSel),
+      formulaWrap, binWrap, status, addBtn, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    showMode();
+    loadSource();
+
+    /**
+     * Close the dialog with a result.
+     * @param {*} result - Resolution value.
+     * @returns {void}
+     */
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/** @type {Object<string, string>} Readable labels for the pushdown filter operators. */
+var SHAPE_OPS = {
+  '=': 'is', '!=': 'is not', '<': 'is less than', '<=': 'is at most', '>': 'is more than', '>=': 'is at least',
+  'in': 'is one of', 'not_in': 'is none of', 'between': 'is between', 'is_null': 'is missing', 'not_null': 'is present'
+};
+
+/**
+ * The "▦ Shape data" dialog: build a source's `pushdown` query without JSON —
+ * keep only rows matching filters, then either keep some columns or summarize
+ * (group by + measures), sort and keep the top N. The preview runs the same
+ * query in the browser on the source's rows (a connector's query runs in its
+ * database, so it has no preview here).
+ * @param {Document} doc - The owning document.
+ * @param {object} spec - The current spec (not modified).
+ * @param {function(string): Promise<?object>} dataOf - A source's rows before its query.
+ * @returns {Promise<?{ref: string, query: ?object}>} The source and its new
+ *   query (null removes the shaping), or null when cancelled.
+ * @private
+ */
+function openShapeDialog(doc, spec, dataOf) {
+  var refs = Object.keys(spec.data || {}).filter(function (ref) {
+    return spec.data[ref] && spec.data[ref].kind !== 'live';
+  });
+  var raw = null;          // the selected source's rows before its query
+  var token = 0;           // ignores a slow resolve superseded by a newer pick
+  var state = null;        // {where, columns, groupBy, measures, sort, desc, limit, mode}
+  return new Promise(function (resolve) {
+    var overlay = el('div', 'cxb-modal-overlay');
+    var modal = el('div', 'cxb-modal cxb-modal-wide');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Shape data';
+    var intro = el('p', 'cxb-links-intro');
+    intro.textContent = 'Keep only the rows you need, then keep some columns or summarize them, sort, and keep ' +
+      'the top rows. A database source runs this in its database; other sources run it in the browser.';
+
+    var sourceSel = selectField(refs, refs[0], function () { load(); });
+    var whereList = el('div', 'cxb-links-list');
+    var whereCol = el('select');
+    var whereOp = selectField(Object.keys(SHAPE_OPS), '=', function () { syncValue(); });
+    labelOptions(whereOp, SHAPE_OPS);
+    var whereValue = el('input');
+    whereValue.type = 'text';
+    whereValue.setAttribute('placeholder', 'value  ·  a, b, c for "one of"  ·  lo, hi for "between"  ·  $param');
+    var whereRow = el('div', 'cxb-links-pick');
+    append(whereRow, [whereCol, whereOp, whereValue]);
+    var addWhere = button('+ Filter', function () { onAddWhere(); });
+
+    var modeSel = selectField(['rows', 'summary'], 'rows', function () { state.mode = modeSel.value; draw(); });
+    labelOptions(modeSel, { rows: 'Rows: keep some columns', summary: 'Summary: group and measure' });
+    var columnsBox = el('div', 'cxb-modal-fn-inputs');
+    var groupBox = el('div', 'cxb-modal-fn-inputs');
+    var measureList = el('div', 'cxb-links-list');
+    var measureFn = selectField(PUSHDOWN_FUNCTIONS.filter(function (f) { return f !== 'mean'; }), 'sum', function () { syncMeasureCol(); });
+    labelOptions(measureFn, { count: 'Count', count_distinct: 'Count distinct', sum: 'Sum', avg: 'Average', min: 'Min', max: 'Max' });
+    var measureCol = el('select');
+    var measureAs = el('input');
+    measureAs.type = 'text';
+    measureAs.setAttribute('placeholder', 'name (optional)');
+    var measureRow = el('div', 'cxb-links-pick');
+    append(measureRow, [measureFn, measureCol, measureAs]);
+    var addMeasure = button('+ Measure', function () { onAddMeasure(); });
+    var rowsWrap = el('div');
+    append(rowsWrap, [field('Columns to keep', columnsBox)]);
+    var summaryWrap = el('div');
+    append(summaryWrap, [field('Group by', groupBox), field('Measures', measureList), measureRow, addMeasure]);
+
+    var sortSel = el('select');
+    var descBox = el('label', 'cxb-check');
+    var desc = el('input');
+    desc.type = 'checkbox';
+    var descText = el('span');
+    descText.textContent = 'Descending';
+    append(descBox, [desc, descText]);
+    var limitInput = el('input');
+    limitInput.type = 'number';
+    limitInput.min = '1';
+    limitInput.setAttribute('placeholder', 'all rows');
+    var sortRow = el('div', 'cxb-links-pick');
+    append(sortRow, [sortSel, descBox, limitInput]);
+    on(sortSel, 'change', function () { state.sort = sortSel.value; preview(); });
+    on(desc, 'change', function () { state.desc = !!desc.checked; preview(); });
+    on(limitInput, 'input', function () { state.limit = parseInt(limitInput.value, 10) || null; preview(); });
+    var status = el('div', 'cxb-links-none');
+    var errEl = el('div', 'cxb-modal-err');
+
+    /**
+     * The field names of the selected source's rows: the row id, numeric
+     * columns and annotations along its axis.
+     * @returns {{axis: string, numeric: string[], all: string[]}} Names.
+     */
+    function fields() {
+      var src = spec.data[sourceSel.value] || {};
+      var axis = src.kind === 'join' ? sourceAxis(sourceSel.value, spec.data) : (src.axis || 'smps');
+      if (!raw) return { axis: axis, numeric: [], all: [] };
+      var f;
+      try { f = tableFields(raw, axis); } catch (e) { f = { columns: [], annotations: [] }; }
+      return { axis: axis, numeric: f.columns, all: f.columns.concat(f.annotations) };
+    }
+
+    /**
+     * The query the form describes (null when it asks for nothing).
+     * @returns {?object} The pushdown query.
+     */
+    function query() {
+      var q = {};
+      if (state.where.length) q.where = state.where;
+      if (state.mode === 'summary') {
+        if (state.groupBy.length) q.groupBy = state.groupBy;
+        if (state.measures.length) q.measures = state.measures;
+      } else if (state.columns && state.columns.length < fields().all.length) {
+        q.columns = state.columns;
+      }
+      if (state.sort) q.orderBy = [{ column: state.sort, desc: !!state.desc }];
+      if (state.limit > 0) q.limit = state.limit;
+      return Object.keys(q).length ? q : null;
+    }
+
+    /**
+     * The output column names of the current query (what the sort can use).
+     * @returns {string[]} Names.
+     */
+    function outputs() {
+      var f = fields();
+      if (state.mode === 'summary') {
+        var names = state.groupBy.length ? state.groupBy.slice() : ['group'];
+        return names.concat(state.measures.map(function (m) {
+          return m.as || (m.fn === 'count' && !m.column ? 'count' : m.fn + '_' + m.column);
+        }));
+      }
+      return [f.axis].concat(state.columns || f.all);
+    }
+
+    /**
+     * A checkbox list over names, calling onToggle with the checked subset.
+     * @param {HTMLElement} box - The host.
+     * @param {string[]} names - Options.
+     * @param {string[]} checked - Initially checked.
+     * @param {function(string[]): void} onToggle - Receives the checked names.
+     * @returns {void}
+     */
+    function checklist(box, names, checked, onToggle) {
+      box.innerHTML = '';
+      var inputs = names.map(function (name) {
+        var row = el('label', 'cxb-check');
+        var input = el('input');
+        input.type = 'checkbox';
+        input.value = name;
+        input.checked = checked.indexOf(name) > -1;
+        on(input, 'change', function () {
+          onToggle(inputs.filter(function (i) { return i.checked; }).map(function (i) { return i.value; }));
+        });
+        var text = el('span');
+        text.textContent = name;
+        append(row, [input, text]);
+        box.appendChild(row);
+        return input;
+      });
+      if (!names.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = raw ? 'No fields.' : 'Loading the source’s rows…';
+        box.appendChild(none);
+      }
+    }
+
+    /**
+     * Fill a select with names (keeping the choice when it is still offered).
+     * @param {HTMLElement} select - The select.
+     * @param {Array<Array<string>>} options - [value, label] pairs.
+     * @returns {void}
+     */
+    function fill(select, options) {
+      var keep = select.value;
+      select.innerHTML = '';
+      options.forEach(function (pair) {
+        var o = el('option');
+        o.value = pair[0];
+        o.textContent = pair[1];
+        select.appendChild(o);
+      });
+      var values = options.map(function (pair) { return pair[0]; });
+      select.value = values.indexOf(keep) > -1 ? keep : (values[0] != null ? values[0] : '');
+    }
+
+    /**
+     * Redraw every part of the form from `state`, then preview.
+     * @returns {void}
+     */
+    function draw() {
+      var f = fields();
+      whereList.innerHTML = '';
+      if (!state.where.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = 'All rows.';
+        whereList.appendChild(none);
+      }
+      state.where.forEach(function (w, i) {
+        var row = el('div', 'cxb-links-row');
+        var text = el('span');
+        text.textContent = w.column + ' ' + SHAPE_OPS[w.op || '='] + (w.value === undefined ? '' : ' ' + formatValue(w.value));
+        var remove = button('×', function () { state.where.splice(i, 1); draw(); });
+        remove.setAttribute('title', 'Remove this filter');
+        append(row, [text, remove]);
+        whereList.appendChild(row);
+      });
+      fill(whereCol, [f.axis].concat(f.all).map(function (n) { return [n, n === f.axis ? n + ' (row id)' : n]; }));
+      modeSel.value = state.mode;
+      rowsWrap.style.display = state.mode === 'rows' ? '' : 'none';
+      summaryWrap.style.display = state.mode === 'summary' ? '' : 'none';
+      checklist(columnsBox, f.all, state.columns || f.all, function (checked) { state.columns = checked; draw(); });
+      checklist(groupBox, f.all, state.groupBy, function (checked) { state.groupBy = checked; draw(); });
+      measureList.innerHTML = '';
+      if (!state.measures.length) {
+        var noM = el('div', 'cxb-links-none');
+        noM.textContent = 'No measures (a summary with only groups lists the distinct values).';
+        measureList.appendChild(noM);
+      }
+      state.measures.forEach(function (m, i) {
+        var row = el('div', 'cxb-links-row');
+        var text = el('span');
+        text.textContent = (m.fn === 'count' && !m.column ? 'count of rows' : m.fn + ' of ' + m.column) + (m.as ? ' as ' + m.as : '');
+        var remove = button('×', function () { state.measures.splice(i, 1); draw(); });
+        remove.setAttribute('title', 'Remove this measure');
+        append(row, [text, remove]);
+        measureList.appendChild(row);
+      });
+      syncMeasureCol();
+      fill(sortSel, [['', '(no sort)']].concat(outputs().map(function (n) { return [n, n]; })));
+      sortSel.value = outputs().indexOf(state.sort) > -1 ? state.sort : '';
+      state.sort = sortSel.value;
+      desc.checked = !!state.desc;
+      limitInput.value = state.limit ? String(state.limit) : '';
+      syncValue();
+      preview();
+    }
+
+    /** Hide the value box for operators that take none. @returns {void} */
+    function syncValue() {
+      whereValue.style.display = whereOp.value === 'is_null' || whereOp.value === 'not_null' ? 'none' : '';
+    }
+
+    /** Offer "(rows)" for count, numeric columns for the rest. @returns {void} */
+    function syncMeasureCol() {
+      var f = fields();
+      var fn = measureFn.value;
+      var names = fn === 'count' || fn === 'count_distinct' ? f.all : f.numeric;
+      fill(measureCol, (fn === 'count' ? [['', '(rows)']] : []).concat(names.map(function (n) { return [n, n]; })));
+    }
+
+    /**
+     * Run the query on the source's rows and summarize the result.
+     * @returns {void}
+     */
+    function preview() {
+      errEl.textContent = '';
+      var src = spec.data[sourceSel.value] || {};
+      if (src.kind === 'connector') {
+        status.textContent = 'Runs in the database when the dashboard loads.';
+        return;
+      }
+      if (!raw) { status.textContent = 'Loading the source’s rows…'; return; }
+      var q = query();
+      if (!q) { status.textContent = 'No shaping: every row and column.'; return; }
+      try {
+        var out = runPushdown(raw, JSON.parse(JSON.stringify(q)), fields().axis);
+        var cols = out.y.vars.concat(Object.keys(out.x || {}));
+        status.textContent = '✓ ' + out.y.smps.length + ' row' + (out.y.smps.length === 1 ? '' : 's') +
+          ' · ' + (cols.length ? cols.join(', ') : 'no columns') +
+          (out.y.smps.length ? ' · first: ' + out.y.smps.slice(0, 3).join(', ') + (out.y.smps.length > 3 ? '…' : '') : '');
+      } catch (e) {
+        status.textContent = '✗ ' + e.message;
+      }
+    }
+
+    /** Add the filter described by the inputs. @returns {void} */
+    function onAddWhere() {
+      var op = whereOp.value;
+      var clause = { column: whereCol.value, op: op };
+      if (op !== 'is_null' && op !== 'not_null') {
+        var text = String(whereValue.value || '').trim();
+        if (!text) { errEl.textContent = 'Type a value to filter by'; return; }
+        clause.value = parseValue(text, op);
+      }
+      state.where.push(clause);
+      whereValue.value = '';
+      draw();
+    }
+
+    /** Add the measure described by the inputs. @returns {void} */
+    function onAddMeasure() {
+      var m = { fn: measureFn.value };
+      if (measureCol.value) m.column = measureCol.value;
+      if (m.fn !== 'count' && !m.column) { errEl.textContent = 'Choose a column to measure'; return; }
+      var name = String(measureAs.value || '').trim();
+      if (name) m.as = name;
+      state.measures.push(m);
+      measureAs.value = '';
+      draw();
+    }
+
+    /**
+     * Load the selected source's rows and its current query into the form.
+     * @returns {void}
+     */
+    function load() {
+      var ref = sourceSel.value;
+      var mine = ++token;
+      var p = (spec.data[ref] && spec.data[ref].pushdown) || {};
+      if (typeof p !== 'object') p = {};
+      state = {
+        where: (p.where || []).slice(),
+        columns: p.columns ? p.columns.slice() : null,
+        groupBy: (p.groupBy || []).slice(),
+        measures: (p.measures || []).slice(),
+        sort: p.orderBy && p.orderBy[0] ? (typeof p.orderBy[0] === 'string' ? p.orderBy[0] : p.orderBy[0].column) : '',
+        desc: !!(p.orderBy && p.orderBy[0] && p.orderBy[0].desc),
+        limit: typeof p.limit === 'number' ? p.limit : null,
+        mode: (p.groupBy && p.groupBy.length) || (p.measures && p.measures.length) ? 'summary' : 'rows'
+      };
+      raw = null;
+      draw();
+      Promise.resolve(dataOf ? dataOf(ref) : null).then(function (data) {
+        if (mine !== token) return;
+        raw = data;
+        draw();
+      });
+    }
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var clearBtn = button('Remove shaping', function () { close({ ref: sourceSel.value, query: null }); });
+    var applyBtn = button('Apply', function () { close({ ref: sourceSel.value, query: query() }); }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [clearBtn, cancelBtn, applyBtn]);
+
+    append(modal, [heading, intro, field('Data source', sourceSel),
+      field('Keep only rows where', whereList), whereRow, addWhere,
+      field('Result', modeSel), rowsWrap, summaryWrap,
+      field('Sort by, then keep the first', sortRow), status, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    load();
+
+    /**
+     * Close the dialog with a result.
+     * @param {*} result - Resolution value.
+     * @returns {void}
+     */
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
+ * A typed filter value from text: `$name` stays a param token; a number reads
+ * as a number; "one of" / "between" split on commas.
+ * @param {string} text - What was typed.
+ * @param {string} op - The operator.
+ * @returns {*} The value.
+ * @private
+ */
+function parseValue(text, op) {
+  /** @param {string} s - One item. @returns {*} Number or string. */
+  function one(s) {
+    s = s.trim();
+    if (s.charAt(0) === '$') return s;
+    return s !== '' && !isNaN(Number(s)) ? Number(s) : s;
+  }
+  if (op === 'in' || op === 'not_in' || op === 'between') {
+    if (text.charAt(0) === '$') return text;
+    return text.split(',').map(one);
+  }
+  return one(text);
+}
+
+/**
+ * A filter value for display.
+ * @param {*} value - The value.
+ * @returns {string} Text.
+ * @private
+ */
+function formatValue(value) {
+  return Array.isArray(value) ? value.join(', ') : String(value);
+}
+
+/**
+ * A status line summarizing a spec's cross-source links.
+ * @param {object} spec - The spec.
+ * @returns {string} e.g. "2 links · selections show as focus".
+ * @private
+ */
+function describeLinkCount(spec) {
+  var n = (spec.relationships || []).length;
+  if (!n) return 'No cross-source links.';
+  return (n === 1 ? '1 link' : n + ' links') + ' · selections show as ' + (spec.markingMode || 'focus') + '.';
 }
 
 /**

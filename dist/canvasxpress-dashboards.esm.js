@@ -98,10 +98,41 @@ var dashboardCss = [
   '  font: inherit; background: var(--cxd-ctrl-bg,#fff); color: inherit; }',
   '.cxd-filters-scheme-name { width: 110px; }',
   '.cxd-filters-bar button { cursor: pointer; }',
-  '.cxd-filters-field { padding: 6px 0; border-top: 1px solid var(--cxd-border, #e2e5ea); }',
-  '.cxd-filters-label { font-weight: 600; margin-bottom: 4px; }',
-  '.cxd-filters-values { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow: auto; }',
-  '.cxd-filters-check { display: flex; align-items: center; gap: 6px; cursor: pointer; }',
+  /* Field cards in the CanvasXpress Data Filter's style (13-datafilter.css). The
+     elements also carry the Data Filter's own classes (cX-DataFilter-Container-
+     Hoverable, cX-DataFilter-Search, cX-DataFilter-Container-Mask-NoOverflow,
+     cX-Checkbox, cX-Checkbox-Label, cX-DataFilter-Count), so they follow the loaded
+     CanvasXpress theme; these rules repeat its values through the same --cx-*
+     variables (fallbacks = its :root defaults), so a page without canvasXpress.css
+     looks the same, and adapt the two rules meant for the chart's fixed-width
+     sidebar (a 220px label, a list that clips instead of scrolling). */
+  '.cxd-filters { --cxd-df-accent: var(--cx-datafilter-border-color, #087ad1); --cxd-df-text: var(--cx-datafilter-text-color, #555b62);',
+  '  --cxd-df-bg: var(--cx-datafilter-background-color, #fff); --cxd-df-hover: var(--cx-datafilter-hover-color, rgba(124,182,226,.2)); }',
+  // Dark (and auto on a dark OS): the same cards in the dashboard's dark palette
+  // (the core Data Filter has no dark variant; its light colours would leave dark
+  // field names on dark cards and white boxes in a dark panel).
+  '.cxd-theme-dark .cxd-filters { --cxd-df-accent: #4c9fe0; --cxd-df-text: #e6e8ec; --cxd-df-bg: #1d2027; --cxd-df-hover: rgba(76,159,224,.14); }',
+  '@media (prefers-color-scheme: dark) {',
+  '  .cxd-theme-auto .cxd-filters { --cxd-df-accent: #4c9fe0; --cxd-df-text: #e6e8ec; --cxd-df-bg: #1d2027; --cxd-df-hover: rgba(76,159,224,.14); } }',
+  '.cxd-filters .cxd-filters-field { box-sizing: border-box; margin: 2px 2px 6px; padding: 0 0 4px;',
+  '  border: 1px solid var(--cxd-df-accent); border-radius: var(--cx-border-radius, 5px); }',
+  '.cxd-filters .cxd-filters-field:hover { background-color: var(--cxd-df-hover); }',
+  '.cxd-filters .cxd-filters-label { padding: 7px 10px 5px 25px; font-size: 13px; color: var(--cxd-df-text); }',
+  '.cxd-filters input.cX-DataFilter-Search { box-sizing: border-box; display: block; width: calc(100% - 10px); height: 32px;',
+  '  margin: 0 5px 4px; padding: 0 0 0 7px; font: inherit; font-size: var(--cx-datafilter-font-size, 12px);',
+  '  color: var(--cxd-df-text); background: var(--cxd-df-bg);',
+  '  border: 1px solid var(--cxd-df-accent); border-radius: var(--cx-border-radius, 5px); outline: none; }',
+  '.cxd-filters input.cxd-filters-find { width: calc(100% - 4px); margin: 0 2px 8px; }',
+  '.cxd-filters .cxd-filters-values { box-sizing: border-box; margin: 0 5px; padding: 2px 0; max-height: 184px; overflow-x: hidden; overflow-y: auto;',
+  '  border: 1px solid var(--cxd-df-accent); background: var(--cxd-df-bg); }',
+  '.cxd-filters .cxd-filters-check { position: relative; display: flex; align-items: center; min-height: 20px; padding: 0 46px 0 4px;',
+  '  font-size: var(--cx-datafilter-font-size, 12px); color: var(--cxd-df-text); }',
+  '.cxd-filters .cxd-filters-check input[type=checkbox] { flex-shrink: 0; width: 14px; height: 14px; margin: 2px;',
+  '  accent-color: var(--cx-background-accent-color, #087ad1); cursor: pointer; }',
+  '.cxd-filters label.cxd-filters-name { flex: 1 1 auto; width: auto; min-width: 0; margin: 0 0 0 3px !important; cursor: pointer;',
+  '  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+  '.cxd-filters .cX-DataFilter-Count { position: absolute; right: 6px; top: 0; line-height: 20px; font-size: 11px; opacity: .6; pointer-events: none; }',
+  '.cxd-filters .cxd-filters-field .cxd-filters-range { padding: 2px 14px 0; }',
   '.cxd-filters-range-plain { display: flex; align-items: center; gap: 6px; }',
   '.cxd-filters-range-plain input { width: 0; flex: 1 1 0; min-width: 60px; }',
   /* Range slider, styled like the CanvasXpress Data Filter range (15-range-slider.css):
@@ -135,6 +166,7 @@ var dashboardCss = [
   '.cxd-range-tick-label { position: absolute; top: 11px; left: 0; transform: translateX(-50%); white-space: nowrap;',
   '  font-size: 12px; line-height: 1.2; color: inherit; }',
   '.cxd-filters-text { width: 100%; }',
+  '.cxd-filters .cxd-filters-field input.cxd-filters-text { width: calc(100% - 10px); }',
   '.cxd-filters-hint { color: var(--cxd-muted,#8a9099); }',
   '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
   '  padding: 5px 0; background: transparent;',
@@ -178,10 +210,10 @@ var dashboardCss = [
   '  background: var(--cxd-panel-bg, #ffffff); }',
   '.cxd-panel-overlay.cxd-error { color: var(--cxd-error, #c0392b); padding: 8px; text-align: center; }',
   '.cxd-theme-dark { --cxd-border: #2c313a; --cxd-panel-bg: #16181d; --cxd-title: #e6e8ec;',
-  '  --cxd-title-bg: #1d2027; --cxd-muted: #7d848f; }',
+  '  --cxd-title-bg: #1d2027; --cxd-muted: #7d848f; --cxd-ctrl-bg: #1d2027; }',
   '@media (prefers-color-scheme: dark) {',
   '  .cxd-theme-auto { --cxd-border: #2c313a; --cxd-panel-bg: #16181d; --cxd-title: #e6e8ec;',
-  '    --cxd-title-bg: #1d2027; --cxd-muted: #7d848f; } }',
+  '    --cxd-title-bg: #1d2027; --cxd-muted: #7d848f; --cxd-ctrl-bg: #1d2027; } }',
   /* ---- builder (Phase 4) ---- */
   '.cxb { display: flex; flex-direction: column; gap: 10px; font-family: system-ui, sans-serif; }',
   /* toolbar (host may be an app-shell element) */
@@ -363,7 +395,23 @@ var dashboardCss = [
   '.cxb-hl-string { color: #188038; }',                       // string values: green
   '.cxb-hl-number { color: #e36209; }',                       // numbers: orange
   '.cxb-hl-literal { color: #cf222e; font-weight: 600; }',    // true/false/null: red
-  '.cxb-modal-footer { display: flex; justify-content: flex-end; gap: 8px; }'
+  '.cxb-modal-footer { display: flex; justify-content: flex-end; gap: 8px; }',
+  // Links dialog: the declared links (one row each, with a remove ×) and the
+  // source + key pickers. Selects are sized explicitly, as in the Save dialog.
+  '.cxb-links-intro { font-size: 14px; line-height: 1.45; color: var(--cxd-muted,#6b7280); margin: 0; }',
+  '.cxb-links-list { display: flex; flex-direction: column; gap: 6px; }',
+  '.cxb-links-row { display: flex; align-items: center; gap: 8px; padding: 6px 4px 6px 10px; border-radius: 6px;',
+  '  background: #f2f4f7; font-size: 14px; }',
+  '.cxb-links-row span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }',
+  '.cxb-links-none { font-size: 13px; color: var(--cxd-muted,#6b7280); }',
+  '.cxb-modal .cxb-links-pick { display: flex; gap: 6px; align-items: center; width: 100%; }',
+  // Selects keep a readable width next to a text box (which takes the rest).
+  '.cxb-modal .cxb-links-pick select { width: auto; min-width: 120px; flex: 1 1 0; }',
+  '.cxb-modal .cxb-links-pick input[type=text], .cxb-modal .cxb-links-pick input[type=number] { flex: 1 1 0; min-width: 0; width: auto; }',
+  // A checkbox inside a field reads as an option, not as another field label.
+  '.cxb-modal-field label.cxb-check, .cxb-modal .cxb-links-pick label.cxb-check { text-transform: none; font-weight: 400;',
+  '  letter-spacing: normal; font-size: 14px; color: inherit; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }',
+  '.cxb-modal .cxb-modal-fn-inputs { display: flex; flex-wrap: wrap; gap: 4px 14px; }'
 ].join('\n');
 
 /**
@@ -413,7 +461,7 @@ function injectStyles(doc) {
  */
 
 /** @type {string} The format version this library writes. */
-var DASHBOARD_SCHEMA_VERSION = '1.2';
+var DASHBOARD_SCHEMA_VERSION = '1.3';
 
 /** @type {string} The URL of the published JSON Schema. */
 var DASHBOARD_SCHEMA_URL = 'https://canvasxpress.org/schema/dashboard.schema.json';
@@ -436,6 +484,12 @@ var MIGRATIONS = [
     from: '1.1',
     to: '1.2',
     description: 'Additive: live (streaming) sources (no rewrite)',
+    up: function (spec) { return spec; }
+  },
+  {
+    from: '1.2',
+    to: '1.3',
+    description: 'Additive: source calculatedFields (no rewrite)',
     up: function (spec) { return spec; }
   }
 ];
@@ -1362,6 +1416,348 @@ function unionKeys(a, b) {
   return out;
 }
 
+/* ==== src/pushdown.js ==== */
+/**
+ * Run a `pushdown` query in the browser, over a source that has no database:
+ * the same grammar a connector source runs in its database
+ * (`{columns?, groupBy?, measures?, where?, orderBy?, limit?}`, see
+ * `pushdownQuery` in dataStore.js), with the connector's semantics:
+ *
+ *  - `where`: `=`, `!=`, `<`, `<=`, `>`, `>=`, `in`, `not_in`, `between`
+ *    (inclusive), `is_null`, `not_null`, all AND-ed. SQL null rules: a
+ *    comparison with a missing value is false; `= null` / `!= null` mean
+ *    is / is not null.
+ *  - Rows mode (`columns`, or nothing): keep the matching rows and the listed
+ *    columns. The row id stays the row id (named after the axis, `"smps"`);
+ *    numeric columns stay variables and annotations stay annotations.
+ *  - Aggregate mode (`groupBy` and/or `measures`): one row per group, in order
+ *    of first appearance; no `groupBy` is one row named `all` (even over no
+ *    rows, as SQL). Measures `count` (rows, or non-missing values of a column),
+ *    `count_distinct`, `sum`, `avg` (alias `mean`), `min`, `max`, over
+ *    non-missing values. The output goes through the connector's own
+ *    rows -> CanvasXpress rule (first column = row ids; numeric columns are
+ *    variables, the rest annotations), so it matches a database source.
+ *  - `orderBy` names an output column (nulls last); `limit` keeps the first N.
+ *
+ * @module pushdown
+ */
+
+/** @type {string[]} Aggregate functions a measure may use. */
+var PUSHDOWN_FUNCTIONS = ['count', 'count_distinct', 'sum', 'avg', 'mean', 'min', 'max'];
+
+/**
+ * Run a pushdown query over a CanvasXpress data object.
+ * @param {object} data - The source's data `{y:{vars,smps,data}, x?, z?}` (not modified).
+ * @param {object} query - The query, `$param` tokens already resolved.
+ * @param {string} [axis='smps'] - The source's row axis.
+ * @returns {object} The result as a CanvasXpress data object.
+ * @throws {Error} On an unknown column, function or operator, or an orderBy
+ *   that is not an output column (the connector's messages).
+ * @public
+ */
+function runPushdown(data, query, axis) {
+  axis = axis || 'smps';
+  query = query || {};
+  var fields = tableFields(data, axis);
+  var available = [axis].concat(fields.columns, fields.annotations);
+  var cache = {};
+
+  /**
+   * A column's values by row, checked to exist.
+   * @param {string} name - Column name (the axis name is the row id).
+   * @returns {Array} Values.
+   */
+  function column(name) {
+    if (!Object.prototype.hasOwnProperty.call(cache, name)) {
+      var col = typeof name === 'string' ? tableColumn(data, axis, name) : null;
+      if (!col) throw new Error('No column named "' + name + '" in this source (it has: ' + available.join(', ') + ')');
+      cache[name] = col.values;
+    }
+    return cache[name];
+  }
+
+  var ids = column(axis);
+  var rows = [];
+  for (var r = 0; r < ids.length; r++) rows.push(r);
+  (query.where || []).forEach(function (clause) {
+    var values = column(clause.column);
+    var test = predicate(clause.op || '=', clause.value);
+    rows = rows.filter(function (row) { return test(values[row]); });
+  });
+
+  var measures = (query.measures || []).map(normalizeMeasure);
+  var groupBy = query.groupBy || [];
+  if (groupBy.length || measures.length) {
+    if (query.columns && query.columns.length) {
+      throw new Error('Use \'columns\' for rows, or \'groupBy\'/\'measures\' for aggregates');
+    }
+    return aggregate(rows, groupBy, measures, query, column);
+  }
+  return selectRows(data, axis, fields, rows, query, column);
+}
+
+/**
+ * Rows mode: keep rows and columns, sort, limit; keep each column's kind.
+ * @param {object} data - Source data.
+ * @param {string} axis - Row axis.
+ * @param {{columns: string[], annotations: string[]}} fields - Its fields.
+ * @param {number[]} rows - Matching row indices.
+ * @param {object} query - The query.
+ * @param {function} column - Checked column reader.
+ * @returns {object} The CanvasXpress data object.
+ */
+function selectRows(data, axis, fields, rows, query, column) {
+  var keep = query.columns && query.columns.length ? query.columns.slice() : fields.columns.concat(fields.annotations);
+  keep.forEach(function (name) { column(name); });
+  var outputs = [axis].concat(keep);
+  rows = sortRows(rows, query.orderBy, outputs, function (name, row) { return column(name)[row]; });
+  if (typeof query.limit === 'number') rows = rows.slice(0, query.limit);
+
+  var numeric = keep.filter(function (name) { return fields.columns.indexOf(name) > -1; });
+  var annotations = keep.filter(function (name) { return fields.columns.indexOf(name) === -1 && name !== axis; });
+  var rowIds = rows.map(function (row) { return column(axis)[row]; });
+  var bySmps = axis === 'smps';
+  var y = data.y;
+  var cols = bySmps ? y.vars : y.smps;
+  var colIndex = numeric.map(function (name) { return cols.indexOf(name); });
+  var out = { y: {} };
+  var matrix;
+  if (bySmps) {
+    // y.data is vars x smps: one row per kept variable, one value per kept sample.
+    matrix = numeric.map(function (name) { return rows.map(function (row) { return column(name)[row]; }); });
+    out.y = { vars: numeric, smps: rowIds, data: matrix };
+  } else {
+    // Rows are variables: one row per kept variable (row), one value per kept sample (column).
+    matrix = rows.map(function (row) { return numeric.map(function (name) { return column(name)[row]; }); });
+    out.y = { vars: rowIds, smps: numeric, data: matrix };
+  }
+  var rowAnn = {};
+  annotations.forEach(function (name) { rowAnn[name] = rows.map(function (row) { return column(name)[row]; }); });
+  var colAnnIn = bySmps ? data.z : data.x;
+  var colAnn = null;
+  if (colAnnIn && numeric.length) {
+    colAnn = {};
+    Object.keys(colAnnIn).forEach(function (key) {
+      var values = colAnnIn[key];
+      colAnn[key] = colIndex.map(function (i) { return Array.isArray(values) ? values[i] : undefined; });
+    });
+  }
+  if (Object.keys(rowAnn).length) out[bySmps ? 'x' : 'z'] = rowAnn;
+  if (colAnn) out[bySmps ? 'z' : 'x'] = colAnn;
+  return out;
+}
+
+/**
+ * Aggregate mode: one output row per group (first-appearance order), or one
+ * `all` row without groupBy; then sort, limit, and convert as the connector.
+ * @param {number[]} rows - Matching row indices.
+ * @param {string[]} groupBy - Group columns.
+ * @param {object[]} measures - Normalized measures.
+ * @param {object} query - The query.
+ * @param {function} column - Checked column reader.
+ * @returns {object} The CanvasXpress data object.
+ */
+function aggregate(rows, groupBy, measures, query, column) {
+  var header = groupBy.length ? groupBy.slice() : ['group'];
+  measures.forEach(function (m) {
+    if (header.indexOf(m.as) > -1) throw new Error('Two outputs are named "' + m.as + '"');
+    header.push(m.as);
+    if (m.column) column(m.column);
+  });
+  groupBy.forEach(function (name) { column(name); });
+  var groups = [];
+  var byKey = {};
+  if (!groupBy.length) {
+    groups.push({ values: ['all'], rows: rows });
+  } else {
+    rows.forEach(function (row) {
+      var values = groupBy.map(function (name) { return column(name)[row]; });
+      var key = JSON.stringify(values);
+      if (!Object.prototype.hasOwnProperty.call(byKey, key)) {
+        byKey[key] = { values: values, rows: [] };
+        groups.push(byKey[key]);
+      }
+      byKey[key].rows.push(row);
+    });
+  }
+  var table = groups.map(function (g) {
+    return g.values.concat(measures.map(function (m) { return measure(m, g.rows, column); }));
+  });
+  var order = sortRows(table.map(function (row, i) { return i; }), query.orderBy, header, function (name, i) {
+    return table[i][header.indexOf(name)];
+  });
+  if (typeof query.limit === 'number') order = order.slice(0, query.limit);
+  return rowsToCx(header, order.map(function (i) { return table[i]; }));
+}
+
+/**
+ * Normalize a measure: `mean` is `avg`, the function must be known, and a
+ * measure other than `count` needs a column.
+ * @param {object} m - `{fn, column?, as}`.
+ * @returns {object} `{fn, column, as}`.
+ */
+function normalizeMeasure(m) {
+  var fn = m && m.fn === 'mean' ? 'avg' : (m && m.fn);
+  if (PUSHDOWN_FUNCTIONS.indexOf(fn) === -1) {
+    throw new Error('fn must be one of: count, count_distinct, sum, avg, min, max');
+  }
+  if (fn !== 'count' && !(m && m.column)) throw new Error(fn + ' needs a column');
+  return { fn: fn, column: m.column || null, as: m.as || (m.column ? fn + '_' + m.column : fn) };
+}
+
+/**
+ * Compute one measure over a group's rows, ignoring missing values (SQL).
+ * @param {object} m - Normalized measure.
+ * @param {number[]} rows - The group's row indices.
+ * @param {function} column - Checked column reader.
+ * @returns {*} The value (null when there is nothing to aggregate, as SQL).
+ */
+function measure(m, rows, column) {
+  if (m.fn === 'count' && !m.column) return rows.length;
+  var values = rows.map(function (row) { return column(m.column)[row]; }).filter(function (v) { return !isMissing(v); });
+  if (m.fn === 'count') return values.length;
+  if (m.fn === 'count_distinct') {
+    var seen = {};
+    values.forEach(function (v) { seen[typeof v + ':' + v] = true; });
+    return Object.keys(seen).length;
+  }
+  if (!values.length) return null;
+  if (m.fn === 'min' || m.fn === 'max') {
+    return values.reduce(function (best, v) {
+      var c = compare(v, best);
+      return (m.fn === 'min' ? c < 0 : c > 0) ? v : best;
+    });
+  }
+  var sum = values.reduce(function (acc, v) { return acc + Number(v); }, 0);
+  return m.fn === 'sum' ? sum : sum / values.length;
+}
+
+/**
+ * A row test for one `where` clause.
+ * @param {string} op - Operator.
+ * @param {*} value - Operand (a list for in / not_in, [lo, hi] for between).
+ * @returns {function(*): boolean} The test.
+ */
+function predicate(op, value) {
+  switch (op) {
+    case '=': return value == null ? isMissing : function (v) { return !isMissing(v) && equal(v, value); };
+    case '!=': return value == null ? function (v) { return !isMissing(v); } : function (v) { return !isMissing(v) && !equal(v, value); };
+    case '<': return function (v) { return !isMissing(v) && compare(v, value) < 0; };
+    case '<=': return function (v) { return !isMissing(v) && compare(v, value) <= 0; };
+    case '>': return function (v) { return !isMissing(v) && compare(v, value) > 0; };
+    case '>=': return function (v) { return !isMissing(v) && compare(v, value) >= 0; };
+    case 'in': return function (v) { return !isMissing(v) && list(value).some(function (x) { return equal(v, x); }); };
+    case 'not_in': return function (v) { return !isMissing(v) && !list(value).some(function (x) { return equal(v, x); }); };
+    case 'between': return function (v) {
+      var range = list(value);
+      return !isMissing(v) && compare(v, range[0]) >= 0 && compare(v, range[1]) <= 0;
+    };
+    case 'is_null': return isMissing;
+    case 'not_null': return function (v) { return !isMissing(v); };
+    default: throw new Error('Unknown filter operator "' + op + '"');
+  }
+}
+
+/**
+ * Sort row indices by `orderBy` output columns, missing values last.
+ * @param {number[]} rows - Row indices.
+ * @param {Array} [orderBy] - Names or `{column, desc}`.
+ * @param {string[]} outputs - The output column names.
+ * @param {function(string, number): *} valueOf - Reads an output of a row.
+ * @returns {number[]} Sorted indices (stable).
+ */
+function sortRows(rows, orderBy, outputs, valueOf) {
+  var keys = (orderBy || []).map(function (o) { return typeof o === 'string' ? { column: o, desc: false } : o; });
+  if (!keys.length) return rows;
+  keys.forEach(function (k) {
+    if (outputs.indexOf(k.column) === -1) throw new Error('orderBy "' + k.column + '" is not an output column');
+  });
+  return rows.map(function (row, i) { return { row: row, i: i }; }).sort(function (a, b) {
+    for (var k = 0; k < keys.length; k++) {
+      var va = valueOf(keys[k].column, a.row);
+      var vb = valueOf(keys[k].column, b.row);
+      if (isMissing(va) !== isMissing(vb)) return isMissing(va) ? 1 : -1;   // nulls last
+      if (isMissing(va)) continue;
+      var c = compare(va, vb);
+      if (c) return keys[k].desc ? -c : c;
+    }
+    return a.i - b.i;
+  }).map(function (e) { return e.row; });
+}
+
+/**
+ * The connector's rows -> CanvasXpress rule (cx_connectors.reshape.rows_to_cx):
+ * the first column is the row ids; each other column is a variable when every
+ * value is a number, else an annotation. No rows is an empty, valid object.
+ * @param {string[]} header - Column names.
+ * @param {Array[]} rows - Rows.
+ * @returns {object} The CanvasXpress data object.
+ */
+function rowsToCx(header, rows) {
+  var numericCol = header.map(function (h, c) {
+    return rows.length > 0 && rows.every(function (row) { return typeof row[c] === 'number' && isFinite(row[c]); });
+  });
+  var vars = [];
+  var data = [];
+  var x = {};
+  for (var c = 1; c < header.length; c++) {
+    var values = rows.map(function (row) { return row[c]; });
+    if (numericCol[c]) {
+      vars.push(header[c]);
+      data.push(values);
+    } else {
+      x[header[c]] = values;
+    }
+  }
+  var out = { y: { vars: vars, smps: rows.map(function (row) { return String(row[0]); }), data: data } };
+  if (Object.keys(x).length) out.x = x;
+  return out;
+}
+
+/**
+ * Whether a cell is missing (SQL NULL): null, undefined, or NaN. An empty
+ * string is a value, as in SQL.
+ * @param {*} v - Cell.
+ * @returns {boolean} True when missing.
+ */
+function isMissing(v) {
+  return v == null || (typeof v === 'number' && isNaN(v));
+}
+
+/**
+ * Compare two cells: numerically when both read as numbers, else as strings.
+ * @param {*} a - Cell.
+ * @param {*} b - Cell.
+ * @returns {number} Negative, zero, or positive.
+ */
+function compare(a, b) {
+  var na = typeof a === 'number' ? a : Number(a);
+  var nb = typeof b === 'number' ? b : Number(b);
+  if (!isNaN(na) && !isNaN(nb) && String(a).trim() !== '' && String(b).trim() !== '') return na - nb;
+  var sa = String(a);
+  var sb = String(b);
+  return sa < sb ? -1 : (sa > sb ? 1 : 0);
+}
+
+/**
+ * Cell equality with the same number/string rule as {@link compare}.
+ * @param {*} a - Cell.
+ * @param {*} b - Cell.
+ * @returns {boolean} True when equal.
+ */
+function equal(a, b) {
+  return compare(a, b) === 0;
+}
+
+/**
+ * A value as a list (a scalar becomes a one-item list).
+ * @param {*} value - Value.
+ * @returns {Array} The list.
+ */
+function list(value) {
+  return Array.isArray(value) ? value : [value];
+}
+
 /* ==== src/marking.js ==== */
 /**
  * Cross-source marking: translate a selection made in one data source into the
@@ -1788,6 +2184,7 @@ function isNumber(v) {
  * @module dataStore
  */
 
+
 /**
  * A process-wide default cache shared across `renderDashboard` calls, so two
  * dashboards (or a re-render) hitting the same connector source reuse one fetch.
@@ -1826,6 +2223,11 @@ function createDataStore(options) {
   var busyRetryMs = options.busyRetryMs != null ? options.busyRetryMs : 250;
   var EventSourceImpl = options.EventSource ||
     (typeof globalThis !== 'undefined' ? globalThis.EventSource : undefined);
+  // The CanvasXpress library, for a source's calculatedFields (its static
+  // applyCalculatedFields evaluates the engine's formula language, no chart).
+  var CX = options.CanvasXpress ||
+    (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
+  var warned = {};   // ref -> true once its calculated-field problem was logged
   var inflight = {}; // cacheKey -> Promise<data>
 
   /**
@@ -1985,11 +2387,100 @@ function createDataStore(options) {
     return appendQuery(parts[0].base + '/api/join', query);
   }
 
+  /**
+   * Add a source's calculated fields to its resolved data, through the
+   * engine's static `CanvasXpress.applyCalculatedFields` (the same safe
+   * formula language and binning as a chart's calculatedFields). Computed once
+   * per resolve, so every panel, Filters panel, join and link on the source sees
+   * the same columns. Without that API (an older CanvasXpress) or when a field
+   * fails, the data passes through without it and the problem is logged once.
+   * @param {string} ref - The source ref name (for messages).
+   * @param {Array} defs - The source's `calculatedFields`.
+   * @param {object} data - The resolved CanvasXpress data object (not modified).
+   * @returns {object} The data with the fields added.
+   */
+  function withCalculatedFields(ref, defs, data) {
+    if (!CX || typeof CX.applyCalculatedFields !== 'function') {
+      warnOnce(ref, 'calculated fields need a CanvasXpress version with CanvasXpress.applyCalculatedFields; showing the data without them');
+      return data;
+    }
+    var result = CX.applyCalculatedFields(data, defs);
+    if (result.errors && result.errors.length) {
+      warnOnce(ref, 'calculated field problem(s): ' + result.errors.map(function (e) {
+        return (e.name || '?') + ': ' + e.message;
+      }).join('; '));
+    }
+    return result.data;
+  }
+
+  /**
+   * The step that runs a source's `pushdown` query in the browser, for a source
+   * with no database to run it: inline, dataset and function sources, and a
+   * join made in the browser. `$param` tokens and the Filters-panel filters
+   * (`opts.where`) resolve exactly as for a connector (see pushdownQuery).
+   * @param {string} ref - The source ref name.
+   * @param {object} sourceSpec - The data source spec.
+   * @param {object} opts - Resolution options (params, where, sources).
+   * @returns {function(object): object} Data -> shaped data (identity without a query).
+   */
+  function inBrowser(ref, sourceSpec, opts) {
+    return function (data) {
+      var where = typeof opts.where === 'function' ? opts.where(ref) : null;
+      var query = JSON.parse(pushdownQuery(sourceSpec.pushdown, opts.params, where));
+      var axis = sourceSpec.kind === 'join' ? sourceAxis(ref, opts.sources || {}) : (sourceSpec.axis || 'smps');
+      return runPushdown(data, query, axis);
+    };
+  }
+
+  /**
+   * Chain the browser pushdown step onto a resolve, only when the source has
+   * a query (a source without one resolves exactly as before, no extra tick).
+   * @param {Promise<object>} promise - The resolve.
+   * @param {string} ref - The source ref name.
+   * @param {object} sourceSpec - The data source spec.
+   * @param {object} opts - Resolution options.
+   * @returns {Promise<object>} The (shaped) resolve.
+   */
+  function shapeInBrowser(promise, ref, sourceSpec, opts) {
+    var p = sourceSpec.pushdown;
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return promise;
+    return promise.then(inBrowser(ref, sourceSpec, opts));
+  }
+
+  /**
+   * Log a data-source problem once per source (a resolve runs per render).
+   * @param {string} ref - The source ref name.
+   * @param {string} message - What went wrong.
+   * @returns {void}
+   */
+  function warnOnce(ref, message) {
+    if (warned[ref] || typeof console === 'undefined') return;
+    warned[ref] = true;
+    console.warn('canvasxpress-dashboards: data source "' + ref + '": ' + message);
+  }
+
   return {
     cache: cache,
 
     /**
-     * Resolve a data source to a CanvasXpress data object.
+     * Resolve a data source to a CanvasXpress data object, with its
+     * `calculatedFields` added (see {@link withCalculatedFields}). Same options
+     * as {@link resolveSource}.
+     * @param {string} ref - The source ref name.
+     * @param {object} sourceSpec - The data source spec.
+     * @param {object} [opts] - Resolution options (see resolveSource).
+     * @returns {Promise<object>} The resolved data.
+     */
+    resolve: function (ref, sourceSpec, opts) {
+      var resolved = this.resolveSource(ref, sourceSpec, opts);
+      var defs = sourceSpec && sourceSpec.calculatedFields;
+      if (!Array.isArray(defs) || !defs.length) return resolved;
+      return resolved.then(function (data) { return withCalculatedFields(ref, defs, data); });
+    },
+
+    /**
+     * Resolve a data source to a CanvasXpress data object, as fetched (without
+     * its calculated fields).
      * @param {string} ref - The source ref name (for cache keying/errors).
      * @param {object} sourceSpec - The data source spec (inline | connector |
      *   dataset | join).
@@ -2008,12 +2499,12 @@ function createDataStore(options) {
      *   resolving `opts.sources[ref]` through this store with the same options.
      * @returns {Promise<object>} The resolved data.
      */
-    resolve: function (ref, sourceSpec, opts) {
+    resolveSource: function (ref, sourceSpec, opts) {
       opts = opts || {};
       if (!sourceSpec) return Promise.reject(new Error('data source "' + ref + '" not found'));
 
       if (sourceSpec.kind === 'inline') {
-        return Promise.resolve(sourceSpec.value);
+        return shapeInBrowser(Promise.resolve(sourceSpec.value), ref, sourceSpec, opts);
       }
       if (sourceSpec.kind === 'live') {
         // A live source has no snapshot to fetch: its data arrives as ticks over
@@ -2026,17 +2517,18 @@ function createDataStore(options) {
         var sqlJoin = sqlJoinUrl(sourceSpec, opts.sources || {}, opts.params);
         if (sqlJoin) {
           // Both inputs are tables of one connector database: join (and
-          // aggregate) there. Anything it refuses is joined here instead.
+          // aggregate) there. Anything it refuses is joined here instead, and
+          // then its pushdown query runs here too (it used to be dropped).
           return fetchUrl(sqlJoin).then(null, function () {
-            return resolveJoin(self, ref, sourceSpec, opts);
+            return shapeInBrowser(resolveJoin(self, ref, sourceSpec, opts), ref, sourceSpec, opts);
           });
         }
-        return resolveJoin(this, ref, sourceSpec, opts);
+        return shapeInBrowser(resolveJoin(this, ref, sourceSpec, opts), ref, sourceSpec, opts);
       }
       if (sourceSpec.kind === 'function') {
-        return resolveFunction(this, ref, sourceSpec, opts, {
+        return shapeInBrowser(resolveFunction(this, ref, sourceSpec, opts, {
           fetch: fetchImpl, baseUrl: baseUrl, params: opts.params, busyRetryMs: busyRetryMs
-        });
+        }), ref, sourceSpec, opts);
       }
       if (sourceSpec.kind !== 'connector' && sourceSpec.kind !== 'dataset') {
         return Promise.reject(new Error('unknown data source kind "' + sourceSpec.kind + '"'));
@@ -2050,10 +2542,17 @@ function createDataStore(options) {
         ? datasetUrl(sourceSpec, opts.params)
         : appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, opts.params, where));
 
+      // A dataset has no database: its pushdown query runs here, over the
+      // cached rows (the cache keeps the rows as fetched). A connector's ran
+      // in its database, as the `_q` of the URL.
+      var isDataset = sourceSpec.kind === 'dataset';
+
       if (!opts.force) {
         var hit = cache.get(key);
-        if (hit && hit.expires > now()) return Promise.resolve(hit.data);
-        if (inflight[key]) return inflight[key];
+        if (hit && hit.expires > now()) {
+          return isDataset ? shapeInBrowser(Promise.resolve(hit.data), ref, sourceSpec, opts) : Promise.resolve(hit.data);
+        }
+        if (inflight[key]) return isDataset ? shapeInBrowser(inflight[key], ref, sourceSpec, opts) : inflight[key];
       }
 
       var promise = fetchUrl(url, sourceSpec.headers).then(function (data) {
@@ -2066,7 +2565,7 @@ function createDataStore(options) {
       });
 
       inflight[key] = promise;
-      return promise;
+      return isDataset ? shapeInBrowser(promise, ref, sourceSpec, opts) : promise;
     },
 
     /**
@@ -2834,6 +3333,12 @@ var FUNCTION_LANGUAGES = ['python', 'r'];
 /** @type {string[]} How related panels show marked rows (CanvasXpress highlightMode). */
 var MARKING_MODES = ['focus', 'highlight', 'ghost'];
 
+/** @type {string[]} Where a calculated field lands (CanvasXpress calculatedFields `target`). */
+var CALC_TARGETS = ['variable', 'sampleAnnotation', 'variableAnnotation'];
+
+/** @type {string[]} Binning methods of a calculated field (CanvasXpress computeBinnedColumn). */
+var BIN_METHODS = ['equalWidth', 'quantile', 'percentile', 'custom'];
+
 /**
  * Validate a dashboard spec.
  *
@@ -3047,6 +3552,7 @@ function validateSpec(spec) {
         }
         if (src.kind === 'function') checkFunction(src, at, spec, errors);
         if (src.pushdown != null) checkPushdown(src, at, spec, errors);
+        if (src.calculatedFields != null) checkCalculatedFields(src, at, errors);
         // A `query` template maps request keys to literals or "$param" tokens;
         // every token must name a declared parameter.
         if (src.query != null) {
@@ -3226,8 +3732,9 @@ var PUSHDOWN_FNS = ['count', 'count_distinct', 'sum', 'avg', 'mean', 'min', 'max
 var PUSHDOWN_OPS = ['=', '!=', '<', '<=', '>', '>=', 'in', 'not_in', 'between', 'is_null', 'not_null'];
 
 /**
- * Check a connector source's `pushdown` block (aggregation, filters and
- * limits run by the database); `$param` filter values must name declared params.
+ * Check a source's `pushdown` block (aggregation, filters and limits, run in
+ * the source's database when it has one, otherwise in the browser); `$param`
+ * filter values must name declared params.
  * @param {object} src - The data source.
  * @param {string} at - Its path for messages.
  * @param {object} spec - The spec (for `params`).
@@ -3240,8 +3747,8 @@ function checkPushdown(src, at, spec, errors) {
   var here = at + '.pushdown';
   // A join takes `true` (join in the database) or a query run over the joined rows.
   if (src.kind === 'join' && typeof p === 'boolean') return;
-  if (src.kind !== 'connector' && src.kind !== 'join') {
-    errors.push(here + ' is only for kind "connector" or "join"');
+  if (src.kind === 'live') {
+    errors.push(here + ' is not supported on a live source');
     return;
   }
   if (typeof p !== 'object' || Array.isArray(p)) { errors.push(here + ' must be an object'); return; }
@@ -3291,6 +3798,73 @@ function checkPushdown(src, at, spec, errors) {
   if (Array.isArray(p.columns) && p.columns.length && grouped) {
     errors.push(here + ' uses columns (rows) or groupBy/measures (aggregates), not both');
   }
+}
+
+/**
+ * Validate a source's `calculatedFields`: fields computed once on the source's
+ * data (by the CanvasXpress formula language), so every panel, Filters panel,
+ * join and link on the source sees them. Each entry is `{name, target?,
+ * formula}` or `{name, target?, bin: {field, method?, bins?, breaks?}}`. The
+ * formula itself is parsed by the engine at render; here only the shape.
+ * A live source's ticks bypass the snapshot, so it cannot carry them.
+ *
+ * @param {object} src - The data source.
+ * @param {string} at - Error path prefix.
+ * @param {string[]} errors - Error list to append to.
+ * @returns {void}
+ * @private
+ */
+function checkCalculatedFields(src, at, errors) {
+  var here = at + '.calculatedFields';
+  if (src.kind === 'live') {
+    errors.push(here + ' is not supported on a live source (its ticks bypass the computed columns)');
+    return;
+  }
+  if (!Array.isArray(src.calculatedFields)) {
+    errors.push(here + ' must be an array');
+    return;
+  }
+  var seen = {};
+  src.calculatedFields.forEach(function (def, i) {
+    var item = here + '[' + i + ']';
+    if (def == null || typeof def !== 'object' || Array.isArray(def)) {
+      errors.push(item + ' must be an object');
+      return;
+    }
+    if (typeof def.name !== 'string' || !def.name) {
+      errors.push(item + ' requires a name string');
+    } else if (hasOwn(seen, def.name)) {
+      errors.push(item + ' repeats the name "' + def.name + '"');
+    } else {
+      seen[def.name] = true;
+    }
+    if (def.target != null && CALC_TARGETS.indexOf(def.target) === -1) {
+      errors.push(item + '.target must be "variable", "sampleAnnotation", or "variableAnnotation"');
+    }
+    var hasFormula = typeof def.formula === 'string' && def.formula.trim().length > 0;
+    var hasBin = def.bin != null;
+    if (hasFormula === hasBin) {
+      errors.push(item + ' needs exactly one of a formula string or a bin');
+    }
+    if (def.formula != null && typeof def.formula !== 'string') errors.push(item + '.formula must be a string');
+    if (hasBin) {
+      var bin = def.bin;
+      if (typeof bin !== 'object' || Array.isArray(bin)) {
+        errors.push(item + '.bin must be an object');
+        return;
+      }
+      if (typeof bin.field !== 'string' || !bin.field) errors.push(item + '.bin requires a field string');
+      if (bin.method != null && BIN_METHODS.indexOf(bin.method) === -1) {
+        errors.push(item + '.bin.method must be "equalWidth", "quantile", "percentile", or "custom"');
+      }
+      if (bin.bins != null && !(Number.isInteger(bin.bins) && bin.bins >= 1)) {
+        errors.push(item + '.bin.bins must be a whole number of at least 1');
+      }
+      if (bin.breaks != null && !(Array.isArray(bin.breaks) && bin.breaks.every(function (b) { return typeof b === 'number' && isFinite(b); }))) {
+        errors.push(item + '.bin.breaks must be a list of numbers');
+      }
+    }
+  });
 }
 
 function checkFunction(src, at, spec, errors) {
@@ -3557,7 +4131,7 @@ function renderDashboard(spec, target, options) {
   // different origin than the page (else same-origin `/api/datasets/{id}`).
   var store = createDataStore({
     fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl,
-    busyRetryMs: options.busyRetryMs, EventSource: options.EventSource
+    busyRetryMs: options.busyRetryMs, EventSource: options.EventSource, CanvasXpress: CX
   });
   // Auto-resize each graph to its cell (via setDimensions) when the container
   // reflows. The builder disables this and re-renders panels itself on resize,
@@ -3959,15 +4533,19 @@ function renderDashboard(spec, target, options) {
   }
 
   /**
-   * Whether a source sends Filters-panel picks to the database: a connector
-   * source with a `pushdown` block (unless `pushdown.filters` is false).
+   * Whether a source runs Filters-panel picks inside its `pushdown` query
+   * (unless `pushdown.filters` is false): a connector source (in its
+   * database), or an inline / dataset / function source whose query runs in
+   * the browser. Either way the picks apply before any group-by. A join keeps
+   * filtering its result: a join made in the database takes no extra filters.
    * @param {string} ref - Source ref.
    * @returns {boolean} True when its filters are pushed down.
    */
   function pushesFilters(ref) {
     var source = (spec.data || {})[ref];
-    return !!(source && source.kind === 'connector' && source.pushdown &&
-      source.pushdown.filters !== false);
+    if (!source || !source.pushdown || source.pushdown.filters === false) return false;
+    if (source.kind === 'connector') return true;
+    return typeof source.pushdown === 'object' && ['inline', 'dataset', 'function'].indexOf(source.kind) > -1;
   }
 
   /**
@@ -4320,8 +4898,9 @@ function renderDashboard(spec, target, options) {
       for (var qk in query) {
         if (query[qk] === '$' + param) { uses = true; break; }
       }
-      // A pushdown filter reads a param through its value ("$name").
-      var clauses = source.kind === 'connector' && source.pushdown && Array.isArray(source.pushdown.where)
+      // A pushdown filter reads a param through its value ("$name"), whether
+      // the query runs in a database or in the browser.
+      var clauses = source.pushdown && typeof source.pushdown === 'object' && Array.isArray(source.pushdown.where)
         ? source.pushdown.where : [];
       for (var wi = 0; wi < clauses.length; wi++) {
         if (clauses[wi] && clauses[wi].value === '$' + param) { uses = true; break; }
@@ -4706,6 +5285,9 @@ function renderDashboard(spec, target, options) {
       filterPanelViews.forEach(function (v) { v.syncScheme(); });
     }
     applyFilterChange();
+    // Keep the "visible / total" badges live, as the CanvasXpress Data Filter
+    // does, without rebuilding the panels (a search or scroll is kept).
+    filterPanelViews.forEach(function (v) { if (v.refreshCounts) v.refreshCounts(); });
   }
 
   /**
@@ -4753,10 +5335,13 @@ function renderDashboard(spec, target, options) {
         function (ref) { return refDomain[ref] || refData[ref] || null; },
         function (ref) { return sourceAxis(ref, sources); });
       var schemeSelect = null;
+      var counters = [];   // [{f, spans: {value: span}}] — the "visible / total" badges
+      var idSeq = 0;       // unique ids tying each checkbox to its label
       var view = {
         panelId: item.panel,
         render: function () {
           cell.body.innerHTML = '';
+          counters = [];
           var root = document.createElement('div');
           root.className = 'cxd-filters';
           root.appendChild(buildSchemeBar());
@@ -4766,13 +5351,77 @@ function renderDashboard(spec, target, options) {
             hint.textContent = 'No fields to filter';
             root.appendChild(hint);
           }
-          fields.forEach(function (f) { root.appendChild(buildField(f)); });
+          var cards = fields.map(function (f) { return buildField(f); });
+          // With several fields, a "Search filters…" box narrows the cards by
+          // name, like the CanvasXpress Data Filter.
+          if (fields.length > 1) root.appendChild(buildFind(cards, fields));
+          cards.forEach(function (card) { root.appendChild(card); });
           cell.body.appendChild(root);
+          view.refreshCounts();
         },
         syncScheme: function () {
           if (schemeSelect) schemeSelect.value = activeScheme === null ? '' : activeScheme;
+        },
+        refreshCounts: function () {
+          counters.forEach(function (c) { fillCounts(c.f, c.spans); });
         }
       };
+
+      /**
+       * Update a value list's "visible / total" badges: total rows with each
+       * value, and how many of them pass every current filter (as the
+       * CanvasXpress Data Filter counts).
+       * @param {object} f - Resolved field.
+       * @param {object} spans - value -> its count badge.
+       * @returns {void}
+       */
+      function fillCounts(f, spans) {
+        var data = refData[f.dataRef];
+        var axis = sourceAxis(f.dataRef, sources);
+        var visible = {};
+        if (data) {
+          var column = tableColumn(data, axis, f.field);
+          var passing = rowsPassing(filterState, f.dataRef, data, axis);
+          var keep = null;
+          if (passing) {
+            keep = {};
+            passing.forEach(function (id) { keep[id] = true; });
+          }
+          if (column) {
+            column.values.forEach(function (value, i) {
+              if (keep && !keep[column.ids[i]]) return;
+              var key = String(value);
+              visible[key] = (visible[key] || 0) + 1;
+            });
+          }
+        }
+        f.summary.values.forEach(function (entry) {
+          var span = spans[entry.value];
+          if (span) span.textContent = (visible[String(entry.value)] || 0) + ' / ' + entry.count;
+        });
+      }
+
+      /**
+       * The "Search filters…" box: shows only the field cards whose name
+       * contains the text.
+       * @param {HTMLElement[]} cards - The field cards.
+       * @param {object[]} list - Their resolved fields, in the same order.
+       * @returns {HTMLElement} The search box.
+       */
+      function buildFind(cards, list) {
+        var find = document.createElement('input');
+        find.type = 'search';
+        find.className = 'cX-DataFilter-Search cxd-filters-find';
+        find.placeholder = 'Search filters...';
+        find.addEventListener('input', function () {
+          var text = String(find.value || '').toLowerCase();
+          cards.forEach(function (card, i) {
+            var name = String(list[i].label || '').toLowerCase();
+            card.style.display = !text || name.indexOf(text) !== -1 ? '' : 'none';
+          });
+        });
+        return find;
+      }
 
       /**
        * The scheme bar: a scheme picker, a name box + Save, and Reset.
@@ -4846,8 +5495,10 @@ function renderDashboard(spec, target, options) {
         filterState.forEach(function (p) {
           if (p.dataRef === f.dataRef && p.field === f.field) current = p;
         });
+        // A card per field, in the CanvasXpress Data Filter's style (its own
+        // classes, so it follows the loaded CanvasXpress theme).
         var section = document.createElement('div');
-        section.className = 'cxd-filters-field';
+        section.className = 'cxd-filters-field cX-DataFilter-Container-Hoverable';
         var label = document.createElement('div');
         label.className = 'cxd-filters-label';
         label.textContent = f.label;
@@ -4865,31 +5516,92 @@ function renderDashboard(spec, target, options) {
        * @returns {HTMLElement} The list.
        */
       function buildValues(f, current) {
+        var wrap = document.createElement('div');
+        // "Search values…" narrows the list, as in the CanvasXpress Data Filter.
+        var search = document.createElement('input');
+        search.type = 'search';
+        search.className = 'cX-DataFilter-Search cxd-filters-valsearch';
+        search.placeholder = 'Search values...';
         var list = document.createElement('div');
-        list.className = 'cxd-filters-values';
+        list.className = 'cxd-filters-values cX-DataFilter-Container-Mask-NoOverflow';
         var boxes = [];
-        f.summary.values.forEach(function (entry) {
-          var row = document.createElement('label');
+        var rows = [];
+        // A pushdown source's rows are groups the database made, so a row
+        // count per value would mislead; show the value alone.
+        var showCounts = !pushesFilters(f.dataRef);
+        var spans = {};
+
+        /**
+         * One checkbox row: box, label, and (optionally) a count badge.
+         * @param {string} text - The label.
+         * @param {boolean} checked - Initial state.
+         * @param {?string} countFor - Value whose count badge to add, or null.
+         * @returns {{row: HTMLElement, box: HTMLInputElement}} The row and its box.
+         */
+        function checkRow(text, checked, countFor) {
+          var row = document.createElement('div');
           row.className = 'cxd-filters-check';
           var box = document.createElement('input');
           box.type = 'checkbox';
-          box.className = 'cxd-filters-cb';
-          box.value = entry.value;
-          box.checked = !current || !Array.isArray(current.values) || current.values.indexOf(entry.value) !== -1;
-          box.addEventListener('change', function () {
-            var checked = boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
-            setFilterPredicate(f.dataRef, f.field, checked.length === boxes.length ? null : { values: checked });
-          });
-          boxes.push(box);
-          var text = document.createElement('span');
-          // A pushdown source's rows are groups the database made, so a row
-          // count per value would mislead; show the value alone.
-          text.textContent = pushesFilters(f.dataRef) ? String(entry.value) : entry.value + ' (' + entry.count + ')';
+          box.className = 'cX-Checkbox cxd-filters-cb';
+          box.id = 'cxd-f-' + item.panel + '-' + (idSeq++);
+          box.checked = checked;
+          var label = document.createElement('label');
+          label.className = 'cX-Checkbox-Label cxd-filters-name';
+          label.htmlFor = box.id;
+          label.textContent = text;
+          label.title = text;
           row.appendChild(box);
-          row.appendChild(text);
-          list.appendChild(row);
+          row.appendChild(label);
+          if (countFor !== null) {
+            var count = document.createElement('span');
+            count.className = 'cX-DataFilter-Count';
+            row.appendChild(count);
+            spans[countFor] = count;
+          }
+          return { row: row, box: box };
+        }
+
+        // "(Select All)": checked when every value is, mixed when some are.
+        var all = checkRow('(Select All)', true, null);
+        all.row.classList.add('cxd-filters-all');
+        list.appendChild(all.row);
+
+        /** Sync "(Select All)" with the value boxes. @returns {void} */
+        function syncAll() {
+          var n = boxes.filter(function (b) { return b.checked; }).length;
+          all.box.checked = n === boxes.length;
+          all.box.indeterminate = n > 0 && n < boxes.length;
+        }
+
+        f.summary.values.forEach(function (entry) {
+          var checked = !current || !Array.isArray(current.values) || current.values.indexOf(entry.value) !== -1;
+          var r = checkRow(String(entry.value), checked, showCounts ? entry.value : null);
+          r.box.value = entry.value;
+          r.box.addEventListener('change', function () {
+            var picked = boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
+            syncAll();
+            setFilterPredicate(f.dataRef, f.field, picked.length === boxes.length ? null : { values: picked });
+          });
+          boxes.push(r.box);
+          rows.push({ row: r.row, text: String(entry.value).toLowerCase() });
+          list.appendChild(r.row);
         });
-        return list;
+        all.box.addEventListener('change', function () {
+          var on = all.box.checked;
+          boxes.forEach(function (b) { b.checked = on; });
+          syncAll();
+          setFilterPredicate(f.dataRef, f.field, on ? null : { values: [] });
+        });
+        syncAll();
+        search.addEventListener('input', function () {
+          var text = String(search.value || '').toLowerCase();
+          rows.forEach(function (r) { r.row.style.display = !text || r.text.indexOf(text) !== -1 ? '' : 'none'; });
+        });
+        if (showCounts) counters.push({ f: f, spans: spans });
+        wrap.appendChild(search);
+        wrap.appendChild(list);
+        return wrap;
       }
 
       /**
@@ -5077,7 +5789,7 @@ function renderDashboard(spec, target, options) {
       function buildSearch(f, current) {
         var input = document.createElement('input');
         input.type = 'search';
-        input.className = 'cxd-filters-text';
+        input.className = 'cX-DataFilter-Search cxd-filters-text';
         input.placeholder = 'Contains\u2026';
         input.value = current && typeof current.text === 'string' ? current.text : '';
         var timer = null;
@@ -8318,6 +9030,287 @@ function updateSettings(spec, changes) {
   return next;
 }
 
+/** @type {string[]} How a selection shows in related panels (default `focus`). */
+var MARKING_MODES = ['focus', 'highlight', 'ghost'];
+
+/**
+ * Encode a pair of key columns as the `on` grammar that `kind:"join"` sources
+ * and `spec.relationships` share. An empty key means "the row id", which is
+ * spelled as the source's row axis (`"smps"` / `"vars"`). Both sides on their
+ * row id is the default, so `on` is omitted; the same name on both sides is a
+ * plain string; otherwise `{left, right}`.
+ * @param {object} spec - The spec (for each source's row axis).
+ * @param {string} left - Left source ref.
+ * @param {string} right - Right source ref.
+ * @param {string} [leftKey] - Left key column ('' = row id).
+ * @param {string} [rightKey] - Right key column ('' = row id).
+ * @returns {(string|object|undefined)} The `on` value, or undefined for row ids.
+ * @public
+ */
+function encodeKeys(spec, left, right, leftKey, rightKey) {
+  var sources = spec.data || {};
+  var leftAxis = sourceAxis(left, sources);
+  var rightAxis = sourceAxis(right, sources);
+  var lk = leftKey || leftAxis;
+  var rk = rightKey || rightAxis;
+  if (lk === leftAxis && rk === rightAxis) return undefined;
+  if (lk === rk) return lk;
+  return { left: lk, right: rk };
+}
+
+/**
+ * Add a cross-source relationship: selecting rows in panels on `left` marks
+ * the rows of `right` whose key matches (and vice versa). The sources are not
+ * blended — each keeps its own panels.
+ * @param {object} spec - The current spec.
+ * @param {object} link - `{left, right, leftKey?, rightKey?}`; an empty key
+ *   is the row id.
+ * @returns {object} A new spec with the relationship appended.
+ * @throws {Error} When a source is missing, both sides are the same source, or
+ *   the same link already exists (in either direction).
+ * @public
+ */
+function addRelationship(spec, link) {
+  var left = link && link.left;
+  var right = link && link.right;
+  checkLinkRefs(spec, left, right);
+  var on = encodeKeys(spec, left, right, link.leftKey, link.rightKey);
+  var rel = { left: left, right: right };
+  if (on !== undefined) rel.on = on;
+  (spec.relationships || []).forEach(function (existing) {
+    if (sameLink(existing, rel)) {
+      throw new Error('"' + left + '" and "' + right + '" are already linked on that key');
+    }
+  });
+  var next = cloneSpec(spec);
+  next.relationships = (spec.relationships || []).concat([rel]);
+  return next;
+}
+
+/**
+ * Remove the relationship at an index; drops `relationships` when it empties.
+ * @param {object} spec - The current spec.
+ * @param {number} index - Position in `spec.relationships`.
+ * @returns {object} A new spec without that relationship.
+ * @public
+ */
+function removeRelationship(spec, index) {
+  var next = cloneSpec(spec);
+  var rels = (spec.relationships || []).filter(function (rel, i) { return i !== index; });
+  if (rels.length) next.relationships = rels;
+  else delete next.relationships;
+  return next;
+}
+
+/**
+ * Set how a selection shows in related panels: `focus` (grey the rest, the
+ * default), `highlight` (outline the related rows) or `ghost` (fade the rest).
+ * An empty value restores the default by removing the key.
+ * @param {object} spec - The current spec.
+ * @param {string} mode - A {@link MARKING_MODES} value, or '' / null.
+ * @returns {object} A new spec with the marking mode set.
+ * @throws {Error} When the mode is not recognized.
+ * @public
+ */
+function setMarkingMode(spec, mode) {
+  if (mode && MARKING_MODES.indexOf(mode) === -1) {
+    throw new Error('marking mode must be one of: ' + MARKING_MODES.join(', '));
+  }
+  var next = cloneSpec(spec);
+  if (mode && mode !== 'focus') next.markingMode = mode;
+  else delete next.markingMode;
+  return next;
+}
+
+/**
+ * Build a `kind:"join"` source that blends two existing sources on a key.
+ * @param {object} spec - The spec (for each source's row axis).
+ * @param {object} def - `{left, right, how?, leftKey?, rightKey?}`; `how` is
+ *   one of `inner` (default) / `left` / `right` / `outer`, and an empty key is
+ *   the row id.
+ * @returns {object} The join source spec.
+ * @throws {Error} When a source is missing, both sides are the same source, or
+ *   `how` is not recognized.
+ * @public
+ */
+function buildJoinSource(spec, def) {
+  var left = def && def.left;
+  var right = def && def.right;
+  checkLinkRefs(spec, left, right);
+  var how = def.how || 'inner';
+  if (JOIN_TYPES.indexOf(how) === -1) throw new Error('join type must be one of: ' + JOIN_TYPES.join(', '));
+  var source = { kind: 'join', left: left, right: right };
+  var on = encodeKeys(spec, left, right, def.leftKey, def.rightKey);
+  if (on !== undefined) source.on = on;
+  source.how = how;
+  return source;
+}
+
+/**
+ * Add a calculated field to a data source, or replace the one with the same
+ * name (keeping its position). The field is computed once on the source's
+ * data, so every panel, Filters panel, join and link on the source sees it.
+ * @param {object} spec - The current spec.
+ * @param {string} ref - The data source name.
+ * @param {object} def - `{name, target?, formula}` or `{name, target?, bin}`.
+ * @returns {object} A new spec with the field set.
+ * @throws {Error} When the source is missing or live, or the field has no name.
+ * @public
+ */
+function setCalculatedField(spec, ref, def) {
+  var source = (spec.data || {})[ref];
+  if (!source) throw new Error('no data source named "' + ref + '"');
+  if (source.kind === 'live') throw new Error('a live source cannot have calculated fields');
+  if (!def || typeof def.name !== 'string' || !def.name.trim()) throw new Error('a calculated field needs a name');
+  var next = cloneSpec(spec);
+  var copy = shallow(source);
+  var fields = (source.calculatedFields || []).slice();
+  var at = -1;
+  fields.forEach(function (f, i) { if (f && f.name === def.name) at = i; });
+  if (at > -1) fields[at] = def;
+  else fields.push(def);
+  copy.calculatedFields = fields;
+  next.data[ref] = copy;
+  return next;
+}
+
+/**
+ * Remove a data source's calculated field by name; drops the key when empty.
+ * @param {object} spec - The current spec.
+ * @param {string} ref - The data source name.
+ * @param {string} name - The field to remove.
+ * @returns {object} A new spec without that field.
+ * @public
+ */
+function removeCalculatedField(spec, ref, name) {
+  var next = cloneSpec(spec);
+  var source = next.data[ref];
+  if (!source || !Array.isArray(source.calculatedFields)) return next;
+  var copy = shallow(source);
+  var kept = source.calculatedFields.filter(function (f) { return !f || f.name !== name; });
+  if (kept.length) copy.calculatedFields = kept;
+  else delete copy.calculatedFields;
+  next.data[ref] = copy;
+  return next;
+}
+
+/**
+ * Set (or clear) a data source's `pushdown` query: filter, keep columns or
+ * summarize, sort and limit its rows (in its database when it has one,
+ * otherwise in the browser). An empty query removes the key; the existing
+ * `filters` flag (whether a Filters panel pushes its picks) is kept.
+ * @param {object} spec - The current spec.
+ * @param {string} ref - The data source name.
+ * @param {?object} query - `{where?, columns?, groupBy?, measures?, orderBy?, limit?}`, or null.
+ * @returns {object} A new spec with the query set.
+ * @throws {Error} When the source is missing or live.
+ * @public
+ */
+function setSourcePushdown(spec, ref, query) {
+  var source = (spec.data || {})[ref];
+  if (!source) throw new Error('no data source named "' + ref + '"');
+  if (source.kind === 'live') throw new Error('a live source cannot be shaped');
+  var next = cloneSpec(spec);
+  var copy = shallow(source);
+  var out = {};
+  ['where', 'columns', 'groupBy', 'measures', 'orderBy'].forEach(function (k) {
+    if (query && Array.isArray(query[k]) && query[k].length) out[k] = query[k];
+  });
+  if (query && typeof query.limit === 'number' && query.limit > 0) out.limit = query.limit;
+  var old = source.pushdown;
+  if (Object.keys(out).length) {
+    if (old && typeof old === 'object' && Object.prototype.hasOwnProperty.call(old, 'filters')) out.filters = old.filters;
+    copy.pushdown = out;
+  } else {
+    delete copy.pushdown;
+  }
+  next.data[ref] = copy;
+  return next;
+}
+
+/**
+ * A one-line, human description of a calculated field, e.g.
+ * `"PerUnit = Revenue / Units"` or `"Tier: 4 quantile bins of Revenue"`.
+ * @param {object} def - A calculated-field definition.
+ * @returns {string} The description.
+ * @public
+ */
+function describeCalculatedField(def) {
+  if (def.bin) {
+    var n = def.bin.bins || 4;
+    var method = def.bin.method || 'equalWidth';
+    var how = method === 'custom' ? 'custom bins' : n + ' ' + (method === 'equalWidth' ? 'equal-width' : method) + ' bins';
+    return def.name + ': ' + how + ' of ' + def.bin.field;
+  }
+  return def.name + ' = ' + def.formula;
+}
+
+/**
+ * A one-line, human description of a relationship's key, e.g.
+ * `"clinical (row id) ↔ labs.patient"`. Composite keys are joined with ` + `.
+ * @param {object} spec - The spec (for each source's row axis).
+ * @param {object} rel - A `spec.relationships` entry or join source.
+ * @returns {string} The description.
+ * @public
+ */
+function describeLink(spec, rel) {
+  var sources = spec.data || {};
+  var leftAxis = rel.leftAxis || rel.axis || sourceAxis(rel.left, sources);
+  var rightAxis = rel.rightAxis || rel.axis || sourceAxis(rel.right, sources);
+  var keys = rel.on == null ? [{ left: leftAxis, right: rightAxis }] : (Array.isArray(rel.on) ? rel.on : [rel.on]);
+  function side(ref, key, axis) {
+    return key === axis ? ref + ' (row id)' : ref + '.' + key;
+  }
+  return keys.map(function (key) {
+    var lk = typeof key === 'string' ? key : key.left;
+    var rk = typeof key === 'string' ? key : key.right;
+    return side(rel.left, lk, leftAxis) + ' ↔ ' + side(rel.right, rk, rightAxis);
+  }).join(' + ');
+}
+
+/**
+ * Throw unless `left` and `right` name two different existing sources.
+ * @param {object} spec - The spec.
+ * @param {string} left - Left source ref.
+ * @param {string} right - Right source ref.
+ * @returns {void}
+ * @private
+ */
+function checkLinkRefs(spec, left, right) {
+  var sources = spec.data || {};
+  [left, right].forEach(function (ref) {
+    if (typeof ref !== 'string' || !ref) throw new Error('choose two data sources');
+    if (!Object.prototype.hasOwnProperty.call(sources, ref)) throw new Error('no data source named "' + ref + '"');
+  });
+  if (left === right) throw new Error('choose two different data sources');
+}
+
+/**
+ * Whether two relationships link the same pair of sources on the same key,
+ * in either direction.
+ * @param {object} a - A relationship.
+ * @param {object} b - A relationship.
+ * @returns {boolean} True when they are the same link.
+ * @private
+ */
+function sameLink(a, b) {
+  if (a.left === b.left && a.right === b.right) return JSON.stringify(a.on) === JSON.stringify(b.on);
+  if (a.left === b.right && a.right === b.left) return JSON.stringify(a.on) === JSON.stringify(swapOn(b.on));
+  return false;
+}
+
+/**
+ * Reverse the orientation of an `on` key spec.
+ * @param {(string|object|Array)} [on] - Key spec oriented left -> right.
+ * @returns {(string|object|Array|undefined)} The same keys oriented right -> left.
+ * @private
+ */
+function swapOn(on) {
+  if (on == null || typeof on === 'string') return on;
+  if (Array.isArray(on)) return on.map(swapOn);
+  return { left: on.right, right: on.left };
+}
+
 /**
  * Create an empty, valid starter spec.
  * @param {string} id - Dashboard id.
@@ -8437,6 +9430,8 @@ function clampInt(value, min, max, fallback) {
  *
  * @module builder
  */
+
+
 
 
 
@@ -8648,6 +9643,9 @@ function createBuilder(target, options) {
   var functionStatusPromise = null;   // memoized GET /api/functions/status (see functionStatus)
   var canAuthorFunctions = false;     // may this user write / edit data functions?
   var addFiltersBtn = null; // same rule as addControlBtn
+  var linksBtn = null;      // disabled until there are two data sources to link
+  var fieldsBtn = null;     // disabled until there is a (non-live) data source
+  var shapeBtn = null;      // same rule as fieldsBtn
   var baseUrl = options.baseUrl || '';   // cxd_server origin for kind:"dataset" sources
   var CX = options.CanvasXpress || (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
   var selectedId = null;
@@ -8719,10 +9717,19 @@ function createBuilder(target, options) {
       if (status.languages.length) addFunctionBtn.style.display = '';
       updateAddPanelState();
     });
+    // "Links": how a selection in one panel marks the related rows of panels
+    // built on other sources (spec.relationships + spec.markingMode).
+    linksBtn = button('🔗 Links', function () { doEditLinks(); });
+    // "ƒx Fields": calculated fields computed once on a source, so every panel,
+    // filter, join and link on it can use them (data.<ref>.calculatedFields).
+    fieldsBtn = button('ƒx Fields', function () { doEditFields(); });
+    // "Shape data": filter, keep columns or summarize, sort and limit a
+    // source's rows (its `pushdown` query; in its database when it has one).
+    shapeBtn = button('▦ Shape data', function () { doShapeData(); });
     var createActions = [titleInput, editJsonBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }),
       button('+ Image', function () { doAddImage(); }),
-      addControlBtn, addFiltersBtn, addFunctionBtn];
+      addControlBtn, addFiltersBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
     append(row1, createActions);
@@ -8917,8 +9924,16 @@ function createBuilder(target, options) {
     });
     Promise.all([storesPromise, datasetsPromise, functionsPromise]).then(function (res) {
       openDataDialog(doc, Object.keys(spec.data || {}),
-        { client: client, stores: res[0], datasets: res[1], functionLanguages: res[2] }).then(function (result) {
+        { client: client, stores: res[0], datasets: res[1], functionLanguages: res[2], spec: spec, dataOf: sourceData }).then(function (result) {
         if (!result) return;
+        if (result.source.kind === 'join') {
+          // A join also links its two inputs for marking, and the renderer
+          // builds that graph per render: fold live edits, then rebuild.
+          syncLiveConfigs();
+          commit(setDataSource(spec, result.name, result.source), false);
+          rebuild();
+          return;
+        }
         commit(setDataSource(spec, result.name, result.source), false);
         renderProps();
         loadDatasets();   // a store upload may have created a new dataset
@@ -8943,6 +9958,134 @@ function createBuilder(target, options) {
         addPanelBound(result.name, true);
       });
     });
+  }
+
+  /**
+   * "🔗 Links": edit how a selection marks related rows across sources — the
+   * marking mode and the declared relationships. Applying folds live
+   * customizer edits first, then rebuilds: the renderer builds its marking
+   * graph once per render, so new links only take effect after a rebuild.
+   * @returns {void}
+   * @private
+   */
+  function doEditLinks() {
+    var doc = container.ownerDocument || document;
+    syncLiveConfigs();
+    openLinksDialog(doc, rawSpec(), sourceData).then(function (edited) {
+      if (!edited) return;
+      var next = rawSpec();
+      if (edited.relationships && edited.relationships.length) next.relationships = edited.relationships;
+      else delete next.relationships;
+      if (edited.markingMode) next.markingMode = edited.markingMode;
+      else delete next.markingMode;
+      commit(next, false);
+      rebuild();
+      setMsg(describeLinkCount(next));
+    });
+  }
+
+  /**
+   * "ƒx Fields": add, replace or remove the calculated fields of the data
+   * sources. Applying folds live customizer edits, writes each changed source's
+   * `calculatedFields`, then rebuilds so every panel resolves the new columns.
+   * @returns {void}
+   * @private
+   */
+  function doEditFields() {
+    var doc = container.ownerDocument || document;
+    syncLiveConfigs();
+    openFieldsDialog(doc, rawSpec(), sourceRawData, CX).then(function (edited) {
+      if (!edited) return;
+      var next = rawSpec();
+      Object.keys(edited).forEach(function (ref) {
+        if (!next.data[ref]) return;
+        if (edited[ref] && edited[ref].length) next.data[ref].calculatedFields = edited[ref];
+        else delete next.data[ref].calculatedFields;
+      });
+      commit(next, false);
+      rebuild();
+      var count = Object.keys(next.data || {}).reduce(function (n, ref) {
+        return n + ((next.data[ref].calculatedFields || []).length);
+      }, 0);
+      setMsg(count === 1 ? '1 calculated field.' : count + ' calculated fields.');
+    });
+  }
+
+  /**
+   * "▦ Shape data": set a source's `pushdown` query. Applying folds live
+   * customizer edits, writes the query, then rebuilds so the panels on the
+   * source resolve its new rows.
+   * @returns {void}
+   * @private
+   */
+  function doShapeData() {
+    var doc = container.ownerDocument || document;
+    syncLiveConfigs();
+    openShapeDialog(doc, rawSpec(), unshapedData).then(function (edited) {
+      if (!edited) return;
+      var next;
+      try {
+        next = setSourcePushdown(rawSpec(), edited.ref, edited.query);
+      } catch (e) {
+        showError(e);
+        return;
+      }
+      commit(next, false);
+      rebuild();
+      setMsg(next.data[edited.ref].pushdown ? 'Shaped "' + edited.ref + '".' : 'Removed the shaping of "' + edited.ref + '".');
+    });
+  }
+
+  /**
+   * A source's rows before its pushdown query, for the Shape dialog's column
+   * lists and preview: a browser source resolved without its query; a
+   * connector source asked for a 50-row sample (its query runs in its
+   * database, so the dialog never pulls the whole table).
+   * @param {string} ref - Source ref.
+   * @returns {Promise<?object>} The data object, or null when it can't be resolved.
+   * @private
+   */
+  function unshapedData(ref) {
+    var source = (spec.data || {})[ref];
+    if (!source || !liveHandle || !liveHandle.store) return Promise.resolve(null);
+    var copy = Object.assign({}, source);
+    if (source.kind === 'connector') copy.pushdown = { limit: 50 };
+    else delete copy.pushdown;
+    return liveHandle.store.resolveSource(ref, copy, { sources: spec.data }).then(function (data) {
+      return data || null;
+    }, function () { return null; });
+  }
+
+  /**
+   * Resolve a data source's data as fetched, WITHOUT its calculated fields (the
+   * Fields dialog re-applies the fields being edited on top of it).
+   * @param {string} ref - Source ref.
+   * @returns {Promise<?object>} The data object, or null when it can't be resolved.
+   * @private
+   */
+  function sourceRawData(ref) {
+    var source = (spec.data || {})[ref];
+    if (!source || !liveHandle || !liveHandle.store) return Promise.resolve(null);
+    return liveHandle.store.resolveSource(ref, source, { sources: spec.data }).then(function (data) {
+      return data || null;
+    }, function () { return null; });
+  }
+
+  /**
+   * Resolve a data source's data object, for offering its key columns. Always
+   * the SOURCE data (what joins and marking read), never a panel instance's
+   * data, which may be transposed or projected to a subset of columns.
+   * @param {string} ref - Source ref.
+   * @returns {Promise<?object>} The data object, or null when it can't be resolved.
+   * @private
+   */
+  function sourceData(ref) {
+    var source = (spec.data || {})[ref];
+    if (!source || !liveHandle || !liveHandle.store) return Promise.resolve(null);
+    // `sources` lets a join source resolve its inputs.
+    return liveHandle.store.resolve(ref, source, { sources: spec.data }).then(function (data) {
+      return data || null;
+    }, function () { return null; });
   }
 
   /**
@@ -11097,6 +12240,26 @@ function createBuilder(target, options) {
    */
   function updateAddPanelState() {
     var hasData = Object.keys(spec.data || {}).length > 0;
+    if (fieldsBtn) {
+      fieldsBtn.disabled = !Object.keys(spec.data || {}).some(function (ref) {
+        return spec.data[ref] && spec.data[ref].kind !== 'live';
+      });
+      fieldsBtn.title = fieldsBtn.disabled
+        ? 'Add a data source to define calculated fields on it'
+        : 'Calculated fields: computed once on a source, usable by every panel, filter and link on it';
+    }
+    if (shapeBtn) {
+      shapeBtn.disabled = fieldsBtn ? fieldsBtn.disabled : true;
+      shapeBtn.title = shapeBtn.disabled
+        ? 'Add a data source to shape its rows'
+        : 'Filter, keep columns or summarize, sort and limit a source\'s rows';
+    }
+    if (linksBtn) {
+      linksBtn.disabled = Object.keys(spec.data || {}).length < 2;
+      linksBtn.title = linksBtn.disabled
+        ? 'Add a second data source to link selections across sources'
+        : 'Link data sources so a selection in one panel marks related rows in the others';
+    }
     if (addFunctionBtn) {
       addFunctionBtn.disabled = !hasData || !canAuthorFunctions;
       addFunctionBtn.title = !canAuthorFunctions ? FUNCTION_AUTHOR_ONLY
@@ -11660,6 +12823,8 @@ function openDataDialog(doc, existingNames, opts) {
   var canPickDataset = datasets.length > 0;
   var functionLangs = (opts.functionLanguages || []).filter(function (l) { return l === 'python' || l === 'r'; });
   var canUseFunction = functionLangs.length > 0 && existingNames.length > 0;
+  // A join blends two existing sources; it needs the spec for their row axes.
+  var canJoin = !!opts.spec && existingNames.length >= 2;
 
   return new Promise(function (resolve) {
     var overlay = el('div', 'cxb-modal-overlay');
@@ -11680,6 +12845,7 @@ function openDataDialog(doc, existingNames, opts) {
     modes.push(['json', 'Paste CanvasXpress JSON'], ['csv', 'Upload CSV / JSON file (inline)']);
     if (canUseStore) modes.push(['store', 'Upload CSV / JSON to a store']);
     modes.push(['connector', 'Connector URL']);
+    if (canJoin) modes.push(['join', 'Join two sources']);
     if (canUseFunction) modes.push(['function', 'Data function (R / Python)']);
     if (opts.onlyFunction && canUseFunction) modes = [['function', 'Data function (R / Python)']];
     var typeSel = el('select');
@@ -11732,8 +12898,10 @@ function openDataDialog(doc, existingNames, opts) {
     urlInput.setAttribute('placeholder', '/api/data?source=sales');
 
     var fn = buildFunctionBody(doc, existingNames, functionLangs);
+    var joinBody = canJoin ? buildJoinBody(doc, existingNames, opts.spec, opts.dataOf) : null;
 
-    var bodies = { dataset: datasetWrap, json: jsonArea, csv: fileInput, store: storeWrap, connector: urlInput, function: fn.root };
+    var bodies = { dataset: datasetWrap, json: jsonArea, csv: fileInput, store: storeWrap, connector: urlInput, function: fn.root,
+      join: joinBody && joinBody.root };
     var bodyWrap = el('div', 'cxb-modal-body');
     Object.keys(bodies).forEach(function (k) { if (bodies[k]) bodyWrap.appendChild(bodies[k]); });
     function showBody() {
@@ -11792,6 +12960,12 @@ function openDataDialog(doc, existingNames, opts) {
         var fsrc = fn.source();
         if (typeof fsrc === 'string') return fail(fsrc);
         return close({ name: name, source: fsrc });
+      }
+
+      if (mode === 'join') {
+        try {
+          return close({ name: name, source: joinBody.source() });
+        } catch (e) { return fail(e.message); }
       }
 
       if (mode === 'store') {
@@ -11936,6 +13110,889 @@ function identifierFor(ref) {
 }
 
 /**
+ * A data-source select paired with a key select listing that source's key
+ * columns — its row id, then its row annotations and columns (the names a
+ * join or relationship `on` accepts along the source's row axis). The key
+ * list fills asynchronously once the source's data resolves; until then, or
+ * when it can't resolve, only the row id is offered.
+ * @param {string[]} refs - Source names to offer.
+ * @param {string} initialRef - The initially selected source.
+ * @param {object} sources - The spec's `data` map (for each source's row axis).
+ * @param {function(string): Promise<?object>} [dataOf] - Resolves a source's data.
+ * @returns {{sourceSel: HTMLElement, keySel: HTMLElement, value: function}} The
+ *   two selects, and `value()` -> `{ref, key}` (`key` '' = the row id).
+ * @private
+ */
+function sourceKeyPicker(refs, initialRef, sources, dataOf) {
+  var keySel = el('select');
+  keySel.setAttribute('title', 'Key: the row id, an annotation, or a column');
+  var token = 0;   // ignores a slow resolve that a newer source pick superseded
+  var sourceSel = selectField(refs, initialRef, function () { fillKeys(); });
+  sourceSel.setAttribute('title', 'Data source');
+
+  /**
+   * Append an option.
+   * @param {HTMLElement} host - A select or optgroup.
+   * @param {string} value - Option value.
+   * @param {string} label - Option text.
+   * @returns {void}
+   */
+  function addOption(host, value, label) {
+    var o = el('option');
+    o.value = value;
+    o.textContent = label;
+    host.appendChild(o);
+  }
+
+  /**
+   * Refill the key list for the selected source.
+   * @returns {void}
+   */
+  function fillKeys() {
+    var ref = sourceSel.value;
+    var mine = ++token;
+    keySel.innerHTML = '';
+    addOption(keySel, '', 'Row id');
+    keySel.value = '';
+    Promise.resolve(dataOf ? dataOf(ref) : null).then(function (data) {
+      if (mine !== token || !data) return;
+      var fields;
+      try {
+        fields = tableFields(data, sourceAxis(ref, sources));
+      } catch (e) {
+        return;
+      }
+      [['Annotations', fields.annotations], ['Columns', fields.columns]].forEach(function (pair) {
+        if (!pair[1].length) return;
+        var group = el('optgroup');
+        group.label = pair[0];
+        pair[1].forEach(function (name) { addOption(group, name, name); });
+        keySel.appendChild(group);
+      });
+      keySel.value = '';
+    });
+  }
+  fillKeys();
+
+  return {
+    sourceSel: sourceSel,
+    keySel: keySel,
+    value: function () { return { ref: sourceSel.value, key: keySel.value || '' }; }
+  };
+}
+
+/**
+ * The "Join two sources" body of the Add-data dialog: a source + key picker
+ * for each side and the join type.
+ * @param {Document} doc - The owning document.
+ * @param {string[]} refs - Existing source names (at least two).
+ * @param {object} spec - The current spec (for each source's row axis).
+ * @param {function(string): Promise<?object>} [dataOf] - Resolves a source's data.
+ * @returns {{root: HTMLElement, source: function}} The body, and a builder that
+ *   returns the `kind:"join"` source (throws with a message when incomplete).
+ * @private
+ */
+function buildJoinBody(doc, refs, spec, dataOf) {
+  var root = el('div', 'cxb-modal-join');
+  var leftPick = sourceKeyPicker(refs, refs[0], spec.data || {}, dataOf);
+  var rightPick = sourceKeyPicker(refs, refs[1], spec.data || {}, dataOf);
+  var leftRow = el('div', 'cxb-links-pick');
+  append(leftRow, [leftPick.sourceSel, leftPick.keySel]);
+  var rightRow = el('div', 'cxb-links-pick');
+  append(rightRow, [rightPick.sourceSel, rightPick.keySel]);
+  var howSel = selectField(JOIN_TYPES, 'inner', function () { /* read on Add */ });
+  labelOptions(howSel, {
+    inner: 'Only rows that match on both sides',
+    left: 'Every left row (blank where unmatched)',
+    right: 'Every right row (blank where unmatched)',
+    outer: 'Every row from both sides'
+  });
+  append(root, [field('Left source and key', leftRow), field('Right source and key', rightRow), field('Keep', howSel)]);
+  return {
+    root: root,
+    source: function () {
+      var left = leftPick.value();
+      var right = rightPick.value();
+      return buildJoinSource(spec, { left: left.ref, right: right.ref, leftKey: left.key, rightKey: right.key, how: howSel.value });
+    }
+  };
+}
+
+/**
+ * The "Links" dialog: how a selection shows in related panels (the marking
+ * mode), the declared cross-source links (each removable), and pickers to
+ * link two more sources on a key. Edits apply to a working copy; nothing
+ * changes until Apply.
+ * @param {Document} doc - The owning document.
+ * @param {object} spec - The current spec (not modified).
+ * @param {function(string): Promise<?object>} [dataOf] - Resolves a source's data.
+ * @returns {Promise<?{relationships: (Array|undefined), markingMode: (string|undefined)}>}
+ *   The edited links, or null when cancelled.
+ * @private
+ */
+function openLinksDialog(doc, spec, dataOf) {
+  var refs = Object.keys(spec.data || {});
+  var working = spec;
+  return new Promise(function (resolve) {
+    var overlay = el('div', 'cxb-modal-overlay');
+    var modal = el('div', 'cxb-modal');
+
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Linked selection';
+    var intro = el('p', 'cxb-links-intro');
+    intro.textContent = 'Link two data sources on a key: selecting marks in a panel on one source then marks ' +
+      'the related rows in panels on the other. Sources combined with “+ Data → Join two sources” are linked already.';
+
+    var modeSel = selectField(MARKING_MODES, working.markingMode || 'focus', function (value) {
+      working = setMarkingMode(working, value);
+    });
+    labelOptions(modeSel, {
+      focus: 'Focus: grey out everything else',
+      highlight: 'Highlight: outline the related rows',
+      ghost: 'Ghost: fade everything else'
+    });
+
+    var errEl = el('div', 'cxb-modal-err');
+    var list = el('div', 'cxb-links-list');
+
+    /**
+     * Redraw the list of declared links.
+     * @returns {void}
+     */
+    function renderList() {
+      list.innerHTML = '';
+      var rels = working.relationships || [];
+      if (!rels.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = 'No links yet.';
+        list.appendChild(none);
+      }
+      rels.forEach(function (rel, i) {
+        var row = el('div', 'cxb-links-row');
+        var text = el('span');
+        text.textContent = describeLink(working, rel);
+        var remove = button('×', function () {
+          working = removeRelationship(working, i);
+          renderList();
+        });
+        remove.setAttribute('title', 'Remove this link');
+        remove.setAttribute('aria-label', 'Remove link ' + text.textContent);
+        append(row, [text, remove]);
+        list.appendChild(row);
+      });
+    }
+    renderList();
+
+    var leftPick = sourceKeyPicker(refs, refs[0], spec.data || {}, dataOf);
+    var rightPick = sourceKeyPicker(refs, refs[1], spec.data || {}, dataOf);
+    var leftRow = el('div', 'cxb-links-pick');
+    append(leftRow, [leftPick.sourceSel, leftPick.keySel]);
+    var rightRow = el('div', 'cxb-links-pick');
+    append(rightRow, [rightPick.sourceSel, rightPick.keySel]);
+    var linkBtn = button('+ Link', function () {
+      var left = leftPick.value();
+      var right = rightPick.value();
+      try {
+        working = addRelationship(working, { left: left.ref, right: right.ref, leftKey: left.key, rightKey: right.key });
+      } catch (e) {
+        errEl.textContent = e.message;
+        return;
+      }
+      errEl.textContent = '';
+      renderList();
+    });
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var applyBtn = button('Apply', function () {
+      close({ relationships: working.relationships, markingMode: working.markingMode });
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, applyBtn]);
+
+    append(modal, [heading, intro, field('When you select marks', modeSel), field('Links', list),
+      field('Link this source and key', leftRow), field('to this source and key', rightRow), linkBtn, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+
+    /**
+     * Close the dialog with a result.
+     * @param {*} result - Resolution value.
+     * @returns {void}
+     */
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
+ * The "ƒx Fields" dialog: per data source, list its calculated fields (each
+ * removable) and add one — a formula over the source's fields, or bins of a
+ * numeric column — with live validation and a preview computed by the engine's
+ * own static API (`CanvasXpress.validateCalculatedField` /
+ * `applyCalculatedFields`). Without that API (an older CanvasXpress) the
+ * dialog explains why fields can't be added. Edits apply to a working copy.
+ * @param {Document} doc - The owning document.
+ * @param {object} spec - The current spec (not modified).
+ * @param {function(string): Promise<?object>} rawDataOf - A source's data
+ *   without its calculated fields.
+ * @param {function} [CX] - The CanvasXpress library.
+ * @returns {Promise<?object>} ref -> the source's new `calculatedFields`
+ *   (empty to remove) for every source touched, or null when cancelled.
+ * @private
+ */
+function openFieldsDialog(doc, spec, rawDataOf, CX) {
+  var refs = Object.keys(spec.data || {}).filter(function (ref) {
+    return spec.data[ref] && spec.data[ref].kind !== 'live';
+  });
+  var engineReady = !!(CX && typeof CX.applyCalculatedFields === 'function' &&
+    typeof CX.validateCalculatedField === 'function');
+  var working = spec;
+  var touched = {};
+  var raw = null;          // the selected source's data without fields
+  var token = 0;           // ignores a slow resolve superseded by a newer pick
+  return new Promise(function (resolve) {
+    var overlay = el('div', 'cxb-modal-overlay');
+    var modal = el('div', 'cxb-modal');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Calculated fields';
+    var intro = el('p', 'cxb-links-intro');
+    intro.textContent = 'A field is computed once on a data source, so every panel, Filters panel, join and ' +
+      'link on that source can use it, like a column in the source itself.';
+
+    var sourceSel = selectField(refs, refs[0], function () { loadSource(); });
+    var list = el('div', 'cxb-links-list');
+    var nameInput = el('input');
+    nameInput.type = 'text';
+    nameInput.setAttribute('placeholder', 'Field name (e.g. PerUnit)');
+    var targetSel = selectField(['variable', 'sampleAnnotation'], 'variable', function () { check(); });
+    labelOptions(targetSel, { variable: 'A number column', sampleAnnotation: 'A category (annotation)' });
+    var modeSel = selectField(['formula', 'bin'], 'formula', function () { showMode(); check(); });
+    labelOptions(modeSel, { formula: 'A formula', bin: 'Bins of a number column' });
+    var formula = el('textarea', 'cxb-modal-json');
+    formula.setAttribute('placeholder', 'e.g. Revenue / Units   ·   Revenue / sum(Revenue)   ·   Age >= 50 ? "50+" : "<50"');
+    on(formula, 'input', function () { check(); });
+    var palette = el('div', 'cxb-links-none');
+    var binField = el('select');
+    var binMethod = selectField(['equalWidth', 'quantile', 'percentile'], 'equalWidth', function () { check(); });
+    labelOptions(binMethod, { equalWidth: 'Equal width', quantile: 'Quantiles (equal counts)', percentile: 'Percent of range' });
+    var binCount = el('input');
+    binCount.type = 'number';
+    binCount.min = '1';
+    binCount.value = '4';
+    on(binField, 'change', function () { check(); });
+    on(binCount, 'input', function () { check(); });
+    var formulaWrap = el('div');
+    append(formulaWrap, [field('Formula', formula), palette]);
+    var binWrap = el('div', 'cxb-links-pick');
+    append(binWrap, [binField, binMethod, binCount]);
+    var status = el('div', 'cxb-links-none');
+    var errEl = el('div', 'cxb-modal-err');
+    var addBtn = button('+ Add field', function () { onAdd(); });
+
+    /**
+     * The definition described by the inputs.
+     * @returns {object} A calculated-field definition.
+     */
+    function candidate() {
+      var name = (nameInput.value || '').trim();
+      if (modeSel.value === 'bin') {
+        var bins = parseInt(binCount.value, 10);
+        return { name: name, target: 'sampleAnnotation',
+          bin: { field: binField.value, method: binMethod.value, bins: bins > 0 ? bins : 4 } };
+      }
+      var def = { name: name, formula: formula.value || '' };
+      if (targetSel.value !== 'variable') def.target = targetSel.value;
+      return def;
+    }
+
+    /**
+     * The selected source's fields as saved in the working copy.
+     * @returns {Array} Its calculated-field definitions.
+     */
+    function currentDefs() {
+      return (working.data[sourceSel.value] && working.data[sourceSel.value].calculatedFields) || [];
+    }
+
+    /**
+     * The field names a formula can use: the source's variables and sample
+     * annotations, including the fields already defined on it.
+     * @returns {string[]} Names.
+     */
+    function fieldNames() {
+      if (!raw || !engineReady) return [];
+      var data = CX.applyCalculatedFields(raw, currentDefs()).data;
+      return data.y.vars.concat(Object.keys(data.x || {}));
+    }
+
+    /**
+     * Show the formula or the bin inputs.
+     * @returns {void}
+     */
+    function showMode() {
+      var bin = modeSel.value === 'bin';
+      formulaWrap.style.display = bin ? 'none' : '';
+      binWrap.style.display = bin ? '' : 'none';
+      targetSel.disabled = bin;   // bins are categories
+    }
+
+    /**
+     * Validate the inputs and show a preview of the first values.
+     * @returns {boolean} True when the field can be added.
+     */
+    function check() {
+      errEl.textContent = '';
+      if (!engineReady) {
+        status.textContent = 'This CanvasXpress version cannot compute dashboard fields ' +
+          '(it needs CanvasXpress.applyCalculatedFields). Update CanvasXpress to add them.';
+        addBtn.disabled = true;
+        return false;
+      }
+      if (!raw) {
+        status.textContent = 'Loading the source’s data…';
+        addBtn.disabled = true;
+        return false;
+      }
+      var def = candidate();
+      if (modeSel.value !== 'bin') {
+        if (!def.formula.trim()) { status.textContent = ''; addBtn.disabled = true; return false; }
+        var verdict = CX.validateCalculatedField(def.formula, fieldNames());
+        if (!verdict.ok) { status.textContent = '✗ ' + verdict.error; addBtn.disabled = true; return false; }
+      } else if (!def.bin.field) {
+        status.textContent = 'Choose a number column to bin.';
+        addBtn.disabled = true;
+        return false;
+      }
+      var probe = Object.assign({}, def, { name: def.name || '__preview__' });
+      var result = CX.applyCalculatedFields(raw, currentDefs().concat([probe]));
+      if (result.errors.length) {
+        status.textContent = '✗ ' + result.errors[result.errors.length - 1].message;
+        addBtn.disabled = true;
+        return false;
+      }
+      var data = result.data;
+      var values = (def.target === 'sampleAnnotation' || def.bin)
+        ? data.x[probe.name] : data.y.data[data.y.vars.indexOf(probe.name)];
+      status.textContent = '✓ ' + data.y.smps.slice(0, 4).map(function (s, i) {
+        var v = values[i];
+        return s + ': ' + (typeof v === 'number' ? Math.round(v * 1000) / 1000 : v);
+      }).join(' · ') + (data.y.smps.length > 4 ? ' …' : '');
+      addBtn.disabled = false;
+      return true;
+    }
+
+    /**
+     * Redraw the selected source's field list.
+     * @returns {void}
+     */
+    function renderList() {
+      list.innerHTML = '';
+      var defs = currentDefs();
+      if (!defs.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = 'No calculated fields on this source yet.';
+        list.appendChild(none);
+      }
+      defs.forEach(function (def) {
+        var row = el('div', 'cxb-links-row');
+        var text = el('span');
+        text.textContent = describeCalculatedField(def);
+        var remove = button('×', function () {
+          working = removeCalculatedField(working, sourceSel.value, def.name);
+          touched[sourceSel.value] = true;
+          renderList();
+          check();
+        });
+        remove.setAttribute('title', 'Remove this field');
+        remove.setAttribute('aria-label', 'Remove field ' + def.name);
+        append(row, [text, remove]);
+        list.appendChild(row);
+      });
+    }
+
+    /**
+     * Load the selected source's data, then refresh the list, palette and bins.
+     * @returns {void}
+     */
+    function loadSource() {
+      var ref = sourceSel.value;
+      var mine = ++token;
+      raw = null;
+      renderList();
+      check();
+      Promise.resolve(rawDataOf ? rawDataOf(ref) : null).then(function (data) {
+        if (mine !== token) return;
+        raw = data;
+        var names = fieldNames();
+        palette.textContent = names.length ? 'Fields: ' + names.join(', ') +
+          '. Functions: sum, mean, median, sd, count, min, max (over the column), log2, sqrt, abs, round…' : '';
+        binField.innerHTML = '';
+        var numeric = raw && engineReady ? CX.applyCalculatedFields(raw, currentDefs()).data.y.vars : [];
+        numeric.forEach(function (n) {
+          var o = el('option');
+          o.value = n;
+          o.textContent = n;
+          binField.appendChild(o);
+        });
+        binField.value = numeric[0] || '';
+        check();
+      });
+    }
+
+    /**
+     * Add (or replace) the described field in the working copy.
+     * @returns {void}
+     */
+    function onAdd() {
+      if (!check()) return;
+      var def = candidate();
+      if (!def.name) { errEl.textContent = 'Give the field a name'; return; }
+      try {
+        working = setCalculatedField(working, sourceSel.value, def);
+      } catch (e) {
+        errEl.textContent = e.message;
+        return;
+      }
+      touched[sourceSel.value] = true;
+      nameInput.value = '';
+      formula.value = '';
+      renderList();
+      loadSource();
+    }
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var applyBtn = button('Apply', function () {
+      var out = {};
+      Object.keys(touched).forEach(function (ref) {
+        out[ref] = (working.data[ref] && working.data[ref].calculatedFields) || [];
+      });
+      close(out);
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, applyBtn]);
+
+    append(modal, [heading, intro, field('Data source', sourceSel), field('Fields', list),
+      field('New field', nameInput), field('Makes', targetSel), field('From', modeSel),
+      formulaWrap, binWrap, status, addBtn, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    showMode();
+    loadSource();
+
+    /**
+     * Close the dialog with a result.
+     * @param {*} result - Resolution value.
+     * @returns {void}
+     */
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/** @type {Object<string, string>} Readable labels for the pushdown filter operators. */
+var SHAPE_OPS = {
+  '=': 'is', '!=': 'is not', '<': 'is less than', '<=': 'is at most', '>': 'is more than', '>=': 'is at least',
+  'in': 'is one of', 'not_in': 'is none of', 'between': 'is between', 'is_null': 'is missing', 'not_null': 'is present'
+};
+
+/**
+ * The "▦ Shape data" dialog: build a source's `pushdown` query without JSON —
+ * keep only rows matching filters, then either keep some columns or summarize
+ * (group by + measures), sort and keep the top N. The preview runs the same
+ * query in the browser on the source's rows (a connector's query runs in its
+ * database, so it has no preview here).
+ * @param {Document} doc - The owning document.
+ * @param {object} spec - The current spec (not modified).
+ * @param {function(string): Promise<?object>} dataOf - A source's rows before its query.
+ * @returns {Promise<?{ref: string, query: ?object}>} The source and its new
+ *   query (null removes the shaping), or null when cancelled.
+ * @private
+ */
+function openShapeDialog(doc, spec, dataOf) {
+  var refs = Object.keys(spec.data || {}).filter(function (ref) {
+    return spec.data[ref] && spec.data[ref].kind !== 'live';
+  });
+  var raw = null;          // the selected source's rows before its query
+  var token = 0;           // ignores a slow resolve superseded by a newer pick
+  var state = null;        // {where, columns, groupBy, measures, sort, desc, limit, mode}
+  return new Promise(function (resolve) {
+    var overlay = el('div', 'cxb-modal-overlay');
+    var modal = el('div', 'cxb-modal cxb-modal-wide');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Shape data';
+    var intro = el('p', 'cxb-links-intro');
+    intro.textContent = 'Keep only the rows you need, then keep some columns or summarize them, sort, and keep ' +
+      'the top rows. A database source runs this in its database; other sources run it in the browser.';
+
+    var sourceSel = selectField(refs, refs[0], function () { load(); });
+    var whereList = el('div', 'cxb-links-list');
+    var whereCol = el('select');
+    var whereOp = selectField(Object.keys(SHAPE_OPS), '=', function () { syncValue(); });
+    labelOptions(whereOp, SHAPE_OPS);
+    var whereValue = el('input');
+    whereValue.type = 'text';
+    whereValue.setAttribute('placeholder', 'value  ·  a, b, c for "one of"  ·  lo, hi for "between"  ·  $param');
+    var whereRow = el('div', 'cxb-links-pick');
+    append(whereRow, [whereCol, whereOp, whereValue]);
+    var addWhere = button('+ Filter', function () { onAddWhere(); });
+
+    var modeSel = selectField(['rows', 'summary'], 'rows', function () { state.mode = modeSel.value; draw(); });
+    labelOptions(modeSel, { rows: 'Rows: keep some columns', summary: 'Summary: group and measure' });
+    var columnsBox = el('div', 'cxb-modal-fn-inputs');
+    var groupBox = el('div', 'cxb-modal-fn-inputs');
+    var measureList = el('div', 'cxb-links-list');
+    var measureFn = selectField(PUSHDOWN_FUNCTIONS.filter(function (f) { return f !== 'mean'; }), 'sum', function () { syncMeasureCol(); });
+    labelOptions(measureFn, { count: 'Count', count_distinct: 'Count distinct', sum: 'Sum', avg: 'Average', min: 'Min', max: 'Max' });
+    var measureCol = el('select');
+    var measureAs = el('input');
+    measureAs.type = 'text';
+    measureAs.setAttribute('placeholder', 'name (optional)');
+    var measureRow = el('div', 'cxb-links-pick');
+    append(measureRow, [measureFn, measureCol, measureAs]);
+    var addMeasure = button('+ Measure', function () { onAddMeasure(); });
+    var rowsWrap = el('div');
+    append(rowsWrap, [field('Columns to keep', columnsBox)]);
+    var summaryWrap = el('div');
+    append(summaryWrap, [field('Group by', groupBox), field('Measures', measureList), measureRow, addMeasure]);
+
+    var sortSel = el('select');
+    var descBox = el('label', 'cxb-check');
+    var desc = el('input');
+    desc.type = 'checkbox';
+    var descText = el('span');
+    descText.textContent = 'Descending';
+    append(descBox, [desc, descText]);
+    var limitInput = el('input');
+    limitInput.type = 'number';
+    limitInput.min = '1';
+    limitInput.setAttribute('placeholder', 'all rows');
+    var sortRow = el('div', 'cxb-links-pick');
+    append(sortRow, [sortSel, descBox, limitInput]);
+    on(sortSel, 'change', function () { state.sort = sortSel.value; preview(); });
+    on(desc, 'change', function () { state.desc = !!desc.checked; preview(); });
+    on(limitInput, 'input', function () { state.limit = parseInt(limitInput.value, 10) || null; preview(); });
+    var status = el('div', 'cxb-links-none');
+    var errEl = el('div', 'cxb-modal-err');
+
+    /**
+     * The field names of the selected source's rows: the row id, numeric
+     * columns and annotations along its axis.
+     * @returns {{axis: string, numeric: string[], all: string[]}} Names.
+     */
+    function fields() {
+      var src = spec.data[sourceSel.value] || {};
+      var axis = src.kind === 'join' ? sourceAxis(sourceSel.value, spec.data) : (src.axis || 'smps');
+      if (!raw) return { axis: axis, numeric: [], all: [] };
+      var f;
+      try { f = tableFields(raw, axis); } catch (e) { f = { columns: [], annotations: [] }; }
+      return { axis: axis, numeric: f.columns, all: f.columns.concat(f.annotations) };
+    }
+
+    /**
+     * The query the form describes (null when it asks for nothing).
+     * @returns {?object} The pushdown query.
+     */
+    function query() {
+      var q = {};
+      if (state.where.length) q.where = state.where;
+      if (state.mode === 'summary') {
+        if (state.groupBy.length) q.groupBy = state.groupBy;
+        if (state.measures.length) q.measures = state.measures;
+      } else if (state.columns && state.columns.length < fields().all.length) {
+        q.columns = state.columns;
+      }
+      if (state.sort) q.orderBy = [{ column: state.sort, desc: !!state.desc }];
+      if (state.limit > 0) q.limit = state.limit;
+      return Object.keys(q).length ? q : null;
+    }
+
+    /**
+     * The output column names of the current query (what the sort can use).
+     * @returns {string[]} Names.
+     */
+    function outputs() {
+      var f = fields();
+      if (state.mode === 'summary') {
+        var names = state.groupBy.length ? state.groupBy.slice() : ['group'];
+        return names.concat(state.measures.map(function (m) {
+          return m.as || (m.fn === 'count' && !m.column ? 'count' : m.fn + '_' + m.column);
+        }));
+      }
+      return [f.axis].concat(state.columns || f.all);
+    }
+
+    /**
+     * A checkbox list over names, calling onToggle with the checked subset.
+     * @param {HTMLElement} box - The host.
+     * @param {string[]} names - Options.
+     * @param {string[]} checked - Initially checked.
+     * @param {function(string[]): void} onToggle - Receives the checked names.
+     * @returns {void}
+     */
+    function checklist(box, names, checked, onToggle) {
+      box.innerHTML = '';
+      var inputs = names.map(function (name) {
+        var row = el('label', 'cxb-check');
+        var input = el('input');
+        input.type = 'checkbox';
+        input.value = name;
+        input.checked = checked.indexOf(name) > -1;
+        on(input, 'change', function () {
+          onToggle(inputs.filter(function (i) { return i.checked; }).map(function (i) { return i.value; }));
+        });
+        var text = el('span');
+        text.textContent = name;
+        append(row, [input, text]);
+        box.appendChild(row);
+        return input;
+      });
+      if (!names.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = raw ? 'No fields.' : 'Loading the source’s rows…';
+        box.appendChild(none);
+      }
+    }
+
+    /**
+     * Fill a select with names (keeping the choice when it is still offered).
+     * @param {HTMLElement} select - The select.
+     * @param {Array<Array<string>>} options - [value, label] pairs.
+     * @returns {void}
+     */
+    function fill(select, options) {
+      var keep = select.value;
+      select.innerHTML = '';
+      options.forEach(function (pair) {
+        var o = el('option');
+        o.value = pair[0];
+        o.textContent = pair[1];
+        select.appendChild(o);
+      });
+      var values = options.map(function (pair) { return pair[0]; });
+      select.value = values.indexOf(keep) > -1 ? keep : (values[0] != null ? values[0] : '');
+    }
+
+    /**
+     * Redraw every part of the form from `state`, then preview.
+     * @returns {void}
+     */
+    function draw() {
+      var f = fields();
+      whereList.innerHTML = '';
+      if (!state.where.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = 'All rows.';
+        whereList.appendChild(none);
+      }
+      state.where.forEach(function (w, i) {
+        var row = el('div', 'cxb-links-row');
+        var text = el('span');
+        text.textContent = w.column + ' ' + SHAPE_OPS[w.op || '='] + (w.value === undefined ? '' : ' ' + formatValue(w.value));
+        var remove = button('×', function () { state.where.splice(i, 1); draw(); });
+        remove.setAttribute('title', 'Remove this filter');
+        append(row, [text, remove]);
+        whereList.appendChild(row);
+      });
+      fill(whereCol, [f.axis].concat(f.all).map(function (n) { return [n, n === f.axis ? n + ' (row id)' : n]; }));
+      modeSel.value = state.mode;
+      rowsWrap.style.display = state.mode === 'rows' ? '' : 'none';
+      summaryWrap.style.display = state.mode === 'summary' ? '' : 'none';
+      checklist(columnsBox, f.all, state.columns || f.all, function (checked) { state.columns = checked; draw(); });
+      checklist(groupBox, f.all, state.groupBy, function (checked) { state.groupBy = checked; draw(); });
+      measureList.innerHTML = '';
+      if (!state.measures.length) {
+        var noM = el('div', 'cxb-links-none');
+        noM.textContent = 'No measures (a summary with only groups lists the distinct values).';
+        measureList.appendChild(noM);
+      }
+      state.measures.forEach(function (m, i) {
+        var row = el('div', 'cxb-links-row');
+        var text = el('span');
+        text.textContent = (m.fn === 'count' && !m.column ? 'count of rows' : m.fn + ' of ' + m.column) + (m.as ? ' as ' + m.as : '');
+        var remove = button('×', function () { state.measures.splice(i, 1); draw(); });
+        remove.setAttribute('title', 'Remove this measure');
+        append(row, [text, remove]);
+        measureList.appendChild(row);
+      });
+      syncMeasureCol();
+      fill(sortSel, [['', '(no sort)']].concat(outputs().map(function (n) { return [n, n]; })));
+      sortSel.value = outputs().indexOf(state.sort) > -1 ? state.sort : '';
+      state.sort = sortSel.value;
+      desc.checked = !!state.desc;
+      limitInput.value = state.limit ? String(state.limit) : '';
+      syncValue();
+      preview();
+    }
+
+    /** Hide the value box for operators that take none. @returns {void} */
+    function syncValue() {
+      whereValue.style.display = whereOp.value === 'is_null' || whereOp.value === 'not_null' ? 'none' : '';
+    }
+
+    /** Offer "(rows)" for count, numeric columns for the rest. @returns {void} */
+    function syncMeasureCol() {
+      var f = fields();
+      var fn = measureFn.value;
+      var names = fn === 'count' || fn === 'count_distinct' ? f.all : f.numeric;
+      fill(measureCol, (fn === 'count' ? [['', '(rows)']] : []).concat(names.map(function (n) { return [n, n]; })));
+    }
+
+    /**
+     * Run the query on the source's rows and summarize the result.
+     * @returns {void}
+     */
+    function preview() {
+      errEl.textContent = '';
+      var src = spec.data[sourceSel.value] || {};
+      if (src.kind === 'connector') {
+        status.textContent = 'Runs in the database when the dashboard loads.';
+        return;
+      }
+      if (!raw) { status.textContent = 'Loading the source’s rows…'; return; }
+      var q = query();
+      if (!q) { status.textContent = 'No shaping: every row and column.'; return; }
+      try {
+        var out = runPushdown(raw, JSON.parse(JSON.stringify(q)), fields().axis);
+        var cols = out.y.vars.concat(Object.keys(out.x || {}));
+        status.textContent = '✓ ' + out.y.smps.length + ' row' + (out.y.smps.length === 1 ? '' : 's') +
+          ' · ' + (cols.length ? cols.join(', ') : 'no columns') +
+          (out.y.smps.length ? ' · first: ' + out.y.smps.slice(0, 3).join(', ') + (out.y.smps.length > 3 ? '…' : '') : '');
+      } catch (e) {
+        status.textContent = '✗ ' + e.message;
+      }
+    }
+
+    /** Add the filter described by the inputs. @returns {void} */
+    function onAddWhere() {
+      var op = whereOp.value;
+      var clause = { column: whereCol.value, op: op };
+      if (op !== 'is_null' && op !== 'not_null') {
+        var text = String(whereValue.value || '').trim();
+        if (!text) { errEl.textContent = 'Type a value to filter by'; return; }
+        clause.value = parseValue(text, op);
+      }
+      state.where.push(clause);
+      whereValue.value = '';
+      draw();
+    }
+
+    /** Add the measure described by the inputs. @returns {void} */
+    function onAddMeasure() {
+      var m = { fn: measureFn.value };
+      if (measureCol.value) m.column = measureCol.value;
+      if (m.fn !== 'count' && !m.column) { errEl.textContent = 'Choose a column to measure'; return; }
+      var name = String(measureAs.value || '').trim();
+      if (name) m.as = name;
+      state.measures.push(m);
+      measureAs.value = '';
+      draw();
+    }
+
+    /**
+     * Load the selected source's rows and its current query into the form.
+     * @returns {void}
+     */
+    function load() {
+      var ref = sourceSel.value;
+      var mine = ++token;
+      var p = (spec.data[ref] && spec.data[ref].pushdown) || {};
+      if (typeof p !== 'object') p = {};
+      state = {
+        where: (p.where || []).slice(),
+        columns: p.columns ? p.columns.slice() : null,
+        groupBy: (p.groupBy || []).slice(),
+        measures: (p.measures || []).slice(),
+        sort: p.orderBy && p.orderBy[0] ? (typeof p.orderBy[0] === 'string' ? p.orderBy[0] : p.orderBy[0].column) : '',
+        desc: !!(p.orderBy && p.orderBy[0] && p.orderBy[0].desc),
+        limit: typeof p.limit === 'number' ? p.limit : null,
+        mode: (p.groupBy && p.groupBy.length) || (p.measures && p.measures.length) ? 'summary' : 'rows'
+      };
+      raw = null;
+      draw();
+      Promise.resolve(dataOf ? dataOf(ref) : null).then(function (data) {
+        if (mine !== token) return;
+        raw = data;
+        draw();
+      });
+    }
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var clearBtn = button('Remove shaping', function () { close({ ref: sourceSel.value, query: null }); });
+    var applyBtn = button('Apply', function () { close({ ref: sourceSel.value, query: query() }); }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [clearBtn, cancelBtn, applyBtn]);
+
+    append(modal, [heading, intro, field('Data source', sourceSel),
+      field('Keep only rows where', whereList), whereRow, addWhere,
+      field('Result', modeSel), rowsWrap, summaryWrap,
+      field('Sort by, then keep the first', sortRow), status, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    load();
+
+    /**
+     * Close the dialog with a result.
+     * @param {*} result - Resolution value.
+     * @returns {void}
+     */
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
+ * A typed filter value from text: `$name` stays a param token; a number reads
+ * as a number; "one of" / "between" split on commas.
+ * @param {string} text - What was typed.
+ * @param {string} op - The operator.
+ * @returns {*} The value.
+ * @private
+ */
+function parseValue(text, op) {
+  /** @param {string} s - One item. @returns {*} Number or string. */
+  function one(s) {
+    s = s.trim();
+    if (s.charAt(0) === '$') return s;
+    return s !== '' && !isNaN(Number(s)) ? Number(s) : s;
+  }
+  if (op === 'in' || op === 'not_in' || op === 'between') {
+    if (text.charAt(0) === '$') return text;
+    return text.split(',').map(one);
+  }
+  return one(text);
+}
+
+/**
+ * A filter value for display.
+ * @param {*} value - The value.
+ * @returns {string} Text.
+ * @private
+ */
+function formatValue(value) {
+  return Array.isArray(value) ? value.join(', ') : String(value);
+}
+
+/**
+ * A status line summarizing a spec's cross-source links.
+ * @param {object} spec - The spec.
+ * @returns {string} e.g. "2 links · selections show as focus".
+ * @private
+ */
+function describeLinkCount(spec) {
+  var n = (spec.relationships || []).length;
+  if (!n) return 'No cross-source links.';
+  return (n === 1 ? '1 link' : n + ' links') + ' · selections show as ' + (spec.markingMode || 'focus') + '.';
+}
+
+/**
  * Resolve once a CanvasXpress instance exposes `getConfig()` (attached
  * asynchronously after construction), polling briefly; resolves anyway after
  * ~5s so a chart that never gets one does not stall the builder.
@@ -12025,5 +14082,5 @@ function withQueryParam(url, key, value) {
 }
 
 var version = "0.10.0";
-export { renderDashboard, validateSpec, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, joinData, joinCycle, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, DASHBOARD_SCHEMA_VERSION, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, hasRelationships, relationGraph, translateMarks, tableFields, tableColumn, resolveFields, summarizeField, rowsPassing, normalizeState, JOIN_TYPES, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, version };
-export default { renderDashboard, validateSpec, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, joinData, joinCycle, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, DASHBOARD_SCHEMA_VERSION, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, hasRelationships, relationGraph, translateMarks, tableFields, tableColumn, resolveFields, summarizeField, rowsPassing, normalizeState, JOIN_TYPES, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, version };
+export { renderDashboard, validateSpec, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, parseSchemaVersion, DASHBOARD_SCHEMA_VERSION, DASHBOARD_SCHEMA_URL, MIGRATIONS, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuery, joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES, resolveFields, summarizeField, rowsPassing, normalizeState, hasRelationships, relationGraph, translateMarks, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES, setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS, version };
+export default { renderDashboard, validateSpec, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, parseSchemaVersion, DASHBOARD_SCHEMA_VERSION, DASHBOARD_SCHEMA_URL, MIGRATIONS, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuery, joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES, resolveFields, summarizeField, rowsPassing, normalizeState, hasRelationships, relationGraph, translateMarks, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES, setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS, version };

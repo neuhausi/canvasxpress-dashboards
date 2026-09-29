@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — Sales Model</title>
+
+  <!-- CanvasXpress (peer dependency): rendering + broadcast coordination -->
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+
+  <!-- canvasxpress-dashboards renderer (UMD drop-in) -->
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    header { padding: 16px 24px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: #6b7280; font-size: 13px; }
+    #dashboard { padding: 16px 24px 32px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0e1013; color: #e6e8ec; }
+      header p { color: #8a9099; }
+    }
+      .cxd-topnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      background: #fff; border: 1px solid #e6e9ee; border-radius: 10px;
+      padding: 8px 14px; margin: 16px 24px; font-size: 13.5px; }
+    .cxd-topnav .cxd-brand { font-weight: 400; margin-right: 10px; color: #57606a; }
+    .cxd-topnav .cxd-brand b { color: #24292f; }
+    .cxd-topnav a { color: #087ad1; text-decoration: none; padding: 4px 10px;
+      border-radius: 7px; }
+    .cxd-topnav a:hover { background: #eaf3fb; }
+    .cxd-topnav .cxd-here { margin-left: auto; color: #57606a; padding: 4px 10px;
+      background: #f2f4f7; border-radius: 7px; }
+    @media (prefers-color-scheme: dark) {
+      .cxd-topnav { background: #1b1e24; border-color: #2a2e36; }
+      .cxd-topnav .cxd-brand b { color: #e6e8ec; }
+      .cxd-topnav a:hover { background: #12283a; }
+      .cxd-topnav .cxd-here { background: #23262d; }
+    }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <a class="cxd-open" href="../?open=sales-model">✏️ Open in Builder</a>
+    <span class="cxd-here">🧮 Sales Model</span>
+  </nav>
+  <header>
+    <h1>Sales Model</h1>
+    <p>Four data-model features on 24 orders and 8 customers, all authored without
+       JSON in the builder: <b>calculated fields</b> on the orders source (Margin,
+       Margin %, a quantile Size band; the Filters panel lists them), a product
+       summary <b>shaped</b> by a group-by that runs in the browser, orders and
+       customers <b>linked</b> by customer (select orders to focus their customers),
+       and orders <b>joined</b> to customers for revenue by segment.</p>
+    <p id="engine-note" style="display:none"></p>
+  </header>
+
+  <div id="dashboard"></div>
+
+  <script>
+    fetch('./sales-model.spec.json')
+      .then(function (res) { return res.json(); })
+      .then(function (spec) {
+        // Calculated fields on a source need CanvasXpress.applyCalculatedFields
+        // (the release after 70.4); an older engine shows the data without them.
+        if (typeof CanvasXpress.applyCalculatedFields !== 'function') {
+          var note = document.getElementById('engine-note');
+          note.textContent = 'The CanvasXpress loaded here does not compute dashboard calculated fields yet ' +
+            '(they need the release after 70.4), so Margin, Margin % and the Size band are left out: the ' +
+            'first chart shows revenue against cost instead.';
+          note.style.display = '';
+          // Plot two raw columns rather than a missing one (margin is the gap between them).
+          spec.panels.scatter.config.yAxis = ['Cost'];
+          spec.panels.scatter.title = 'Orders: revenue vs cost (colored by region)';
+        }
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard');
+      })
+      .then(function (handle) {
+        console.log('Dashboard rendered:', handle.instances.length, 'instances in group', handle.broadcastGroup);
+      })
+      .catch(function (err) {
+        document.getElementById('dashboard').textContent = 'Failed to render: ' + err.message;
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

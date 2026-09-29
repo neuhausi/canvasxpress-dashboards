@@ -19,8 +19,8 @@
     "schemaVersion": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+$",
-      "default": "1.1",
-      "description": "Spec FORMAT version, MAJOR.MINOR (absent = 1.0). MINOR bumps are additive (a reader renders what it knows); MAJOR bumps are migrated on load. Current: 1.1 (1.0 + join/function sources, relationships, Filters panels). Not the dashboard's own revision — that is `version`."
+      "default": "1.3",
+      "description": "Spec FORMAT version, MAJOR.MINOR (absent = 1.0). MINOR bumps are additive (a reader renders what it knows); MAJOR bumps are migrated on load. Current: 1.3 (1.1: join/function sources, relationships, Filters panels; 1.2: live sources; 1.3: source calculatedFields). Not the dashboard's own revision — that is `version`."
     },
     "title": { "type": "string" },
     "version": { "type": "integer", "minimum": 1, "default": 1, "description": "The dashboard's own revision counter (author-managed). Distinct from schemaVersion, the format version." },
@@ -155,10 +155,33 @@
           "type": "string",
           "description": "The dataset's owner when it is not the viewer (kind:dataset). Set by the server on a dashboard opened from another owner; access is checked on every read."
         },
+        "calculatedFields": {
+          "type": "array",
+          "description": "Fields computed once on this source's data (CanvasXpress formula language: tokenizer + parser, never eval), so every panel, Filters panel, join and link on the source sees them. Applied in order (a later field may use an earlier one) by the engine's static CanvasXpress.applyCalculatedFields; an engine without it shows the data without them. Not for kind:live.",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "description": "The new column / annotation name (replaces a column of the same name)." },
+              "target": { "enum": ["variable", "sampleAnnotation", "variableAnnotation"], "default": "variable", "description": "variable = a new numeric row of y; sampleAnnotation = an x annotation; variableAnnotation = a z annotation." },
+              "formula": { "type": "string", "description": "e.g. \"Revenue / Units\", \"Revenue / sum(Revenue)\", \"Age >= 50 ? \\\"50+\\\" : \\\"<50\\\"\". Exactly one of formula or bin." },
+              "bin": {
+                "type": "object",
+                "required": ["field"],
+                "properties": {
+                  "field": { "type": "string" },
+                  "method": { "enum": ["equalWidth", "quantile", "percentile", "custom"], "default": "equalWidth" },
+                  "bins": { "type": "integer", "minimum": 1, "default": 4 },
+                  "breaks": { "type": "array", "items": { "type": "number" }, "description": "method custom: the cut points." }
+                }
+              }
+            }
+          }
+        },
         "pushdown": {
           "type": ["object", "boolean"],
           "additionalProperties": false,
-          "description": "kind:connector: aggregate, filter and limit IN THE DATABASE (canvasxpress-connectors 0.6+, SQL sources). Sent as the `_q` request parameter; the connector wraps the source's own SELECT, checks column names against it and binds every value. kind:join: true joins the two connector inputs in their database (same connection; otherwise the browser joins them), and an object is also run over the joined rows.",
+          "description": "Aggregate, filter, sort and limit the source's rows. kind:connector: IN THE DATABASE (canvasxpress-connectors 0.6+, SQL sources), sent as the `_q` request parameter; the connector wraps the source's own SELECT, checks column names against it and binds every value. kind:join: true joins the two connector inputs in their database (same connection; otherwise the browser joins them), and an object is also run over the joined rows (in the database, or in the browser after a browser join). kind:inline / dataset / function: the same query runs in the browser with the connector's semantics. Not for kind:live.",
           "properties": {
             "columns": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Rows mode: only these columns (with where / orderBy / limit)." },
             "groupBy": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Group by these columns; each result row's id joins their values." },

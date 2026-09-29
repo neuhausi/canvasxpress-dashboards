@@ -437,6 +437,33 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.set_locked(EXAMPLES_OWNER, kpi["id"], True)
         print("  [seed] shipped dashboard: %s" % kpi["id"])
 
+    # Sales Model: calculated fields, a browser-run pushdown query, a
+    # relationship and a join. Its inline sources move into the dataset store;
+    # a source's own keys (calculatedFields, pushdown) ride along, and the
+    # product summary reuses the orders dataset (its query runs in the browser).
+    sales = load_spec("sales-model.spec.json")
+    if sales and sales["id"] not in saved:
+        sales = copy.deepcopy(sales)
+        stored = {}   # inline value (as canonical JSON) -> dataset id: a repeated value is stored once
+        for ref, source in sales.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            value = source["value"]
+            key = json.dumps(value, sort_keys=True)
+            dataset_id = stored.get(key)
+            if dataset_id is None:
+                dataset_id = "sales-model-" + ref
+                stored[key] = dataset_id
+                if dataset_id not in have:
+                    datasets.create(EXAMPLES_OWNER, value, now,
+                                    title="Sales Model: " + ref, dataset_id=dataset_id, locked=True)
+            bound = {"kind": "dataset", "id": dataset_id, "store": "local"}
+            bound.update({k: v for k, v in source.items() if k not in ("kind", "value")})
+            sales["data"][ref] = bound
+        dashboards.save_dashboard(EXAMPLES_OWNER, sales, now)
+        dashboards.set_locked(EXAMPLES_OWNER, sales["id"], True)
+        print("  [seed] shipped dashboard: %s" % sales["id"])
+
     # Live Ops: two kind:"live" panels (the connectors demo stream, subscribed
     # with the viewer's own session) over a 24-hour snapshot. Only the inline
     # snapshot moves into the dataset store; the live sources stay live.
@@ -587,21 +614,40 @@ def _shared():
 
 
 # --- canvasxpress-connectors BYO-database app (bridged session) -------------
-# Mounts the full per-user connectors web app at /connectors: each user
-# registers named database sources (connection string + read-only SQL, stored
-# ENCRYPTED) and charts them live via /connectors/api/data?source=<name>.
-# The session is BRIDGED: the front-end asks /api/connectors/credentials
-# (guarded by the cxd session) for a derived per-user credential and logs into
-# the connectors app with it — the user signs in once, to the dashboards app.
+# The integration lives in cxd_server.connectors: the same code the
+# `python -m cxd_server` launcher installs with CXD_CONNECTORS=on (mount at
+# /connectors, the session bridge, the scheduled-refresh origin). The demo adds
+# two conveniences a real deployment does not get: an ENCRYPTION_KEY generated
+# once and kept next to the demo data, and the demo inventory sources registered
+# for every bridged user.
 _connectors_store = None
+
+
+def _seed_demo_sources(store, user):
+    """Every bridged user starts with the demo SQLite sources registered
+    (read-only URLs into the repo-committed database)."""
+    have_sources = store.list_sources(user)
+    if "inventory" not in have_sources:
+        store.save_source(
+            user, "inventory", INVENTORY_URL,
+            'SELECT item AS "Item", stock AS "Stock", price AS "Price",'
+            ' category AS "Category", warehouse AS "Warehouse"'
+            " FROM product_inventory ORDER BY item")
+    if "furniture-only" not in have_sources:
+        store.save_source(
+            user, "furniture-only", INVENTORY_URL,
+            'SELECT item AS "Item", stock AS "Stock", price AS "Price",'
+            ' ROUND(stock * price, 2) AS "Value", warehouse AS "Warehouse"'
+            " FROM product_inventory WHERE category = 'Furniture' ORDER BY item")
+
+
 try:
-    from cx_connectors.store import Store as _CxcStore
     from cx_connectors.store import generate_key as _cxc_generate_key
-    from cx_connectors.web.byo_app import create_byo_app
+    from cxd_server.connectors import install_connectors
 
     # The Fernet key encrypting stored connection strings must be stable across
-    # restarts: use ENCRYPTION_KEY from the env/.env when set, else generate
-    # once and persist it next to the demo data.
+    # restarts: use ENCRYPTION_KEY from the env/.env when set, else (demo only)
+    # generate once and persist it next to the demo data.
     _KEY_FILE = os.path.join(DATA_DIR, "encryption.key")
     if not os.environ.get("ENCRYPTION_KEY"):
         if os.path.isfile(_KEY_FILE):
@@ -612,158 +658,10 @@ try:
             with open(_KEY_FILE, "w", encoding="utf-8") as _fh:
                 _fh.write(os.environ["ENCRYPTION_KEY"])
 
-    _connectors_store = _CxcStore(os.path.join(DATA_DIR, "connectors.db"),
-                                  os.environ["ENCRYPTION_KEY"])
-    app.mount("/connectors", create_byo_app(store=_connectors_store, serve_static=False))
-    print("  [connectors] BYO-database app mounted at /connectors")
-
-    def _refresh_from_connector(owner, name):
-        """Scheduled refresh from a user's database source, run with THEIR stored
-        credentials, the same way /connectors/api/data reads it (SQL bind
-        parameters are passed as NULL; SaaS sources go through their reader)."""
-        from cx_connectors.reshape import rows_to_cx
-        from cx_connectors.sources.sql import SqlSource, bind_param_names
-        from cx_connectors.web.byo_app import _read_saas_source
-
-        record = _connectors_store.get_source(owner, name)
-        if not record:
-            raise ValueError("No database source named %r" % name)
-        if record.get("kind") == "packed":
-            raise ValueError("Matrix sources need a gene list and cannot be refreshed on a schedule")
-        if record.get("kind") in ("salesforce", "servicenow"):
-            header, rows = _read_saas_source(record)
-        else:
-            sql = record["sql"]
-            params = {n: None for n in bind_param_names(sql)}
-            header, rows = SqlSource(record["conn_url"], sql, params).read()
-        return rows_to_cx(header, rows)
-
-    app.state.origin_fetchers["connector"] = _refresh_from_connector
+    _connectors_store = install_connectors(app, os.path.join(DATA_DIR, "connectors.db"),
+                                           os.environ["ENCRYPTION_KEY"], seed=_seed_demo_sources)
 except Exception as exc:  # noqa: BLE001 — missing extra just disables the feature
     print("  [connectors] NOTE: connectors web app not mounted (%s)" % exc)
-
-
-def _derive_bridge_password(key, user):
-    """The bridged connectors password for a user: HMAC-SHA256 of ``cxc-bridge:<user>``
-    under ``key``, truncated to 32 hex characters (never stored anywhere)."""
-    import hashlib
-    import hmac as _hmac
-
-    return _hmac.new(key.encode(), ("cxc-bridge:" + user).encode(), hashlib.sha256).hexdigest()[:32]
-
-
-def _bridge_credential(store, user):
-    """Ensure ``user`` exists in the connectors store and return the password that
-    signs them in.
-
-    New users get the ENCRYPTION_KEY derivation. A user the earlier code created
-    with the SESSION_SECRET derivation is recognised by that credential still
-    verifying — which also proves the account is a bridged one, so an account made
-    directly in the connectors app with its own password is never taken over — and
-    is re-keyed to the new derivation, so a later SESSION_SECRET rotation cannot
-    lock them out. On a store without ``set_password`` (an older
-    canvasxpress-connectors) that user keeps the old credential instead.
-
-    :param store: The connectors ``Store``.
-    :param user: The signed-in dashboards username.
-    :returns: The password to log into the connectors app with.
-    """
-    password = _derive_bridge_password(os.environ["ENCRYPTION_KEY"], user)
-    if store.create_user(user, password) or store.check_user(user, password):
-        return password
-    legacy = _derive_bridge_password(os.environ["SESSION_SECRET"], user)
-    if store.check_user(user, legacy):
-        if hasattr(store, "set_password"):
-            store.set_password(user, password)
-            print("  [connectors] re-keyed bridged user %r to the ENCRYPTION_KEY derivation" % user)
-            return password
-        return legacy
-    # Neither credential verifies (e.g. a user created under a SESSION_SECRET that
-    # has since changed): nothing here can prove it is theirs, so leave it alone.
-    return password
-
-
-@app.get("/api/connectors/credentials", include_in_schema=False)
-def _connectors_credentials(request: "Request"):
-    """Session bridge: hand the SIGNED-IN cxd user a derived credential for the
-    connectors app (same username; password = HMAC(ENCRYPTION_KEY, user), so it
-    is stable, never stored, and only obtainable with a valid cxd session).
-    Ensures the connectors user exists and seeds the demo inventory source.
-
-    The key is ENCRYPTION_KEY — the key that already guards the user's stored
-    connection strings — not SESSION_SECRET: rotating the session secret (which
-    signs cookies) must not lock bridged users out of their saved connections.
-    Users created by the earlier SESSION_SECRET derivation are moved to the new
-    one the next time they come through here (see _bridge_credential)."""
-    from fastapi.responses import JSONResponse
-
-    user = request.session.get("user")
-    if not user:
-        return JSONResponse({"detail": "Not logged in"}, status_code=401)
-    if _connectors_store is None:
-        return JSONResponse({"detail": "connectors app not available"}, status_code=503)
-    password = _bridge_credential(_connectors_store, user)
-    # Every bridged user starts with the demo SQLite sources registered
-    # (read-only URLs into the repo-committed database).
-    have_sources = _connectors_store.list_sources(user)
-    if "inventory" not in have_sources:
-        _connectors_store.save_source(
-            user, "inventory", INVENTORY_URL,
-            'SELECT item AS "Item", stock AS "Stock", price AS "Price",'
-            ' category AS "Category", warehouse AS "Warehouse"'
-            " FROM product_inventory ORDER BY item")
-    if "furniture-only" not in have_sources:
-        _connectors_store.save_source(
-            user, "furniture-only", INVENTORY_URL,
-            'SELECT item AS "Item", stock AS "Stock", price AS "Price",'
-            ' ROUND(stock * price, 2) AS "Value", warehouse AS "Warehouse"'
-            " FROM product_inventory WHERE category = 'Furniture' ORDER BY item")
-    return {"username": user, "password": password}
-
-
-@app.get("/api/connectors/sources-meta", include_in_schema=False)
-def _connectors_sources_meta(request: Request):
-    """The signed-in user's database sources with display metadata: last-saved
-    timestamp and a CREDENTIAL-FREE location (dialect + host only)."""
-    from urllib.parse import urlsplit
-
-    from fastapi.responses import JSONResponse
-
-    user = request.session.get("user")
-    if not user:
-        return JSONResponse({"detail": "Not logged in"}, status_code=401)
-    if _connectors_store is None:
-        return JSONResponse({"detail": "connectors app not available"}, status_code=503)
-    out = []
-    for meta in _connectors_store.list_sources_meta(user):
-        record = _connectors_store.get_source(user, meta["name"])
-        location = ""
-        if record:
-            parts = urlsplit(record["conn_url"])
-            location = (parts.scheme or "").split("+")[0]
-            if parts.hostname:
-                location += "@" + parts.hostname
-        out.append({"name": meta["name"], "updated_at": meta["updated_at"],
-                    "location": location})
-    return {"sources": out}
-
-
-@app.get("/api/connectors/source", include_in_schema=False)
-def _connectors_source_detail(request: Request, name: str = ""):
-    """Owner-only read-back of one source's connection URL + SQL, so the Data
-    page can prefill the edit form (the byo app itself only lists names).
-    Guarded by the cxd session; a user can only read their own sources."""
-    from fastapi.responses import JSONResponse
-
-    user = request.session.get("user")
-    if not user:
-        return JSONResponse({"detail": "Not logged in"}, status_code=401)
-    if _connectors_store is None:
-        return JSONResponse({"detail": "connectors app not available"}, status_code=503)
-    record = _connectors_store.get_source(user, name)
-    if not record:
-        return JSONResponse({"detail": "No such source"}, status_code=404)
-    return {"name": name, "conn_url": record["conn_url"], "sql": record["sql"]}
 
 
 @app.get("/api/data", include_in_schema=False)

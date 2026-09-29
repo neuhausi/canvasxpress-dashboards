@@ -25,6 +25,31 @@ used on the other; row security applies from either. Interleaved audit writes
 from both keep one verified chain. A due schedule fired on both at once runs
 exactly once and sends one email.
 
+## Database sources (optional)
+
+Per-user database sources come from
+[canvasxpress-connectors](https://github.com/neuhausi/canvasxpress-connectors).
+Each user registers a connection string and a read-only SQL query, stored
+encrypted. They can chart it live, or refresh a dataset from it on a schedule,
+with bound parameter values (`origin: {kind: "connector", source, params}`).
+
+- **Enable:** install the `[connectors]` extra (plus your database's driver,
+  e.g. `canvasxpress-connectors[postgres]`), then set `CXD_CONNECTORS=on`. With
+  Docker, `docker build --build-arg CXD_EXTRAS="web,connectors" …`.
+- **`ENCRYPTION_KEY` is required and never generated.** It encrypts every stored
+  connection string and is the only way to read them back. Keep it, and back it
+  up, with your other secrets. Generate one with
+  `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+  Without it the server refuses to start while `CXD_CONNECTORS=on`.
+- **One store, one host.** The connection store is a SQLite file
+  (`CXD_CONNECTORS_DB`, default `connectors.db` beside `APP_DB_PATH`). Processes
+  on one host share it. Several hosts would each have their own, so a source
+  saved on one would be missing on another. Run database sources on one host,
+  or keep that file on storage every host shares safely.
+- The Data page's edit form reads a source's connection string, including its
+  password, back to the source's owner (the owner only, behind their session).
+- Needs canvasxpress-connectors 0.6 or later.
+
 ## Requirements
 
 | Setting | Several processes, one host | Several hosts |

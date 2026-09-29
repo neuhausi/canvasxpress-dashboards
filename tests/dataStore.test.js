@@ -418,5 +418,116 @@ test('a join with pushdown asks the connector to join in the database, else join
   var store2 = createDataStore({ fetch: refused, cache: new Map() });
   var joined = await store2.resolve('j', sources.j, { sources: sources, params: { r: 'EMEA' } });
   assert.equal(refused.urls.length, 3, 'the join request, then both inputs');
-  assert.deepEqual(joined.y.vars, ['amount', 'size'], 'joined in the browser');
+  // Joined in the browser, and its query then runs in the browser too (it used
+  // to be dropped): the same answer the database gave above.
+  assert.deepEqual(joined.y.smps, ['retail']);
+  assert.deepEqual(joined.y.vars, ['count']);
+  assert.deepEqual(joined.y.data, [[1]]);
+});
+
+// --- calculatedFields: computed once on the source, through the engine's static API ---
+
+var CALC_DATA = { y: { vars: ['Revenue', 'Units'], smps: ['s1', 's2'], data: [[100, 250], [4, 5]] } };
+
+/**
+ * A CanvasXpress stand-in whose static applyCalculatedFields records its calls
+ * and appends a column per definition (the real engine computes the formula).
+ * @param {Array} calls - Collects each (data, defs) call.
+ * @returns {function} The stub.
+ */
+function calcCX(calls) {
+  function CX() {}
+  CX.applyCalculatedFields = function (data, defs) {
+    calls.push({ data: data, defs: defs });
+    var out = { y: { vars: data.y.vars.concat(defs.map(function (d) { return d.name; })), smps: data.y.smps,
+      data: data.y.data.concat(defs.map(function () { return [0, 0]; })) } };
+    return { data: out, errors: defs.filter(function (d) { return d.formula === 'bad'; })
+      .map(function (d) { return { name: d.name, message: 'Unknown field: nope' }; }) };
+  };
+  return CX;
+}
+
+/**
+ * Run fn with console.warn captured.
+ * @param {function} fn - Async body.
+ * @returns {Promise<string[]>} The warnings logged.
+ */
+async function captureWarnings(fn) {
+  var logged = [];
+  var original = console.warn;
+  console.warn = function (msg) { logged.push(String(msg)); };
+  try { await fn(); } finally { console.warn = original; }
+  return logged;
+}
+
+test('calculatedFields are applied once on the resolved source data', async function () {
+  var calls = [];
+  var store = createDataStore({ CanvasXpress: calcCX(calls) });
+  var source = { kind: 'inline', value: CALC_DATA, calculatedFields: [{ name: 'PerUnit', formula: 'Revenue / Units' }] };
+  var data = await store.resolve('sales', source);
+  assert.deepEqual(data.y.vars, ['Revenue', 'Units', 'PerUnit']);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].data, CALC_DATA, 'the engine receives the source data as resolved');
+  assert.deepEqual(calls[0].defs, source.calculatedFields);
+  assert.deepEqual(CALC_DATA.y.vars, ['Revenue', 'Units'], 'the source value is not modified');
+  // resolveSource is the same resolve without the fields.
+  assert.deepEqual((await store.resolveSource('sales', source)).y.vars, ['Revenue', 'Units']);
+  // No fields: no engine call.
+  await store.resolve('plain', { kind: 'inline', value: CALC_DATA });
+  assert.equal(calls.length, 1);
+});
+
+test('calculatedFields without the engine API pass the data through and warn once', async function () {
+  var store = createDataStore({ CanvasXpress: function OldCX() {} });
+  var source = { kind: 'inline', value: CALC_DATA, calculatedFields: [{ name: 'PerUnit', formula: 'Revenue / Units' }] };
+  var results = [];
+  var warnings = await captureWarnings(async function () {
+    results.push(await store.resolve('sales', source));
+    results.push(await store.resolve('sales', source));
+  });
+  assert.equal(results[0], CALC_DATA);
+  assert.equal(warnings.length, 1, 'warned once per source');
+  assert.match(warnings[0], /data source "sales".*applyCalculatedFields/);
+});
+
+test('a failing calculated field is logged and the others still apply', async function () {
+  var store = createDataStore({ CanvasXpress: calcCX([]) });
+  var source = { kind: 'inline', value: CALC_DATA, calculatedFields: [{ name: 'Oops', formula: 'bad' }] };
+  var data;
+  var warnings = await captureWarnings(async function () { data = await store.resolve('sales', source); });
+  assert.ok(data.y.vars.indexOf('Oops') > -1, 'the engine result is used as returned');
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /Oops: Unknown field: nope/);
+});
+
+// --- pushdown in the browser: sources with no database run the same query here ---
+
+test('an inline / dataset source runs its pushdown query in the browser, Filters picks before the group-by', async function () {
+  var rows = { y: { vars: ['amount'], smps: ['r1', 'r2', 'r3', 'r4'], data: [[10, 20, 30, 40]] },
+    x: { region: ['EMEA', 'APAC', 'EMEA', 'APAC'], product: ['A', 'A', 'B', 'B'] } };
+  var query = { groupBy: ['region'], measures: [{ fn: 'sum', column: 'amount', as: 'total' }], orderBy: ['region'] };
+  var store = createDataStore({ fetch: function () {
+    return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(JSON.stringify(rows)); } });
+  }, cache: new Map() });
+
+  var inline = await store.resolve('s', { kind: 'inline', value: rows, pushdown: query });
+  assert.deepEqual(inline, { y: { vars: ['total'], smps: ['APAC', 'EMEA'], data: [[60, 40]] } });
+
+  // A Filters pick on product (not an output) narrows the rows BEFORE grouping, as in a database.
+  var where = function () { return [{ column: 'product', op: 'in', value: ['B'] }]; };
+  var dataset = await store.resolve('d', { kind: 'dataset', id: 'sales', pushdown: query }, { where: where });
+  assert.deepEqual(dataset, { y: { vars: ['total'], smps: ['APAC', 'EMEA'], data: [[40, 30]] } });
+
+  // $param tokens resolve as for a connector; an unset param drops the filter.
+  var withParam = Object.assign({}, query, { where: [{ column: 'region', op: '=', value: '$r' }] });
+  assert.deepEqual((await store.resolve('p', { kind: 'inline', value: rows, pushdown: withParam }, { params: { r: 'EMEA' } })).y.smps, ['EMEA']);
+  assert.deepEqual((await store.resolve('p', { kind: 'inline', value: rows, pushdown: withParam }, { params: {} })).y.smps, ['APAC', 'EMEA']);
+  // resolveSource runs it too (it is part of fetching the source, not a calculated field).
+  assert.deepEqual((await store.resolveSource('s', { kind: 'inline', value: rows, pushdown: query })).y.vars, ['total']);
+});
+
+test('a source without a pushdown query resolves exactly as before (same object, no extra step)', async function () {
+  var value = { y: { vars: ['v'], smps: ['a'], data: [[1]] } };
+  var store = createDataStore({ cache: new Map() });
+  assert.equal(await store.resolve('s', { kind: 'inline', value: value }), value);
 });

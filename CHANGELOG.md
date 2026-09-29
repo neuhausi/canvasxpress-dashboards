@@ -8,6 +8,148 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 Server features, live on the demo; the client additions ship in the next npm
 release.
 
+### Linked selection without JSON
+- **🔗 Links (builder toolbar).** Link two data sources on a key, so selecting
+  marks in a panel on one source marks the related rows in panels on the other:
+  pick each source and its key (the row id, an annotation, or a column, listed
+  from the source's data), then **+ Link**. The dialog lists the links (each
+  removable) and sets how a selection shows (**Focus** / **Highlight** /
+  **Ghost**). It writes the existing `spec.relationships` and `markingMode`, so
+  the spec format doesn't change. Enabled once a dashboard has two sources.
+- **+ Data → Join two sources.** Blend two sources into one on a key, choosing
+  which rows to keep (inner / left / right / outer). It writes a `kind: "join"`
+  source; the join also links its inputs for marking.
+- New pure model functions, exported: `addRelationship`, `removeRelationship`,
+  `setMarkingMode`, `buildJoinSource`, `encodeKeys`, `describeLink`,
+  `MARKING_MODES`.
+- With CanvasXpress 70.4 and earlier, **Highlight** and **Ghost** don't draw
+  marked sample rows differently (the engine's mark colouring checked only
+  variable highlights). Fixed in the engine's next release; **Focus**, the
+  default, works on every version.
+
+### Filters panel in the CanvasXpress Data Filter style
+- Each field is a **card** like the core library's Data Filter. A list of
+  values has a **Search values…** box, a **(Select All)** row (mixed when only
+  some values are picked; unticking it filters everything out) and live
+  **"visible / total"** counts: rows with that value that pass every current
+  filter / all rows with it. The counts update on every change without
+  redrawing the panel, so a search or scroll is kept. With several fields, a
+  **Search filters…** box narrows the cards by name.
+- The elements carry the Data Filter's own classes (`cX-DataFilter-Container-
+  Hoverable`, `cX-DataFilter-Search`, `cX-Checkbox`, `cX-DataFilter-Count`, …),
+  so the panel follows the loaded CanvasXpress theme. The dashboards styles
+  repeat the same values through the same `--cx-*` variables, so it looks the
+  same without `canvasXpress.css`.
+- Unchanged: the scheme bar, the range sliders (already styled like the Data
+  Filter's), and database sources showing values without counts.
+- **Dark / auto theme:** the cards follow the dashboard's dark palette (light
+  field names, dark search boxes and lists, a brighter accent). The core Data
+  Filter has no dark variant, so its light colours had left dark field names on
+  dark cards and white boxes in a dark panel. **Fixed** in the same change: the
+  scheme bar's picker and buttons were white with light text in dark mode
+  (`--cxd-ctrl-bg` had no dark value).
+- Cohort Explorer: the Filters panel is 18 rows tall (was 14), so all five
+  fields show without scrolling. The charts beside it take two rows of 9, and
+  widths are unchanged.
+
+### Sales Model example
+- `examples/sales-model.html` shows all four features on 24 orders and 8
+  customers: calculated fields (Margin, Margin %, a quantile Size band that the
+  Filters panel lists), a product summary grouped in the browser, orders and
+  customers linked by customer, and a join for revenue by segment. With a
+  CanvasXpress older than the release after 70.4 it explains that the fields
+  are missing and plots revenue against cost instead. It's seeded as a shipped
+  dashboard in the demo host; its sources keep their `calculatedFields` and
+  `pushdown` when moved into the dataset store.
+- App Home page: new **Calculated fields** and **Shape your data** cards
+  (both link to the Sales Model). **Blend and link sources** now points at
+  🔗 Links and + Data → Join, and **Scheduling** mentions parameter values.
+
+### Build: bundles can no longer miss a module or an export
+- **Fixed:** the bundles left out the new `src/pushdown.js`, so
+  "runPushdown is not defined" broke Shape data and any browser-run query in
+  the built app. `scripts/build.mjs` inlined a hand-kept module list, and a
+  module missing from it had its import line dropped silently.
+- The build now fails, naming the file, when a source module or an internal
+  import is missing from that list or listed after a module that needs it.
+- The bundles' public API is now read from `src/index.js` instead of a second
+  hand-kept list. Besides the new functions, `parseSchemaVersion`,
+  `DASHBOARD_SCHEMA_URL`, `MIGRATIONS` and `pushdownQuery` were missing from
+  the bundles before this and are now exported.
+
+### Database sources in the server itself (`CXD_CONNECTORS=on`)
+- The canvasxpress-connectors integration moved from the demo host
+  (`examples/serve.py`) into `cxd_server.connectors`. `python -m cxd_server`
+  (and so the Docker image) now offers per-user database sources when
+  `CXD_CONNECTORS=on`. That covers the `/connectors` app, the session bridge
+  (`/api/connectors/credentials`, `/sources-meta`, `/source`), and scheduled
+  refresh from a database source. Before, only the demo host had them.
+- **`ENCRYPTION_KEY` is required and never generated** by the server: it is the
+  only way to read stored connections back. A missing or invalid key, a missing
+  package or a missing session secret stops the server at start with a message
+  saying what to do. New `[connectors]` extra (canvasxpress-connectors 0.6+).
+- **Scheduled refresh binds parameter values:** a refresh origin takes `params`
+  (`{kind: "connector", source, params: {region: "EMEA"}}`) for the source
+  query's bind parameters. A name the query does not declare fails the run, and
+  a parameter left out stays NULL, as before. Host fetchers with two arguments
+  keep working.
+- The routes install ahead of the server's static app shell, which is mounted
+  at `/` and would otherwise swallow them.
+- The demo host now calls the same code, keeping only its demo conveniences
+  (a generated key file for the demo data, seeded inventory sources).
+- Docs: `docs/deployment.md` (including one-store-one-host: the connection store is a
+  SQLite file), `.env.example`, the Dockerfile.
+
+### `pushdown` runs in the browser for sources without a database
+- **inline, dataset and function sources** now take a `pushdown` query
+  (`where`, `columns`, `groupBy` + `measures`, `orderBy`, `limit`, `$param`
+  values). It runs in the browser with the connector's semantics (SQL null
+  rules, the same measures and operators, `orderBy` over outputs, and the
+  connector's rows → CanvasXpress rule for aggregates), so a spec gives the same
+  answer whether its rows come from a database or a file. The new
+  `tests/fixtures/pushdown-parity.json` holds the real connector's output over
+  SQLite for 10 queries; the browser executor must match it exactly.
+- A **Filters panel** over such a source applies its picks inside the query,
+  before any group-by, as a database does.
+- **Fixed:** a join whose query could not run in the database (inputs in
+  different databases) silently dropped its query after the browser join; the
+  query now runs in the browser.
+- A `$param` in any source's `pushdown.where` re-resolves the source when the
+  param changes (was connector-only).
+- New module `src/pushdown.js` (`runPushdown`, `rowsToCx`). Sources without a
+  query resolve exactly as before.
+- **▦ Shape data (builder toolbar):** build a source's query without JSON:
+  keep only rows where (readable operators, `a, b, c` lists, `lo, hi` ranges,
+  `$param` values), then keep some columns or summarize (group by + count,
+  count distinct, sum, average, min, max, optionally named), sort, and keep the
+  first N. A live preview runs the query on the source's rows (a database
+  source's query runs in its database). New model function `setSourcePushdown`.
+
+### Calculated fields on a source (spec format 1.3)
+- **`calculatedFields` on a data source.** Fields computed once on the
+  source's data, so every panel, Filters panel, join and link on the source
+  sees them, like columns of the source itself: `{name, target?, formula}`
+  (e.g. `"Revenue / Units"`, `"Revenue / sum(Revenue)"`,
+  `"Age >= 50 ? \"50+\" : \"<50\""`) or `{name, target?, bin: {field, method?,
+  bins?, breaks?}}`. `target` is `variable` (a number column, default),
+  `sampleAnnotation` or `variableAnnotation`. Fields apply in order, so a later
+  one may use an earlier one; a join adds its own on top of its inputs'.
+- Evaluated by the CanvasXpress engine's own formula language (tokenizer +
+  parser, never `eval`) through its new static
+  `CanvasXpress.applyCalculatedFields`, so a dashboard field behaves exactly
+  like a chart's calculated field. **Needs the CanvasXpress release after
+  70.4**; with an older engine the data shows without the fields and a warning
+  is logged once per source.
+- **ƒx Fields (builder toolbar):** per source, list, add and remove fields: a
+  formula (with the fields and functions listed) or bins of a number column,
+  with live validation and a preview of the first values.
+- Spec format **1.3** (additive; 1.2 specs migrate with no rewrite). The
+  client and server validators check the shape; the JSON Schema documents it.
+- `createDataStore` takes a `CanvasXpress` option; the store's `resolve`
+  applies the fields, and the new `resolveSource` resolves without them. New
+  model functions: `setCalculatedField`, `removeCalculatedField`,
+  `describeCalculatedField`.
+
 ### Live data (streaming) ([docs/live-streaming.md](docs/live-streaming.md))
 - **`kind: "live"` source.** A panel subscribes to a canvasxpress-connectors
   Server-Sent-Events stream (`url`) and each message appends new samples to the

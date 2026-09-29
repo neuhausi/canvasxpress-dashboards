@@ -1,4 +1,5 @@
-"""The dashboards -> canvasxpress-connectors session bridge in examples/serve.py.
+"""The dashboards -> canvasxpress-connectors session bridge (cxd_server.connectors,
+as the examples/serve.py demo host installs it).
 
 The bridged password is derived from ENCRYPTION_KEY, so rotating SESSION_SECRET
 (which signs cookies) no longer locks users out of their saved connections; users
@@ -19,6 +20,7 @@ from fastapi.testclient import TestClient
 
 pytest.importorskip("cx_connectors")
 from cx_connectors.store import Store, generate_key  # noqa: E402
+from cxd_server.connectors import derive_bridge_password  # noqa: E402
 
 SERVE = os.path.join(os.path.dirname(__file__), "..", "..", "examples", "serve.py")
 _SET_BY_SERVE = ("APP_DB_PATH", "CXD_DATASET_STORE", "CXD_EXAMPLES_OWNER",
@@ -104,14 +106,14 @@ def test_a_legacy_user_is_rekeyed_and_then_survives_a_rotation(demo, warehouse):
     module = demo()
     TestClient(module.app).post("/auth/signup", json={"username": "alice", "password": "secret1"})
     # Created by the earlier code: password keyed on SESSION_SECRET.
-    legacy = module._derive_bridge_password(os.environ["SESSION_SECRET"], "alice")
+    legacy = derive_bridge_password(os.environ["SESSION_SECRET"], "alice")
     module._connectors_store.create_user("alice", legacy)
     module._connectors_store.save_source("alice", "mine", warehouse, "SELECT item, qty FROM stock")
 
     client, status = _sign_in(module)
     assert status == 200
     store = module._connectors_store
-    assert store.check_user("alice", module._derive_bridge_password(os.environ["ENCRYPTION_KEY"], "alice"))
+    assert store.check_user("alice", derive_bridge_password(os.environ["ENCRYPTION_KEY"], "alice"))
     assert not store.check_user("alice", legacy), "re-keyed to the ENCRYPTION_KEY derivation"
 
     os.environ["SESSION_SECRET"] = "session-secret-B"
@@ -125,7 +127,7 @@ def test_a_legacy_user_keeps_the_old_credential_on_a_store_without_set_password(
     monkeypatch.delattr(Store, "set_password")             # an older canvasxpress-connectors
     module = demo()
     TestClient(module.app).post("/auth/signup", json={"username": "alice", "password": "secret1"})
-    legacy = module._derive_bridge_password(os.environ["SESSION_SECRET"], "alice")
+    legacy = derive_bridge_password(os.environ["SESSION_SECRET"], "alice")
     module._connectors_store.create_user("alice", legacy)
     client, status = _sign_in(module)
     assert status == 200

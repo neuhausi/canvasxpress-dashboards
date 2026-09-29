@@ -11,6 +11,8 @@
  * @module builderModel
  */
 
+import { sourceAxis, JOIN_TYPES } from './join.js';
+
 /**
  * The default number of grid columns when a spec doesn't specify one.
  * @type {number}
@@ -414,6 +416,287 @@ export function updateSettings(spec, changes) {
     }
   });
   return next;
+}
+
+/** @type {string[]} How a selection shows in related panels (default `focus`). */
+export var MARKING_MODES = ['focus', 'highlight', 'ghost'];
+
+/**
+ * Encode a pair of key columns as the `on` grammar that `kind:"join"` sources
+ * and `spec.relationships` share. An empty key means "the row id", which is
+ * spelled as the source's row axis (`"smps"` / `"vars"`). Both sides on their
+ * row id is the default, so `on` is omitted; the same name on both sides is a
+ * plain string; otherwise `{left, right}`.
+ * @param {object} spec - The spec (for each source's row axis).
+ * @param {string} left - Left source ref.
+ * @param {string} right - Right source ref.
+ * @param {string} [leftKey] - Left key column ('' = row id).
+ * @param {string} [rightKey] - Right key column ('' = row id).
+ * @returns {(string|object|undefined)} The `on` value, or undefined for row ids.
+ * @public
+ */
+export function encodeKeys(spec, left, right, leftKey, rightKey) {
+  var sources = spec.data || {};
+  var leftAxis = sourceAxis(left, sources);
+  var rightAxis = sourceAxis(right, sources);
+  var lk = leftKey || leftAxis;
+  var rk = rightKey || rightAxis;
+  if (lk === leftAxis && rk === rightAxis) return undefined;
+  if (lk === rk) return lk;
+  return { left: lk, right: rk };
+}
+
+/**
+ * Add a cross-source relationship: selecting rows in panels on `left` marks
+ * the rows of `right` whose key matches (and vice versa). The sources are not
+ * blended — each keeps its own panels.
+ * @param {object} spec - The current spec.
+ * @param {object} link - `{left, right, leftKey?, rightKey?}`; an empty key
+ *   is the row id.
+ * @returns {object} A new spec with the relationship appended.
+ * @throws {Error} When a source is missing, both sides are the same source, or
+ *   the same link already exists (in either direction).
+ * @public
+ */
+export function addRelationship(spec, link) {
+  var left = link && link.left;
+  var right = link && link.right;
+  checkLinkRefs(spec, left, right);
+  var on = encodeKeys(spec, left, right, link.leftKey, link.rightKey);
+  var rel = { left: left, right: right };
+  if (on !== undefined) rel.on = on;
+  (spec.relationships || []).forEach(function (existing) {
+    if (sameLink(existing, rel)) {
+      throw new Error('"' + left + '" and "' + right + '" are already linked on that key');
+    }
+  });
+  var next = cloneSpec(spec);
+  next.relationships = (spec.relationships || []).concat([rel]);
+  return next;
+}
+
+/**
+ * Remove the relationship at an index; drops `relationships` when it empties.
+ * @param {object} spec - The current spec.
+ * @param {number} index - Position in `spec.relationships`.
+ * @returns {object} A new spec without that relationship.
+ * @public
+ */
+export function removeRelationship(spec, index) {
+  var next = cloneSpec(spec);
+  var rels = (spec.relationships || []).filter(function (rel, i) { return i !== index; });
+  if (rels.length) next.relationships = rels;
+  else delete next.relationships;
+  return next;
+}
+
+/**
+ * Set how a selection shows in related panels: `focus` (grey the rest, the
+ * default), `highlight` (outline the related rows) or `ghost` (fade the rest).
+ * An empty value restores the default by removing the key.
+ * @param {object} spec - The current spec.
+ * @param {string} mode - A {@link MARKING_MODES} value, or '' / null.
+ * @returns {object} A new spec with the marking mode set.
+ * @throws {Error} When the mode is not recognized.
+ * @public
+ */
+export function setMarkingMode(spec, mode) {
+  if (mode && MARKING_MODES.indexOf(mode) === -1) {
+    throw new Error('marking mode must be one of: ' + MARKING_MODES.join(', '));
+  }
+  var next = cloneSpec(spec);
+  if (mode && mode !== 'focus') next.markingMode = mode;
+  else delete next.markingMode;
+  return next;
+}
+
+/**
+ * Build a `kind:"join"` source that blends two existing sources on a key.
+ * @param {object} spec - The spec (for each source's row axis).
+ * @param {object} def - `{left, right, how?, leftKey?, rightKey?}`; `how` is
+ *   one of `inner` (default) / `left` / `right` / `outer`, and an empty key is
+ *   the row id.
+ * @returns {object} The join source spec.
+ * @throws {Error} When a source is missing, both sides are the same source, or
+ *   `how` is not recognized.
+ * @public
+ */
+export function buildJoinSource(spec, def) {
+  var left = def && def.left;
+  var right = def && def.right;
+  checkLinkRefs(spec, left, right);
+  var how = def.how || 'inner';
+  if (JOIN_TYPES.indexOf(how) === -1) throw new Error('join type must be one of: ' + JOIN_TYPES.join(', '));
+  var source = { kind: 'join', left: left, right: right };
+  var on = encodeKeys(spec, left, right, def.leftKey, def.rightKey);
+  if (on !== undefined) source.on = on;
+  source.how = how;
+  return source;
+}
+
+/**
+ * Add a calculated field to a data source, or replace the one with the same
+ * name (keeping its position). The field is computed once on the source's
+ * data, so every panel, Filters panel, join and link on the source sees it.
+ * @param {object} spec - The current spec.
+ * @param {string} ref - The data source name.
+ * @param {object} def - `{name, target?, formula}` or `{name, target?, bin}`.
+ * @returns {object} A new spec with the field set.
+ * @throws {Error} When the source is missing or live, or the field has no name.
+ * @public
+ */
+export function setCalculatedField(spec, ref, def) {
+  var source = (spec.data || {})[ref];
+  if (!source) throw new Error('no data source named "' + ref + '"');
+  if (source.kind === 'live') throw new Error('a live source cannot have calculated fields');
+  if (!def || typeof def.name !== 'string' || !def.name.trim()) throw new Error('a calculated field needs a name');
+  var next = cloneSpec(spec);
+  var copy = shallow(source);
+  var fields = (source.calculatedFields || []).slice();
+  var at = -1;
+  fields.forEach(function (f, i) { if (f && f.name === def.name) at = i; });
+  if (at > -1) fields[at] = def;
+  else fields.push(def);
+  copy.calculatedFields = fields;
+  next.data[ref] = copy;
+  return next;
+}
+
+/**
+ * Remove a data source's calculated field by name; drops the key when empty.
+ * @param {object} spec - The current spec.
+ * @param {string} ref - The data source name.
+ * @param {string} name - The field to remove.
+ * @returns {object} A new spec without that field.
+ * @public
+ */
+export function removeCalculatedField(spec, ref, name) {
+  var next = cloneSpec(spec);
+  var source = next.data[ref];
+  if (!source || !Array.isArray(source.calculatedFields)) return next;
+  var copy = shallow(source);
+  var kept = source.calculatedFields.filter(function (f) { return !f || f.name !== name; });
+  if (kept.length) copy.calculatedFields = kept;
+  else delete copy.calculatedFields;
+  next.data[ref] = copy;
+  return next;
+}
+
+/**
+ * Set (or clear) a data source's `pushdown` query: filter, keep columns or
+ * summarize, sort and limit its rows (in its database when it has one,
+ * otherwise in the browser). An empty query removes the key; the existing
+ * `filters` flag (whether a Filters panel pushes its picks) is kept.
+ * @param {object} spec - The current spec.
+ * @param {string} ref - The data source name.
+ * @param {?object} query - `{where?, columns?, groupBy?, measures?, orderBy?, limit?}`, or null.
+ * @returns {object} A new spec with the query set.
+ * @throws {Error} When the source is missing or live.
+ * @public
+ */
+export function setSourcePushdown(spec, ref, query) {
+  var source = (spec.data || {})[ref];
+  if (!source) throw new Error('no data source named "' + ref + '"');
+  if (source.kind === 'live') throw new Error('a live source cannot be shaped');
+  var next = cloneSpec(spec);
+  var copy = shallow(source);
+  var out = {};
+  ['where', 'columns', 'groupBy', 'measures', 'orderBy'].forEach(function (k) {
+    if (query && Array.isArray(query[k]) && query[k].length) out[k] = query[k];
+  });
+  if (query && typeof query.limit === 'number' && query.limit > 0) out.limit = query.limit;
+  var old = source.pushdown;
+  if (Object.keys(out).length) {
+    if (old && typeof old === 'object' && Object.prototype.hasOwnProperty.call(old, 'filters')) out.filters = old.filters;
+    copy.pushdown = out;
+  } else {
+    delete copy.pushdown;
+  }
+  next.data[ref] = copy;
+  return next;
+}
+
+/**
+ * A one-line, human description of a calculated field, e.g.
+ * `"PerUnit = Revenue / Units"` or `"Tier: 4 quantile bins of Revenue"`.
+ * @param {object} def - A calculated-field definition.
+ * @returns {string} The description.
+ * @public
+ */
+export function describeCalculatedField(def) {
+  if (def.bin) {
+    var n = def.bin.bins || 4;
+    var method = def.bin.method || 'equalWidth';
+    var how = method === 'custom' ? 'custom bins' : n + ' ' + (method === 'equalWidth' ? 'equal-width' : method) + ' bins';
+    return def.name + ': ' + how + ' of ' + def.bin.field;
+  }
+  return def.name + ' = ' + def.formula;
+}
+
+/**
+ * A one-line, human description of a relationship's key, e.g.
+ * `"clinical (row id) ↔ labs.patient"`. Composite keys are joined with ` + `.
+ * @param {object} spec - The spec (for each source's row axis).
+ * @param {object} rel - A `spec.relationships` entry or join source.
+ * @returns {string} The description.
+ * @public
+ */
+export function describeLink(spec, rel) {
+  var sources = spec.data || {};
+  var leftAxis = rel.leftAxis || rel.axis || sourceAxis(rel.left, sources);
+  var rightAxis = rel.rightAxis || rel.axis || sourceAxis(rel.right, sources);
+  var keys = rel.on == null ? [{ left: leftAxis, right: rightAxis }] : (Array.isArray(rel.on) ? rel.on : [rel.on]);
+  function side(ref, key, axis) {
+    return key === axis ? ref + ' (row id)' : ref + '.' + key;
+  }
+  return keys.map(function (key) {
+    var lk = typeof key === 'string' ? key : key.left;
+    var rk = typeof key === 'string' ? key : key.right;
+    return side(rel.left, lk, leftAxis) + ' ↔ ' + side(rel.right, rk, rightAxis);
+  }).join(' + ');
+}
+
+/**
+ * Throw unless `left` and `right` name two different existing sources.
+ * @param {object} spec - The spec.
+ * @param {string} left - Left source ref.
+ * @param {string} right - Right source ref.
+ * @returns {void}
+ * @private
+ */
+function checkLinkRefs(spec, left, right) {
+  var sources = spec.data || {};
+  [left, right].forEach(function (ref) {
+    if (typeof ref !== 'string' || !ref) throw new Error('choose two data sources');
+    if (!Object.prototype.hasOwnProperty.call(sources, ref)) throw new Error('no data source named "' + ref + '"');
+  });
+  if (left === right) throw new Error('choose two different data sources');
+}
+
+/**
+ * Whether two relationships link the same pair of sources on the same key,
+ * in either direction.
+ * @param {object} a - A relationship.
+ * @param {object} b - A relationship.
+ * @returns {boolean} True when they are the same link.
+ * @private
+ */
+function sameLink(a, b) {
+  if (a.left === b.left && a.right === b.right) return JSON.stringify(a.on) === JSON.stringify(b.on);
+  if (a.left === b.right && a.right === b.left) return JSON.stringify(a.on) === JSON.stringify(swapOn(b.on));
+  return false;
+}
+
+/**
+ * Reverse the orientation of an `on` key spec.
+ * @param {(string|object|Array)} [on] - Key spec oriented left -> right.
+ * @returns {(string|object|Array|undefined)} The same keys oriented right -> left.
+ * @private
+ */
+function swapOn(on) {
+  if (on == null || typeof on === 'string') return on;
+  if (Array.isArray(on)) return on.map(swapOn);
+  return { left: on.right, right: on.left };
 }
 
 /**

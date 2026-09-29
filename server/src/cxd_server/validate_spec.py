@@ -15,6 +15,7 @@ contract for both is ``schema/dashboard.schema.json``.
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Any, Optional
 
@@ -30,9 +31,11 @@ _JOIN_TYPES = ("inner", "left", "right", "outer")
 _AXES = ("smps", "vars")
 _MARKING_MODES = ("focus", "highlight", "ghost")
 _FIELD_KINDS = ("values", "range", "search")
+_CALC_TARGETS = ("variable", "sampleAnnotation", "variableAnnotation")
+_BIN_METHODS = ("equalWidth", "quantile", "percentile", "custom")
 # The dashboard spec format version this server reads/writes — keep in sync with
 # DASHBOARD_SCHEMA_VERSION in src/spec.js.
-DASHBOARD_SCHEMA_VERSION = "1.2"
+DASHBOARD_SCHEMA_VERSION = "1.3"
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)$")
 
 
@@ -305,6 +308,8 @@ def _check_data(data: Any, params: Any, errors: list, lenient: Optional[list] = 
             _check_function(src, at, data, params, errors)
         if src.get("pushdown") is not None:
             _check_pushdown(src, at, params, errors)
+        if src.get("calculatedFields") is not None:
+            _check_calculated_fields(src, at, errors)
 
         # A `query` template maps request keys to literals or "$param" tokens;
         # every token must name a declared parameter.
@@ -434,15 +439,75 @@ _PUSHDOWN_OPS = ("=", "!=", "<", "<=", ">", ">=", "in", "not_in", "between", "is
                  "not_null")
 
 
+def _check_calculated_fields(src: dict, at: str, errors: list) -> None:
+    """Check a source's ``calculatedFields`` shape (mirrors validateSpec.js).
+
+    Each entry is ``{name, target?, formula}`` or ``{name, target?, bin: {field,
+    method?, bins?, breaks?}}``; the formula itself is parsed by the CanvasXpress
+    engine at render. A live source's ticks bypass the computed columns.
+    """
+    here = at + ".calculatedFields"
+    if src.get("kind") == "live":
+        errors.append(here + " is not supported on a live source (its ticks bypass the computed columns)")
+        return
+    defs = src.get("calculatedFields")
+    if not isinstance(defs, list):
+        errors.append(here + " must be an array")
+        return
+    seen = set()
+    for i, d in enumerate(defs):
+        item = "%s[%d]" % (here, i)
+        if not _is_obj(d):
+            errors.append(item + " must be an object")
+            continue
+        name = d.get("name")
+        if not _is_str(name) or not name:
+            errors.append(item + " requires a name string")
+        elif name in seen:
+            errors.append(item + ' repeats the name "%s"' % name)
+        else:
+            seen.add(name)
+        if d.get("target") is not None and d.get("target") not in _CALC_TARGETS:
+            errors.append(item + '.target must be "variable", "sampleAnnotation", or "variableAnnotation"')
+        formula = d.get("formula")
+        has_formula = _is_str(formula) and formula.strip() != ""
+        has_bin = d.get("bin") is not None
+        if has_formula == has_bin:
+            errors.append(item + " needs exactly one of a formula string or a bin")
+        if formula is not None and not _is_str(formula):
+            errors.append(item + ".formula must be a string")
+        if has_bin:
+            b = d.get("bin")
+            if not _is_obj(b):
+                errors.append(item + ".bin must be an object")
+                continue
+            if not _is_str(b.get("field")) or not b.get("field"):
+                errors.append(item + ".bin requires a field string")
+            if b.get("method") is not None and b.get("method") not in _BIN_METHODS:
+                errors.append(item + '.bin.method must be "equalWidth", "quantile", "percentile", or "custom"')
+            if b.get("bins") is not None and not (_is_int(b.get("bins")) and b.get("bins") >= 1):
+                errors.append(item + ".bin.bins must be a whole number of at least 1")
+            brk = b.get("breaks")
+            if brk is not None and not (
+                isinstance(brk, list)
+                and all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in brk)
+            ):
+                errors.append(item + ".bin.breaks must be a list of numbers")
+
+
 def _check_pushdown(src: dict, at: str, params: Any, errors: list) -> None:
-    """Check a connector source's ``pushdown`` block (mirrors validateSpec.js)."""
+    """Check a source's ``pushdown`` block (mirrors validateSpec.js).
+
+    It runs in the source's database when it has one (connector, a database
+    join), otherwise in the browser (inline, dataset, function, a browser join).
+    """
     p = src.get("pushdown")
     here = at + ".pushdown"
     # A join takes `true` (join in the database) or a query run over the joined rows.
     if src.get("kind") == "join" and isinstance(p, bool):
         return
-    if src.get("kind") not in ("connector", "join"):
-        errors.append(here + ' is only for kind "connector" or "join"')
+    if src.get("kind") == "live":
+        errors.append(here + " is not supported on a live source")
         return
     if not _is_obj(p):
         errors.append(here + " must be an object")

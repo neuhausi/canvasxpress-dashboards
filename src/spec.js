@@ -29,7 +29,7 @@
  */
 
 /** @type {string} The format version this library writes. */
-export var DASHBOARD_SCHEMA_VERSION = '1.2';
+export var DASHBOARD_SCHEMA_VERSION = '1.3';
 
 /** @type {string} The URL of the published JSON Schema. */
 export var DASHBOARD_SCHEMA_URL = 'https://canvasxpress.org/schema/dashboard.schema.json';
@@ -52,6 +52,12 @@ export var MIGRATIONS = [
     from: '1.1',
     to: '1.2',
     description: 'Additive: live (streaming) sources (no rewrite)',
+    up: function (spec) { return spec; }
+  },
+  {
+    from: '1.2',
+    to: '1.3',
+    description: 'Additive: source calculatedFields (no rewrite)',
     up: function (spec) { return spec; }
   }
 ];

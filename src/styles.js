@@ -96,10 +96,41 @@ export var dashboardCss = [
   '  font: inherit; background: var(--cxd-ctrl-bg,#fff); color: inherit; }',
   '.cxd-filters-scheme-name { width: 110px; }',
   '.cxd-filters-bar button { cursor: pointer; }',
-  '.cxd-filters-field { padding: 6px 0; border-top: 1px solid var(--cxd-border, #e2e5ea); }',
-  '.cxd-filters-label { font-weight: 600; margin-bottom: 4px; }',
-  '.cxd-filters-values { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow: auto; }',
-  '.cxd-filters-check { display: flex; align-items: center; gap: 6px; cursor: pointer; }',
+  /* Field cards in the CanvasXpress Data Filter's style (13-datafilter.css). The
+     elements also carry the Data Filter's own classes (cX-DataFilter-Container-
+     Hoverable, cX-DataFilter-Search, cX-DataFilter-Container-Mask-NoOverflow,
+     cX-Checkbox, cX-Checkbox-Label, cX-DataFilter-Count), so they follow the loaded
+     CanvasXpress theme; these rules repeat its values through the same --cx-*
+     variables (fallbacks = its :root defaults), so a page without canvasXpress.css
+     looks the same, and adapt the two rules meant for the chart's fixed-width
+     sidebar (a 220px label, a list that clips instead of scrolling). */
+  '.cxd-filters { --cxd-df-accent: var(--cx-datafilter-border-color, #087ad1); --cxd-df-text: var(--cx-datafilter-text-color, #555b62);',
+  '  --cxd-df-bg: var(--cx-datafilter-background-color, #fff); --cxd-df-hover: var(--cx-datafilter-hover-color, rgba(124,182,226,.2)); }',
+  // Dark (and auto on a dark OS): the same cards in the dashboard's dark palette
+  // (the core Data Filter has no dark variant; its light colours would leave dark
+  // field names on dark cards and white boxes in a dark panel).
+  '.cxd-theme-dark .cxd-filters { --cxd-df-accent: #4c9fe0; --cxd-df-text: #e6e8ec; --cxd-df-bg: #1d2027; --cxd-df-hover: rgba(76,159,224,.14); }',
+  '@media (prefers-color-scheme: dark) {',
+  '  .cxd-theme-auto .cxd-filters { --cxd-df-accent: #4c9fe0; --cxd-df-text: #e6e8ec; --cxd-df-bg: #1d2027; --cxd-df-hover: rgba(76,159,224,.14); } }',
+  '.cxd-filters .cxd-filters-field { box-sizing: border-box; margin: 2px 2px 6px; padding: 0 0 4px;',
+  '  border: 1px solid var(--cxd-df-accent); border-radius: var(--cx-border-radius, 5px); }',
+  '.cxd-filters .cxd-filters-field:hover { background-color: var(--cxd-df-hover); }',
+  '.cxd-filters .cxd-filters-label { padding: 7px 10px 5px 25px; font-size: 13px; color: var(--cxd-df-text); }',
+  '.cxd-filters input.cX-DataFilter-Search { box-sizing: border-box; display: block; width: calc(100% - 10px); height: 32px;',
+  '  margin: 0 5px 4px; padding: 0 0 0 7px; font: inherit; font-size: var(--cx-datafilter-font-size, 12px);',
+  '  color: var(--cxd-df-text); background: var(--cxd-df-bg);',
+  '  border: 1px solid var(--cxd-df-accent); border-radius: var(--cx-border-radius, 5px); outline: none; }',
+  '.cxd-filters input.cxd-filters-find { width: calc(100% - 4px); margin: 0 2px 8px; }',
+  '.cxd-filters .cxd-filters-values { box-sizing: border-box; margin: 0 5px; padding: 2px 0; max-height: 184px; overflow-x: hidden; overflow-y: auto;',
+  '  border: 1px solid var(--cxd-df-accent); background: var(--cxd-df-bg); }',
+  '.cxd-filters .cxd-filters-check { position: relative; display: flex; align-items: center; min-height: 20px; padding: 0 46px 0 4px;',
+  '  font-size: var(--cx-datafilter-font-size, 12px); color: var(--cxd-df-text); }',
+  '.cxd-filters .cxd-filters-check input[type=checkbox] { flex-shrink: 0; width: 14px; height: 14px; margin: 2px;',
+  '  accent-color: var(--cx-background-accent-color, #087ad1); cursor: pointer; }',
+  '.cxd-filters label.cxd-filters-name { flex: 1 1 auto; width: auto; min-width: 0; margin: 0 0 0 3px !important; cursor: pointer;',
+  '  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+  '.cxd-filters .cX-DataFilter-Count { position: absolute; right: 6px; top: 0; line-height: 20px; font-size: 11px; opacity: .6; pointer-events: none; }',
+  '.cxd-filters .cxd-filters-field .cxd-filters-range { padding: 2px 14px 0; }',
   '.cxd-filters-range-plain { display: flex; align-items: center; gap: 6px; }',
   '.cxd-filters-range-plain input { width: 0; flex: 1 1 0; min-width: 60px; }',
   /* Range slider, styled like the CanvasXpress Data Filter range (15-range-slider.css):
@@ -133,6 +164,7 @@ export var dashboardCss = [
   '.cxd-range-tick-label { position: absolute; top: 11px; left: 0; transform: translateX(-50%); white-space: nowrap;',
   '  font-size: 12px; line-height: 1.2; color: inherit; }',
   '.cxd-filters-text { width: 100%; }',
+  '.cxd-filters .cxd-filters-field input.cxd-filters-text { width: calc(100% - 10px); }',
   '.cxd-filters-hint { color: var(--cxd-muted,#8a9099); }',
   '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
   '  padding: 5px 0; background: transparent;',
@@ -176,10 +208,10 @@ export var dashboardCss = [
   '  background: var(--cxd-panel-bg, #ffffff); }',
   '.cxd-panel-overlay.cxd-error { color: var(--cxd-error, #c0392b); padding: 8px; text-align: center; }',
   '.cxd-theme-dark { --cxd-border: #2c313a; --cxd-panel-bg: #16181d; --cxd-title: #e6e8ec;',
-  '  --cxd-title-bg: #1d2027; --cxd-muted: #7d848f; }',
+  '  --cxd-title-bg: #1d2027; --cxd-muted: #7d848f; --cxd-ctrl-bg: #1d2027; }',
   '@media (prefers-color-scheme: dark) {',
   '  .cxd-theme-auto { --cxd-border: #2c313a; --cxd-panel-bg: #16181d; --cxd-title: #e6e8ec;',
-  '    --cxd-title-bg: #1d2027; --cxd-muted: #7d848f; } }',
+  '    --cxd-title-bg: #1d2027; --cxd-muted: #7d848f; --cxd-ctrl-bg: #1d2027; } }',
   /* ---- builder (Phase 4) ---- */
   '.cxb { display: flex; flex-direction: column; gap: 10px; font-family: system-ui, sans-serif; }',
   /* toolbar (host may be an app-shell element) */
@@ -361,7 +393,23 @@ export var dashboardCss = [
   '.cxb-hl-string { color: #188038; }',                       // string values: green
   '.cxb-hl-number { color: #e36209; }',                       // numbers: orange
   '.cxb-hl-literal { color: #cf222e; font-weight: 600; }',    // true/false/null: red
-  '.cxb-modal-footer { display: flex; justify-content: flex-end; gap: 8px; }'
+  '.cxb-modal-footer { display: flex; justify-content: flex-end; gap: 8px; }',
+  // Links dialog: the declared links (one row each, with a remove ×) and the
+  // source + key pickers. Selects are sized explicitly, as in the Save dialog.
+  '.cxb-links-intro { font-size: 14px; line-height: 1.45; color: var(--cxd-muted,#6b7280); margin: 0; }',
+  '.cxb-links-list { display: flex; flex-direction: column; gap: 6px; }',
+  '.cxb-links-row { display: flex; align-items: center; gap: 8px; padding: 6px 4px 6px 10px; border-radius: 6px;',
+  '  background: #f2f4f7; font-size: 14px; }',
+  '.cxb-links-row span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }',
+  '.cxb-links-none { font-size: 13px; color: var(--cxd-muted,#6b7280); }',
+  '.cxb-modal .cxb-links-pick { display: flex; gap: 6px; align-items: center; width: 100%; }',
+  // Selects keep a readable width next to a text box (which takes the rest).
+  '.cxb-modal .cxb-links-pick select { width: auto; min-width: 120px; flex: 1 1 0; }',
+  '.cxb-modal .cxb-links-pick input[type=text], .cxb-modal .cxb-links-pick input[type=number] { flex: 1 1 0; min-width: 0; width: auto; }',
+  // A checkbox inside a field reads as an option, not as another field label.
+  '.cxb-modal-field label.cxb-check, .cxb-modal .cxb-links-pick label.cxb-check { text-transform: none; font-weight: 400;',
+  '  letter-spacing: normal; font-size: 14px; color: inherit; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }',
+  '.cxb-modal .cxb-modal-fn-inputs { display: flex; flex-wrap: wrap; gap: 4px 14px; }'
 ].join('\n');
 
 /**

@@ -297,6 +297,10 @@ keyed differently, declare how the sources relate:
 "markingMode": "focus"   // focus (default) | highlight | ghost
 ```
 
+In the builder, **🔗 Links** does this without JSON: pick two sources and a key
+on each (row id, annotation or column), **+ Link**, and choose how a selection
+shows. **+ Data → Join two sources** builds a join the same way.
+
 - **Marking** — selecting rows in a panel marks the related rows in the panels
   of every source reachable through relationships (several hops, both
   directions), shown with CanvasXpress's declarative highlight in
@@ -309,6 +313,39 @@ keyed differently, declare how the sources relate:
   itself to each input row by row, with no extra declaration.
 - `on` uses the join key grammar (row id by default, a shared column,
   `{left, right}`, or an array).
+
+## Calculated fields
+
+A source can carry fields computed once on its data, so every panel, Filters
+panel, join and link on it sees them as ordinary columns:
+
+```jsonc
+"data": {
+  "labs": {
+    "kind": "dataset", "id": "labs",
+    "calculatedFields": [
+      { "name": "Ratio", "formula": "ALT / AST" },                        // a number column
+      { "name": "Share", "formula": "ALT / sum(ALT)" },                   // aggregates cover the column
+      { "name": "High", "target": "sampleAnnotation",
+        "formula": "ALT > 40 ? \"high\" : \"normal\"" },                  // a category
+      { "name": "Tier", "target": "sampleAnnotation",
+        "bin": { "field": "ALT", "method": "quantile", "bins": 4 } }      // bins
+    ]
+  }
+}
+```
+
+- Formulas use the CanvasXpress calculated-field language (a tokenizer and
+  parser, never `eval`) through the engine's static
+  `CanvasXpress.applyCalculatedFields`, so they behave exactly like a chart's
+  own `calculatedFields`. Fields apply in order; a join adds its own on top of
+  its inputs' fields. `target`: `variable` (default), `sampleAnnotation`,
+  `variableAnnotation`. Bins: `equalWidth`, `quantile`, `percentile`, `custom`
+  (`breaks`).
+- Needs the CanvasXpress release after 70.4. With an older engine the data
+  shows without the fields and a warning is logged once per source.
+- In the builder, **ƒx Fields** adds and removes them without JSON, with live
+  validation and a preview.
 
 ## Data functions (R / Python)
 
@@ -489,10 +526,27 @@ A connector source can ask its database for the answer instead of the table
   re-queries. Its value lists keep every option.
 - A `kind:"join"` of two connector sources with `pushdown` runs as one SQL join
   (aggregated there too, if given a query). It falls back to the browser join
-  when the sources are in different databases.
+  when the sources are in different databases, and its query then runs in the
+  browser.
 
 The browser never writes SQL: column names are checked against the source's own
 query, and values are bound.
+
+**Sources without a database** (inline, dataset, function) take the same
+`pushdown` query, run in the browser with the connector's semantics: SQL null
+rules, the same measures and operators, `orderBy` over output columns, and the
+connector's rows → CanvasXpress rule for aggregates, so the answer matches a
+database source (checked against the real connector over SQLite in
+`tests/pushdown.test.js`). A Filters panel over such a source applies its picks
+before the group-by, as a database would. Differences: the row id always stays
+the row id (named `smps`, or `vars` on a variables-axis source), and a query
+that matches no groups returns an empty chart instead of the connector's "Query
+returned no rows" error. On an aggregated source, pick Filters fields that
+exist before and after the query (a group key); an output-only field such as a
+measure has no column to filter the source rows by.
+
+In the builder, **▦ Shape data** writes this query without JSON, for any source:
+filters, keep columns or summarize, sort and top N, with a live preview.
 
 ## Governance and audit (server)
 

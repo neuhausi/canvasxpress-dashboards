@@ -318,3 +318,41 @@ test('flags bad relationships, axes, and markingMode', function () {
   assert.ok(errors.includes('spec.relationships[2] must be an object'));
   assert.ok(errors.includes('spec.markingMode must be "focus", "highlight", or "ghost"'));
 });
+
+test('source calculatedFields: formula and bin shapes are checked', function () {
+  var base = function (fields, kind) {
+    var src = kind === 'live' ? { kind: 'live', url: '/s' } : { kind: 'inline', value: { y: { vars: ['V'], smps: ['a'], data: [[1]] } } };
+    src.calculatedFields = fields;
+    return { id: 'd', layout: { cols: 12, items: [] }, data: { s: src }, panels: {} };
+  };
+  assert.deepEqual(validateSpec(base([
+    { name: 'Double', formula: 'V * 2' },
+    { name: 'Tier', target: 'sampleAnnotation', bin: { field: 'V', method: 'quantile', bins: 4 } },
+    { name: 'Cut', target: 'sampleAnnotation', bin: { field: 'V', method: 'custom', breaks: [1, 2.5] } }
+  ])).errors, []);
+  var errors = validateSpec(base([
+    { formula: 'x' },
+    { name: 'A', formula: 'x', bin: { field: 'y' } },
+    { name: 'A', formula: ' ' },
+    { name: 'B', target: 'column', formula: 'x' },
+    { name: 'C', bin: { method: 'log', bins: 0, breaks: ['1'] } }
+  ])).errors;
+  ['requires a name string', 'needs exactly one of a formula string or a bin', 'repeats the name "A"',
+    '.target must be', '.bin requires a field string', '.bin.method must be', '.bin.bins must be a whole number',
+    '.bin.breaks must be a list of numbers'].forEach(function (fragment) {
+    assert.ok(errors.some(function (e) { return e.indexOf(fragment) > -1; }), fragment + ' in ' + JSON.stringify(errors));
+  });
+  assert.ok(validateSpec(base({ name: 'x' })).errors.some(function (e) { return /calculatedFields must be an array/.test(e); }));
+  assert.ok(validateSpec(base([{ name: 'X', formula: '1' }], 'live')).errors.some(function (e) { return /not supported on a live source/.test(e); }));
+});
+
+test('pushdown: allowed on any source except live (it runs in the browser when there is no database)', function () {
+  var spec = function (src) { return { id: 'd', layout: { cols: 12, items: [] }, data: { s: src }, panels: {} }; };
+  var q = { groupBy: ['region'], measures: [{ fn: 'count' }] };
+  var value = { y: { vars: ['v'], smps: ['a'], data: [[1]] } };
+  assert.deepEqual(validateSpec(spec({ kind: 'inline', value: value, pushdown: q })).errors, []);
+  assert.deepEqual(validateSpec(spec({ kind: 'dataset', id: 'x', pushdown: q })).errors, []);
+  assert.deepEqual(validateSpec(spec({ kind: 'connector', url: '/api/data', pushdown: q })).errors, []);
+  assert.ok(validateSpec(spec({ kind: 'live', url: '/s', pushdown: q })).errors.some(function (e) { return /pushdown is not supported on a live source/.test(e); }));
+  assert.ok(validateSpec(spec({ kind: 'inline', value: value, pushdown: true })).errors.some(function (e) { return /pushdown must be an object/.test(e); }));
+});

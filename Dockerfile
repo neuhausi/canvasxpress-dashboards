@@ -10,6 +10,12 @@
 # To enable Postgres / S3 / Google Drive / SQL stores, add their extras at build
 # time:  docker build --build-arg CXD_EXTRAS="web,sql,s3" -t cxd-server .
 # then point the CXD_* env vars (see .env.example) at your resources.
+#
+# Per-user database sources (docs/deployment.md): build with the connectors
+# extra and run with CXD_CONNECTORS=on plus an ENCRYPTION_KEY you keep:
+#   docker build --build-arg CXD_EXTRAS="web,connectors" -t cxd-server .
+#   docker run -p 8000:8000 -v cxd-data:/data -e CXD_CONNECTORS=on \
+#     -e ENCRYPTION_KEY=<your Fernet key> cxd-server
 
 FROM python:3.12-slim AS base
 

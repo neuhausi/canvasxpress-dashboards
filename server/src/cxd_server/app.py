@@ -70,7 +70,7 @@ updated spec, preserving ids and anything the user didn't ask to change.
 
 ## Dashboard spec contract
 {
-  "schemaVersion": "1.2", "id": "<kebab-case>", "title": "<Title>", "version": 1,
+  "schemaVersion": "1.3", "id": "<kebab-case>", "title": "<Title>", "version": 1,
   "layout": {"cols": 12, "rowHeight": 130, "gap": 12,
              "items": [{"panel": "<panel-id>", "x": 0-11, "y": 0+, "w": 1-12, "h": 1+}]},
   "data": {"<ref>": {"kind": "dataset", "id": "<dataset id>", "store": "<store>"}

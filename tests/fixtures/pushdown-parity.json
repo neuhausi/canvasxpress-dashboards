@@ -1,0 +1,589 @@
+{
+ "base": {
+  "y": {
+   "vars": [
+    "amount",
+    "units",
+    "qty"
+   ],
+   "smps": [
+    "r1",
+    "r2",
+    "r3",
+    "r4",
+    "r5",
+    "r6",
+    "r7",
+    "r8",
+    "r9",
+    "r10"
+   ],
+   "data": [
+    [
+     10.0,
+     25.0,
+     40.0,
+     5.0,
+     60.0,
+     30.0,
+     20.0,
+     15.0,
+     35.0,
+     50.0
+    ],
+    [
+     1.0,
+     null,
+     3.0,
+     4.0,
+     2.0,
+     5.0,
+     1.0,
+     null,
+     6.0,
+     2.0
+    ],
+    [
+     1.0,
+     2.0,
+     1.0,
+     3.0,
+     2.0,
+     1.0,
+     3.0,
+     1.0,
+     2.0,
+     3.0
+    ]
+   ]
+  },
+  "x": {
+   "region": [
+    "EMEA",
+    "EMEA",
+    "APAC",
+    "APAC",
+    "AMER",
+    "EMEA",
+    "",
+    "AMER",
+    "APAC",
+    "EMEA"
+   ],
+   "product": [
+    "A",
+    "B",
+    "A",
+    "C",
+    "B",
+    "A",
+    "C",
+    "A",
+    "B",
+    "C"
+   ]
+  }
+ },
+ "results": {
+  "grouped_all_fns": {
+   "query": {
+    "groupBy": [
+     "region"
+    ],
+    "measures": [
+     {
+      "fn": "count"
+     },
+     {
+      "fn": "count_distinct",
+      "column": "product"
+     },
+     {
+      "fn": "sum",
+      "column": "amount"
+     },
+     {
+      "fn": "avg",
+      "column": "units"
+     },
+     {
+      "fn": "min",
+      "column": "amount"
+     },
+     {
+      "fn": "max",
+      "column": "amount"
+     },
+     {
+      "fn": "count",
+      "column": "units",
+      "as": "units_n"
+     }
+    ],
+    "orderBy": [
+     "region"
+    ]
+   },
+   "db": {
+    "y": {
+     "vars": [
+      "count",
+      "count_distinct_product",
+      "sum_amount",
+      "avg_units",
+      "min_amount",
+      "max_amount",
+      "units_n"
+     ],
+     "smps": [
+      "",
+      "AMER",
+      "APAC",
+      "EMEA"
+     ],
+     "data": [
+      [
+       1.0,
+       2.0,
+       3.0,
+       4.0
+      ],
+      [
+       1.0,
+       2.0,
+       3.0,
+       3.0
+      ],
+      [
+       20.0,
+       75.0,
+       80.0,
+       115.0
+      ],
+      [
+       1.0,
+       2.0,
+       4.333333333333333,
+       2.6666666666666665
+      ],
+      [
+       20.0,
+       15.0,
+       5.0,
+       10.0
+      ],
+      [
+       20.0,
+       60.0,
+       40.0,
+       50.0
+      ],
+      [
+       1.0,
+       1.0,
+       3.0,
+       3.0
+      ]
+     ]
+    }
+   }
+  },
+  "no_groupby": {
+   "query": {
+    "measures": [
+     {
+      "fn": "count",
+      "as": "n"
+     },
+     {
+      "fn": "sum",
+      "column": "amount",
+      "as": "total"
+     }
+    ]
+   },
+   "db": {
+    "y": {
+     "vars": [
+      "n",
+      "total"
+     ],
+     "smps": [
+      "all"
+     ],
+     "data": [
+      [
+       10.0
+      ],
+      [
+       290.0
+      ]
+     ]
+    }
+   }
+  },
+  "no_rows_no_groupby": {
+   "query": {
+    "measures": [
+     {
+      "fn": "count"
+     }
+    ],
+    "where": [
+     {
+      "column": "region",
+      "op": "=",
+      "value": "nowhere"
+     }
+    ]
+   },
+   "db": {
+    "y": {
+     "vars": [
+      "count"
+     ],
+     "smps": [
+      "all"
+     ],
+     "data": [
+      [
+       0.0
+      ]
+     ]
+    }
+   }
+  },
+  "two_keys_desc_limit": {
+   "query": {
+    "groupBy": [
+     "region",
+     "product"
+    ],
+    "measures": [
+     {
+      "fn": "sum",
+      "column": "amount",
+      "as": "s"
+     }
+    ],
+    "where": [
+     {
+      "column": "amount",
+      "op": ">=",
+      "value": 20
+     }
+    ],
+    "orderBy": [
+     {
+      "column": "s",
+      "desc": true
+     }
+    ],
+    "limit": 3
+   },
+   "db": {
+    "y": {
+     "vars": [
+      "s"
+     ],
+     "smps": [
+      "AMER",
+      "EMEA",
+      "APAC"
+     ],
+     "data": [
+      [
+       60.0,
+       50.0,
+       40.0
+      ]
+     ]
+    },
+    "x": {
+     "product": [
+      "B",
+      "C",
+      "A"
+     ]
+    }
+   }
+  },
+  "avg_of_nulls": {
+   "query": {
+    "groupBy": [
+     "region"
+    ],
+    "measures": [
+     {
+      "fn": "avg",
+      "column": "units",
+      "as": "u"
+     }
+    ],
+    "where": [
+     {
+      "column": "units",
+      "op": "is_null"
+     }
+    ],
+    "orderBy": [
+     "region"
+    ]
+   },
+   "db": {
+    "y": {
+     "vars": [],
+     "smps": [
+      "AMER",
+      "EMEA"
+     ],
+     "data": []
+    },
+    "x": {
+     "u": [
+      null,
+      null
+     ]
+    }
+   }
+  },
+  "ops_mix": {
+   "query": {
+    "groupBy": [
+     "product"
+    ],
+    "measures": [
+     {
+      "fn": "count",
+      "as": "n"
+     }
+    ],
+    "orderBy": [
+     "product"
+    ],
+    "where": [
+     {
+      "column": "region",
+      "op": "in",
+      "value": [
+       "EMEA",
+       "APAC",
+       ""
+      ]
+     },
+     {
+      "column": "amount",
+      "op": "between",
+      "value": [
+       10,
+       40
+      ]
+     },
+     {
+      "column": "qty",
+      "op": "!=",
+      "value": 3
+     },
+     {
+      "column": "units",
+      "op": "not_null"
+     }
+    ]
+   },
+   "db": {
+    "y": {
+     "vars": [
+      "n"
+     ],
+     "smps": [
+      "A",
+      "B"
+     ],
+     "data": [
+      [
+       3.0,
+       1.0
+      ]
+     ]
+    }
+   }
+  },
+  "not_in_and_lt": {
+   "query": {
+    "groupBy": [
+     "region"
+    ],
+    "measures": [
+     {
+      "fn": "mean",
+      "column": "amount"
+     }
+    ],
+    "orderBy": [
+     "region"
+    ],
+    "where": [
+     {
+      "column": "product",
+      "op": "not_in",
+      "value": [
+       "C"
+      ]
+     },
+     {
+      "column": "amount",
+      "op": "<",
+      "value": 50
+     }
+    ]
+   },
+   "db": {
+    "y": {
+     "vars": [
+      "avg_amount"
+     ],
+     "smps": [
+      "AMER",
+      "APAC",
+      "EMEA"
+     ],
+     "data": [
+      [
+       15.0,
+       37.5,
+       21.666666666666668
+      ]
+     ]
+    }
+   }
+  },
+  "numeric_key": {
+   "query": {
+    "groupBy": [
+     "qty"
+    ],
+    "measures": [
+     {
+      "fn": "count",
+      "as": "n"
+     }
+    ],
+    "orderBy": [
+     "qty"
+    ]
+   },
+   "db": {
+    "y": {
+     "vars": [
+      "n"
+     ],
+     "smps": [
+      "1",
+      "2",
+      "3"
+     ],
+     "data": [
+      [
+       4.0,
+       3.0,
+       3.0
+      ]
+     ]
+    }
+   }
+  },
+  "empty_string_is_a_value": {
+   "query": {
+    "groupBy": [
+     "region"
+    ],
+    "measures": [
+     {
+      "fn": "count",
+      "as": "n"
+     }
+    ],
+    "orderBy": [
+     "region"
+    ],
+    "where": [
+     {
+      "column": "region",
+      "op": "=",
+      "value": ""
+     }
+    ]
+   },
+   "db": {
+    "y": {
+     "vars": [
+      "n"
+     ],
+     "smps": [
+      ""
+     ],
+     "data": [
+      [
+       1.0
+      ]
+     ]
+    }
+   }
+  },
+  "rows_mode": {
+   "query": {
+    "columns": [
+     "id",
+     "region",
+     "amount"
+    ],
+    "where": [
+     {
+      "column": "product",
+      "op": "in",
+      "value": [
+       "A",
+       "B"
+      ]
+     }
+    ],
+    "orderBy": [
+     {
+      "column": "amount",
+      "desc": true
+     }
+    ],
+    "limit": 4
+   },
+   "db": {
+    "y": {
+     "vars": [
+      "amount"
+     ],
+     "smps": [
+      "r5",
+      "r3",
+      "r9",
+      "r6"
+     ],
+     "data": [
+      [
+       60.0,
+       40.0,
+       35.0,
+       30.0
+      ]
+     ]
+    },
+    "x": {
+     "region": [
+      "AMER",
+      "APAC",
+      "APAC",
+      "EMEA"
+     ]
+    }
+   }
+  }
+ }
+}

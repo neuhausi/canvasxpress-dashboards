@@ -22,6 +22,7 @@
  */
 
 import { joinData, derivedCycle, sourceAxis } from './join.js';
+import { runPushdown } from './pushdown.js';
 
 /**
  * A process-wide default cache shared across `renderDashboard` calls, so two
@@ -61,6 +62,11 @@ export function createDataStore(options) {
   var busyRetryMs = options.busyRetryMs != null ? options.busyRetryMs : 250;
   var EventSourceImpl = options.EventSource ||
     (typeof globalThis !== 'undefined' ? globalThis.EventSource : undefined);
+  // The CanvasXpress library, for a source's calculatedFields (its static
+  // applyCalculatedFields evaluates the engine's formula language, no chart).
+  var CX = options.CanvasXpress ||
+    (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
+  var warned = {};   // ref -> true once its calculated-field problem was logged
   var inflight = {}; // cacheKey -> Promise<data>
 
   /**
@@ -220,11 +226,100 @@ export function createDataStore(options) {
     return appendQuery(parts[0].base + '/api/join', query);
   }
 
+  /**
+   * Add a source's calculated fields to its resolved data, through the
+   * engine's static `CanvasXpress.applyCalculatedFields` (the same safe
+   * formula language and binning as a chart's calculatedFields). Computed once
+   * per resolve, so every panel, Filters panel, join and link on the source sees
+   * the same columns. Without that API (an older CanvasXpress) or when a field
+   * fails, the data passes through without it and the problem is logged once.
+   * @param {string} ref - The source ref name (for messages).
+   * @param {Array} defs - The source's `calculatedFields`.
+   * @param {object} data - The resolved CanvasXpress data object (not modified).
+   * @returns {object} The data with the fields added.
+   */
+  function withCalculatedFields(ref, defs, data) {
+    if (!CX || typeof CX.applyCalculatedFields !== 'function') {
+      warnOnce(ref, 'calculated fields need a CanvasXpress version with CanvasXpress.applyCalculatedFields; showing the data without them');
+      return data;
+    }
+    var result = CX.applyCalculatedFields(data, defs);
+    if (result.errors && result.errors.length) {
+      warnOnce(ref, 'calculated field problem(s): ' + result.errors.map(function (e) {
+        return (e.name || '?') + ': ' + e.message;
+      }).join('; '));
+    }
+    return result.data;
+  }
+
+  /**
+   * The step that runs a source's `pushdown` query in the browser, for a source
+   * with no database to run it: inline, dataset and function sources, and a
+   * join made in the browser. `$param` tokens and the Filters-panel filters
+   * (`opts.where`) resolve exactly as for a connector (see pushdownQuery).
+   * @param {string} ref - The source ref name.
+   * @param {object} sourceSpec - The data source spec.
+   * @param {object} opts - Resolution options (params, where, sources).
+   * @returns {function(object): object} Data -> shaped data (identity without a query).
+   */
+  function inBrowser(ref, sourceSpec, opts) {
+    return function (data) {
+      var where = typeof opts.where === 'function' ? opts.where(ref) : null;
+      var query = JSON.parse(pushdownQuery(sourceSpec.pushdown, opts.params, where));
+      var axis = sourceSpec.kind === 'join' ? sourceAxis(ref, opts.sources || {}) : (sourceSpec.axis || 'smps');
+      return runPushdown(data, query, axis);
+    };
+  }
+
+  /**
+   * Chain the browser pushdown step onto a resolve, only when the source has
+   * a query (a source without one resolves exactly as before, no extra tick).
+   * @param {Promise<object>} promise - The resolve.
+   * @param {string} ref - The source ref name.
+   * @param {object} sourceSpec - The data source spec.
+   * @param {object} opts - Resolution options.
+   * @returns {Promise<object>} The (shaped) resolve.
+   */
+  function shapeInBrowser(promise, ref, sourceSpec, opts) {
+    var p = sourceSpec.pushdown;
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return promise;
+    return promise.then(inBrowser(ref, sourceSpec, opts));
+  }
+
+  /**
+   * Log a data-source problem once per source (a resolve runs per render).
+   * @param {string} ref - The source ref name.
+   * @param {string} message - What went wrong.
+   * @returns {void}
+   */
+  function warnOnce(ref, message) {
+    if (warned[ref] || typeof console === 'undefined') return;
+    warned[ref] = true;
+    console.warn('canvasxpress-dashboards: data source "' + ref + '": ' + message);
+  }
+
   return {
     cache: cache,
 
     /**
-     * Resolve a data source to a CanvasXpress data object.
+     * Resolve a data source to a CanvasXpress data object, with its
+     * `calculatedFields` added (see {@link withCalculatedFields}). Same options
+     * as {@link resolveSource}.
+     * @param {string} ref - The source ref name.
+     * @param {object} sourceSpec - The data source spec.
+     * @param {object} [opts] - Resolution options (see resolveSource).
+     * @returns {Promise<object>} The resolved data.
+     */
+    resolve: function (ref, sourceSpec, opts) {
+      var resolved = this.resolveSource(ref, sourceSpec, opts);
+      var defs = sourceSpec && sourceSpec.calculatedFields;
+      if (!Array.isArray(defs) || !defs.length) return resolved;
+      return resolved.then(function (data) { return withCalculatedFields(ref, defs, data); });
+    },
+
+    /**
+     * Resolve a data source to a CanvasXpress data object, as fetched (without
+     * its calculated fields).
      * @param {string} ref - The source ref name (for cache keying/errors).
      * @param {object} sourceSpec - The data source spec (inline | connector |
      *   dataset | join).
@@ -243,12 +338,12 @@ export function createDataStore(options) {
      *   resolving `opts.sources[ref]` through this store with the same options.
      * @returns {Promise<object>} The resolved data.
      */
-    resolve: function (ref, sourceSpec, opts) {
+    resolveSource: function (ref, sourceSpec, opts) {
       opts = opts || {};
       if (!sourceSpec) return Promise.reject(new Error('data source "' + ref + '" not found'));
 
       if (sourceSpec.kind === 'inline') {
-        return Promise.resolve(sourceSpec.value);
+        return shapeInBrowser(Promise.resolve(sourceSpec.value), ref, sourceSpec, opts);
       }
       if (sourceSpec.kind === 'live') {
         // A live source has no snapshot to fetch: its data arrives as ticks over
@@ -261,17 +356,18 @@ export function createDataStore(options) {
         var sqlJoin = sqlJoinUrl(sourceSpec, opts.sources || {}, opts.params);
         if (sqlJoin) {
           // Both inputs are tables of one connector database: join (and
-          // aggregate) there. Anything it refuses is joined here instead.
+          // aggregate) there. Anything it refuses is joined here instead, and
+          // then its pushdown query runs here too (it used to be dropped).
           return fetchUrl(sqlJoin).then(null, function () {
-            return resolveJoin(self, ref, sourceSpec, opts);
+            return shapeInBrowser(resolveJoin(self, ref, sourceSpec, opts), ref, sourceSpec, opts);
           });
         }
-        return resolveJoin(this, ref, sourceSpec, opts);
+        return shapeInBrowser(resolveJoin(this, ref, sourceSpec, opts), ref, sourceSpec, opts);
       }
       if (sourceSpec.kind === 'function') {
-        return resolveFunction(this, ref, sourceSpec, opts, {
+        return shapeInBrowser(resolveFunction(this, ref, sourceSpec, opts, {
           fetch: fetchImpl, baseUrl: baseUrl, params: opts.params, busyRetryMs: busyRetryMs
-        });
+        }), ref, sourceSpec, opts);
       }
       if (sourceSpec.kind !== 'connector' && sourceSpec.kind !== 'dataset') {
         return Promise.reject(new Error('unknown data source kind "' + sourceSpec.kind + '"'));
@@ -285,10 +381,17 @@ export function createDataStore(options) {
         ? datasetUrl(sourceSpec, opts.params)
         : appendQuery(sourceSpec.url, resolvedQuery(sourceSpec, opts.params, where));
 
+      // A dataset has no database: its pushdown query runs here, over the
+      // cached rows (the cache keeps the rows as fetched). A connector's ran
+      // in its database, as the `_q` of the URL.
+      var isDataset = sourceSpec.kind === 'dataset';
+
       if (!opts.force) {
         var hit = cache.get(key);
-        if (hit && hit.expires > now()) return Promise.resolve(hit.data);
-        if (inflight[key]) return inflight[key];
+        if (hit && hit.expires > now()) {
+          return isDataset ? shapeInBrowser(Promise.resolve(hit.data), ref, sourceSpec, opts) : Promise.resolve(hit.data);
+        }
+        if (inflight[key]) return isDataset ? shapeInBrowser(inflight[key], ref, sourceSpec, opts) : inflight[key];
       }
 
       var promise = fetchUrl(url, sourceSpec.headers).then(function (data) {
@@ -301,7 +404,7 @@ export function createDataStore(options) {
       });
 
       inflight[key] = promise;
-      return promise;
+      return isDataset ? shapeInBrowser(promise, ref, sourceSpec, opts) : promise;
     },
 
     /**

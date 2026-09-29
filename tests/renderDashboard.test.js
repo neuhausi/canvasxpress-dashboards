@@ -971,6 +971,65 @@ test('a Filters panel filters its source and, through relationships, the others'
   handle.destroy();
 });
 
+test('Filters panel in the Data Filter style: cards, live "visible / total" counts, Select All, value and field search', async function () {
+  var live = [];
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var handle = await renderDashboard(filtersSpec(), container, { CanvasXpress: markingCX(live) });
+  await handle.ready;
+  var cards = container.querySelectorAll('.cxd-filters-field');
+  assert.equal(cards.length, 2);
+  assert.ok(cards.every(function (c) { return c.classList.contains('cX-DataFilter-Container-Hoverable'); }), 'the Data Filter card class');
+  var counts = function () {
+    var out = {};
+    container.querySelectorAll('.cxd-filters-check').forEach(function (row) {
+      var badge = row.querySelector('.cX-DataFilter-Count');
+      if (badge) out[row.querySelector('label').textContent] = badge.textContent;
+    });
+    return out;
+  };
+  assert.deepEqual(counts(), { drug: '2 / 2', placebo: '2 / 2' });
+
+  // A range on Age (>= 65 keeps c3, a drug patient) updates the Arm badges live.
+  var min = container.querySelector('.cxd-filters-min');
+  min.value = '65';
+  min.dispatchEvent('change');
+  assert.deepEqual(counts(), { drug: '1 / 2', placebo: '0 / 2' });
+  container.querySelector('.cxd-filters-reset').dispatchEvent('click');
+
+  // (Select All): off filters every row out, on clears the filter; mixed when partial.
+  var all = container.querySelector('.cxd-filters-all').querySelector('input');
+  assert.equal(all.checked, true);
+  all.checked = false;
+  all.dispatchEvent('change');
+  assert.deepEqual(handle.getFilterState(), [{ dataRef: 'clin', field: 'Arm', values: [] }]);
+  assert.equal(valueBox(container, 'drug').checked, false);
+  all = container.querySelector('.cxd-filters-all').querySelector('input');
+  all.checked = true;
+  all.dispatchEvent('change');
+  assert.deepEqual(handle.getFilterState(), []);
+  var placebo = valueBox(container, 'placebo');
+  placebo.checked = false;
+  placebo.dispatchEvent('change');
+  all = container.querySelector('.cxd-filters-all').querySelector('input');
+  assert.equal(all.checked, false);
+  assert.equal(all.indeterminate, true, 'mixed while only some values are picked');
+
+  // "Search values…" hides non-matching rows; "Search filters…" hides non-matching cards.
+  var valSearch = container.querySelector('.cxd-filters-valsearch');
+  valSearch.value = 'pla';
+  valSearch.dispatchEvent('input');
+  var shown = container.querySelectorAll('.cxd-filters-check').filter(function (r) {
+    return r.style.display !== 'none' && !r.classList.contains('cxd-filters-all');
+  }).map(function (r) { return r.querySelector('label').textContent; });
+  assert.deepEqual(shown, ['placebo']);
+  var find = container.querySelector('.cxd-filters-find');
+  find.value = 'ag';
+  find.dispatchEvent('input');
+  assert.deepEqual(container.querySelectorAll('.cxd-filters-field').map(function (c) { return c.style.display; }), ['none', '']);
+  handle.destroy();
+});
+
 test('filter schemes: pick a declared scheme, save the current state as a new one', async function () {
   var live = [];
   var CX = markingCX(live);

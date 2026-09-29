@@ -87,7 +87,8 @@ def test_schema_version_rules():
     from cxd_server.validate_spec import spec_compatibility
     assert spec_compatibility({}) == ("older", "1.0")
     assert spec_compatibility({"schemaVersion": "1.1"}) == ("older", "1.1")
-    assert spec_compatibility({"schemaVersion": "1.2"}) == ("current", "1.2")
+    assert spec_compatibility({"schemaVersion": "1.2"}) == ("older", "1.2")
+    assert spec_compatibility({"schemaVersion": "1.3"}) == ("current", "1.3")
     assert spec_compatibility({"schemaVersion": "1.4"}) == ("newer-minor", "1.4")
     assert spec_compatibility({"schemaVersion": "3.0"}) == ("newer-major", "3.0")
     assert spec_compatibility({"schemaVersion": "1.1\n"})[0] == "invalid"
@@ -97,3 +98,41 @@ def test_schema_version_rules():
     assert result["valid"] is True and len(result["warnings"]) == 1
     newer["schemaVersion"] = "2.0"
     assert any("needs a newer" in e for e in validate_spec(newer)["errors"])
+
+
+def test_calculated_fields_shape():
+    """A source's calculatedFields: {name, target?, formula} or {name, target?, bin} (mirrors validateSpec.js)."""
+    good = _spec({"a": dict(_INLINE, calculatedFields=[
+        {"name": "PerUnit", "formula": "Revenue / Units"},
+        {"name": "Tier", "target": "sampleAnnotation", "bin": {"field": "Revenue", "method": "quantile", "bins": 4}},
+        {"name": "Cut", "target": "sampleAnnotation", "bin": {"field": "Revenue", "method": "custom", "breaks": [10, 20.5]}},
+    ])}, ref="a")
+    assert validate_spec(good)["errors"] == []
+
+    bad = _spec({"a": dict(_INLINE, calculatedFields=[
+        {"formula": "x"},                                     # no name
+        {"name": "A", "formula": "x", "bin": {"field": "y"}},  # both
+        {"name": "A", "formula": " "},                        # repeat + blank formula
+        {"name": "B", "target": "column", "formula": "x"},    # bad target
+        {"name": "C", "bin": {"method": "log", "bins": 0, "breaks": ["1"]}},
+    ])}, ref="a")
+    errors = validate_spec(bad)["errors"]
+    for fragment in ("requires a name string", "needs exactly one of a formula string or a bin",
+                     'repeats the name "A"', ".target must be", ".bin requires a field string",
+                     ".bin.method must be", ".bin.bins must be a whole number", ".bin.breaks must be a list of numbers"):
+        assert any(fragment in e for e in errors), (fragment, errors)
+
+    live = _spec({"a": {"kind": "live", "url": "/s", "calculatedFields": [{"name": "X", "formula": "1"}]}}, ref="a")
+    assert any("not supported on a live source" in e for e in validate_spec(live)["errors"])
+
+
+def test_pushdown_runs_anywhere_but_live():
+    """pushdown is allowed on any source but live: it runs in the browser when there is no database."""
+    q = {"groupBy": ["region"], "measures": [{"fn": "count"}]}
+    for src in (dict(_INLINE, pushdown=q), {"kind": "dataset", "id": "x", "pushdown": q},
+                {"kind": "connector", "url": "/api/data", "pushdown": q}):
+        assert validate_spec(_spec({"a": src}, ref="a"))["errors"] == [], src["kind"]
+    live = _spec({"a": {"kind": "live", "url": "/s", "pushdown": q}}, ref="a")
+    assert any("pushdown is not supported on a live source" in e for e in validate_spec(live)["errors"])
+    boolean = _spec({"a": dict(_INLINE, pushdown=True)}, ref="a")
+    assert any("pushdown must be an object" in e for e in validate_spec(boolean)["errors"])

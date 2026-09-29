@@ -23,6 +23,12 @@ var FUNCTION_LANGUAGES = ['python', 'r'];
 /** @type {string[]} How related panels show marked rows (CanvasXpress highlightMode). */
 var MARKING_MODES = ['focus', 'highlight', 'ghost'];
 
+/** @type {string[]} Where a calculated field lands (CanvasXpress calculatedFields `target`). */
+var CALC_TARGETS = ['variable', 'sampleAnnotation', 'variableAnnotation'];
+
+/** @type {string[]} Binning methods of a calculated field (CanvasXpress computeBinnedColumn). */
+var BIN_METHODS = ['equalWidth', 'quantile', 'percentile', 'custom'];
+
 /**
  * Validate a dashboard spec.
  *
@@ -236,6 +242,7 @@ export function validateSpec(spec) {
         }
         if (src.kind === 'function') checkFunction(src, at, spec, errors);
         if (src.pushdown != null) checkPushdown(src, at, spec, errors);
+        if (src.calculatedFields != null) checkCalculatedFields(src, at, errors);
         // A `query` template maps request keys to literals or "$param" tokens;
         // every token must name a declared parameter.
         if (src.query != null) {
@@ -415,8 +422,9 @@ var PUSHDOWN_FNS = ['count', 'count_distinct', 'sum', 'avg', 'mean', 'min', 'max
 var PUSHDOWN_OPS = ['=', '!=', '<', '<=', '>', '>=', 'in', 'not_in', 'between', 'is_null', 'not_null'];
 
 /**
- * Check a connector source's `pushdown` block (aggregation, filters and
- * limits run by the database); `$param` filter values must name declared params.
+ * Check a source's `pushdown` block (aggregation, filters and limits, run in
+ * the source's database when it has one, otherwise in the browser); `$param`
+ * filter values must name declared params.
  * @param {object} src - The data source.
  * @param {string} at - Its path for messages.
  * @param {object} spec - The spec (for `params`).
@@ -429,8 +437,8 @@ function checkPushdown(src, at, spec, errors) {
   var here = at + '.pushdown';
   // A join takes `true` (join in the database) or a query run over the joined rows.
   if (src.kind === 'join' && typeof p === 'boolean') return;
-  if (src.kind !== 'connector' && src.kind !== 'join') {
-    errors.push(here + ' is only for kind "connector" or "join"');
+  if (src.kind === 'live') {
+    errors.push(here + ' is not supported on a live source');
     return;
   }
   if (typeof p !== 'object' || Array.isArray(p)) { errors.push(here + ' must be an object'); return; }
@@ -480,6 +488,73 @@ function checkPushdown(src, at, spec, errors) {
   if (Array.isArray(p.columns) && p.columns.length && grouped) {
     errors.push(here + ' uses columns (rows) or groupBy/measures (aggregates), not both');
   }
+}
+
+/**
+ * Validate a source's `calculatedFields`: fields computed once on the source's
+ * data (by the CanvasXpress formula language), so every panel, Filters panel,
+ * join and link on the source sees them. Each entry is `{name, target?,
+ * formula}` or `{name, target?, bin: {field, method?, bins?, breaks?}}`. The
+ * formula itself is parsed by the engine at render; here only the shape.
+ * A live source's ticks bypass the snapshot, so it cannot carry them.
+ *
+ * @param {object} src - The data source.
+ * @param {string} at - Error path prefix.
+ * @param {string[]} errors - Error list to append to.
+ * @returns {void}
+ * @private
+ */
+function checkCalculatedFields(src, at, errors) {
+  var here = at + '.calculatedFields';
+  if (src.kind === 'live') {
+    errors.push(here + ' is not supported on a live source (its ticks bypass the computed columns)');
+    return;
+  }
+  if (!Array.isArray(src.calculatedFields)) {
+    errors.push(here + ' must be an array');
+    return;
+  }
+  var seen = {};
+  src.calculatedFields.forEach(function (def, i) {
+    var item = here + '[' + i + ']';
+    if (def == null || typeof def !== 'object' || Array.isArray(def)) {
+      errors.push(item + ' must be an object');
+      return;
+    }
+    if (typeof def.name !== 'string' || !def.name) {
+      errors.push(item + ' requires a name string');
+    } else if (hasOwn(seen, def.name)) {
+      errors.push(item + ' repeats the name "' + def.name + '"');
+    } else {
+      seen[def.name] = true;
+    }
+    if (def.target != null && CALC_TARGETS.indexOf(def.target) === -1) {
+      errors.push(item + '.target must be "variable", "sampleAnnotation", or "variableAnnotation"');
+    }
+    var hasFormula = typeof def.formula === 'string' && def.formula.trim().length > 0;
+    var hasBin = def.bin != null;
+    if (hasFormula === hasBin) {
+      errors.push(item + ' needs exactly one of a formula string or a bin');
+    }
+    if (def.formula != null && typeof def.formula !== 'string') errors.push(item + '.formula must be a string');
+    if (hasBin) {
+      var bin = def.bin;
+      if (typeof bin !== 'object' || Array.isArray(bin)) {
+        errors.push(item + '.bin must be an object');
+        return;
+      }
+      if (typeof bin.field !== 'string' || !bin.field) errors.push(item + '.bin requires a field string');
+      if (bin.method != null && BIN_METHODS.indexOf(bin.method) === -1) {
+        errors.push(item + '.bin.method must be "equalWidth", "quantile", "percentile", or "custom"');
+      }
+      if (bin.bins != null && !(Number.isInteger(bin.bins) && bin.bins >= 1)) {
+        errors.push(item + '.bin.bins must be a whole number of at least 1');
+      }
+      if (bin.breaks != null && !(Array.isArray(bin.breaks) && bin.breaks.every(function (b) { return typeof b === 'number' && isFinite(b); }))) {
+        errors.push(item + '.bin.breaks must be a list of numbers');
+      }
+    }
+  });
 }
 
 function checkFunction(src, at, spec, errors) {

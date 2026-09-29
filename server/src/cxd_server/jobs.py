@@ -234,6 +234,17 @@ class Jobs:
                 if "connector" not in ctx.origin_fetchers:
                     raise ScheduleError("This server cannot refresh from database connectors")
                 clean_origin = {"kind": "connector", "source": _id(origin.get("source"), "source")}
+                # Values for the source query's bind parameters (":region" ...);
+                # a parameter left out is NULL, as before.
+                params = origin.get("params")
+                if params is not None:
+                    if not isinstance(params, dict) or not all(
+                            isinstance(k, str) and k and (v is None or isinstance(v, (str, int, float, bool)))
+                            for k, v in params.items()):
+                        raise ScheduleError("origin params must map parameter names to "
+                                            "strings, numbers, booleans or null")
+                    if params:
+                        clean_origin["params"] = dict(params)
             return {"dataset": dataset, "store": config.get("store") or None,
                     "title": (config.get("title") or "").strip()[:200] or None,
                     "origin": clean_origin}
@@ -303,7 +314,12 @@ class Jobs:
             fetcher = ctx.origin_fetchers.get("connector")
             if fetcher is None:
                 raise ScheduleError("This server cannot refresh from database connectors")
-            data = fetcher(owner, origin["source"])
+            # Bound parameter values ride along only when set, so a host's
+            # two-argument fetcher keeps working.
+            if origin.get("params"):
+                data = fetcher(owner, origin["source"], origin["params"])
+            else:
+                data = fetcher(owner, origin["source"])
         ds = ctx.dataset_store_for(cfg.get("store"))
         existing = next((d for d in ds.list(owner) if d["id"] == cfg["dataset"]), None) or {}
         summary = ds.create(owner, data, ctx.now_iso(),

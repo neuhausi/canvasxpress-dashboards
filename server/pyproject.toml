@@ -37,6 +37,10 @@ functions = ["pandas>=2.0"]
 llm = ["anthropic>=1.8"]
 # Single sign-on (OpenID Connect): ID-token signature checks.
 sso = ["PyJWT[crypto]>=2.8"]
+# Per-user database sources + scheduled refresh from them (CXD_CONNECTORS=on,
+# ENCRYPTION_KEY required). Add the driver extra for your database too, e.g.
+# canvasxpress-connectors[postgres].
+connectors = ["canvasxpress-connectors[web,sql]>=0.6"]
 dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6", "pandas>=2.0", "PyJWT[crypto]>=2.8"]
 
 [project.urls]

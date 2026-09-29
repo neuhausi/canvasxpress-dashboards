@@ -96,7 +96,7 @@ export function renderDashboard(spec, target, options) {
   // different origin than the page (else same-origin `/api/datasets/{id}`).
   var store = createDataStore({
     fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl,
-    busyRetryMs: options.busyRetryMs, EventSource: options.EventSource
+    busyRetryMs: options.busyRetryMs, EventSource: options.EventSource, CanvasXpress: CX
   });
   // Auto-resize each graph to its cell (via setDimensions) when the container
   // reflows. The builder disables this and re-renders panels itself on resize,
@@ -498,15 +498,19 @@ export function renderDashboard(spec, target, options) {
   }
 
   /**
-   * Whether a source sends Filters-panel picks to the database: a connector
-   * source with a `pushdown` block (unless `pushdown.filters` is false).
+   * Whether a source runs Filters-panel picks inside its `pushdown` query
+   * (unless `pushdown.filters` is false): a connector source (in its
+   * database), or an inline / dataset / function source whose query runs in
+   * the browser. Either way the picks apply before any group-by. A join keeps
+   * filtering its result: a join made in the database takes no extra filters.
    * @param {string} ref - Source ref.
    * @returns {boolean} True when its filters are pushed down.
    */
   function pushesFilters(ref) {
     var source = (spec.data || {})[ref];
-    return !!(source && source.kind === 'connector' && source.pushdown &&
-      source.pushdown.filters !== false);
+    if (!source || !source.pushdown || source.pushdown.filters === false) return false;
+    if (source.kind === 'connector') return true;
+    return typeof source.pushdown === 'object' && ['inline', 'dataset', 'function'].indexOf(source.kind) > -1;
   }
 
   /**
@@ -859,8 +863,9 @@ export function renderDashboard(spec, target, options) {
       for (var qk in query) {
         if (query[qk] === '$' + param) { uses = true; break; }
       }
-      // A pushdown filter reads a param through its value ("$name").
-      var clauses = source.kind === 'connector' && source.pushdown && Array.isArray(source.pushdown.where)
+      // A pushdown filter reads a param through its value ("$name"), whether
+      // the query runs in a database or in the browser.
+      var clauses = source.pushdown && typeof source.pushdown === 'object' && Array.isArray(source.pushdown.where)
         ? source.pushdown.where : [];
       for (var wi = 0; wi < clauses.length; wi++) {
         if (clauses[wi] && clauses[wi].value === '$' + param) { uses = true; break; }
@@ -1245,6 +1250,9 @@ export function renderDashboard(spec, target, options) {
       filterPanelViews.forEach(function (v) { v.syncScheme(); });
     }
     applyFilterChange();
+    // Keep the "visible / total" badges live, as the CanvasXpress Data Filter
+    // does, without rebuilding the panels (a search or scroll is kept).
+    filterPanelViews.forEach(function (v) { if (v.refreshCounts) v.refreshCounts(); });
   }
 
   /**
@@ -1292,10 +1300,13 @@ export function renderDashboard(spec, target, options) {
         function (ref) { return refDomain[ref] || refData[ref] || null; },
         function (ref) { return sourceAxis(ref, sources); });
       var schemeSelect = null;
+      var counters = [];   // [{f, spans: {value: span}}] — the "visible / total" badges
+      var idSeq = 0;       // unique ids tying each checkbox to its label
       var view = {
         panelId: item.panel,
         render: function () {
           cell.body.innerHTML = '';
+          counters = [];
           var root = document.createElement('div');
           root.className = 'cxd-filters';
           root.appendChild(buildSchemeBar());
@@ -1305,13 +1316,77 @@ export function renderDashboard(spec, target, options) {
             hint.textContent = 'No fields to filter';
             root.appendChild(hint);
           }
-          fields.forEach(function (f) { root.appendChild(buildField(f)); });
+          var cards = fields.map(function (f) { return buildField(f); });
+          // With several fields, a "Search filters…" box narrows the cards by
+          // name, like the CanvasXpress Data Filter.
+          if (fields.length > 1) root.appendChild(buildFind(cards, fields));
+          cards.forEach(function (card) { root.appendChild(card); });
           cell.body.appendChild(root);
+          view.refreshCounts();
         },
         syncScheme: function () {
           if (schemeSelect) schemeSelect.value = activeScheme === null ? '' : activeScheme;
+        },
+        refreshCounts: function () {
+          counters.forEach(function (c) { fillCounts(c.f, c.spans); });
         }
       };
+
+      /**
+       * Update a value list's "visible / total" badges: total rows with each
+       * value, and how many of them pass every current filter (as the
+       * CanvasXpress Data Filter counts).
+       * @param {object} f - Resolved field.
+       * @param {object} spans - value -> its count badge.
+       * @returns {void}
+       */
+      function fillCounts(f, spans) {
+        var data = refData[f.dataRef];
+        var axis = sourceAxis(f.dataRef, sources);
+        var visible = {};
+        if (data) {
+          var column = tableColumn(data, axis, f.field);
+          var passing = rowsPassing(filterState, f.dataRef, data, axis);
+          var keep = null;
+          if (passing) {
+            keep = {};
+            passing.forEach(function (id) { keep[id] = true; });
+          }
+          if (column) {
+            column.values.forEach(function (value, i) {
+              if (keep && !keep[column.ids[i]]) return;
+              var key = String(value);
+              visible[key] = (visible[key] || 0) + 1;
+            });
+          }
+        }
+        f.summary.values.forEach(function (entry) {
+          var span = spans[entry.value];
+          if (span) span.textContent = (visible[String(entry.value)] || 0) + ' / ' + entry.count;
+        });
+      }
+
+      /**
+       * The "Search filters…" box: shows only the field cards whose name
+       * contains the text.
+       * @param {HTMLElement[]} cards - The field cards.
+       * @param {object[]} list - Their resolved fields, in the same order.
+       * @returns {HTMLElement} The search box.
+       */
+      function buildFind(cards, list) {
+        var find = document.createElement('input');
+        find.type = 'search';
+        find.className = 'cX-DataFilter-Search cxd-filters-find';
+        find.placeholder = 'Search filters...';
+        find.addEventListener('input', function () {
+          var text = String(find.value || '').toLowerCase();
+          cards.forEach(function (card, i) {
+            var name = String(list[i].label || '').toLowerCase();
+            card.style.display = !text || name.indexOf(text) !== -1 ? '' : 'none';
+          });
+        });
+        return find;
+      }
 
       /**
        * The scheme bar: a scheme picker, a name box + Save, and Reset.
@@ -1385,8 +1460,10 @@ export function renderDashboard(spec, target, options) {
         filterState.forEach(function (p) {
           if (p.dataRef === f.dataRef && p.field === f.field) current = p;
         });
+        // A card per field, in the CanvasXpress Data Filter's style (its own
+        // classes, so it follows the loaded CanvasXpress theme).
         var section = document.createElement('div');
-        section.className = 'cxd-filters-field';
+        section.className = 'cxd-filters-field cX-DataFilter-Container-Hoverable';
         var label = document.createElement('div');
         label.className = 'cxd-filters-label';
         label.textContent = f.label;
@@ -1404,31 +1481,92 @@ export function renderDashboard(spec, target, options) {
        * @returns {HTMLElement} The list.
        */
       function buildValues(f, current) {
+        var wrap = document.createElement('div');
+        // "Search values…" narrows the list, as in the CanvasXpress Data Filter.
+        var search = document.createElement('input');
+        search.type = 'search';
+        search.className = 'cX-DataFilter-Search cxd-filters-valsearch';
+        search.placeholder = 'Search values...';
         var list = document.createElement('div');
-        list.className = 'cxd-filters-values';
+        list.className = 'cxd-filters-values cX-DataFilter-Container-Mask-NoOverflow';
         var boxes = [];
-        f.summary.values.forEach(function (entry) {
-          var row = document.createElement('label');
+        var rows = [];
+        // A pushdown source's rows are groups the database made, so a row
+        // count per value would mislead; show the value alone.
+        var showCounts = !pushesFilters(f.dataRef);
+        var spans = {};
+
+        /**
+         * One checkbox row: box, label, and (optionally) a count badge.
+         * @param {string} text - The label.
+         * @param {boolean} checked - Initial state.
+         * @param {?string} countFor - Value whose count badge to add, or null.
+         * @returns {{row: HTMLElement, box: HTMLInputElement}} The row and its box.
+         */
+        function checkRow(text, checked, countFor) {
+          var row = document.createElement('div');
           row.className = 'cxd-filters-check';
           var box = document.createElement('input');
           box.type = 'checkbox';
-          box.className = 'cxd-filters-cb';
-          box.value = entry.value;
-          box.checked = !current || !Array.isArray(current.values) || current.values.indexOf(entry.value) !== -1;
-          box.addEventListener('change', function () {
-            var checked = boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
-            setFilterPredicate(f.dataRef, f.field, checked.length === boxes.length ? null : { values: checked });
-          });
-          boxes.push(box);
-          var text = document.createElement('span');
-          // A pushdown source's rows are groups the database made, so a row
-          // count per value would mislead; show the value alone.
-          text.textContent = pushesFilters(f.dataRef) ? String(entry.value) : entry.value + ' (' + entry.count + ')';
+          box.className = 'cX-Checkbox cxd-filters-cb';
+          box.id = 'cxd-f-' + item.panel + '-' + (idSeq++);
+          box.checked = checked;
+          var label = document.createElement('label');
+          label.className = 'cX-Checkbox-Label cxd-filters-name';
+          label.htmlFor = box.id;
+          label.textContent = text;
+          label.title = text;
           row.appendChild(box);
-          row.appendChild(text);
-          list.appendChild(row);
+          row.appendChild(label);
+          if (countFor !== null) {
+            var count = document.createElement('span');
+            count.className = 'cX-DataFilter-Count';
+            row.appendChild(count);
+            spans[countFor] = count;
+          }
+          return { row: row, box: box };
+        }
+
+        // "(Select All)": checked when every value is, mixed when some are.
+        var all = checkRow('(Select All)', true, null);
+        all.row.classList.add('cxd-filters-all');
+        list.appendChild(all.row);
+
+        /** Sync "(Select All)" with the value boxes. @returns {void} */
+        function syncAll() {
+          var n = boxes.filter(function (b) { return b.checked; }).length;
+          all.box.checked = n === boxes.length;
+          all.box.indeterminate = n > 0 && n < boxes.length;
+        }
+
+        f.summary.values.forEach(function (entry) {
+          var checked = !current || !Array.isArray(current.values) || current.values.indexOf(entry.value) !== -1;
+          var r = checkRow(String(entry.value), checked, showCounts ? entry.value : null);
+          r.box.value = entry.value;
+          r.box.addEventListener('change', function () {
+            var picked = boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
+            syncAll();
+            setFilterPredicate(f.dataRef, f.field, picked.length === boxes.length ? null : { values: picked });
+          });
+          boxes.push(r.box);
+          rows.push({ row: r.row, text: String(entry.value).toLowerCase() });
+          list.appendChild(r.row);
         });
-        return list;
+        all.box.addEventListener('change', function () {
+          var on = all.box.checked;
+          boxes.forEach(function (b) { b.checked = on; });
+          syncAll();
+          setFilterPredicate(f.dataRef, f.field, on ? null : { values: [] });
+        });
+        syncAll();
+        search.addEventListener('input', function () {
+          var text = String(search.value || '').toLowerCase();
+          rows.forEach(function (r) { r.row.style.display = !text || r.text.indexOf(text) !== -1 ? '' : 'none'; });
+        });
+        if (showCounts) counters.push({ f: f, spans: spans });
+        wrap.appendChild(search);
+        wrap.appendChild(list);
+        return wrap;
       }
 
       /**
@@ -1616,7 +1754,7 @@ export function renderDashboard(spec, target, options) {
       function buildSearch(f, current) {
         var input = document.createElement('input');
         input.type = 'search';
-        input.className = 'cxd-filters-text';
+        input.className = 'cX-DataFilter-Search cxd-filters-text';
         input.placeholder = 'Contains\u2026';
         input.value = current && typeof current.text === 'string' ? current.text : '';
         var timer = null;

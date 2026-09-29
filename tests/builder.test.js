@@ -402,3 +402,295 @@ test('a real edit (changed since render) is captured, including an authored tran
   assert.equal(config.smpTextScaleFontFactor, 1.2);
   assert.equal('toolbarSize' in config, false, 'a transient key the author never wrote stays out');
 });
+
+// --- Links dialog + "Join two sources": the no-code path to cross-source marking ---
+
+var CLINICAL_SRC = { kind: 'inline', value: { y: { vars: ['Age'], smps: ['p1', 'p2', 'p3'], data: [[50, 61, 47]] }, x: { Arm: ['A', 'B', 'A'] } } };
+var LABS_SRC = { kind: 'inline', value: { y: { vars: ['ALT'], smps: ['d1', 'd2', 'd3', 'd4'], data: [[30, 42, 28, 55]] }, x: { patient: ['p1', 'p1', 'p2', 'p3'] } } };
+
+/**
+ * A two-source spec with one graph panel on each source.
+ * @returns {object} The spec.
+ */
+function twoSourceSpec() {
+  var s = setDataSource(setDataSource(blankSpec('d1'), 'clinical', CLINICAL_SRC), 'labs', LABS_SRC);
+  s.panels = {
+    a: { title: 'Clinical', dataRef: 'clinical', config: { graphType: 'Bar' } },
+    b: { title: 'Labs', dataRef: 'labs', config: { graphType: 'Bar' } }
+  };
+  s.layout.items = [{ panel: 'a', x: 0, y: 0, w: 6, h: 4 }, { panel: 'b', x: 6, y: 0, w: 6, h: 4 }];
+  return s;
+}
+
+/** @returns {Promise<void>} Resolves after pending promise callbacks run. */
+function settle() { return new Promise(function (resolve) { setTimeout(resolve, 0); }); }
+
+/**
+ * The first button under a root with this exact label.
+ * @param {object} root - Element to search.
+ * @param {string} label - Button text.
+ * @returns {object} The button (undefined when absent).
+ */
+function buttonNamed(root, label) {
+  return [].filter.call(root.querySelectorAll('button'), function (b) { return b.textContent === label; })[0];
+}
+
+/**
+ * Set a select's value and fire its change handler, as a user pick would.
+ * @param {object} select - The select.
+ * @param {string} value - The value to pick.
+ * @returns {void}
+ */
+function pick(select, value) {
+  select.value = value;
+  select.dispatchEvent('change');
+}
+
+test('🔗 Links is disabled until there are two data sources', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var builder = createBuilder(container, { spec: setDataSource(blankSpec('d1'), 'clinical', CLINICAL_SRC), CanvasXpress: makeCX([]) });
+  assert.equal(buttonNamed(container, '🔗 Links').disabled, true, 'one source: nothing to link');
+  builder.setSpec(twoSourceSpec());
+  await builder.whenReady();
+  assert.equal(buttonNamed(container, '🔗 Links').disabled, false, 'two sources: enabled');
+});
+
+test('Links dialog: link two sources on a key and pick a marking mode, without JSON', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var calls = [];
+  var builder = createBuilder(container, { spec: twoSourceSpec(), CanvasXpress: makeCX(calls) });
+  await builder.whenReady();
+  var before = calls.length;
+
+  buttonNamed(container, '🔗 Links').dispatchEvent('click');
+  await settle();
+  var modal = document.body.querySelector('.cxb-modal');
+  assert.ok(modal, 'the Links dialog opened');
+  assert.equal(modal.querySelector('.cxb-links-none').textContent, 'No links yet.');
+
+  // Selects: marking mode, then [source, key] for each side.
+  var selects = modal.querySelectorAll('select');
+  var modeSel = selects[0], leftKey = selects[2], rightSrc = selects[3], rightKey = selects[4];
+  assert.equal(selects[1].value, 'clinical');
+  assert.equal(rightSrc.value, 'labs');
+  // The right key list offers the row id plus labs' annotation and column.
+  var rightKeys = [].map.call(rightKey.options, function (o) { return o.value; });
+  assert.deepEqual(rightKeys, ['', 'patient', 'ALT']);
+
+  pick(leftKey, '');           // clinical: row id
+  pick(rightKey, 'patient');   // labs: the patient annotation
+  buttonNamed(modal, '+ Link').dispatchEvent('click');
+  var rows = modal.querySelectorAll('.cxb-links-row');
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].querySelector('span').textContent, 'clinical (row id) ↔ labs.patient');
+
+  // Adding the same link again is refused with a readable message.
+  buttonNamed(modal, '+ Link').dispatchEvent('click');
+  assert.match(modal.querySelector('.cxb-modal-err').textContent, /already linked/);
+
+  pick(modeSel, 'ghost');
+  buttonNamed(modal, 'Apply').dispatchEvent('click');
+  await builder.whenReady();
+
+  var spec = builder.getSpec();
+  assert.deepEqual(spec.relationships, [{ left: 'clinical', right: 'labs', on: { left: 'smps', right: 'patient' } }]);
+  assert.equal(spec.markingMode, 'ghost');
+  assert.deepEqual(validateSpec(spec).errors, []);
+  assert.equal(document.body.querySelector('.cxb-modal'), null, 'dialog closed');
+  assert.ok(calls.length > before, 'dashboard rebuilt so the new links take effect');
+});
+
+test('Links dialog: removing a link and Cancel leave the spec as it was', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var start = twoSourceSpec();
+  start.relationships = [{ left: 'clinical', right: 'labs', on: { left: 'smps', right: 'patient' } }];
+  var builder = createBuilder(container, { spec: start, CanvasXpress: makeCX([]) });
+  await builder.whenReady();
+
+  buttonNamed(container, '🔗 Links').dispatchEvent('click');
+  var modal = document.body.querySelector('.cxb-modal');
+  assert.equal(modal.querySelectorAll('.cxb-links-row').length, 1, 'existing link listed');
+  buttonNamed(modal.querySelector('.cxb-links-row'), '×').dispatchEvent('click');
+  assert.equal(modal.querySelectorAll('.cxb-links-row').length, 0, 'removed from the working copy');
+  buttonNamed(modal, 'Cancel').dispatchEvent('click');
+  assert.deepEqual(builder.getSpec().relationships, start.relationships, 'Cancel discards the edit');
+
+  buttonNamed(container, '🔗 Links').dispatchEvent('click');
+  modal = document.body.querySelector('.cxb-modal');
+  buttonNamed(modal.querySelector('.cxb-links-row'), '×').dispatchEvent('click');
+  buttonNamed(modal, 'Apply').dispatchEvent('click');
+  await builder.whenReady();
+  assert.equal(Object.prototype.hasOwnProperty.call(builder.getSpec(), 'relationships'), false, 'Apply removes it');
+});
+
+test('+ Data → Join two sources adds a valid join source from pickers', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var builder = createBuilder(container, { spec: twoSourceSpec(), CanvasXpress: makeCX([]) });
+  await builder.whenReady();
+
+  buttonNamed(container, '+ Data').dispatchEvent('click');
+  await settle();
+  var modal = document.body.querySelector('.cxb-modal');
+  var typeSel = modal.querySelectorAll('select')[0];
+  assert.ok([].some.call(typeSel.options, function (o) { return o.value === 'join'; }), 'join offered');
+  pick(typeSel, 'join');
+
+  var joinSelects = modal.querySelector('.cxb-modal-join').querySelectorAll('select');
+  pick(joinSelects[0], 'labs');        // left source
+  await settle();                       // its key list refills asynchronously
+  pick(joinSelects[1], 'patient');     // left key
+  pick(joinSelects[2], 'clinical');    // right source (key: row id)
+  await settle();
+  pick(joinSelects[4], 'left');        // keep every lab draw
+  buttonNamed(modal, 'Add').dispatchEvent('click');
+  await builder.whenReady();
+
+  var spec = builder.getSpec();
+  var added = Object.keys(spec.data).filter(function (ref) { return spec.data[ref].kind === 'join'; });
+  assert.equal(added.length, 1);
+  assert.deepEqual(spec.data[added[0]], { kind: 'join', left: 'labs', right: 'clinical', on: { left: 'patient', right: 'smps' }, how: 'left' });
+  assert.deepEqual(validateSpec(spec).errors, []);
+});
+
+// --- ƒx Fields: calculated fields on a source, without JSON ---
+
+/**
+ * A CX stub with the engine's static calculated-field API: a formula is valid
+ * when every identifier is a known field; applying appends a column of 1s.
+ * @param {object[]} calls - Collects constructed instances.
+ * @returns {function} The stub constructor.
+ */
+function makeCalcCX(calls) {
+  var CX = makeCX(calls);
+  CX.validateCalculatedField = function (formula, names) {
+    var ids = (formula.match(/[A-Za-z_]\w*/g) || []);
+    var bad = ids.filter(function (id) { return names.indexOf(id) === -1; })[0];
+    return bad ? { ok: false, error: 'Unknown field: ' + bad } : { ok: true, references: ids };
+  };
+  CX.applyCalculatedFields = function (data, defs) {
+    var out = { y: { vars: data.y.vars.slice(), smps: data.y.smps, data: data.y.data.slice() }, x: Object.assign({}, data.x || {}) };
+    defs.forEach(function (d) {
+      var ones = data.y.smps.map(function () { return 1; });
+      if (d.target === 'sampleAnnotation' || d.bin) out.x[d.name] = ones;
+      else { out.y.vars.push(d.name); out.y.data.push(ones); }
+    });
+    return { data: out, errors: [] };
+  };
+  return CX;
+}
+
+test('ƒx Fields: add a formula field to a source with live validation, then Apply', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var calls = [];
+  var builder = createBuilder(container, { spec: twoSourceSpec(), CanvasXpress: makeCalcCX(calls) });
+  await builder.whenReady();
+  var before = calls.length;
+
+  buttonNamed(container, 'ƒx Fields').dispatchEvent('click');
+  await settle();
+  var modal = document.body.querySelector('.cxb-modal');
+  var sourceSel = modal.querySelectorAll('select')[0];
+  pick(sourceSel, 'labs');
+  await settle();
+  var inputs = modal.querySelectorAll('input');
+  var name = inputs[0];
+  var formula = modal.querySelector('textarea');
+  var status = modal.querySelectorAll('.cxb-links-none');
+
+  name.value = 'Double';
+  formula.value = 'ALT * Nope';
+  formula.dispatchEvent('input');
+  assert.match(modal.textContent + [].map.call(status, function (s) { return s.textContent; }).join(' '), /Unknown field: Nope/);
+  assert.equal(buttonNamed(modal, '+ Add field').disabled, true, 'invalid formula cannot be added');
+
+  formula.value = 'ALT * 2';
+  formula.dispatchEvent('input');
+  assert.equal(buttonNamed(modal, '+ Add field').disabled, false);
+  buttonNamed(modal, '+ Add field').dispatchEvent('click');
+  await settle();
+  assert.equal(modal.querySelector('.cxb-links-row').querySelector('span').textContent, 'Double = ALT * 2');
+
+  buttonNamed(modal, 'Apply').dispatchEvent('click');
+  await builder.whenReady();
+  var spec = builder.getSpec();
+  assert.deepEqual(spec.data.labs.calculatedFields, [{ name: 'Double', formula: 'ALT * 2' }]);
+  assert.equal(spec.data.clinical.calculatedFields, undefined, 'other sources untouched');
+  assert.deepEqual(validateSpec(spec).errors, []);
+  assert.ok(calls.length > before, 'rebuilt so panels resolve the new column');
+});
+
+test('ƒx Fields: an engine without the static API explains why fields cannot be added', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var builder = createBuilder(container, { spec: twoSourceSpec(), CanvasXpress: makeCX([]) });
+  await builder.whenReady();
+  buttonNamed(container, 'ƒx Fields').dispatchEvent('click');
+  await settle();
+  var modal = document.body.querySelector('.cxb-modal');
+  var texts = [].map.call(modal.querySelectorAll('.cxb-links-none'), function (s) { return s.textContent; }).join(' ');
+  assert.match(texts, /needs CanvasXpress\.applyCalculatedFields/);
+  assert.equal(buttonNamed(modal, '+ Add field').disabled, true);
+  buttonNamed(modal, 'Cancel').dispatchEvent('click');
+  assert.equal(builder.getSpec().data.labs.calculatedFields, undefined);
+});
+
+// --- ▦ Shape data: a source's pushdown query without JSON ---
+
+test('Shape data: filter, summarize, sort, preview, then Apply writes the pushdown query', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var spec = setDataSource(blankSpec('d1'), 'sales', { kind: 'inline', value: {
+    y: { vars: ['amount'], smps: ['r1', 'r2', 'r3', 'r4'], data: [[10, 20, 30, 40]] },
+    x: { region: ['EMEA', 'APAC', 'EMEA', 'AMER'] } } });
+  spec.panels = { p: { title: 'Sales', dataRef: 'sales', config: { graphType: 'Bar' } } };
+  spec.layout.items = [{ panel: 'p', x: 0, y: 0, w: 6, h: 4 }];
+  var calls = [];
+  var builder = createBuilder(container, { spec: spec, CanvasXpress: makeCX(calls) });
+  await builder.whenReady();
+
+  buttonNamed(container, '▦ Shape data').dispatchEvent('click');
+  await settle();
+  var modal = document.body.querySelector('.cxb-modal');
+  // Selects in order: source, filter column, filter op, result mode, measure fn, measure column, sort.
+  var sel = function () { return modal.querySelectorAll('select'); };
+  pick(sel()[1], 'region');
+  pick(sel()[2], 'in');
+  var textInputs = [].filter.call(modal.querySelectorAll('input'), function (i) { return i.type === 'text'; });
+  textInputs[0].value = 'EMEA, APAC';
+  buttonNamed(modal, '+ Filter').dispatchEvent('click');
+  assert.equal(modal.querySelector('.cxb-links-row').querySelector('span').textContent, 'region is one of EMEA, APAC');
+
+  pick(sel()[3], 'summary');
+  var groupBox = modal.querySelectorAll('.cxb-modal-fn-inputs')[1];
+  var regionBox = [].filter.call(groupBox.querySelectorAll('input'), function (i) { return i.value === 'region'; })[0];
+  regionBox.checked = true;
+  regionBox.dispatchEvent('change');
+  pick(sel()[4], 'sum');
+  pick(sel()[5], 'amount');
+  textInputs = [].filter.call(modal.querySelectorAll('input'), function (i) { return i.type === 'text'; });
+  textInputs[1].value = 'total';
+  buttonNamed(modal, '+ Measure').dispatchEvent('click');
+  pick(sel()[6], 'total');
+  var descBox = [].filter.call(modal.querySelectorAll('input'), function (i) { return i.type === 'checkbox' && !i.value; })[0];
+  descBox.checked = true;
+  descBox.dispatchEvent('change');
+
+  var statusText = [].map.call(modal.querySelectorAll('.cxb-links-none'), function (s) { return s.textContent; }).join(' | ');
+  assert.match(statusText, /✓ 2 rows · total · first: EMEA, APAC/);
+
+  buttonNamed(modal, 'Apply').dispatchEvent('click');
+  await builder.whenReady();
+  var out = builder.getSpec().data.sales.pushdown;
+  assert.deepEqual(out, {
+    where: [{ column: 'region', op: 'in', value: ['EMEA', 'APAC'] }],
+    groupBy: ['region'],
+    measures: [{ fn: 'sum', column: 'amount', as: 'total' }],
+    orderBy: [{ column: 'total', desc: true }]
+  });
+  assert.deepEqual(validateSpec(builder.getSpec()).errors, []);
+});

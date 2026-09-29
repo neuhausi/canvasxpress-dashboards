@@ -23,8 +23,11 @@ export {
 } from './exportDashboard.js';
 export { createBuilder, pointerToCell, csvToCx, buildDataSource } from './builder.js';
 export {
-  addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS
+  addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS,
+  addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES,
+  setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown
 } from './builderModel.js';
+export { runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS } from './pushdown.js';
 
 /** @type {string} Package version. */
 export var version = '0.10.0';

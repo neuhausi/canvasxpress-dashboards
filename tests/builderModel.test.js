@@ -4,8 +4,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, setParam, removeParam, setSourceQuery
+  addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, setParam, removeParam, setSourceQuery,
+  addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink
 } from '../src/builderModel.js';
+import { validateSpec } from '../src/validateSpec.js';
+import { relationGraph, translateMarks } from '../src/marking.js';
+import { joinData } from '../src/join.js';
 
 test('blankSpec is a valid empty starter', function () {
   var s = blankSpec('d1', 'Title');
@@ -268,4 +272,133 @@ test('addPanel filters stores a Filters panel over its data source', function ()
   assert.deepEqual(s.panels.f1, { type: 'filters', title: 'Filters', dataRef: 'src' });
   s = addPanel(s, { id: 'f2', type: 'filters', dataRef: 'src', fields: ['Arm'] });
   assert.deepEqual(s.panels.f2.fields, ['Arm']);
+});
+
+// --- Linked selection: relationships, marking mode, and join sources ---------
+
+// Clinical rows are patients (row id p1..p3); labs rows are draws carrying a
+// `patient` annotation that points back at them.
+var CLINICAL = { y: { vars: ['Age'], smps: ['p1', 'p2', 'p3'], data: [[50, 61, 47]] }, x: { Arm: ['A', 'B', 'A'] } };
+var LABS = { y: { vars: ['ALT'], smps: ['d1', 'd2', 'd3', 'd4'], data: [[30, 42, 28, 55]] }, x: { patient: ['p1', 'p1', 'p2', 'p3'] } };
+
+function linkedSpec() {
+  var s = setDataSource(blankSpec('d1'), 'clinical', { kind: 'inline', value: CLINICAL });
+  return setDataSource(s, 'labs', { kind: 'inline', value: LABS });
+}
+
+test('encodeKeys spells row ids as the axis and omits the default', function () {
+  var s = linkedSpec();
+  assert.equal(encodeKeys(s, 'clinical', 'labs', '', ''), undefined);
+  assert.equal(encodeKeys(s, 'clinical', 'labs', 'smps', 'smps'), undefined);
+  assert.equal(encodeKeys(s, 'clinical', 'labs', 'Arm', 'Arm'), 'Arm');
+  assert.deepEqual(encodeKeys(s, 'clinical', 'labs', '', 'patient'), { left: 'smps', right: 'patient' });
+  // A vars-axis source spells its row id "vars".
+  s = setDataSource(s, 'genes', { kind: 'inline', axis: 'vars', value: CLINICAL });
+  assert.deepEqual(encodeKeys(s, 'genes', 'labs', '', 'patient'), { left: 'vars', right: 'patient' });
+});
+
+test('addRelationship appends a valid link, purely, in the cohort-explorer shape', function () {
+  var s0 = linkedSpec();
+  var s1 = addRelationship(s0, { left: 'clinical', right: 'labs', leftKey: '', rightKey: 'patient' });
+  assert.equal(s0.relationships, undefined);   // input untouched
+  assert.deepEqual(s1.relationships, [{ left: 'clinical', right: 'labs', on: { left: 'smps', right: 'patient' } }]);
+  assert.deepEqual(validateSpec(Object.assign({}, s1, { layout: s1.layout, panels: {} })).errors, []);
+});
+
+test('a relationship built by addRelationship really drives marking across sources', function () {
+  var s = addRelationship(linkedSpec(), { left: 'clinical', right: 'labs', rightKey: 'patient' });
+  var data = { clinical: CLINICAL, labs: LABS };
+  var graph = relationGraph(s);
+  // Marking patient p1 in clinical marks both of p1's draws in labs ...
+  assert.deepEqual(translateMarks('clinical', ['p1'], graph, function (ref) { return data[ref]; }), { labs: ['d1', 'd2'] });
+  // ... and marking draw d4 in labs marks its patient p3 (the reverse direction).
+  assert.deepEqual(translateMarks('labs', ['d4'], graph, function (ref) { return data[ref]; }), { clinical: ['p3'] });
+});
+
+test('addRelationship rejects missing, identical, and duplicate links', function () {
+  var s = linkedSpec();
+  assert.throws(function () { addRelationship(s, { left: 'clinical', right: '' }); }, /two data sources/);
+  assert.throws(function () { addRelationship(s, { left: 'clinical', right: 'nope' }); }, /no data source named "nope"/);
+  assert.throws(function () { addRelationship(s, { left: 'labs', right: 'labs' }); }, /two different/);
+  s = addRelationship(s, { left: 'clinical', right: 'labs', rightKey: 'patient' });
+  assert.throws(function () { addRelationship(s, { left: 'clinical', right: 'labs', rightKey: 'patient' }); }, /already linked/);
+  // The same link declared from the other side is also a duplicate.
+  assert.throws(function () { addRelationship(s, { left: 'labs', right: 'clinical', leftKey: 'patient' }); }, /already linked/);
+  // A different key on the same pair is a distinct link.
+  assert.equal(addRelationship(s, { left: 'clinical', right: 'labs', leftKey: 'Arm', rightKey: 'Arm' }).relationships.length, 2);
+});
+
+test('removeRelationship removes by index and drops the empty key', function () {
+  var s = addRelationship(linkedSpec(), { left: 'clinical', right: 'labs', rightKey: 'patient' });
+  s = addRelationship(s, { left: 'clinical', right: 'labs', leftKey: 'Arm', rightKey: 'Arm' });
+  var one = removeRelationship(s, 0);
+  assert.deepEqual(one.relationships, [{ left: 'clinical', right: 'labs', on: 'Arm' }]);
+  assert.equal(s.relationships.length, 2);   // input untouched
+  assert.equal(Object.prototype.hasOwnProperty.call(removeRelationship(one, 0), 'relationships'), false);
+});
+
+test('setMarkingMode sets a non-default mode, clears on focus/empty, and rejects unknown modes', function () {
+  var s = setMarkingMode(linkedSpec(), 'ghost');
+  assert.equal(s.markingMode, 'ghost');
+  assert.deepEqual(validateSpec(s).errors, []);
+  assert.equal(Object.prototype.hasOwnProperty.call(setMarkingMode(s, 'focus'), 'markingMode'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(setMarkingMode(s, ''), 'markingMode'), false);
+  assert.throws(function () { setMarkingMode(s, 'filter'); }, /marking mode must be one of/);
+});
+
+test('buildJoinSource builds a valid join that really blends the two sources', function () {
+  var s = linkedSpec();
+  var join = buildJoinSource(s, { left: 'labs', right: 'clinical', leftKey: 'patient', how: 'left' });
+  assert.deepEqual(join, { kind: 'join', left: 'labs', right: 'clinical', on: { left: 'patient', right: 'smps' }, how: 'left' });
+  var withJoin = setDataSource(s, 'cohort', join);
+  assert.deepEqual(validateSpec(withJoin).errors, []);
+  // Every lab draw picks up its patient's Arm.
+  var out = joinData(LABS, CLINICAL, { on: join.on, how: join.how });
+  assert.deepEqual(out.y.smps, ['d1', 'd2', 'd3', 'd4']);
+  assert.deepEqual(out.x.Arm, ['A', 'A', 'B', 'A']);
+  assert.equal(buildJoinSource(s, { left: 'labs', right: 'clinical', leftKey: 'patient' }).how, 'inner');
+  assert.throws(function () { buildJoinSource(s, { left: 'labs', right: 'clinical', how: 'cross' }); }, /join type must be one of/);
+});
+
+test('describeLink reads keys back in plain words', function () {
+  var s = linkedSpec();
+  assert.equal(describeLink(s, { left: 'clinical', right: 'labs', on: { left: 'smps', right: 'patient' } }),
+    'clinical (row id) ↔ labs.patient');
+  assert.equal(describeLink(s, { left: 'clinical', right: 'labs' }), 'clinical (row id) ↔ labs (row id)');
+  assert.equal(describeLink(s, { left: 'clinical', right: 'labs', on: ['Arm', { left: 'smps', right: 'patient' }] }),
+    'clinical.Arm ↔ labs.Arm + clinical (row id) ↔ labs.patient');
+});
+
+test('setCalculatedField adds, replaces in place, and removeCalculatedField drops the key when empty', async function () {
+  var { setCalculatedField, removeCalculatedField, describeCalculatedField } = await import('../src/builderModel.js');
+  var s0 = linkedSpec();
+  var s1 = setCalculatedField(s0, 'labs', { name: 'High', target: 'sampleAnnotation', formula: 'ALT > 40 ? "high" : "normal"' });
+  assert.equal(s0.data.labs.calculatedFields, undefined, 'input untouched');
+  var s2 = setCalculatedField(s1, 'labs', { name: 'Tier', target: 'sampleAnnotation', bin: { field: 'ALT', method: 'quantile', bins: 2 } });
+  var s3 = setCalculatedField(s2, 'labs', { name: 'High', target: 'sampleAnnotation', formula: 'ALT > 50 ? "high" : "normal"' });
+  assert.deepEqual(s3.data.labs.calculatedFields.map(function (f) { return f.name; }), ['High', 'Tier'], 'replace keeps position');
+  assert.match(s3.data.labs.calculatedFields[0].formula, /ALT > 50/);
+  assert.deepEqual(validateSpec(s3).errors, []);
+  assert.equal(describeCalculatedField(s3.data.labs.calculatedFields[1]), 'Tier: 2 quantile bins of ALT');
+  assert.equal(describeCalculatedField({ name: 'P', formula: 'A / B' }), 'P = A / B');
+  var s4 = removeCalculatedField(removeCalculatedField(s3, 'labs', 'High'), 'labs', 'Tier');
+  assert.equal(Object.prototype.hasOwnProperty.call(s4.data.labs, 'calculatedFields'), false);
+  assert.throws(function () { setCalculatedField(s0, 'nope', { name: 'X', formula: '1' }); }, /no data source named "nope"/);
+  assert.throws(function () { setCalculatedField(s0, 'labs', { name: ' ', formula: '1' }); }, /needs a name/);
+  var live = setDataSource(s0, 'feed', { kind: 'live', url: '/s' });
+  assert.throws(function () { setCalculatedField(live, 'feed', { name: 'X', formula: '1' }); }, /live source/);
+});
+
+test('setSourcePushdown sets, keeps the filters flag, and removes an empty query', async function () {
+  var { setSourcePushdown } = await import('../src/builderModel.js');
+  var s0 = setDataSource(blankSpec('d1'), 'sales', { kind: 'inline', value: CLINICAL, pushdown: { limit: 5, filters: false } });
+  var q = { where: [{ column: 'Arm', op: '=', value: 'A' }], groupBy: ['Arm'], measures: [{ fn: 'count' }], columns: [], limit: 0 };
+  var s1 = setSourcePushdown(s0, 'sales', q);
+  assert.deepEqual(s1.data.sales.pushdown, { where: q.where, groupBy: ['Arm'], measures: [{ fn: 'count' }], filters: false });
+  assert.deepEqual(s0.data.sales.pushdown, { limit: 5, filters: false }, 'input untouched');
+  assert.deepEqual(validateSpec(s1).errors, []);
+  assert.equal(Object.prototype.hasOwnProperty.call(setSourcePushdown(s1, 'sales', null).data.sales, 'pushdown'), false);
+  assert.throws(function () { setSourcePushdown(s0, 'nope', q); }, /no data source named "nope"/);
+  var live = setDataSource(s0, 'feed', { kind: 'live', url: '/s' });
+  assert.throws(function () { setSourcePushdown(live, 'feed', q); }, /live source cannot be shaped/);
 });
