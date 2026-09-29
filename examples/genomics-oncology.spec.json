@@ -53352,7 +53352,7 @@
   "panels": {
     "intro": {
       "type": "text",
-      "html": "<div style=\"font-weight: 700; font-size: 25px\">Genomics — Oncology RNA-seq Cohort</div><div style=\"font-size: 18px; color: #5b6472\">An oncology RNA-seq cohort over six datasets: a clustered expression heatmap, a differential-expression volcano, MA and contrast scatters, a single-cell UMAP, a cohort meter, a response-by-stage bar, and a Kaplan–Meier survival curve.</div>"
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Genomics — Oncology RNA-seq Cohort</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">An oncology RNA-seq cohort over six datasets: a clustered expression heatmap, a differential-expression volcano, MA and contrast scatters, a single-cell UMAP, a cohort meter, a response-by-stage bar, and a Kaplan–Meier survival curve.</div>"
     },
     "regulation-control": {
       "type": "control",

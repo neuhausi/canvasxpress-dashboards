@@ -15,3 +15,6 @@ __pycache__/
 # example dev-server data
 examples/.cxd-demo/
 .env
+
+# ui-chrome gate: actuals written on a failed run
+tests/browser/ui-chrome-results/

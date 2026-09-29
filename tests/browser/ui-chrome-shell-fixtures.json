@@ -1,0 +1,784 @@
+{
+ "$comment": "API responses for the app-shell views in tests/browser/ui-chrome.cjs (keys: 'METHOD /path' exact, or 'METHOD /path*' prefix). Shapes follow examples/builder.html + server/src/cxd_server/app.py. Fixed dates so renders are deterministic.",
+ "GET /auth/me": {
+  "user": "alice",
+  "is_admin": true,
+  "sso": false,
+  "permissions": [
+   "dashboard.create",
+   "dashboard.sign",
+   "dataset.create",
+   "function.run",
+   "llm.use",
+   "schedule.create",
+   "share.grant",
+   "share.public"
+  ],
+  "groups": [
+   "analysts"
+  ],
+  "roles": [
+   "editor"
+  ]
+ },
+ "GET /auth/config": {
+  "password": true,
+  "signup": true,
+  "oidc": {
+   "enabled": true,
+   "name": "Okta"
+  },
+  "posit_connect": false
+ },
+ "GET /api/llm/status": {
+  "enabled": true,
+  "model": "claude-x",
+  "mcp": {
+   "enabled": true,
+   "url": "http://mcp"
+  },
+  "logsPanel": true
+ },
+ "GET /api/functions/status": {
+  "enabled": true,
+  "languages": [
+   "python",
+   "r"
+  ],
+  "canAuthor": true
+ },
+ "GET /api/dashboards": {
+  "dashboards": [
+   {
+    "id": "sales-overview",
+    "title": "Sales Overview",
+    "visibility": "public",
+    "share_token": "tok1",
+    "locked": false,
+    "updated_at": "2026-09-01T10:15:00+00:00",
+    "owner": "alice",
+    "sharedWith": [
+     {
+      "principal": "group:analysts",
+      "level": "view"
+     }
+    ]
+   },
+   {
+    "id": "kpi-overview",
+    "title": "KPI Overview",
+    "visibility": "private",
+    "share_token": null,
+    "locked": true,
+    "updated_at": "2026-08-20T08:00:00+00:00",
+    "owner": "app",
+    "example": true,
+    "readOnly": false
+   }
+  ]
+ },
+ "GET /api/dashboards/sales-overview/versions*": {
+  "versions": [
+   {
+    "version": 3,
+    "saved_at": "2026-09-01T10:15:00+00:00",
+    "saved_by": "alice",
+    "title": "Sales Overview",
+    "sha256": "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12",
+    "note": "tweak colors",
+    "signatures": [
+     {
+      "signer": "alice",
+      "meaning": "Approved",
+      "signed_at": "2026-09-01T11:00:00+00:00",
+      "method": "password",
+      "valid": true,
+      "version": 3
+     }
+    ]
+   },
+   {
+    "version": 2,
+    "saved_at": "2026-08-30T09:00:00+00:00",
+    "saved_by": "bob",
+    "title": "Sales Overview",
+    "sha256": "9f8e7d6c5b4a9f8e7d6c5b4a9f8e7d6c5b4a9f8e7d6c5b4a9f8e7d6c5b4a9f8e",
+    "note": null,
+    "signatures": []
+   }
+  ],
+  "meanings": [
+   "Authored",
+   "Reviewed",
+   "Approved"
+  ],
+  "can_sign": true,
+  "reauth": "password"
+ },
+ "GET /api/dashboards/sales-overview/grants*": {
+  "grants": [
+   {
+    "principal": "group:analysts",
+    "level": "view"
+   },
+   {
+    "principal": "user:bob",
+    "level": "edit"
+   }
+  ]
+ },
+ "GET /api/dashboards/*": {
+  "id": "sales-overview",
+  "title": "Sales Overview",
+  "version": 1,
+  "broadcastGroup": "sales-overview",
+  "theme": "auto",
+  "layout": {
+   "cols": 12,
+   "rowHeight": 130,
+   "gap": 12,
+   "items": [
+    {
+     "panel": "intro",
+     "x": 0,
+     "y": 0,
+     "w": 12,
+     "h": 1
+    },
+    {
+     "panel": "revenue-bar",
+     "x": 0,
+     "y": 1,
+     "w": 6,
+     "h": 3
+    },
+    {
+     "panel": "region-pie",
+     "x": 6,
+     "y": 1,
+     "w": 6,
+     "h": 3
+    },
+    {
+     "panel": "trend-line",
+     "x": 0,
+     "y": 4,
+     "w": 12,
+     "h": 3
+    }
+   ]
+  },
+  "data": {
+   "sales": {
+    "kind": "inline",
+    "value": {
+     "y": {
+      "vars": [
+       "Revenue"
+      ],
+      "smps": [
+       "North",
+       "South",
+       "East",
+       "West",
+       "Central"
+      ],
+      "data": [
+       [
+        820,
+        640,
+        910,
+        730,
+        560
+       ]
+      ]
+     },
+     "x": {
+      "Region": [
+       "North",
+       "South",
+       "East",
+       "West",
+       "Central"
+      ]
+     }
+    }
+   },
+   "trend": {
+    "kind": "inline",
+    "value": {
+     "y": {
+      "vars": [
+       "North",
+       "South",
+       "East",
+       "West",
+       "Central"
+      ],
+      "smps": [
+       "Q1",
+       "Q2",
+       "Q3",
+       "Q4"
+      ],
+      "data": [
+       [
+        180,
+        210,
+        220,
+        210
+       ],
+       [
+        150,
+        160,
+        170,
+        160
+       ],
+       [
+        200,
+        230,
+        240,
+        240
+       ],
+       [
+        160,
+        180,
+        200,
+        190
+       ],
+       [
+        120,
+        140,
+        150,
+        150
+       ]
+      ]
+     }
+    }
+   }
+  },
+  "panels": {
+   "intro": {
+    "type": "text",
+    "html": "<div style=\"font-weight: 700; font-size: 25px\">Sales Overview</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">A backend-free sales showcase: three linked panels \u2014 revenue by region (bar), share (pie) and a monthly trend line \u2014 plus a broadcast-aware table. Click anything and the selection coordinates across the board.</div>"
+   },
+   "revenue-bar": {
+    "title": "Revenue by Region",
+    "dataRef": "sales",
+    "config": {
+     "graphType": "Bar",
+     "colorBy": "Region",
+     "showLegend": false,
+     "title": false
+    }
+   },
+   "region-pie": {
+    "title": "Share by Region",
+    "dataRef": "sales",
+    "config": {
+     "graphType": "Pie",
+     "colorBy": "Region",
+     "title": false
+    }
+   },
+   "trend-line": {
+    "title": "Quarterly Trend",
+    "dataRef": "trend",
+    "config": {
+     "graphType": "Line",
+     "title": false
+    }
+   }
+  },
+  "controls": [
+   {
+    "kind": "table",
+    "dataRef": "sales",
+    "title": "Sales Table"
+   }
+  ]
+ },
+ "GET /api/datasets": {
+  "datasets": [
+   {
+    "id": "regional-sales",
+    "title": "Regional Sales",
+    "rows": 5,
+    "cols": 3,
+    "store": null,
+    "updated_at": "2026-09-01T10:00:00+00:00",
+    "owner": "alice"
+   },
+   {
+    "id": "penguins",
+    "title": "Palmer Penguins",
+    "rows": 344,
+    "cols": 7,
+    "store": "s3",
+    "updated_at": "2026-08-15T12:00:00+00:00",
+    "owner": "app",
+    "example": true,
+    "readOnly": false
+   }
+  ]
+ },
+ "GET /api/datasets/regional-sales/grants*": {
+  "grants": [
+   {
+    "principal": "group:analysts",
+    "level": "view"
+   },
+   {
+    "principal": "user:bob",
+    "level": "edit"
+   }
+  ]
+ },
+ "GET /api/datasets/regional-sales/policy*": {
+  "policy": {
+   "rows": [
+    {
+     "field": "Region",
+     "allow": {
+      "group:analysts": [
+       "North",
+       "South"
+      ],
+      "*": "*"
+     }
+    }
+   ],
+   "columns": [
+    {
+     "hide": [
+      "Units"
+     ],
+     "except": [
+      "group:clinicians"
+     ]
+    }
+   ]
+  }
+ },
+ "GET /api/datasets/*": {
+  "y": {
+   "vars": [
+    "Revenue",
+    "Units"
+   ],
+   "smps": [
+    "North",
+    "South",
+    "East"
+   ],
+   "data": [
+    [
+     820,
+     640,
+     910
+    ],
+    [
+     10,
+     12,
+     9
+    ]
+   ]
+  },
+  "x": {
+   "Region": [
+    "North",
+    "South",
+    "East"
+   ]
+  }
+ },
+ "GET /api/directory": {
+  "users": [
+   "bob",
+   "carol"
+  ],
+  "groups": [
+   "analysts",
+   "clinicians"
+  ]
+ },
+ "GET /api/connectors/credentials": {
+  "username": "alice",
+  "password": "x"
+ },
+ "POST /connectors/auth/login": {},
+ "GET /connectors/api/sources": {
+  "sources": [
+   "sales-db",
+   "orders-db"
+  ]
+ },
+ "GET /connectors/api/streams": {
+  "streams": [
+   {
+    "name": "ticker",
+    "title": "Ticker",
+    "url": "/api/stream?source=ticker",
+    "variables": [
+     "price"
+    ]
+   }
+  ]
+ },
+ "GET /connectors/api/data*": {
+  "y": {
+   "vars": [
+    "Amount"
+   ],
+   "smps": [
+    "o1",
+    "o2",
+    "o3",
+    "o4"
+   ],
+   "data": [
+    [
+     5,
+     7,
+     3,
+     9
+    ]
+   ]
+  }
+ },
+ "GET /api/connectors/sources-meta": {
+  "sources": [
+   {
+    "name": "sales-db",
+    "updated_at": "2026-09-01T00:00:00",
+    "location": "postgres @ db.local/sales"
+   },
+   {
+    "name": "orders-db",
+    "updated_at": "2026-08-01T00:00:00",
+    "location": "sqlite"
+   }
+  ]
+ },
+ "GET /api/schedules/status": {
+  "enabled": true,
+  "scheduler": true,
+  "email": true,
+  "snapshots": true,
+  "links": true,
+  "origins": [
+   "connector",
+   "url"
+  ],
+  "can_create": true,
+  "email_address": "alice@example.org",
+  "email_verified": true,
+  "email_daily_cap": 100
+ },
+ "GET /api/schedules/a1b2c3/runs": {
+  "runs": [
+   {
+    "started": "2026-09-29T06:00:00+00:00",
+    "finished": "2026-09-29T06:00:02+00:00",
+    "status": "ok",
+    "message": "5 rows",
+    "cause": "schedule",
+    "detail": {}
+   },
+   {
+    "started": "2026-09-28T06:00:00+00:00",
+    "finished": "2026-09-28T06:00:01+00:00",
+    "status": "error",
+    "message": "HTTP 500",
+    "cause": "manual",
+    "detail": {}
+   }
+  ]
+ },
+ "GET /api/schedules*": {
+  "schedules": [
+   {
+    "id": "a1b2c3",
+    "owner": "alice",
+    "kind": "refresh",
+    "name": "Refresh Regional Sales",
+    "cron": "0 6 * * *",
+    "tz": "UTC",
+    "description": "every day at 06:00",
+    "enabled": true,
+    "config": {
+     "dataset": "regional-sales",
+     "origin": {
+      "kind": "url",
+      "url": "https://example.org/sales.csv",
+      "format": "csv"
+     }
+    },
+    "next_run": "2026-09-30T06:00:00+00:00",
+    "last_run": "2026-09-29T06:00:00+00:00",
+    "last_status": "ok",
+    "last_message": "5 rows"
+   },
+   {
+    "id": "d4e5f6",
+    "owner": "bob",
+    "kind": "alert",
+    "name": "Revenue drop",
+    "cron": "*/15 * * * *",
+    "tz": "Europe/Paris",
+    "description": "every 15 minutes",
+    "enabled": false,
+    "config": {
+     "dataset": "regional-sales",
+     "aggregate": "mean",
+     "measure": "Revenue",
+     "where": {
+      "Region": "North"
+     },
+     "op": "<",
+     "threshold": 500,
+     "recipients": [
+      "user:alice",
+      "group:analysts"
+     ]
+    },
+    "next_run": null,
+    "last_run": null,
+    "last_status": null,
+    "last_message": null
+   }
+  ]
+ },
+ "GET /api/cron/preview*": {
+  "description": "every day at 06:00",
+  "next": [
+   "2026-09-30T06:00:00+00:00",
+   "2026-10-01T06:00:00+00:00",
+   "2026-10-02T06:00:00+00:00"
+  ]
+ },
+ "GET /api/admin/governance": {
+  "permissions": [
+   {
+    "name": "dashboard.create",
+    "description": "Create dashboards and edit their own"
+   },
+   {
+    "name": "share.grant",
+    "description": "Share dashboards and datasets with users and groups"
+   }
+  ],
+  "roles": [
+   {
+    "name": "viewer",
+    "builtin": true,
+    "description": "Read-only access",
+    "permissions": []
+   },
+   {
+    "name": "editor",
+    "builtin": true,
+    "description": "Create and share",
+    "permissions": [
+     "dashboard.create",
+     "share.grant"
+    ]
+   },
+   {
+    "name": "auditor",
+    "builtin": false,
+    "description": "",
+    "permissions": [
+     "share.grant"
+    ]
+   }
+  ],
+  "groups": [
+   {
+    "name": "analysts",
+    "description": "Data team",
+    "members": [
+     "alice",
+     "bob"
+    ],
+    "role": "editor",
+    "managed": null
+   },
+   {
+    "name": "clinicians",
+    "description": "",
+    "members": [],
+    "role": null,
+    "managed": true
+   }
+  ],
+  "assignments": {
+   "user:bob": "auditor"
+  },
+  "default_role": "editor"
+ },
+ "GET /api/admin/users": {
+  "users": [
+   {
+    "username": "alice",
+    "is_admin": true,
+    "via_config": true,
+    "dashboards": 3,
+    "role": null,
+    "email": "alice@example.org",
+    "email_verified": true,
+    "roles": [
+     "editor"
+    ],
+    "groups": [
+     "analysts"
+    ]
+   },
+   {
+    "username": "bob",
+    "is_admin": false,
+    "via_config": false,
+    "dashboards": 1,
+    "role": "auditor",
+    "email": null,
+    "email_verified": false,
+    "roles": [
+     "auditor"
+    ],
+    "groups": [
+     "analysts"
+    ]
+   }
+  ]
+ },
+ "GET /api/admin/lineage": {
+  "dashboards": [],
+  "datasets": [
+   {
+    "owner": "alice",
+    "store": null,
+    "id": "regional-sales",
+    "used_by": [
+     {
+      "owner": "alice",
+      "id": "sales-overview",
+      "title": "Sales Overview"
+     }
+    ]
+   }
+  ],
+  "connectors": [
+   {
+    "url": "/connectors/api/data?source=sales-db",
+    "used_by": [
+     {
+      "owner": "bob",
+      "id": "ops",
+      "title": "Ops"
+     }
+    ]
+   }
+  ],
+  "live": []
+ },
+ "GET /api/admin/audit/verify": {
+  "ok": true,
+  "checked": 42,
+  "first_seq": 1,
+  "last_seq": 42,
+  "broken_at": null
+ },
+ "GET /api/admin/audit*": {
+  "enabled": true,
+  "next": null,
+  "actions": [
+   "auth.login",
+   "dashboard.save",
+   "dataset.upload"
+  ],
+  "events": [
+   {
+    "seq": 42,
+    "ts": "2026-09-29T10:00:00+00:00",
+    "actor": "alice",
+    "action": "dashboard.save",
+    "target": "sales-overview",
+    "owner": "alice",
+    "outcome": "ok",
+    "status": 200,
+    "ip": "127.0.0.1",
+    "detail": {
+     "version": 3
+    },
+    "prev_hash": "aa",
+    "hash": "bb"
+   },
+   {
+    "seq": 41,
+    "ts": "2026-09-29T09:58:00+00:00",
+    "actor": "bob",
+    "action": "auth.login",
+    "target": null,
+    "owner": null,
+    "outcome": "denied",
+    "status": 401,
+    "ip": "127.0.0.1",
+    "detail": null,
+    "prev_hash": "cc",
+    "hash": "aa"
+   }
+  ]
+ },
+ "GET /api/llm/mcp-log*": {
+  "log_path": "/var/log/cxd/mcp.jsonl",
+  "entries": [
+   {
+    "ts": "2026-09-29T10:00:00Z",
+    "endpoint": "/generate",
+    "request": {
+     "description": "bar chart of revenue by region"
+    },
+    "response": {
+     "success": true,
+     "config": {
+      "graphType": "Bar"
+     },
+     "warnings": [
+      "x"
+     ],
+     "invalid_refs": {},
+     "removed_params": [
+      "foo"
+     ],
+     "request_id": "req-1"
+    }
+   },
+   {
+    "ts": "2026-09-29T10:01:00Z",
+    "endpoint": "/modify",
+    "request": {
+     "instruction": "make it a pie"
+    },
+    "error": "timeout",
+    "response": {
+     "success": false
+    }
+   }
+  ]
+ },
+ "__signedOut": {
+  "GET /auth/me": {
+   "user": null,
+   "is_admin": false,
+   "permissions": []
+  },
+  "POST /auth/login": {
+   "__status": 401,
+   "detail": "Bad credentials"
+  },
+  "POST /auth/signup": {
+   "__status": 401,
+   "detail": "Bad credentials"
+  }
+ }
+}

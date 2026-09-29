@@ -1,0 +1,810 @@
+div.app:1 [0,0 1400x900] color=rgb(27, 30, 36); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto
+div.app:1>aside.rail [0,0 220x900] border=0px 1px 0px 0px / none solid none none / rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36) rgb(27, 30, 36); padding=14px 10px 14px 10px; bg=rgb(255, 255, 255)
+div.app:1>aside.rail>a.brand [10,14 199x54] padding=6px 8px 16px 8px
+div.app:1>aside.rail>a.brand>img [18,20 32x32] 
+div.app:1>aside.rail>a.brand>span [60,26 121x21] font-size=18px; font-weight=700
+div.app:1>aside.rail>nav [10,68 199x466] 
+div.app:1>aside.rail>nav>a.nav-item:1 [10,68 199x50] radius=6px; padding=10px
+div.app:1>aside.rail>nav>a.nav-item:1>span.ic [20,78 24x30] font-size=21px
+div.app:1>aside.rail>nav>a.nav-item:2 [10,120 199x50] radius=6px; padding=10px
+div.app:1>aside.rail>nav>a.nav-item:2>span.ic [20,130 24x30] font-size=21px
+div.app:1>aside.rail>nav>a.nav-item:3 [10,172 199x50] radius=6px; padding=10px
+div.app:1>aside.rail>nav>a.nav-item:3>span.ic [20,182 24x30] font-size=21px
+div.app:1>aside.rail>nav>a.active.nav-item:4 [10,224 199x50] color=rgb(61, 88, 255); font-weight=600; radius=6px; padding=10px; bg=rgba(83, 105, 255, 0.1)
+div.app:1>aside.rail>nav>a.active.nav-item:4>span.ic [20,234 24x30] font-size=21px
+div.app:1>aside.rail>nav>a.nav-item:5 [10,276 199x50] radius=6px; padding=10px
+div.app:1>aside.rail>nav>a.nav-item:5>span.ic [20,286 24x30] font-size=21px
+div.app:1>aside.rail>nav>a.nav-item:6 [10,328 199x50] radius=6px; padding=10px
+div.app:1>aside.rail>nav>a.nav-item:6>span.ic [20,338 24x30] font-size=21px
+a#nav-admin [10,380 199x50] radius=6px; padding=10px
+a#nav-admin>span.ic [20,390 24x30] font-size=21px
+a#nav-logs [10,432 199x50] radius=6px; padding=10px
+a#nav-logs>span.ic [20,442 24x30] font-size=21px
+a#nav-examples [10,484 199x50] radius=6px; padding=10px
+a#nav-examples>span.ic [20,494 24x30] font-size=21px
+div#rail-foot [10,839 199x47] color=rgb(87, 96, 106); border=1px 0px 0px 0px / solid none none none / rgb(230, 232, 236) rgb(87, 96, 106) rgb(87, 96, 106) rgb(87, 96, 106); padding=10px 8px 10px 8px
+span#rail-avatar [18,850 26x26] color=rgb(255, 255, 255); font-size=14px; font-weight=700; radius=50%; bg=rgb(61, 88, 255)
+span#rail-user [54,854 84x18] 
+a#rail-auth [148,855 53x17] font-size=14px
+div.app:1>main.content [220,0 1180x900] 
+div.app:1>main.content>div.topstrip:1 [220,0 1180x102] border=0px 0px 1px 0px / none none solid none / rgb(27, 30, 36) rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36); padding=10px 20px 10px 20px; bg=rgb(255, 255, 255)
+div#toolbar [240,35 1140x32] 
+div#toolbar>div [240,35 1140x32] 
+div#toolbar>div>h2.view-title [240,42 35x18] font-weight=600
+button#data-add [1206,36 76x30] color=rgb(255, 255, 255); font-family=Arial; font-weight=600; radius=6px; padding=6px 14px 6px 14px; bg=rgb(61, 88, 255)
+button#data-refresh [1290,35 90x32] font-family=Arial; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=6px 14px 6px 14px
+div#view [220,102 1180x798] padding=16px 20px 32px 20px
+div#view>div.data-view [240,118 1140x750] 
+div#data-left-col [240,118 300x750] 
+div#data-dropzone [240,118 300x175] color=rgb(87, 96, 106); line-height=24px; border=2px / dashed / rgb(230, 232, 236); radius=10px; padding=18px 14px 18px 14px
+div#data-dropzone>span.dz-icon [256,138 268x33] font-size=22px; line-height=33px
+div#data-dropzone>strong [259,180 113x18] font-weight=700
+div#data-dropzone>br:1 [521,180 0x18] 
+div#data-dropzone>br:2 [508,204 0x18] 
+input#data-search [240,305 300x38] color=rgb(0, 0, 0); font-size=15px; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=9px 10px 9px 10px; bg=rgb(255, 255, 255)
+div#file-sources [240,351 300x420] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=10px; bg=rgb(255, 255, 255)
+div#file-sources>div:1 [251,362 278x16] color=rgb(87, 96, 106); font-size=13px; font-weight=600
+div#data-list [251,384 278x376] 
+div#data-list>div.active.data-item:1 [261,394 258x59] border=1px / solid / rgb(61, 88, 255); radius=6px; padding=10px 12px 10px 12px; bg=rgba(83, 105, 255, 0.1)
+div#data-list>div.active.data-item:1>div [274,405 149x37] 
+div#data-list>div.active.data-item:1>div>div.data-item-title:1 [274,405 149x18] font-weight=600
+div#data-list>div.active.data-item:1>div>div.data-item-meta:2 [274,425 149x17] font-size=14px
+div#data-list>div.active.data-item:1>button.cX-Button:1 [431,415 22x17] font-size=14px; font-weight=500; line-height=16.8px; radius=6px; padding=0px 2px 0px 2px
+div#data-list>div.active.data-item:1>button.cX-Button:2 [461,415 15x17] font-size=14px; font-weight=500; line-height=16.8px; radius=6px; padding=0px 2px 0px 2px
+div#data-list>div.active.data-item:1>button.cX-Button:3 [484,415 22x17] font-size=14px; font-weight=500; line-height=16.8px; radius=6px; padding=0px 2px 0px 2px
+div#data-list>div.data-item:2 [261,463 258x59] border=1px / solid / rgb(230, 232, 236); radius=6px; padding=10px 12px 10px 12px
+div#data-list>div.data-item:2>div [274,474 172x37] 
+div#data-list>div.data-item:2>div>div.data-item-title:1 [274,474 172x18] font-weight=600
+div#data-list>div.data-item:2>div>div.data-item-meta:2 [274,494 172x17] color=rgb(87, 96, 106); font-size=14px
+div#data-list>div.data-item:2>button.cX-Button:1 [454,484 22x17] font-size=14px; font-weight=500; line-height=16.8px; radius=6px; padding=0px 2px 0px 2px
+div#data-list>div.data-item:2>button.cX-Button:2 [484,484 22x17] font-size=14px; font-weight=500; line-height=16.8px; radius=6px; padding=0px 2px 0px 2px
+div#data-splitter [240,775 300x8] border=1px 0px 1px 0px / solid none solid none / rgb(230, 232, 236) rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36); background-image=repeating-linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 4px, rgb(230, 232, 236) 4px, rgb(230, 232, 236) 8px)
+div#db-sources [240,787 300x250] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=10px; bg=rgb(255, 255, 255)
+div#db-sources>div:1 [251,798 278x16] color=rgb(87, 96, 106); font-size=13px; font-weight=600
+div#db-source-list [251,820 278x172] 
+div#db-source-list>div:1 [251,820 278x68] border=1px / solid / rgb(230, 232, 236); radius=6px; padding=6px 8px 6px 8px
+div#db-source-list>div:1>span [260,827 215x54] 
+div#db-source-list>div:1>span>div.data-item-title:1 [260,827 215x18] font-weight=600
+div#db-source-list>div:1>span>div.data-item-meta:2 [260,847 215x34] color=rgb(87, 96, 106); font-size=14px
+div#db-source-list>div:1>span>div.data-item-meta:2>span [260,847 37x17] 
+div#db-source-list>div:1>button.cX-Button.cX-Button--icon:1 [481,827 18x18] color=rgb(87, 96, 106); font-size=15px; font-weight=500; line-height=18px; radius=6px; padding=0px 2px 0px 2px
+div#db-source-list>div:1>button.cX-Button.cX-Button--icon:2 [505,827 15x22] color=rgb(87, 96, 106); font-size=18px; font-weight=500; line-height=21.6px; radius=6px; padding=0px 2px 0px 2px
+div#db-source-list>div:2 [251,894 278x51] border=1px / solid / rgb(230, 232, 236); radius=6px; padding=6px 8px 6px 8px
+div#db-source-list>div:2>span [260,901 215x37] 
+div#db-source-list>div:2>span>div.data-item-title:1 [260,901 215x18] font-weight=600
+div#db-source-list>div:2>span>div.data-item-meta:2 [260,921 215x17] color=rgb(87, 96, 106); font-size=14px
+div#db-source-list>div:2>span>div.data-item-meta:2>span [260,921 37x17] 
+div#db-source-list>div:2>button.cX-Button.cX-Button--icon:1 [481,901 18x18] color=rgb(87, 96, 106); font-size=15px; font-weight=500; line-height=18px; radius=6px; padding=0px 2px 0px 2px
+div#db-source-list>div:2>button.cX-Button.cX-Button--icon:2 [505,901 15x22] color=rgb(87, 96, 106); font-size=18px; font-weight=500; line-height=21.6px; radius=6px; padding=0px 2px 0px 2px
+button#db-source-add [251,1000 278x26] color=rgb(61, 88, 255); font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#data-preview [556,118 824x750] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=12px; bg=rgb(255, 255, 255)
+div#data-title [569,131 798x18] font-weight=600
+div#data-canvas-host [569,159 794x680] 
+div#data-preview-regional-sales-cX-DOM [569,159 794x676] 
+div#data-preview-regional-sales-cX-Container-HTMLWidgets [569,159 794x0] color=rgb(34, 34, 34); font-size=13px
+div#data-preview-regional-sales-cX-Container-DOE [569,159 794x0] 
+div#data-preview-regional-sales-cX-Container-Code [569,159 794x0] z=100000
+div#data-preview-regional-sales-cX-Container-Menus [569,159 794x0] 
+div#data-preview-regional-sales-cX-Resizer-Container [569,159 794x0] 
+div#data-preview-regional-sales-cX-Resize-Indicator [1313,817 20x8] color=rgb(255, 255, 255); font-size=12px; font-weight=700; radius=5px; padding=4px 10px 4px 10px; bg=rgb(83, 105, 255); z=10001; opacity=0
+div#data-preview-regional-sales-cX-Resizer-Container>div.cX-Resizer.t:2 [569,159 794x8] z=2000
+div#data-preview-regional-sales-cX-Resizer-Container>div.b.cX-Resizer:3 [569,827 794x8] z=2000
+div#data-preview-regional-sales-cX-Resizer-Container>div.cX-Resizer.l:4 [569,159 8x676] z=2000
+div#data-preview-regional-sales-cX-Resizer-Container>div.cX-Resizer.r:5 [1355,159 8x676] z=2000
+div#data-preview-regional-sales-cX-Resizer-Container>div.cX-Resizer.lt:6 [569,159 12x12] z=2000
+div#data-preview-regional-sales-cX-Resizer-Container>div.cX-Resizer.rt:7 [1351,159 12x12] z=2000
+div#data-preview-regional-sales-cX-Resizer-Container>div.cX-Resizer.lb:8 [569,823 12x12] z=2000
+div#data-preview-regional-sales-cX-Resizer-Container>div.cX-Resizer.rb:9 [1351,823 12x12] z=2000
+div#data-preview-regional-sales-cX-Wrapper [569,159 794x676] 
+div#data-preview-regional-sales-cX-UI [569,159 794x676] 
+div#data-preview-regional-sales-cX-Toolbars [569,159 0x676] 
+div#data-preview-regional-sales-cX-Toolbar-Top [569,159 794x32] z=1000
+div#data-preview-regional-sales-cX-Toolbar-Container-Top [788,149 357x36] border=0px 1px 1px 1px / none solid solid solid / rgb(27, 30, 36) rgb(83, 105, 255) rgb(83, 105, 255) rgb(83, 105, 255); radius=0px 0px 5px 5px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+svg#data-preview-regional-sales-cX-ToolbarTopReset [800,150 28x28] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-ToolbarTopSave [850,150 28x28] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-ToolbarTopChat [900,150 28x28] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-ToolbarTopTable [951,150 28x28] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-ToolbarTopExplore [1001,150 28x28] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-ToolbarTopCustomize [1052,150 28x28] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-ToolbarTopMaximize [1102,150 28x28] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+div#data-preview-regional-sales-cX-Toolbar-Bottom [569,803 794x32] z=1000
+div#data-preview-regional-sales-cX-Toolbar-Container-Bottom [964,842 4x3] border=1px 1px 0px 1px / solid solid none solid / rgb(83, 105, 255) rgb(83, 105, 255) rgb(27, 30, 36) rgb(83, 105, 255); radius=5px 5px 0px 0px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#data-preview-regional-sales-cX-Toolbar-Left [569,159 32x676] z=1000
+div#data-preview-regional-sales-cX-Toolbar-Container-Left [559,495 3x4] border=1px 1px 1px 0px / solid solid solid none / rgb(83, 105, 255) rgb(83, 105, 255) rgb(83, 105, 255) rgb(27, 30, 36); radius=0px 5px 5px 0px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#data-preview-regional-sales-cX-Toolbar-Right [1331,159 32x676] z=1000
+div#data-preview-regional-sales-cX-Toolbar-Container-Right [1370,495 3x4] border=1px 0px 1px 1px / solid none solid solid / rgb(83, 105, 255) rgb(27, 30, 36) rgb(83, 105, 255) rgb(83, 105, 255); radius=5px 0px 0px 5px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#data-preview-regional-sales-cX-Container [569,159 794x676] 
+div#data-preview-regional-sales-cX-Container-Viewer [569,159 794x676] color=rgb(255, 255, 255); opacity=0
+div#data-preview-regional-sales-cX-Canvas-Container [569,159 794x676] 
+div#data-preview-regional-sales-cX-Container-DataTable [569,159 794x676] color=rgb(255, 255, 255)
+div#data-preview-regional-sales-cX-DataTable [569,159 794x676] color=rgb(34, 34, 34); font-size=15px; border=1px / solid / rgb(83, 105, 255); radius=5px; z=10001
+div#data-preview-regional-sales-cX-DataTable-Banner [570,160 792x32] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(34, 34, 34) rgb(83, 105, 255) rgb(34, 34, 34); bg=rgb(61, 88, 255)
+div#data-preview-regional-sales-cX-DataTable-Logo [570,157 42x37] 
+div#data-preview-regional-sales-cX-DataTable-Logo>svg.cX-DataTable-Toolbar-Image-Logo [580,162 32x32] fill=rgb(0, 0, 0)
+div#data-preview-regional-sales-cX-DataTable-Search [1177,164 157x24] 
+input#data-preview-regional-sales-cX-DataTableSearch [1177,164 147x24] color=rgb(255, 255, 255); font-family=Arial; font-size=12px; border=1px / solid / rgb(83, 105, 255); radius=5px; padding=10px; bg=rgb(255, 255, 255)
+svg#data-preview-regional-sales-cX-DataTable-Toolbar-Show-Hide-Image [1334,167 18x18] fill=rgb(0, 0, 0)
+div#data-preview-regional-sales-cX-DataTable-Toolbar [570,192 792x32] font-size=14px; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(34, 34, 34) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 4px 0px 0px; bg=rgb(255, 255, 255)
+svg#data-preview-regional-sales-cX-DataTable-Chat-Image [998,198 20x20] border=1px / solid / rgb(83, 105, 255); radius=5px; padding=2px; box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+div#data-preview-regional-sales-cX-DataTable-Toolbar>div.cX-DataTable-Toolbar-Spacer:1 [1034,200 16x20] border=0px 0px 0px 1px / none none none solid / rgb(34, 34, 34) rgb(34, 34, 34) rgb(34, 34, 34) rgb(83, 105, 255)
+svg#data-preview-regional-sales-cX-DataTable-Stripe-Image [1054,198 20x20] border=1px / solid / rgb(83, 105, 255); radius=5px; padding=2px; box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-DataTable-Color-Image [1082,198 20x20] border=1px / solid / rgb(83, 105, 255); radius=5px; padding=2px; box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-DataTable-Transpose-Image [1110,198 20x20] border=1px / solid / rgb(83, 105, 255); radius=5px; padding=2px; box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+div#data-preview-regional-sales-cX-DataTable-Toolbar>div.cX-DataTable-Toolbar-Spacer:2 [1146,200 16x20] border=0px 0px 0px 1px / none none none solid / rgb(34, 34, 34) rgb(34, 34, 34) rgb(34, 34, 34) rgb(83, 105, 255)
+svg#data-preview-regional-sales-cX-DataTable-Layout-Image [1166,198 20x20] border=1px / solid / rgb(83, 105, 255); radius=5px; padding=2px; box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-DataTable-Filter-Reset-Image [1194,198 20x20] border=1px / solid / rgb(83, 105, 255); radius=5px; padding=2px; box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+div#data-preview-regional-sales-cX-DataTable-Toolbar>div.cX-DataTable-Toolbar-Spacer:3 [1230,200 16x20] border=0px 0px 0px 1px / none none none solid / rgb(34, 34, 34) rgb(34, 34, 34) rgb(34, 34, 34) rgb(83, 105, 255)
+svg#data-preview-regional-sales-cX-DataTable-Save-Image [1250,198 20x20] border=1px / solid / rgb(83, 105, 255); radius=5px; padding=2px; box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-DataTable-DOE-Image [1278,198 20x20] border=1px / solid / rgb(83, 105, 255); radius=5px; padding=2px; box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-DataTable-Maximize-Minimize-Image [1306,198 20x20] border=1px / solid / rgb(83, 105, 255); radius=5px; padding=2px; box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#data-preview-regional-sales-cX-DataTable-Close-Image [1334,198 20x20] border=1px / solid / rgb(83, 105, 255); radius=5px; padding=2px; box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+div#data-preview-regional-sales-cX-DataTable-Root [570,224 794x580] 
+div#data-preview-regional-sales-cX-DataTable-Header-Viewport [570,224 778x564] border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); z=1
+table#data-preview-regional-sales-cX-DataTableTable [570,224 4462x330] radius=5px; z=10001
+table#data-preview-regional-sales-cX-DataTableTable>tbody [570,224 4462x330] 
+table#data-preview-regional-sales-cX-DataTableTable>tbody>tr.cX-DataTable-Row:1 [570,224 4462x33] 
+th#data-preview-regional-sales-cX-DataTable-Cell.0.0 [570,224 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100001
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.0 [570,224 66x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.0>span.cX-DataTable-Cell-Head-Text:1 [590,231 31x18] 
+th#data-preview-regional-sales-cX-DataTable-Cell.0.1 [640,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.1 [640,224 180x32] line-height=32px; padding=0px 0px 0px 15px
+a#data-preview-regional-sales-cX-DataTable-Cell-Header-Menu.0.1 [802,224 8x32] color=rgb(0, 0, 238); padding=0px 0px 0px 1px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.1>span.cX-DataTable-Cell-Head-Text:1 [655,231 14x18] 
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.1 [786,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter1 [786,234 12x12] fill=rgb(0, 0, 0)
+span#data-preview-regional-sales-cX-DataTable-Cell-Header-Resize.0.1 [817,235 3x10] bg=rgb(83, 105, 255)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.2 [823,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.2 [823,224 180x32] line-height=32px; padding=0px 0px 0px 15px
+a#data-preview-regional-sales-cX-DataTable-Cell-Header-Menu.0.2 [985,224 8x32] color=rgb(0, 0, 238); padding=0px 0px 0px 1px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.2>span.cX-DataTable-Cell-Head-Text:1 [838,231 50x18] 
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.2 [969,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter2 [969,234 12x12] fill=rgb(0, 0, 0)
+span#data-preview-regional-sales-cX-DataTable-Cell-Header-Resize.0.2 [1000,235 3x10] bg=rgb(83, 105, 255)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.3 [1006,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.3 [1006,224 180x32] line-height=32px; padding=0px 15px 0px 0px
+a#data-preview-regional-sales-cX-DataTable-Cell-Header-Menu.0.3 [1009,224 8x32] color=rgb(0, 0, 238); padding=0px 0px 0px 1px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.3>span.cX-DataTable-Cell-Head-Text:1 [1108,231 63x18] 
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.3 [1025,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter3 [1025,234 12x12] fill=rgb(0, 0, 0)
+span#data-preview-regional-sales-cX-DataTable-Cell-Header-Resize.0.3 [1183,235 3x10] bg=rgb(83, 105, 255)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.4 [1189,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.4 [1189,224 180x32] line-height=32px; padding=0px 15px 0px 0px
+a#data-preview-regional-sales-cX-DataTable-Cell-Header-Menu.0.4 [1192,224 8x32] color=rgb(0, 0, 238); padding=0px 0px 0px 1px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.4>span.cX-DataTable-Cell-Head-Text:1 [1315,231 39x18] 
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.4 [1208,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter4 [1208,234 12x12] fill=rgb(0, 0, 0)
+span#data-preview-regional-sales-cX-DataTable-Cell-Header-Resize.0.4 [1366,235 3x10] bg=rgb(83, 105, 255)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.5 [1372,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.5 [1372,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.5 [1518,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter5 [1518,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.6 [1555,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.6 [1555,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.6 [1701,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter6 [1701,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.7 [1738,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.7 [1738,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.7 [1884,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter7 [1884,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.8 [1921,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.8 [1921,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.8 [2067,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter8 [2067,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.9 [2104,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.9 [2104,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.9 [2250,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter9 [2250,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.10 [2287,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.10 [2287,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.10 [2433,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter10 [2433,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.11 [2470,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.11 [2470,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.11 [2616,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter11 [2616,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.12 [2653,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.12 [2653,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.12 [2799,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter12 [2799,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.13 [2836,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.13 [2836,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.13 [2982,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter13 [2982,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.14 [3019,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.14 [3019,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.14 [3165,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter14 [3165,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.15 [3202,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.15 [3202,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.15 [3348,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter15 [3348,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.16 [3385,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.16 [3385,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.16 [3531,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter16 [3531,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.17 [3568,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.17 [3568,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.17 [3714,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter17 [3714,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.18 [3751,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.18 [3751,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.18 [3897,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter18 [3897,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.19 [3934,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.19 [3934,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.19 [4080,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter19 [4080,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.20 [4117,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.20 [4117,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.20 [4263,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter20 [4263,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.21 [4300,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.21 [4300,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.21 [4446,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter21 [4446,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.22 [4483,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.22 [4483,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.22 [4629,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter22 [4629,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.23 [4666,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.23 [4666,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.23 [4812,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter23 [4812,234 12x12] fill=rgb(0, 0, 0)
+th#data-preview-regional-sales-cX-DataTable-Cell.0.24 [4849,224 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.0.24 [4849,224 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter.24 [4995,234 12x12] 
+svg#data-preview-regional-sales-cX-DataTable-Cell-Header-Filter-Unfilter24 [4995,234 12x12] fill=rgb(0, 0, 0)
+table#data-preview-regional-sales-cX-DataTableTable>tbody>tr.cX-DataTable-Row:2 [570,257 4462x33] 
+th#data-preview-regional-sales-cX-DataTable-Cell.1.0 [570,257 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.0 [570,257 66x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.0>span.cX-DataTable-Cell-Text [611,264 10x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.1.1 [640,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.1 [640,257 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.1>span.cX-DataTable-Cell-Text [766,264 39x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.1.2 [823,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.2 [823,257 180x32] line-height=32px; padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.2>span.cX-DataTable-Cell-Text [838,264 39x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.1.3 [1006,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.3 [1006,257 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.3>span.cX-DataTable-Cell-Text [1143,264 28x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.1.4 [1189,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.4 [1189,257 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.4>span.cX-DataTable-Cell-Text [1336,264 18x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.1.5 [1372,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.5 [1372,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.6 [1555,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.6 [1555,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.7 [1738,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.7 [1738,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.8 [1921,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.8 [1921,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.9 [2104,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.9 [2104,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.10 [2287,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.10 [2287,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.11 [2470,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.11 [2470,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.12 [2653,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.12 [2653,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.13 [2836,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.13 [2836,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.14 [3019,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.14 [3019,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.15 [3202,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.15 [3202,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.16 [3385,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.16 [3385,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.17 [3568,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.17 [3568,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.18 [3751,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.18 [3751,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.19 [3934,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.19 [3934,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.20 [4117,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.20 [4117,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.21 [4300,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.21 [4300,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.22 [4483,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.22 [4483,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.23 [4666,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.23 [4666,257 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.1.24 [4849,257 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.1.24 [4849,257 180x32] padding=0px 0px 0px 15px
+table#data-preview-regional-sales-cX-DataTableTable>tbody>tr.cX-DataTable-Row:3 [570,290 4462x33] 
+th#data-preview-regional-sales-cX-DataTable-Cell.2.0 [570,290 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.0 [570,290 66x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.0>span.cX-DataTable-Cell-Text [611,297 10x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.2.1 [640,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.1 [640,290 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.1>span.cX-DataTable-Cell-Text [765,297 40x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.2.2 [823,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.2 [823,290 180x32] line-height=32px; padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.2>span.cX-DataTable-Cell-Text [838,297 40x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.2.3 [1006,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.3 [1006,290 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.3>span.cX-DataTable-Cell-Text [1143,297 28x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.2.4 [1189,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.4 [1189,290 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.4>span.cX-DataTable-Cell-Text [1336,297 18x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.2.5 [1372,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.5 [1372,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.6 [1555,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.6 [1555,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.7 [1738,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.7 [1738,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.8 [1921,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.8 [1921,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.9 [2104,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.9 [2104,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.10 [2287,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.10 [2287,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.11 [2470,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.11 [2470,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.12 [2653,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.12 [2653,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.13 [2836,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.13 [2836,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.14 [3019,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.14 [3019,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.15 [3202,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.15 [3202,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.16 [3385,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.16 [3385,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.17 [3568,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.17 [3568,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.18 [3751,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.18 [3751,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.19 [3934,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.19 [3934,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.20 [4117,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.20 [4117,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.21 [4300,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.21 [4300,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.22 [4483,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.22 [4483,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.23 [4666,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.23 [4666,290 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.2.24 [4849,290 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.2.24 [4849,290 180x32] padding=0px 0px 0px 15px
+table#data-preview-regional-sales-cX-DataTableTable>tbody>tr.cX-DataTable-Row:4 [570,323 4462x33] 
+th#data-preview-regional-sales-cX-DataTable-Cell.3.0 [570,323 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.0 [570,323 66x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.0>span.cX-DataTable-Cell-Text [611,330 10x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.3.1 [640,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.1 [640,323 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.1>span.cX-DataTable-Cell-Text [775,330 30x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.3.2 [823,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.2 [823,323 180x32] line-height=32px; padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.2>span.cX-DataTable-Cell-Text [838,330 30x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.3.3 [1006,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.3 [1006,323 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.3>span.cX-DataTable-Cell-Text [1143,330 28x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.3.4 [1189,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.4 [1189,323 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.4>span.cX-DataTable-Cell-Text [1345,330 9x18] 
+td#data-preview-regional-sales-cX-DataTable-Cell.3.5 [1372,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.5 [1372,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.6 [1555,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.6 [1555,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.7 [1738,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.7 [1738,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.8 [1921,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.8 [1921,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.9 [2104,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.9 [2104,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.10 [2287,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.10 [2287,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.11 [2470,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.11 [2470,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.12 [2653,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.12 [2653,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.13 [2836,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.13 [2836,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.14 [3019,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.14 [3019,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.15 [3202,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.15 [3202,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.16 [3385,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.16 [3385,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.17 [3568,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.17 [3568,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.18 [3751,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.18 [3751,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.19 [3934,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.19 [3934,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.20 [4117,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.20 [4117,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.21 [4300,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.21 [4300,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.22 [4483,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.22 [4483,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.23 [4666,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.23 [4666,323 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.3.24 [4849,323 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.3.24 [4849,323 180x32] padding=0px 0px 0px 15px
+table#data-preview-regional-sales-cX-DataTableTable>tbody>tr.cX-DataTable-Row:5 [570,356 4462x33] 
+th#data-preview-regional-sales-cX-DataTable-Cell.4.0 [570,356 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.0 [570,356 66x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.1 [640,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.1 [640,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.2 [823,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.2 [823,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.3 [1006,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.3 [1006,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.4 [1189,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.4 [1189,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.5 [1372,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.5 [1372,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.6 [1555,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.6 [1555,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.7 [1738,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.7 [1738,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.8 [1921,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.8 [1921,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.9 [2104,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.9 [2104,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.10 [2287,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.10 [2287,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.11 [2470,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.11 [2470,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.12 [2653,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.12 [2653,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.13 [2836,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.13 [2836,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.14 [3019,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.14 [3019,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.15 [3202,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.15 [3202,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.16 [3385,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.16 [3385,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.17 [3568,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.17 [3568,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.18 [3751,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.18 [3751,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.19 [3934,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.19 [3934,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.20 [4117,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.20 [4117,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.21 [4300,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.21 [4300,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.22 [4483,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.22 [4483,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.23 [4666,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.23 [4666,356 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.4.24 [4849,356 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.4.24 [4849,356 180x32] padding=0px 0px 0px 15px
+table#data-preview-regional-sales-cX-DataTableTable>tbody>tr.cX-DataTable-Row:6 [570,389 4462x33] 
+th#data-preview-regional-sales-cX-DataTable-Cell.5.0 [570,389 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.0 [570,389 66x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.1 [640,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.1 [640,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.2 [823,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.2 [823,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.3 [1006,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.3 [1006,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.4 [1189,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.4 [1189,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.5 [1372,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.5 [1372,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.6 [1555,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.6 [1555,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.7 [1738,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.7 [1738,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.8 [1921,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.8 [1921,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.9 [2104,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.9 [2104,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.10 [2287,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.10 [2287,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.11 [2470,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.11 [2470,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.12 [2653,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.12 [2653,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.13 [2836,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.13 [2836,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.14 [3019,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.14 [3019,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.15 [3202,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.15 [3202,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.16 [3385,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.16 [3385,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.17 [3568,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.17 [3568,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.18 [3751,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.18 [3751,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.19 [3934,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.19 [3934,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.20 [4117,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.20 [4117,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.21 [4300,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.21 [4300,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.22 [4483,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.22 [4483,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.23 [4666,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.23 [4666,389 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.5.24 [4849,389 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.5.24 [4849,389 180x32] padding=0px 0px 0px 15px
+table#data-preview-regional-sales-cX-DataTableTable>tbody>tr.cX-DataTable-Row:7 [570,422 4462x33] 
+th#data-preview-regional-sales-cX-DataTable-Cell.6.0 [570,422 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.0 [570,422 66x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.1 [640,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.1 [640,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.2 [823,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.2 [823,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.3 [1006,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.3 [1006,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.4 [1189,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.4 [1189,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.5 [1372,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.5 [1372,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.6 [1555,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.6 [1555,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.7 [1738,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.7 [1738,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.8 [1921,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.8 [1921,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.9 [2104,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.9 [2104,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.10 [2287,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.10 [2287,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.11 [2470,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.11 [2470,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.12 [2653,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.12 [2653,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.13 [2836,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.13 [2836,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.14 [3019,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.14 [3019,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.15 [3202,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.15 [3202,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.16 [3385,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.16 [3385,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.17 [3568,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.17 [3568,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.18 [3751,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.18 [3751,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.19 [3934,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.19 [3934,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.20 [4117,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.20 [4117,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.21 [4300,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.21 [4300,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.22 [4483,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.22 [4483,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.23 [4666,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.23 [4666,422 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.6.24 [4849,422 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.6.24 [4849,422 180x32] padding=0px 0px 0px 15px
+table#data-preview-regional-sales-cX-DataTableTable>tbody>tr.cX-DataTable-Row:8 [570,455 4462x33] 
+th#data-preview-regional-sales-cX-DataTable-Cell.7.0 [570,455 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.0 [570,455 66x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.1 [640,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.1 [640,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.2 [823,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.2 [823,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.3 [1006,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.3 [1006,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.4 [1189,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.4 [1189,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.5 [1372,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.5 [1372,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.6 [1555,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.6 [1555,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.7 [1738,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.7 [1738,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.8 [1921,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.8 [1921,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.9 [2104,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.9 [2104,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.10 [2287,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.10 [2287,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.11 [2470,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.11 [2470,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.12 [2653,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.12 [2653,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.13 [2836,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.13 [2836,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.14 [3019,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.14 [3019,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.15 [3202,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.15 [3202,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.16 [3385,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.16 [3385,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.17 [3568,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.17 [3568,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.18 [3751,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.18 [3751,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.19 [3934,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.19 [3934,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.20 [4117,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.20 [4117,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.21 [4300,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.21 [4300,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.22 [4483,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.22 [4483,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.23 [4666,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.23 [4666,455 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.7.24 [4849,455 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.7.24 [4849,455 180x32] padding=0px 0px 0px 15px
+table#data-preview-regional-sales-cX-DataTableTable>tbody>tr.cX-DataTable-Row:9 [570,488 4462x33] 
+th#data-preview-regional-sales-cX-DataTable-Cell.8.0 [570,488 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.0 [570,488 66x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.1 [640,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.1 [640,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.2 [823,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.2 [823,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.3 [1006,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.3 [1006,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.4 [1189,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.4 [1189,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.5 [1372,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.5 [1372,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.6 [1555,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.6 [1555,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.7 [1738,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.7 [1738,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.8 [1921,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.8 [1921,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.9 [2104,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.9 [2104,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.10 [2287,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.10 [2287,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.11 [2470,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.11 [2470,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.12 [2653,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.12 [2653,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.13 [2836,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.13 [2836,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.14 [3019,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.14 [3019,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.15 [3202,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.15 [3202,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.16 [3385,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.16 [3385,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.17 [3568,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.17 [3568,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.18 [3751,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.18 [3751,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.19 [3934,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.19 [3934,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.20 [4117,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.20 [4117,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.21 [4300,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.21 [4300,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.22 [4483,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.22 [4483,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.23 [4666,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.23 [4666,488 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.8.24 [4849,488 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.8.24 [4849,488 180x32] padding=0px 0px 0px 15px
+table#data-preview-regional-sales-cX-DataTableTable>tbody>tr.cX-DataTable-Row:10 [570,521 4462x33] 
+th#data-preview-regional-sales-cX-DataTable-Cell.9.0 [570,521 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=100000
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.0 [570,521 66x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.1 [640,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.1 [640,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.2 [823,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.2 [823,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.3 [1006,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.3 [1006,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.4 [1189,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.4 [1189,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.5 [1372,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.5 [1372,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.6 [1555,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.6 [1555,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.7 [1738,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.7 [1738,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.8 [1921,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.8 [1921,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.9 [2104,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.9 [2104,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.10 [2287,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.10 [2287,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.11 [2470,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.11 [2470,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.12 [2653,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.12 [2653,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.13 [2836,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.13 [2836,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.14 [3019,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.14 [3019,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.15 [3202,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.15 [3202,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.16 [3385,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.16 [3385,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.17 [3568,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.17 [3568,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.18 [3751,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.18 [3751,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.19 [3934,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.19 [3934,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.20 [4117,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.20 [4117,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.21 [4300,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.21 [4300,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.22 [4483,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.22 [4483,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.23 [4666,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.23 [4666,521 180x32] padding=0px 0px 0px 15px
+td#data-preview-regional-sales-cX-DataTable-Cell.9.24 [4849,521 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#data-preview-regional-sales-cX-DataTable-Cell-Content.9.24 [4849,521 180x32] padding=0px 0px 0px 15px
+div#data-preview-regional-sales-cX-DataTable-Vertical-Scrollbar [1343,226 16x560] bg=rgb(255, 255, 255)
+img#data-preview-regional-sales-cX-DataTable-Vertical-Scrollbar-Image [1343,226 1x133] 
+div#data-preview-regional-sales-cX-DataTable-Horizontal-Scrollbar [572,783 774x16] bg=rgb(255, 255, 255)
+img#data-preview-regional-sales-cX-DataTable-Horizontal-Scrollbar-Image [572,797 807x1] 
+div#data-preview-regional-sales-cX-DataTable-Status [570,802 792x32] color=rgb(255, 255, 255); border=1px 0px 0px 0px / solid none none none / rgb(83, 105, 255) rgb(255, 255, 255) rgb(255, 255, 255) rgb(255, 255, 255); bg=rgb(61, 88, 255)
+div#data-preview-regional-sales-cX-DataTable-Status-Left [570,810 162x18] 
+svg#data-preview-regional-sales-cX-DataTable-Pagination-Show-Hide-Image [580,810 18x18] fill=rgb(0, 0, 0)
+span#data-preview-regional-sales-cX-DataTable-Dimensions [618,810 114x18] 
+div#data-preview-regional-sales-cX-Container-Workflow [569,835 794x0] 
+div#data-preview-regional-sales-cX-Version-Info-Trigger [569,159 25x25] z=10000
+div#data-preview-regional-sales-cX-Version-Info-Container [601,191 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#data-preview-regional-sales-cX-Version-Info-Container>b:1 [610,200 117x20] font-weight=700
+div#data-preview-regional-sales-cX-Version-Info-Container>br:1 [727,200 0x20] 
+div#data-preview-regional-sales-cX-Version-Info-Container>b:2 [610,220 26x20] font-weight=700
+div#data-preview-regional-sales-cX-Version-Info-Container>br:2 [678,220 0x20] 
+div#data-preview-regional-sales-cX-Version-Info-Container>b:3 [610,240 37x20] font-weight=700
+table#data-preview-regional-sales-cX-a11y-table [568,158 209x86] 
+table#data-preview-regional-sales-cX-a11y-table>caption [568,158 209x18] 
+table#data-preview-regional-sales-cX-a11y-table>thead [570,178 205x20] 
+table#data-preview-regional-sales-cX-a11y-table>thead>tr [570,178 205x20] 
+table#data-preview-regional-sales-cX-a11y-table>thead>tr>td [570,178 68x20] padding=1px
+table#data-preview-regional-sales-cX-a11y-table>thead>tr>th:1 [640,178 47x20] font-weight=700; padding=1px
+table#data-preview-regional-sales-cX-a11y-table>thead>tr>th:2 [689,178 48x20] font-weight=700; padding=1px
+table#data-preview-regional-sales-cX-a11y-table>thead>tr>th:3 [739,178 36x20] font-weight=700; padding=1px
+table#data-preview-regional-sales-cX-a11y-table>tbody [570,200 205x42] 
+table#data-preview-regional-sales-cX-a11y-table>tbody>tr:1 [570,200 205x20] 
+table#data-preview-regional-sales-cX-a11y-table>tbody>tr:1>th [570,200 68x20] font-weight=700; padding=1px
+table#data-preview-regional-sales-cX-a11y-table>tbody>tr:1>td:1 [640,200 47x20] padding=1px
+table#data-preview-regional-sales-cX-a11y-table>tbody>tr:1>td:2 [689,200 48x20] padding=1px
+table#data-preview-regional-sales-cX-a11y-table>tbody>tr:1>td:3 [739,200 36x20] padding=1px
+table#data-preview-regional-sales-cX-a11y-table>tbody>tr:2 [570,222 205x20] 
+table#data-preview-regional-sales-cX-a11y-table>tbody>tr:2>th [570,222 68x20] font-weight=700; padding=1px
+table#data-preview-regional-sales-cX-a11y-table>tbody>tr:2>td:1 [640,222 47x20] padding=1px
+table#data-preview-regional-sales-cX-a11y-table>tbody>tr:2>td:2 [689,222 48x20] padding=1px
+table#data-preview-regional-sales-cX-a11y-table>tbody>tr:2>td:3 [739,222 36x20] padding=1px
+div#data-preview-regional-sales-cX-a11y-live [568,158 1x1] 
+div.cX-Modal-Overlay:2 [0,0 1400x900] color=rgb(27, 30, 36); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto; padding=72px 0px 0px 0px; bg=rgba(0, 0, 0, 0.35); z=100000
+div.cX-Modal-Overlay:2>div.cX-Modal [340,72 720x595] font-size=13px; border=1px / solid / rgb(230, 232, 236); radius=10px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0.3) 0px 4px 20px 0px
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Head:1 [341,73 718x55] border=0px 0px 1px 0px / none none solid none / rgb(27, 30, 36) rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36); padding=12px 16px 12px 16px
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Head:1>h3.cX-Modal-Title [357,90 642x20] font-size=17px; font-weight=700
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Head:1>button.cX-Button.cX-Button--icon [1007,85 36x30] font-size=18px; font-weight=500; line-height=21.6px; border=1px / solid / rgba(0, 0, 0, 0); radius=6px; padding=3px 10px 3px 10px
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2 [341,128 718x539] font-size=15px; padding=14px 16px 14px 16px
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>p [357,142 686x51] color=rgb(87, 96, 106); font-size=14px
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>h4:1 [357,203 686x18] font-weight=700
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1 [357,227 686x134] border=1px / solid / rgb(230, 232, 236); radius=6px; padding=8px 10px 8px 10px
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:1 [368,236 664x25] 
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:1>span:1 [368,239 155x18] 
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:1>select [531,238 76x19] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(118, 118, 118); bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:1>span:2 [615,239 169x18] 
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:1>button.cX-Button [929,236 103x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=3px 10px 3px 10px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:2 [368,266 664x26] 
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:2>select [368,266 220x26] color=rgb(0, 0, 0); font-family=Arial; font-size=14px; border=1px / solid / rgb(118, 118, 118); padding=3px 4px 3px 4px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:2>input [596,266 395x26] color=rgb(0, 0, 0); font-family=Arial; font-size=14px; border=2px / inset / rgb(118, 118, 118); padding=3px 6px 3px 6px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:2>button.cX-Button [999,267 33x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=3px 10px 3px 10px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:3 [368,296 664x26] 
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:3>select [368,296 220x26] color=rgb(0, 0, 0); font-family=Arial; font-size=14px; border=1px / solid / rgb(118, 118, 118); padding=3px 4px 3px 4px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:3>input [596,296 395x26] color=rgb(0, 0, 0); font-family=Arial; font-size=14px; border=2px / inset / rgb(118, 118, 118); padding=3px 6px 3px 6px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>div:3>button.cX-Button [999,297 33x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=3px 10px 3px 10px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:1>button.cX-Button [368,326 155x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=3px 10px 3px 10px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>button.cX-Button:1 [357,368 91x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=3px 10px 3px 10px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>h4:2 [357,409 686x18] font-weight=700
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2 [357,433 686x124] border=1px / solid / rgb(230, 232, 236); radius=6px; padding=8px 10px 8px 10px
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:1 [368,442 664x18] 
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:2 [368,464 664x17] 
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:2>label:1 [368,464 75x17] font-size=14px
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:2>label:1>input [368,464 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:2>label:2 [455,464 53x17] font-size=14px
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:2>label:2>input [455,464 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(83, 105, 255); radius=4px; bg=rgb(83, 105, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:2>label:3 [521,464 64x17] font-size=14px
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:2>label:3>input [521,464 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:3 [368,489 664x26] 
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:3>span [368,493 98x18] 
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:3>button.cX-Button [472,490 119x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=3px 10px 3px 10px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>div:3>select [597,489 150x26] color=rgb(0, 0, 0); font-family=Arial; font-size=14px; border=1px / solid / rgb(118, 118, 118); padding=3px 4px 3px 4px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:2>button.cX-Button [368,523 103x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=3px 10px 3px 10px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>button.cX-Button:2 [357,565 114x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=3px 10px 3px 10px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:3 [357,598 686x25] 
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:3>button.cX-Button:1 [357,598 88x25] color=rgb(255, 255, 255); font-size=14px; font-weight=500; line-height=16.8px; radius=6px; padding=3px 10px 3px 10px; bg=rgb(61, 88, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:3>button.cX-Button:2 [453,598 129x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=3px 10px 3px 10px; bg=rgb(255, 255, 255)
+div.cX-Modal-Overlay:2>div.cX-Modal>div.cX-Modal-Body:2>div:4 [357,634 686x18] font-size=14px

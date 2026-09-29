@@ -21,7 +21,7 @@ make it available in the app) a seed entry in `examples/serve.py`.
    **ALWAYS start the dashboard with a full-width intro text panel** (the house
    default): the FIRST layout item is a `{"type":"text"}` panel spanning all
    columns (`"w": cols`) that shows the dashboard **title** (bold, 25px) with a
-   **one-to-three-line description** underneath (18px, muted `#5b6472`) — see the
+   **one-to-three-line description** underneath (18px, muted `var(--cxd-muted)` — a theme role, so it reads in dark mode too) — see the
    spec format. Height `h`: `2` when `rowHeight` is ~40, `1` when it is ~130
    (keep it short — no big gap before the graphs). Only `color`, `font-size`,
    `font-weight`, `font-style`, `text-decoration`, `text-align`, `font-family`
@@ -81,7 +81,7 @@ make it available in the app) a seed entry in `examples/serve.py`.
   },
   "panels": {
     "intro": { "type": "text",                                  // REQUIRED: title + 1-3 line description
-               "html": "<div style=\"font-weight: 700; font-size: 25px\">My Example</div><div style=\"font-size: 18px; color: #5b6472\">One to three lines describing what this dashboard shows and how to use it.</div>" },
+               "html": "<div style=\"font-weight: 700; font-size: 25px\">My Example</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">One to three lines describing what this dashboard shows and how to use it.</div>" },
     "p1":  { "type": "control", "title": "Region", "dataRef": "ref1",
              "annotation": "Region", "style": "dropdown" },   // or radio | buttons | auto
     "p2":  { "title": "Chart", "dataRef": "ref1", "config": { "graphType": "Bar", "title": false } }

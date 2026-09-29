@@ -827,7 +827,18 @@ Structural validation; returns human-readable error strings.
 
 ### `injectStyles(doc?)` / `dashboardCss`
 
-The grid stylesheet (auto-injected by `renderDashboard`).
+The grid stylesheet (auto-injected by `renderDashboard`). It is built on the CanvasXpress design
+tokens (`--cx-ui-*` roles from `canvasXpress.css`) and carries a generated, zero-specificity
+fallback of them, so it also works on a page that does not load `canvasXpress.css`.
+
+**Light and dark.** A dashboard's `theme` sets `data-cx-ui-theme` (`light`, `dark` or `auto`) on
+its container, the same switch CanvasXpress uses, so the dashboard chrome and its charts' widgets
+(toolbar, menus, Customizer, data table) change together; `auto` follows the OS. Put
+`data-cx-ui-theme="auto"` (or `light` / `dark`) on your page's `<html>` so your own chrome
+follows too, and read the `--cx-ui-*` variables in your CSS instead of fixed colours. To change a
+colour, override the variable with `!important` on `.cxd-dashboard` (dashboard chrome) or
+`[data-cx-ui-scope]` (the charts' widgets), for example
+`[data-cx-ui-scope] { --cx-ui-accent: #0f766e !important; }`.
 
 ---
 

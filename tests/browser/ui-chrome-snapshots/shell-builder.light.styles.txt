@@ -1,0 +1,80 @@
+div.app [0,0 1400x945] color=rgb(27, 30, 36); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto
+div.app>aside.rail [0,0 220x900] border=0px 1px 0px 0px / none solid none none / rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36) rgb(27, 30, 36); padding=14px 10px 14px 10px; bg=rgb(255, 255, 255)
+div.app>aside.rail>a.brand [10,14 199x54] padding=6px 8px 16px 8px
+div.app>aside.rail>a.brand>img [18,20 32x32] 
+div.app>aside.rail>a.brand>span [60,26 121x21] font-size=18px; font-weight=700
+div.app>aside.rail>nav [10,68 199x466] 
+div.app>aside.rail>nav>a.nav-item:1 [10,68 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:1>span.ic [20,78 24x30] font-size=21px
+div.app>aside.rail>nav>a.active.nav-item:2 [10,120 199x50] color=rgb(61, 88, 255); font-weight=600; radius=6px; padding=10px; bg=rgba(83, 105, 255, 0.1)
+div.app>aside.rail>nav>a.active.nav-item:2>span.ic [20,130 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:3 [10,172 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:3>span.ic [20,182 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:4 [10,224 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:4>span.ic [20,234 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:5 [10,276 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:5>span.ic [20,286 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:6 [10,328 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:6>span.ic [20,338 24x30] font-size=21px
+a#nav-admin [10,380 199x50] radius=6px; padding=10px
+a#nav-admin>span.ic [20,390 24x30] font-size=21px
+a#nav-logs [10,432 199x50] radius=6px; padding=10px
+a#nav-logs>span.ic [20,442 24x30] font-size=21px
+a#nav-examples [10,484 199x50] radius=6px; padding=10px
+a#nav-examples>span.ic [20,494 24x30] font-size=21px
+div#rail-foot [10,839 199x47] color=rgb(87, 96, 106); border=1px 0px 0px 0px / solid none none none / rgb(230, 232, 236) rgb(87, 96, 106) rgb(87, 96, 106) rgb(87, 96, 106); padding=10px 8px 10px 8px
+span#rail-avatar [18,850 26x26] color=rgb(255, 255, 255); font-size=14px; font-weight=700; radius=50%; bg=rgb(61, 88, 255)
+span#rail-user [54,854 84x18] 
+a#rail-auth [148,855 53x17] font-size=14px
+div.app>main.content [220,0 1180x945] 
+div.app>main.content>div.topstrip:1 [220,0 1180x147] border=0px 0px 1px 0px / none none solid none / rgb(27, 30, 36) rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36); padding=10px 20px 10px 20px; bg=rgb(255, 255, 255)
+div#toolbar [240,10 1140x126] 
+div#toolbar>div.cxb-trow:1 [240,10 1140x80] 
+div#toolbar>div.cxb-trow:1>input.cxb-title-input [240,15 204x30] font-weight=600; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=5px 8px 5px 8px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:1 [452,14 43x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:2 [503,14 83x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:3 [593,14 73x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:4 [675,14 88x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:5 [770,14 97x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:6 [875,14 88x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:7 [971,10 91x40] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:8 [1069,14 90x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:9 [1167,14 130x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:10 [240,58 107x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cX-Button--primary.cxb-btn.cxb-btn-primary:11 [355,58 64x32] color=rgb(255, 255, 255); font-weight=500; border=1px / solid / rgb(61, 88, 255); radius=6px; padding=6px 13px 6px 13px; bg=rgb(61, 88, 255)
+div#toolbar>div.cxb-props.cxb-tgroup:2 [240,102 1140x34] 
+div#view [220,147 1180x798] padding=16px 20px 32px 20px
+div#view>div [240,163 1140x750] 
+div#chat-panel [240,163 320x750] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=10px; bg=rgb(255, 255, 255)
+div#chat-panel>div.data-dropzone:1 [251,174 298x200] color=rgb(87, 96, 106); line-height=24px; border=1px / solid / rgb(208, 212, 218); radius=10px; padding=12px; bg=rgb(255, 255, 255)
+div#chat-panel>div.data-dropzone:1>div [264,187 272x24] font-weight=600
+div#chat-panel>div.data-dropzone:1>strong:1 [264,220 105x18] font-weight=700
+div#chat-panel>div.data-dropzone:1>strong:2 [391,340 57x18] font-weight=700
+div#chat-datasets [251,384 298x250] border=1px / solid / rgb(208, 212, 218); radius=10px; padding=10px 12px 10px 12px; bg=rgb(255, 255, 255)
+div#chat-datasets>div:1 [264,395 272x16] color=rgb(87, 96, 106); font-size=13px; font-weight=600
+input#chat-dataset-search [264,415 272x38] color=rgb(0, 0, 0); font-size=15px; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=9px 10px 9px 10px; bg=rgb(255, 255, 255)
+div#chat-dataset-list [264,459 272x164] padding=2px 0px 2px 0px
+div#chat-dataset-list>label.chat-ds-row:1 [264,461 272x18] 
+div#chat-dataset-list>label.chat-ds-row:1>input.chat-ds [264,462 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
+div#chat-dataset-list>label.chat-ds-row:1>span [286,461 150x18] 
+div#chat-dataset-list>label.chat-ds-row:2 [264,486 272x18] 
+div#chat-dataset-list>label.chat-ds-row:2>input.chat-ds [264,487 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
+div#chat-dataset-list>label.chat-ds-row:2>span [286,486 185x18] 
+div#chat-dataset-list>label.chat-ds-row:3 [264,511 272x18] 
+div#chat-dataset-list>label.chat-ds-row:3>input.chat-cs [264,512 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
+div#chat-dataset-list>label.chat-ds-row:3>span [286,511 133x18] 
+div#chat-dataset-list>label.chat-ds-row:3>span>span [378,511 41x18] 
+div#chat-dataset-list>label.chat-ds-row:4 [264,536 272x18] 
+div#chat-dataset-list>label.chat-ds-row:4>input.chat-cs [264,537 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
+div#chat-dataset-list>label.chat-ds-row:4>span [286,536 142x18] 
+div#chat-dataset-list>label.chat-ds-row:4>span>span [387,536 41x18] 
+div#chat-splitter [251,644 298x8] border=1px 0px 1px 0px / solid none solid none / rgb(230, 232, 236) rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36); background-image=repeating-linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 4px, rgb(230, 232, 236) 4px, rgb(230, 232, 236) 8px)
+div#chat-section [251,662 298x250] border=1px / solid / rgb(208, 212, 218); radius=10px; bg=rgb(255, 255, 255)
+div#chat-log [252,663 296x143] padding=12px
+div#chat-section>div:2 [252,806 296x105] border=1px 0px 0px 0px / solid none none none / rgb(230, 232, 236) rgb(27, 30, 36) rgb(27, 30, 36) rgb(27, 30, 36); padding=8px
+textarea#chat-input [260,815 211x88] color=rgb(0, 0, 0); border=1px / solid / rgb(118, 118, 118); padding=7px; bg=rgb(255, 255, 255)
+button#chat-send [477,815 63x88] color=rgb(255, 255, 255); font-family=Arial; font-weight=600; radius=6px; padding=6px 12px 6px 12px; bg=rgb(61, 88, 255)
+div#builder-host [572,163 808x42] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=0px 12px 12px 12px; bg=rgb(255, 255, 255)
+div#builder-host>div.cxb [585,164 782x28] 
+div#builder-host>div.cxb>div.cxb-stage:1 [585,164 782x0] 
+div#builder-host>div.cxb>div.cxb-msg:2 [585,174 782x18] color=rgb(87, 96, 106)

@@ -131,7 +131,7 @@
   "panels": {
     "intro": {
       "type": "text",
-      "html": "<div style=\"font-weight: 700; font-size: 25px\">Sales Overview</div><div style=\"font-size: 18px; color: #5b6472\">A backend-free sales showcase: three linked panels — revenue by region (bar), share (pie) and a monthly trend line — plus a broadcast-aware table. Click anything and the selection coordinates across the board.</div>"
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Sales Overview</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">A backend-free sales showcase: three linked panels — revenue by region (bar), share (pie) and a monthly trend line — plus a broadcast-aware table. Click anything and the selection coordinates across the board.</div>"
     },
     "revenue-bar": {
       "title": "Revenue by Region",

@@ -8,6 +8,54 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 Server features, live on the demo; the client additions ship in the next npm
 release.
 
+### One look with CanvasXpress (UI design system)
+- **The dashboard styles use the CanvasXpress design tokens.** `dashboardCss` reads the engine's
+  `--cx-ui-*` roles and `--cx-*` steps (colours, radius, shadows, fonts, z-layers) from
+  `canvasXpress.css`, so the dashboard chrome and the charts' own widgets share one palette, and a
+  `dataUIStyle`-free page gets the CanvasXpress look.
+  - The dashboards' own `--cxd-*` properties now default to those roles (still overridable per
+    dashboard: panel colours, `fontName`).
+  - A generated fallback (`src/uiTokens.js`, from the engine's `tokens.json`: `npm run tokens`,
+    checked by `npm run tokens:check`) keeps it working on a page without `canvasXpress.css`.
+- **One accent.** The builder's blue (`#2f6feb`) is the CanvasXpress indigo now.
+  - Builder buttons are the shared `.cX-Button` (the `cxb-btn` classes stay).
+  - Filled buttons and the active segment use the AA-safe strong accent.
+- **Fixed:** the Filters panel checkboxes were a near-invisible 10% tint; they now use the accent.
+- **Fixed:** builder modals sat on the same z-index as CanvasXpress panels (10000); they use the
+  shared modal layer now.
+- Muted text is darker (WCAG AA), panel corners are 10px, and shadows and backdrops match the
+  engine's dialogs.
+- Needs CanvasXpress 70.6 or later for the shared primitives. With an older engine the tokens
+  still come from the fallback, but builder buttons render unstyled.
+- **The app and its pages use the same tokens.** The builder shell, the viewer toolbar
+  (`view.html`, moved into `dashboardCss`), the examples gallery, the example pages, the shared
+  read-only view, the server banner, the snapshot page and exported HTML all read the
+  CanvasXpress roles. Links and the active accents are the CanvasXpress indigo.
+  - The 18 example pages no longer each carry a copy of the top-nav CSS; `example-header.css`
+    owns it. The gallery links the new generated `examples/ui-tokens.css`.
+  - In OS dark mode, example-page and gallery links use the dark accent (the old blue was below
+    WCAG AA on the dark bars).
+  - The exported page's favicon is the indigo accent.
+- **One dark mode.** A dashboard's theme now sets `data-cx-ui-theme` (`light` / `dark` /
+  `auto`) on its container: the same switch CanvasXpress uses, so the charts' own toolbar,
+  menus, Customizer and data table go dark with a dark dashboard (they used to stay light).
+  - The builder's modals follow the dashboard; the viewer, shared and exported pages follow the
+    dashboard they show; the app shell and example pages follow the OS (`auto`). Every
+    separate OS dark-mode stylesheet is gone.
+  - A dark dashboard paints its own backdrop, so embedded in a light page its text stays
+    readable.
+  - Dark-mode contrast meets WCAG AA across the app (checked by the UI gate).
+  - Needs CanvasXpress 70.6 or later for the charts to follow; the dashboard chrome works with
+    any version (the tokens come with the package).
+- **Your own colours.** Override any `--cx-ui-*` variable with `!important` on `.cxd-dashboard`
+  (dashboard chrome) or `[data-cx-ui-scope]` (the charts' widgets); it holds in light and dark.
+- The app's dialogs and its remaining buttons use the shared CanvasXpress modal and button.
+- `npm test` now also checks that the package stays on the shared tokens and the one dark mode.
+- **Checkboxes and radios match CanvasXpress:** a rounded box with an accent fill and check
+  (a ring and dot for radios), in light and dark, across the Filters panel, builder dialogs and
+  the app (the dashboard adds the `cX-UI-Controls` class; needs CanvasXpress 70.6).
+- The shipped examples' description text uses the theme's muted colour, so it reads in dark mode.
+
 ### Linked selection without JSON
 - **🔗 Links (builder toolbar).** Link two data sources on a key, so selecting
   marks in a panel on one source marks the related rows in panels on the other:

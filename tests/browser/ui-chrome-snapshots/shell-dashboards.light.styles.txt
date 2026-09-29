@@ -1,0 +1,974 @@
+div.app [0,0 1400x1582] color=rgb(27, 30, 36); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto
+div.app>aside.rail [0,0 220x900] border=0px 1px 0px 0px / none solid none none / rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36) rgb(27, 30, 36); padding=14px 10px 14px 10px; bg=rgb(255, 255, 255)
+div.app>aside.rail>a.brand [10,14 199x54] padding=6px 8px 16px 8px
+div.app>aside.rail>a.brand>img [18,20 32x32] 
+div.app>aside.rail>a.brand>span [60,26 121x21] font-size=18px; font-weight=700
+div.app>aside.rail>nav [10,68 199x466] 
+div.app>aside.rail>nav>a.nav-item:1 [10,68 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:1>span.ic [20,78 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:2 [10,120 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:2>span.ic [20,130 24x30] font-size=21px
+div.app>aside.rail>nav>a.active.nav-item:3 [10,172 199x50] color=rgb(61, 88, 255); font-weight=600; radius=6px; padding=10px; bg=rgba(83, 105, 255, 0.1)
+div.app>aside.rail>nav>a.active.nav-item:3>span.ic [20,182 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:4 [10,224 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:4>span.ic [20,234 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:5 [10,276 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:5>span.ic [20,286 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:6 [10,328 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:6>span.ic [20,338 24x30] font-size=21px
+a#nav-admin [10,380 199x50] radius=6px; padding=10px
+a#nav-admin>span.ic [20,390 24x30] font-size=21px
+a#nav-logs [10,432 199x50] radius=6px; padding=10px
+a#nav-logs>span.ic [20,442 24x30] font-size=21px
+a#nav-examples [10,484 199x50] radius=6px; padding=10px
+a#nav-examples>span.ic [20,494 24x30] font-size=21px
+div#rail-foot [10,839 199x47] color=rgb(87, 96, 106); border=1px 0px 0px 0px / solid none none none / rgb(230, 232, 236) rgb(87, 96, 106) rgb(87, 96, 106) rgb(87, 96, 106); padding=10px 8px 10px 8px
+span#rail-avatar [18,850 26x26] color=rgb(255, 255, 255); font-size=14px; font-weight=700; radius=50%; bg=rgb(61, 88, 255)
+span#rail-user [54,854 84x18] 
+a#rail-auth [148,855 53x17] font-size=14px
+div.app>main.content [220,0 1180x1582] 
+div.app>main.content>div.topstrip:1 [220,0 1180x102] border=0px 0px 1px 0px / none none solid none / rgb(27, 30, 36) rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36); padding=10px 20px 10px 20px; bg=rgb(255, 255, 255)
+div#toolbar [240,35 1140x32] 
+div#toolbar>div [240,35 1140x32] 
+div#toolbar>div>h2.view-title [240,42 91x18] font-weight=600
+button#dash-refresh [1290,35 90x32] font-family=Arial; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=6px 14px 6px 14px
+div#view [220,102 1180x1480] padding=16px 20px 32px 20px
+div#view>div.data-view [240,118 1140x1432] 
+div#view>div.data-view>div:1 [240,118 320x1432] 
+input#dash-search [240,118 320x38] color=rgb(0, 0, 0); font-size=15px; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=9px 10px 9px 10px; bg=rgb(255, 255, 255)
+div#dash-list [240,164 320x311] border=1px / solid / rgb(230, 232, 236); radius=10px; bg=rgb(255, 255, 255)
+div#dash-list>div.active.data-item:1 [251,175 298x160] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=10px 12px 10px 12px; bg=rgba(83, 105, 255, 0.1)
+div#dash-list>div.active.data-item:1>div:1 [264,186 272x23] font-weight=600
+div#dash-list>div.active.data-item:1>div:1>span:1 [384,189 79x18] font-size=13px; radius=999px; padding=1px 8px 1px 8px; bg=rgba(83, 105, 255, 0.1)
+div#dash-list>div.active.data-item:1>div:1>span.access-icon:2 [469,190 18x17] font-size=14px
+div#dash-list>div.active.data-item:1>div:2 [264,209 272x17] font-size=14px
+div#dash-list>div.active.data-item:1>div:3 [264,234 272x90] 
+div#dash-list>div.active.data-item:1>div:3>button.cta:1 [264,234 52x26] color=rgb(255, 255, 255); font-family=Arial; font-size=14px; font-weight=600; radius=6px; padding=4px 10px 4px 10px; bg=rgb(61, 88, 255)
+div#dash-list>div.active.data-item:1>div:3>button.cta:2 [322,234 75x26] color=rgb(61, 88, 255); font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-list>div.active.data-item:1>div:3>button.cta:3 [403,234 126x26] color=rgb(61, 88, 255); font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-list>div.active.data-item:1>div:3>button.cta:4 [264,266 68x26] font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-list>div.active.data-item:1>div:3>button.cta:5 [338,266 89x26] font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-list>div.active.data-item:1>div:3>button.cta:6 [433,266 78x26] font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-list>div.active.data-item:1>div:3>button.cta:7 [264,298 70x26] font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-list>div.active.data-item:1>div:3>button.cta:8 [340,298 90x26] font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-list>div.active.data-item:1>div:3>button.cta:9 [436,298 64x26] font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-list>div.data-item:2 [251,343 298x123] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=10px 12px 10px 12px
+div#dash-list>div.data-item:2>div:1 [264,354 272x18] font-weight=600
+div#dash-list>div.data-item:2>div:2 [264,372 272x17] color=rgb(87, 96, 106); font-size=14px
+div#dash-list>div.data-item:2>div:3 [264,397 272x58] 
+div#dash-list>div.data-item:2>div:3>button.cta:1 [264,397 52x26] color=rgb(255, 255, 255); font-family=Arial; font-size=14px; font-weight=600; radius=6px; padding=4px 10px 4px 10px; bg=rgb(61, 88, 255)
+div#dash-list>div.data-item:2>div:3>button.cta:2 [322,397 75x26] color=rgb(61, 88, 255); font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-list>div.data-item:2>div:3>button.cta:3 [403,397 126x26] color=rgb(61, 88, 255); font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-list>div.data-item:2>div:3>button.cta:4 [264,429 70x26] font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-list>div.data-item:2>div:3>button.cta:5 [340,429 90x26] font-family=Arial; font-size=14px; font-weight=600; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=4px 10px 4px 10px
+div#dash-preview [576,118 804x1432] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=0px 12px 12px 12px; bg=rgb(255, 255, 255)
+div#dash-host [589,119 778x1418] padding=12px
+div#dash-host>div.cxd-grid:1 [601,131 754x982] 
+div#dash-host>div.cxd-grid:1>div.cxd-panel.cxd-text-cell:1 [601,131 754x130] radius=10px; z=2
+div#dash-host>div.cxd-grid:1>div.cxd-panel.cxd-text-cell:1>div.cxd-panel-body [601,131 754x130] 
+div#dash-host>div.cxd-grid:1>div.cxd-panel.cxd-text-cell:1>div.cxd-panel-body>div.cxd-text:2 [601,131 754x130] line-height=21.6px; padding=5px 12px 5px 12px
+div#dash-host>div.cxd-grid:1>div.cxd-panel.cxd-text-cell:1>div.cxd-panel-body>div.cxd-text:2>div:1 [613,136 730x34] font-size=25px; font-weight=700; line-height=33.75px
+div#dash-host>div.cxd-grid:1>div.cxd-panel.cxd-text-cell:1>div.cxd-panel-body>div.cxd-text:2>div:2 [613,170 730x73] color=rgb(87, 96, 106); font-size=18px; line-height=24.3px
+div#dash-host>div.cxd-grid:1>div.cxd-panel:2 [601,273 371x414] border=1px / solid / rgb(208, 212, 218); radius=10px; bg=rgb(255, 255, 255)
+div#dash-host>div.cxd-grid:1>div.cxd-panel:2>div.cxd-panel-title:1 [602,274 369x34] font-weight=600; line-height=20.8px; border=0px 0px 1px 0px / none none solid none / rgb(27, 30, 36) rgb(27, 30, 36) rgb(208, 212, 218) rgb(27, 30, 36); padding=6px 10px 6px 10px; bg=rgb(242, 244, 247)
+div#dash-host>div.cxd-grid:1>div.cxd-panel:2>div.cxd-panel-body:2 [602,308 369x378] 
+div#CanvasXpress-ParentNode-cxd-sales-overview-panel-revenue-bar-0 [604,310 365x374] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-DOM [604,310 365x374] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Container-HTMLWidgets [604,310 365x0] color=rgb(34, 34, 34); font-size=13px
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Container-DOE [604,310 365x0] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Container-Code [604,310 365x0] z=100000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Container-Menus [604,310 365x0] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Resizer-Container [604,310 365x0] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Resize-Indicator [919,666 20x8] color=rgb(255, 255, 255); font-size=12px; font-weight=700; radius=5px; padding=4px 10px 4px 10px; bg=rgb(83, 105, 255); z=10001; opacity=0
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Resizer-Container>div.cX-Resizer.t:2 [604,310 365x8] z=2000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Resizer-Container>div.b.cX-Resizer:3 [604,676 365x8] z=2000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Resizer-Container>div.cX-Resizer.l:4 [604,310 8x374] z=2000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Resizer-Container>div.cX-Resizer.r:5 [961,310 8x374] z=2000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Resizer-Container>div.cX-Resizer.lt:6 [604,310 12x12] z=2000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Resizer-Container>div.cX-Resizer.rt:7 [957,310 12x12] z=2000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Resizer-Container>div.cX-Resizer.lb:8 [604,672 12x12] z=2000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Resizer-Container>div.cX-Resizer.rb:9 [957,672 12x12] z=2000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Wrapper [604,310 365x374] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-UI [604,310 365x374] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Toolbars [604,310 0x374] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Toolbar-Top [604,310 365x32] z=1000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Toolbar-Container-Top [661,300 252x28] border=0px 1px 1px 1px / none solid solid solid / rgb(27, 30, 36) rgb(83, 105, 255) rgb(83, 105, 255) rgb(83, 105, 255); radius=0px 0px 5px 5px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+svg#cxd-sales-overview-panel-revenue-bar-0-cX-ToolbarTopReset [668,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-revenue-bar-0-cX-ToolbarTopSave [703,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-revenue-bar-0-cX-ToolbarTopChat [738,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-revenue-bar-0-cX-ToolbarTopTable [774,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-revenue-bar-0-cX-ToolbarTopExplore [809,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-revenue-bar-0-cX-ToolbarTopCustomize [845,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-revenue-bar-0-cX-ToolbarTopMaximize [880,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Toolbar-Bottom [604,652 365x32] z=1000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Toolbar-Container-Bottom [785,691 4x3] border=1px 1px 0px 1px / solid solid none solid / rgb(83, 105, 255) rgb(83, 105, 255) rgb(27, 30, 36) rgb(83, 105, 255); radius=5px 5px 0px 0px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Toolbar-Left [604,310 32x374] z=1000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Toolbar-Container-Left [594,495 3x4] border=1px 1px 1px 0px / solid solid solid none / rgb(83, 105, 255) rgb(83, 105, 255) rgb(83, 105, 255) rgb(27, 30, 36); radius=0px 5px 5px 0px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Toolbar-Right [937,310 32x374] z=1000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Toolbar-Container-Right [976,495 3x4] border=1px 0px 1px 1px / solid none solid solid / rgb(83, 105, 255) rgb(27, 30, 36) rgb(83, 105, 255) rgb(83, 105, 255); radius=5px 0px 0px 5px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Container [604,310 365x374] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Container-Viewer [604,310 365x374] color=rgb(255, 255, 255)
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Canvas-Container [604,310 365x374] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Container-Workflow [604,684 365x0] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Trigger [604,310 25x25] z=10000
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container [636,342 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container>b:1 [645,351 117x20] font-weight=700
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container>br:1 [762,351 0x20] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container>b:2 [645,371 26x20] font-weight=700
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container>br:2 [713,371 0x20] 
+div#cxd-sales-overview-panel-revenue-bar-0-cX-Version-Info-Container>b:3 [645,391 37x20] font-weight=700
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table [603,309 313x64] 
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>caption [603,309 313x18] 
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>thead [605,329 309x20] 
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>thead>tr [605,329 309x20] 
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>thead>tr>td [605,329 68x20] padding=1px
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>thead>tr>th:1 [675,329 47x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>thead>tr>th:2 [724,329 48x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>thead>tr>th:3 [774,329 36x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>thead>tr>th:4 [812,329 41x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>thead>tr>th:5 [855,329 59x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>tbody [605,351 309x20] 
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>tbody>tr [605,351 309x20] 
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>tbody>tr>th [605,351 68x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>tbody>tr>td:1 [675,351 47x20] padding=1px
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>tbody>tr>td:2 [724,351 48x20] padding=1px
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>tbody>tr>td:3 [774,351 36x20] padding=1px
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>tbody>tr>td:4 [812,351 41x20] padding=1px
+table#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-table>tbody>tr>td:5 [855,351 59x20] padding=1px
+div#cxd-sales-overview-panel-revenue-bar-0-cX-a11y-live [603,309 1x1] 
+div#dash-host>div.cxd-grid:1>div.cxd-panel:3 [984,273 371x414] border=1px / solid / rgb(208, 212, 218); radius=10px; bg=rgb(255, 255, 255)
+div#dash-host>div.cxd-grid:1>div.cxd-panel:3>div.cxd-panel-title:1 [985,274 369x34] font-weight=600; line-height=20.8px; border=0px 0px 1px 0px / none none solid none / rgb(27, 30, 36) rgb(27, 30, 36) rgb(208, 212, 218) rgb(27, 30, 36); padding=6px 10px 6px 10px; bg=rgb(242, 244, 247)
+div#dash-host>div.cxd-grid:1>div.cxd-panel:3>div.cxd-panel-body:2 [985,308 369x378] 
+div#CanvasXpress-ParentNode-cxd-sales-overview-panel-region-pie-1 [987,310 365x374] 
+div#cxd-sales-overview-panel-region-pie-1-cX-DOM [987,310 365x374] 
+div#cxd-sales-overview-panel-region-pie-1-cX-Container-HTMLWidgets [987,310 365x0] color=rgb(34, 34, 34); font-size=13px
+div#cxd-sales-overview-panel-region-pie-1-cX-Container-DOE [987,310 365x0] 
+div#cxd-sales-overview-panel-region-pie-1-cX-Container-Code [987,310 365x0] z=100000
+div#cxd-sales-overview-panel-region-pie-1-cX-Container-Menus [987,310 365x0] 
+div#cxd-sales-overview-panel-region-pie-1-cX-Resizer-Container [987,310 365x0] 
+div#cxd-sales-overview-panel-region-pie-1-cX-Resize-Indicator [1302,666 20x8] color=rgb(255, 255, 255); font-size=12px; font-weight=700; radius=5px; padding=4px 10px 4px 10px; bg=rgb(83, 105, 255); z=10001; opacity=0
+div#cxd-sales-overview-panel-region-pie-1-cX-Resizer-Container>div.cX-Resizer.t:2 [987,310 365x8] z=2000
+div#cxd-sales-overview-panel-region-pie-1-cX-Resizer-Container>div.b.cX-Resizer:3 [987,676 365x8] z=2000
+div#cxd-sales-overview-panel-region-pie-1-cX-Resizer-Container>div.cX-Resizer.l:4 [987,310 8x374] z=2000
+div#cxd-sales-overview-panel-region-pie-1-cX-Resizer-Container>div.cX-Resizer.r:5 [1344,310 8x374] z=2000
+div#cxd-sales-overview-panel-region-pie-1-cX-Resizer-Container>div.cX-Resizer.lt:6 [987,310 12x12] z=2000
+div#cxd-sales-overview-panel-region-pie-1-cX-Resizer-Container>div.cX-Resizer.rt:7 [1340,310 12x12] z=2000
+div#cxd-sales-overview-panel-region-pie-1-cX-Resizer-Container>div.cX-Resizer.lb:8 [987,672 12x12] z=2000
+div#cxd-sales-overview-panel-region-pie-1-cX-Resizer-Container>div.cX-Resizer.rb:9 [1340,672 12x12] z=2000
+div#cxd-sales-overview-panel-region-pie-1-cX-Wrapper [987,310 365x374] 
+div#cxd-sales-overview-panel-region-pie-1-cX-UI [987,310 365x374] 
+div#cxd-sales-overview-panel-region-pie-1-cX-Toolbars [987,310 0x374] 
+div#cxd-sales-overview-panel-region-pie-1-cX-Toolbar-Top [987,310 365x32] z=1000
+div#cxd-sales-overview-panel-region-pie-1-cX-Toolbar-Container-Top [1044,300 252x28] border=0px 1px 1px 1px / none solid solid solid / rgb(27, 30, 36) rgb(83, 105, 255) rgb(83, 105, 255) rgb(83, 105, 255); radius=0px 0px 5px 5px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+svg#cxd-sales-overview-panel-region-pie-1-cX-ToolbarTopReset [1051,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-region-pie-1-cX-ToolbarTopSave [1086,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-region-pie-1-cX-ToolbarTopChat [1121,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-region-pie-1-cX-ToolbarTopTable [1157,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-region-pie-1-cX-ToolbarTopExplore [1192,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-region-pie-1-cX-ToolbarTopCustomize [1228,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-region-pie-1-cX-ToolbarTopMaximize [1263,301 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+div#cxd-sales-overview-panel-region-pie-1-cX-Toolbar-Bottom [987,652 365x32] z=1000
+div#cxd-sales-overview-panel-region-pie-1-cX-Toolbar-Container-Bottom [1168,691 4x3] border=1px 1px 0px 1px / solid solid none solid / rgb(83, 105, 255) rgb(83, 105, 255) rgb(27, 30, 36) rgb(83, 105, 255); radius=5px 5px 0px 0px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-region-pie-1-cX-Toolbar-Left [987,310 32x374] z=1000
+div#cxd-sales-overview-panel-region-pie-1-cX-Toolbar-Container-Left [977,495 3x4] border=1px 1px 1px 0px / solid solid solid none / rgb(83, 105, 255) rgb(83, 105, 255) rgb(83, 105, 255) rgb(27, 30, 36); radius=0px 5px 5px 0px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-region-pie-1-cX-Toolbar-Right [1320,310 32x374] z=1000
+div#cxd-sales-overview-panel-region-pie-1-cX-Toolbar-Container-Right [1359,495 3x4] border=1px 0px 1px 1px / solid none solid solid / rgb(83, 105, 255) rgb(27, 30, 36) rgb(83, 105, 255) rgb(83, 105, 255); radius=5px 0px 0px 5px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-region-pie-1-cX-Container [987,310 365x374] 
+div#cxd-sales-overview-panel-region-pie-1-cX-Container-Viewer [987,310 365x374] color=rgb(255, 255, 255)
+div#cxd-sales-overview-panel-region-pie-1-cX-Canvas-Container [987,310 365x374] 
+div#cxd-sales-overview-panel-region-pie-1-cX-Container-Workflow [987,684 365x0] 
+div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Trigger [987,310 25x25] z=10000
+div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container [1019,342 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container>b:1 [1028,351 117x20] font-weight=700
+div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container>br:1 [1145,351 0x20] 
+div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container>b:2 [1028,371 26x20] font-weight=700
+div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container>br:2 [1096,371 0x20] 
+div#cxd-sales-overview-panel-region-pie-1-cX-Version-Info-Container>b:3 [1028,391 37x20] font-weight=700
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table [986,309 140x152] 
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>caption [986,309 140x18] 
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>thead [988,329 136x20] 
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>thead>tr [988,329 136x20] 
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>thead>tr>td [988,329 62x20] padding=1px
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>thead>tr>th [1052,329 72x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody [988,351 136x108] 
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:1 [988,351 136x20] 
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:1>th [988,351 62x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:1>td [1052,351 72x20] padding=1px
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:2 [988,373 136x20] 
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:2>th [988,373 62x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:2>td [1052,373 72x20] padding=1px
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:3 [988,395 136x20] 
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:3>th [988,395 62x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:3>td [1052,395 72x20] padding=1px
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:4 [988,417 136x20] 
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:4>th [988,417 62x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:4>td [1052,417 72x20] padding=1px
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:5 [988,439 136x20] 
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:5>th [988,439 62x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-region-pie-1-cX-a11y-table>tbody>tr:5>td [1052,439 72x20] padding=1px
+div#cxd-sales-overview-panel-region-pie-1-cX-a11y-live [986,309 1x1] 
+div#dash-host>div.cxd-grid:1>div.cxd-panel:4 [601,699 754x414] border=1px / solid / rgb(208, 212, 218); radius=10px; bg=rgb(255, 255, 255)
+div#dash-host>div.cxd-grid:1>div.cxd-panel:4>div.cxd-panel-title:1 [602,700 752x34] font-weight=600; line-height=20.8px; border=0px 0px 1px 0px / none none solid none / rgb(27, 30, 36) rgb(27, 30, 36) rgb(208, 212, 218) rgb(27, 30, 36); padding=6px 10px 6px 10px; bg=rgb(242, 244, 247)
+div#dash-host>div.cxd-grid:1>div.cxd-panel:4>div.cxd-panel-body:2 [602,734 752x378] 
+div#CanvasXpress-ParentNode-cxd-sales-overview-panel-trend-line-2 [604,736 748x374] 
+div#cxd-sales-overview-panel-trend-line-2-cX-DOM [604,736 748x374] 
+div#cxd-sales-overview-panel-trend-line-2-cX-Container-HTMLWidgets [604,736 748x0] color=rgb(34, 34, 34); font-size=13px
+div#cxd-sales-overview-panel-trend-line-2-cX-Container-DOE [604,736 748x0] 
+div#cxd-sales-overview-panel-trend-line-2-cX-Container-Code [604,736 748x0] z=100000
+div#cxd-sales-overview-panel-trend-line-2-cX-Container-Menus [604,736 748x0] 
+div#cxd-sales-overview-panel-trend-line-2-cX-Resizer-Container [604,736 748x0] 
+div#cxd-sales-overview-panel-trend-line-2-cX-Resize-Indicator [1302,1092 20x8] color=rgb(255, 255, 255); font-size=12px; font-weight=700; radius=5px; padding=4px 10px 4px 10px; bg=rgb(83, 105, 255); z=10001; opacity=0
+div#cxd-sales-overview-panel-trend-line-2-cX-Resizer-Container>div.cX-Resizer.t:2 [604,736 748x8] z=2000
+div#cxd-sales-overview-panel-trend-line-2-cX-Resizer-Container>div.b.cX-Resizer:3 [604,1102 748x8] z=2000
+div#cxd-sales-overview-panel-trend-line-2-cX-Resizer-Container>div.cX-Resizer.l:4 [604,736 8x374] z=2000
+div#cxd-sales-overview-panel-trend-line-2-cX-Resizer-Container>div.cX-Resizer.r:5 [1344,736 8x374] z=2000
+div#cxd-sales-overview-panel-trend-line-2-cX-Resizer-Container>div.cX-Resizer.lt:6 [604,736 12x12] z=2000
+div#cxd-sales-overview-panel-trend-line-2-cX-Resizer-Container>div.cX-Resizer.rt:7 [1340,736 12x12] z=2000
+div#cxd-sales-overview-panel-trend-line-2-cX-Resizer-Container>div.cX-Resizer.lb:8 [604,1098 12x12] z=2000
+div#cxd-sales-overview-panel-trend-line-2-cX-Resizer-Container>div.cX-Resizer.rb:9 [1340,1098 12x12] z=2000
+div#cxd-sales-overview-panel-trend-line-2-cX-Wrapper [604,736 748x374] 
+div#cxd-sales-overview-panel-trend-line-2-cX-UI [604,736 748x374] 
+div#cxd-sales-overview-panel-trend-line-2-cX-Toolbars [604,736 0x374] 
+div#cxd-sales-overview-panel-trend-line-2-cX-Toolbar-Top [604,736 748x32] z=1000
+div#cxd-sales-overview-panel-trend-line-2-cX-Toolbar-Container-Top [852,726 252x28] border=0px 1px 1px 1px / none solid solid solid / rgb(27, 30, 36) rgb(83, 105, 255) rgb(83, 105, 255) rgb(83, 105, 255); radius=0px 0px 5px 5px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+svg#cxd-sales-overview-panel-trend-line-2-cX-ToolbarTopReset [859,727 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-trend-line-2-cX-ToolbarTopSave [894,727 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-trend-line-2-cX-ToolbarTopChat [930,727 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-trend-line-2-cX-ToolbarTopTable [965,727 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-trend-line-2-cX-ToolbarTopExplore [1001,727 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-trend-line-2-cX-ToolbarTopCustomize [1036,727 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-panel-trend-line-2-cX-ToolbarTopMaximize [1072,727 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+div#cxd-sales-overview-panel-trend-line-2-cX-Toolbar-Bottom [604,1078 748x32] z=1000
+div#cxd-sales-overview-panel-trend-line-2-cX-Toolbar-Container-Bottom [976,1117 4x3] border=1px 1px 0px 1px / solid solid none solid / rgb(83, 105, 255) rgb(83, 105, 255) rgb(27, 30, 36) rgb(83, 105, 255); radius=5px 5px 0px 0px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-trend-line-2-cX-Toolbar-Left [604,736 32x374] z=1000
+div#cxd-sales-overview-panel-trend-line-2-cX-Toolbar-Container-Left [594,921 3x4] border=1px 1px 1px 0px / solid solid solid none / rgb(83, 105, 255) rgb(83, 105, 255) rgb(83, 105, 255) rgb(27, 30, 36); radius=0px 5px 5px 0px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-trend-line-2-cX-Toolbar-Right [1320,736 32x374] z=1000
+div#cxd-sales-overview-panel-trend-line-2-cX-Toolbar-Container-Right [1359,921 3x4] border=1px 0px 1px 1px / solid none solid solid / rgb(83, 105, 255) rgb(27, 30, 36) rgb(83, 105, 255) rgb(83, 105, 255); radius=5px 0px 0px 5px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-trend-line-2-cX-Container [604,736 748x374] 
+div#cxd-sales-overview-panel-trend-line-2-cX-Container-Viewer [604,736 748x374] color=rgb(255, 255, 255)
+div#cxd-sales-overview-panel-trend-line-2-cX-Canvas-Container [604,736 748x374] 
+div#cxd-sales-overview-panel-trend-line-2-cX-Container-Workflow [604,1110 748x0] 
+div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Trigger [604,736 25x25] z=10000
+div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container [636,768 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container>b:1 [645,777 117x20] font-weight=700
+div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container>br:1 [762,777 0x20] 
+div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container>b:2 [645,797 26x20] font-weight=700
+div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container>br:2 [713,797 0x20] 
+div#cxd-sales-overview-panel-trend-line-2-cX-Version-Info-Container>b:3 [645,817 37x20] font-weight=700
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table [603,735 194x152] 
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>caption [603,735 194x18] 
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>thead [605,755 190x20] 
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>thead>tr [605,755 190x20] 
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>thead>tr>td [605,755 59x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>thead>tr>th:1 [666,755 31x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>thead>tr>th:2 [699,755 31x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>thead>tr>th:3 [732,755 31x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>thead>tr>th:4 [764,755 31x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody [605,777 190x108] 
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:1 [605,777 190x20] 
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:1>th [605,777 59x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:1>td:1 [666,777 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:1>td:2 [699,777 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:1>td:3 [732,777 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:1>td:4 [764,777 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:2 [605,799 190x20] 
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:2>th [605,799 59x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:2>td:1 [666,799 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:2>td:2 [699,799 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:2>td:3 [732,799 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:2>td:4 [764,799 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:3 [605,821 190x20] 
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:3>th [605,821 59x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:3>td:1 [666,821 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:3>td:2 [699,821 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:3>td:3 [732,821 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:3>td:4 [764,821 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:4 [605,843 190x20] 
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:4>th [605,843 59x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:4>td:1 [666,843 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:4>td:2 [699,843 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:4>td:3 [732,843 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:4>td:4 [764,843 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:5 [605,865 190x20] 
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:5>th [605,865 59x20] font-weight=700; padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:5>td:1 [666,865 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:5>td:2 [699,865 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:5>td:3 [732,865 31x20] padding=1px
+table#cxd-sales-overview-panel-trend-line-2-cX-a11y-table>tbody>tr:5>td:4 [764,865 31x20] padding=1px
+div#cxd-sales-overview-panel-trend-line-2-cX-a11y-live [603,735 1x1] 
+div#dash-host>div.cxd-controls:2 [601,1125 754x400] 
+div#dash-host>div.cxd-controls:2>div.cxd-control.cxd-panel [601,1125 754x400] border=1px / solid / rgb(208, 212, 218); radius=10px; bg=rgb(255, 255, 255)
+div#dash-host>div.cxd-controls:2>div.cxd-control.cxd-panel>div.cxd-panel-title:1 [602,1126 752x34] font-weight=600; line-height=20.8px; border=0px 0px 1px 0px / none none solid none / rgb(27, 30, 36) rgb(27, 30, 36) rgb(208, 212, 218) rgb(27, 30, 36); padding=6px 10px 6px 10px; bg=rgb(242, 244, 247)
+div#dash-host>div.cxd-controls:2>div.cxd-control.cxd-panel>div.cxd-panel-body:2 [602,1160 752x364] 
+div#CanvasXpress-ParentNode-cxd-sales-overview-control-table-0 [604,1162 748x360] 
+div#cxd-sales-overview-control-table-0-cX-DOM [604,1162 748x360] 
+div#cxd-sales-overview-control-table-0-cX-Container-HTMLWidgets [604,1162 748x0] color=rgb(34, 34, 34); font-size=13px
+div#cxd-sales-overview-control-table-0-cX-Container-DOE [604,1162 748x0] 
+div#cxd-sales-overview-control-table-0-cX-Container-Code [604,1162 748x0] z=100000
+div#cxd-sales-overview-control-table-0-cX-Container-Menus [604,1162 748x0] 
+div#cxd-sales-overview-control-table-0-cX-Resizer-Container [604,1162 748x0] 
+div#cxd-sales-overview-control-table-0-cX-Resize-Indicator [1302,1504 20x8] color=rgb(255, 255, 255); font-size=12px; font-weight=700; radius=5px; padding=4px 10px 4px 10px; bg=rgb(83, 105, 255); z=10001; opacity=0
+div#cxd-sales-overview-control-table-0-cX-Resizer-Container>div.cX-Resizer.t:2 [604,1162 748x8] z=2000
+div#cxd-sales-overview-control-table-0-cX-Resizer-Container>div.b.cX-Resizer:3 [604,1514 748x8] z=2000
+div#cxd-sales-overview-control-table-0-cX-Resizer-Container>div.cX-Resizer.l:4 [604,1162 8x360] z=2000
+div#cxd-sales-overview-control-table-0-cX-Resizer-Container>div.cX-Resizer.r:5 [1344,1162 8x360] z=2000
+div#cxd-sales-overview-control-table-0-cX-Resizer-Container>div.cX-Resizer.lt:6 [604,1162 12x12] z=2000
+div#cxd-sales-overview-control-table-0-cX-Resizer-Container>div.cX-Resizer.rt:7 [1340,1162 12x12] z=2000
+div#cxd-sales-overview-control-table-0-cX-Resizer-Container>div.cX-Resizer.lb:8 [604,1510 12x12] z=2000
+div#cxd-sales-overview-control-table-0-cX-Resizer-Container>div.cX-Resizer.rb:9 [1340,1510 12x12] z=2000
+div#cxd-sales-overview-control-table-0-cX-Wrapper [604,1162 748x360] 
+div#cxd-sales-overview-control-table-0-cX-UI [604,1162 748x360] 
+div#cxd-sales-overview-control-table-0-cX-Toolbars [604,1162 0x360] 
+div#cxd-sales-overview-control-table-0-cX-Toolbar-Top [604,1162 748x32] z=1000
+div#cxd-sales-overview-control-table-0-cX-Toolbar-Container-Top [852,1152 252x28] border=0px 1px 1px 1px / none solid solid solid / rgb(27, 30, 36) rgb(83, 105, 255) rgb(83, 105, 255) rgb(83, 105, 255); radius=0px 0px 5px 5px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+svg#cxd-sales-overview-control-table-0-cX-ToolbarTopReset [859,1153 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-control-table-0-cX-ToolbarTopSave [894,1153 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-control-table-0-cX-ToolbarTopChat [930,1153 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-control-table-0-cX-ToolbarTopTable [965,1153 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-control-table-0-cX-ToolbarTopExplore [1001,1153 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-control-table-0-cX-ToolbarTopCustomize [1036,1153 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+svg#cxd-sales-overview-control-table-0-cX-ToolbarTopMaximize [1072,1153 20x20] padding=4px 0px 0px 0px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=rgb(0, 0, 0)
+div#cxd-sales-overview-control-table-0-cX-Toolbar-Bottom [604,1490 748x32] z=1000
+div#cxd-sales-overview-control-table-0-cX-Toolbar-Container-Bottom [976,1529 4x3] border=1px 1px 0px 1px / solid solid none solid / rgb(83, 105, 255) rgb(83, 105, 255) rgb(27, 30, 36) rgb(83, 105, 255); radius=5px 5px 0px 0px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-control-table-0-cX-Toolbar-Left [604,1162 32x360] z=1000
+div#cxd-sales-overview-control-table-0-cX-Toolbar-Container-Left [594,1340 3x4] border=1px 1px 1px 0px / solid solid solid none / rgb(83, 105, 255) rgb(83, 105, 255) rgb(83, 105, 255) rgb(27, 30, 36); radius=0px 5px 5px 0px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-control-table-0-cX-Toolbar-Right [1320,1162 32x360] z=1000
+div#cxd-sales-overview-control-table-0-cX-Toolbar-Container-Right [1359,1340 3x4] border=1px 0px 1px 1px / solid none solid solid / rgb(83, 105, 255) rgb(27, 30, 36) rgb(83, 105, 255) rgb(83, 105, 255); radius=5px 0px 0px 5px; padding=1px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-control-table-0-cX-Container [604,1162 748x360] 
+div#cxd-sales-overview-control-table-0-cX-Container-Viewer [604,1162 748x360] color=rgb(255, 255, 255); opacity=0
+div#cxd-sales-overview-control-table-0-cX-Canvas-Container [604,1162 748x360] 
+div#cxd-sales-overview-control-table-0-cX-Container-DataTable [604,1162 748x360] color=rgb(255, 255, 255)
+div#cxd-sales-overview-control-table-0-cX-DataTable [604,1162 748x360] color=rgb(34, 34, 34); font-size=15px; border=1px / solid / rgb(83, 105, 255); radius=5px; z=10001
+div#cxd-sales-overview-control-table-0-cX-DataTable-Banner [605,1163 746x32] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(34, 34, 34) rgb(83, 105, 255) rgb(34, 34, 34); bg=rgb(61, 88, 255)
+div#cxd-sales-overview-control-table-0-cX-DataTable-Logo [605,1160 42x37] 
+div#cxd-sales-overview-control-table-0-cX-DataTable-Logo>svg.cX-DataTable-Toolbar-Image-Logo [615,1165 32x32] fill=rgb(0, 0, 0)
+div#cxd-sales-overview-control-table-0-cX-DataTable-Search [1166,1166 157x24] 
+input#cxd-sales-overview-control-table-0-cX-DataTableSearch [1166,1166 147x24] color=rgb(255, 255, 255); font-family=Arial; font-size=12px; border=1px / solid / rgb(83, 105, 255); radius=5px; padding=10px; bg=rgb(255, 255, 255)
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Toolbar-Show-Hide-Image [1323,1169 18x18] fill=rgb(0, 0, 0)
+div#cxd-sales-overview-control-table-0-cX-DataTable-Root [605,1195 748x296] 
+div#cxd-sales-overview-control-table-0-cX-DataTable-Header-Viewport [605,1195 732x280] border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); z=1
+table#cxd-sales-overview-control-table-0-cX-DataTableTable [605,1195 4462x330] radius=5px; z=10001
+table#cxd-sales-overview-control-table-0-cX-DataTableTable>tbody [605,1195 4462x330] 
+table#cxd-sales-overview-control-table-0-cX-DataTableTable>tbody>tr.cX-DataTable-Row:1 [605,1195 4462x33] 
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.0 [605,1195 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100001
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.0 [605,1195 66x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.0>span.cX-DataTable-Cell-Head-Text:1 [625,1202 31x18] 
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.1 [675,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.1 [675,1195 180x32] line-height=32px; padding=0px 0px 0px 15px
+a#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Menu.0.1 [837,1195 8x32] color=rgb(0, 0, 238); padding=0px 0px 0px 1px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.1>span.cX-DataTable-Cell-Head-Text:1 [690,1202 14x18] 
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.1 [821,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter1 [821,1205 12x12] fill=rgb(0, 0, 0)
+span#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Resize.0.1 [852,1206 3x10] bg=rgb(83, 105, 255)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.2 [858,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.2 [858,1195 180x32] line-height=32px; padding=0px 0px 0px 15px
+a#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Menu.0.2 [1020,1195 8x32] color=rgb(0, 0, 238); padding=0px 0px 0px 1px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.2>span.cX-DataTable-Cell-Head-Text:1 [873,1202 50x18] 
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.2 [1004,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter2 [1004,1205 12x12] fill=rgb(0, 0, 0)
+span#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Resize.0.2 [1035,1206 3x10] bg=rgb(83, 105, 255)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.3 [1041,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.3 [1041,1195 180x32] line-height=32px; padding=0px 15px 0px 0px
+a#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Menu.0.3 [1044,1195 8x32] color=rgb(0, 0, 238); padding=0px 0px 0px 1px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.3>span.cX-DataTable-Cell-Head-Text:1 [1143,1202 63x18] 
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.3 [1060,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter3 [1060,1205 12x12] fill=rgb(0, 0, 0)
+span#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Resize.0.3 [1218,1206 3x10] bg=rgb(83, 105, 255)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.4 [1224,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.4 [1224,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.4 [1370,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter4 [1370,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.5 [1407,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.5 [1407,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.5 [1553,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter5 [1553,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.6 [1590,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.6 [1590,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.6 [1736,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter6 [1736,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.7 [1773,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.7 [1773,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.7 [1919,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter7 [1919,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.8 [1956,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.8 [1956,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.8 [2102,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter8 [2102,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.9 [2139,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.9 [2139,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.9 [2285,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter9 [2285,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.10 [2322,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.10 [2322,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.10 [2468,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter10 [2468,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.11 [2505,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.11 [2505,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.11 [2651,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter11 [2651,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.12 [2688,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.12 [2688,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.12 [2834,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter12 [2834,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.13 [2871,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.13 [2871,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.13 [3017,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter13 [3017,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.14 [3054,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.14 [3054,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.14 [3200,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter14 [3200,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.15 [3237,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.15 [3237,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.15 [3383,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter15 [3383,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.16 [3420,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.16 [3420,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.16 [3566,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter16 [3566,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.17 [3603,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.17 [3603,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.17 [3749,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter17 [3749,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.18 [3786,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.18 [3786,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.18 [3932,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter18 [3932,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.19 [3969,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.19 [3969,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.19 [4115,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter19 [4115,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.20 [4152,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.20 [4152,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.20 [4298,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter20 [4298,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.21 [4335,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.21 [4335,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.21 [4481,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter21 [4481,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.22 [4518,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.22 [4518,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.22 [4664,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter22 [4664,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.23 [4701,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.23 [4701,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.23 [4847,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter23 [4847,1205 12x12] fill=rgb(0, 0, 0)
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.0.24 [4884,1195 183x33] font-weight=700; border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.0.24 [4884,1195 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter.24 [5030,1205 12x12] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Header-Filter-Unfilter24 [5030,1205 12x12] fill=rgb(0, 0, 0)
+table#cxd-sales-overview-control-table-0-cX-DataTableTable>tbody>tr.cX-DataTable-Row:2 [605,1228 4462x33] 
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.0 [605,1228 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.0 [605,1228 66x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.0>span.cX-DataTable-Cell-Text [646,1235 10x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.1 [675,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.1 [675,1228 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.1>span.cX-DataTable-Cell-Text [801,1235 39x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.2 [858,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.2 [858,1228 180x32] line-height=32px; padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.2>span.cX-DataTable-Cell-Text [873,1235 39x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.3 [1041,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.3 [1041,1228 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.3>span.cX-DataTable-Cell-Text [1178,1235 28x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.4 [1224,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.4 [1224,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.5 [1407,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.5 [1407,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.6 [1590,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.6 [1590,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.7 [1773,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.7 [1773,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.8 [1956,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.8 [1956,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.9 [2139,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.9 [2139,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.10 [2322,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.10 [2322,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.11 [2505,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.11 [2505,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.12 [2688,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.12 [2688,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.13 [2871,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.13 [2871,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.14 [3054,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.14 [3054,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.15 [3237,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.15 [3237,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.16 [3420,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.16 [3420,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.17 [3603,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.17 [3603,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.18 [3786,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.18 [3786,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.19 [3969,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.19 [3969,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.20 [4152,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.20 [4152,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.21 [4335,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.21 [4335,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.22 [4518,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.22 [4518,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.23 [4701,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.23 [4701,1228 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.1.24 [4884,1228 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.1.24 [4884,1228 180x32] padding=0px 0px 0px 15px
+table#cxd-sales-overview-control-table-0-cX-DataTableTable>tbody>tr.cX-DataTable-Row:3 [605,1261 4462x33] 
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.0 [605,1261 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.0 [605,1261 66x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.0>span.cX-DataTable-Cell-Text [646,1268 10x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.1 [675,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.1 [675,1261 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.1>span.cX-DataTable-Cell-Text [800,1268 40x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.2 [858,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.2 [858,1261 180x32] line-height=32px; padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.2>span.cX-DataTable-Cell-Text [873,1268 40x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.3 [1041,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.3 [1041,1261 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.3>span.cX-DataTable-Cell-Text [1178,1268 28x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.4 [1224,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.4 [1224,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.5 [1407,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.5 [1407,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.6 [1590,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.6 [1590,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.7 [1773,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.7 [1773,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.8 [1956,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.8 [1956,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.9 [2139,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.9 [2139,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.10 [2322,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.10 [2322,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.11 [2505,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.11 [2505,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.12 [2688,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.12 [2688,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.13 [2871,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.13 [2871,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.14 [3054,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.14 [3054,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.15 [3237,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.15 [3237,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.16 [3420,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.16 [3420,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.17 [3603,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.17 [3603,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.18 [3786,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.18 [3786,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.19 [3969,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.19 [3969,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.20 [4152,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.20 [4152,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.21 [4335,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.21 [4335,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.22 [4518,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.22 [4518,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.23 [4701,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.23 [4701,1261 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.2.24 [4884,1261 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.2.24 [4884,1261 180x32] padding=0px 0px 0px 15px
+table#cxd-sales-overview-control-table-0-cX-DataTableTable>tbody>tr.cX-DataTable-Row:4 [605,1294 4462x33] 
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.0 [605,1294 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.0 [605,1294 66x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.0>span.cX-DataTable-Cell-Text [646,1301 10x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.1 [675,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.1 [675,1294 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.1>span.cX-DataTable-Cell-Text [810,1301 30x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.2 [858,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.2 [858,1294 180x32] line-height=32px; padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.2>span.cX-DataTable-Cell-Text [873,1301 30x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.3 [1041,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.3 [1041,1294 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.3>span.cX-DataTable-Cell-Text [1178,1301 28x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.4 [1224,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.4 [1224,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.5 [1407,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.5 [1407,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.6 [1590,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.6 [1590,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.7 [1773,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.7 [1773,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.8 [1956,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.8 [1956,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.9 [2139,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.9 [2139,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.10 [2322,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.10 [2322,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.11 [2505,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.11 [2505,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.12 [2688,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.12 [2688,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.13 [2871,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.13 [2871,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.14 [3054,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.14 [3054,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.15 [3237,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.15 [3237,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.16 [3420,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.16 [3420,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.17 [3603,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.17 [3603,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.18 [3786,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.18 [3786,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.19 [3969,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.19 [3969,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.20 [4152,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.20 [4152,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.21 [4335,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.21 [4335,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.22 [4518,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.22 [4518,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.23 [4701,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.23 [4701,1294 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.3.24 [4884,1294 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.3.24 [4884,1294 180x32] padding=0px 0px 0px 15px
+table#cxd-sales-overview-control-table-0-cX-DataTableTable>tbody>tr.cX-DataTable-Row:5 [605,1327 4462x33] 
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.0 [605,1327 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.0 [605,1327 66x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.0>span.cX-DataTable-Cell-Text [646,1334 10x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.1 [675,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.1 [675,1327 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.1>span.cX-DataTable-Cell-Text [805,1334 35x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.2 [858,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.2 [858,1327 180x32] line-height=32px; padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.2>span.cX-DataTable-Cell-Text [873,1334 35x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.3 [1041,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.3 [1041,1327 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.3>span.cX-DataTable-Cell-Text [1178,1334 28x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.4 [1224,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.4 [1224,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.5 [1407,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.5 [1407,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.6 [1590,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.6 [1590,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.7 [1773,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.7 [1773,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.8 [1956,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.8 [1956,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.9 [2139,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.9 [2139,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.10 [2322,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.10 [2322,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.11 [2505,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.11 [2505,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.12 [2688,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.12 [2688,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.13 [2871,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.13 [2871,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.14 [3054,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.14 [3054,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.15 [3237,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.15 [3237,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.16 [3420,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.16 [3420,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.17 [3603,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.17 [3603,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.18 [3786,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.18 [3786,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.19 [3969,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.19 [3969,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.20 [4152,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.20 [4152,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.21 [4335,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.21 [4335,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.22 [4518,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.22 [4518,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.23 [4701,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.23 [4701,1327 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.4.24 [4884,1327 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.4.24 [4884,1327 180x32] padding=0px 0px 0px 15px
+table#cxd-sales-overview-control-table-0-cX-DataTableTable>tbody>tr.cX-DataTable-Row:6 [605,1360 4462x33] 
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.0 [605,1360 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.0 [605,1360 66x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.0>span.cX-DataTable-Cell-Text [646,1367 10x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.1 [675,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.1 [675,1360 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.1>span.cX-DataTable-Cell-Text [790,1367 50x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.2 [858,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.2 [858,1360 180x32] line-height=32px; padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.2>span.cX-DataTable-Cell-Text [873,1367 50x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.3 [1041,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.3 [1041,1360 180x32] line-height=32px; padding=0px 15px 0px 0px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.3>span.cX-DataTable-Cell-Text [1178,1367 28x18] 
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.4 [1224,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.4 [1224,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.5 [1407,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.5 [1407,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.6 [1590,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.6 [1590,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.7 [1773,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.7 [1773,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.8 [1956,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.8 [1956,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.9 [2139,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.9 [2139,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.10 [2322,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.10 [2322,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.11 [2505,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.11 [2505,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.12 [2688,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.12 [2688,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.13 [2871,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.13 [2871,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.14 [3054,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.14 [3054,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.15 [3237,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.15 [3237,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.16 [3420,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.16 [3420,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.17 [3603,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.17 [3603,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.18 [3786,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.18 [3786,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.19 [3969,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.19 [3969,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.20 [4152,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.20 [4152,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.21 [4335,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.21 [4335,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.22 [4518,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.22 [4518,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.23 [4701,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.23 [4701,1360 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.5.24 [4884,1360 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.5.24 [4884,1360 180x32] padding=0px 0px 0px 15px
+table#cxd-sales-overview-control-table-0-cX-DataTableTable>tbody>tr.cX-DataTable-Row:7 [605,1393 4462x33] 
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.0 [605,1393 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.0 [605,1393 66x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.1 [675,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.1 [675,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.2 [858,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.2 [858,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.3 [1041,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.3 [1041,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.4 [1224,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.4 [1224,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.5 [1407,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.5 [1407,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.6 [1590,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.6 [1590,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.7 [1773,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.7 [1773,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.8 [1956,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.8 [1956,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.9 [2139,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.9 [2139,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.10 [2322,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.10 [2322,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.11 [2505,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.11 [2505,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.12 [2688,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.12 [2688,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.13 [2871,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.13 [2871,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.14 [3054,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.14 [3054,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.15 [3237,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.15 [3237,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.16 [3420,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.16 [3420,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.17 [3603,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.17 [3603,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.18 [3786,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.18 [3786,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.19 [3969,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.19 [3969,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.20 [4152,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.20 [4152,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.21 [4335,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.21 [4335,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.22 [4518,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.22 [4518,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.23 [4701,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.23 [4701,1393 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.6.24 [4884,1393 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.6.24 [4884,1393 180x32] padding=0px 0px 0px 15px
+table#cxd-sales-overview-control-table-0-cX-DataTableTable>tbody>tr.cX-DataTable-Row:8 [605,1426 4462x33] 
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.0 [605,1426 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.0 [605,1426 66x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.1 [675,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.1 [675,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.2 [858,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.2 [858,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.3 [1041,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.3 [1041,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.4 [1224,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.4 [1224,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.5 [1407,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.5 [1407,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.6 [1590,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.6 [1590,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.7 [1773,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.7 [1773,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.8 [1956,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.8 [1956,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.9 [2139,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.9 [2139,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.10 [2322,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.10 [2322,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.11 [2505,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.11 [2505,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.12 [2688,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.12 [2688,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.13 [2871,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.13 [2871,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.14 [3054,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.14 [3054,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.15 [3237,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.15 [3237,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.16 [3420,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.16 [3420,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.17 [3603,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.17 [3603,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.18 [3786,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.18 [3786,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.19 [3969,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.19 [3969,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.20 [4152,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.20 [4152,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.21 [4335,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.21 [4335,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.22 [4518,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.22 [4518,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.23 [4701,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.23 [4701,1426 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.7.24 [4884,1426 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.7.24 [4884,1426 180x32] padding=0px 0px 0px 15px
+table#cxd-sales-overview-control-table-0-cX-DataTableTable>tbody>tr.cX-DataTable-Row:9 [605,1459 4462x33] 
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.0 [605,1459 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.0 [605,1459 66x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.1 [675,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.1 [675,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.2 [858,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.2 [858,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.3 [1041,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.3 [1041,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.4 [1224,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.4 [1224,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.5 [1407,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.5 [1407,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.6 [1590,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.6 [1590,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.7 [1773,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.7 [1773,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.8 [1956,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.8 [1956,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.9 [2139,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.9 [2139,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.10 [2322,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.10 [2322,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.11 [2505,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.11 [2505,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.12 [2688,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.12 [2688,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.13 [2871,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.13 [2871,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.14 [3054,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.14 [3054,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.15 [3237,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.15 [3237,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.16 [3420,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.16 [3420,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.17 [3603,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.17 [3603,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.18 [3786,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.18 [3786,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.19 [3969,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.19 [3969,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.20 [4152,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.20 [4152,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.21 [4335,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.21 [4335,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.22 [4518,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.22 [4518,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.23 [4701,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.23 [4701,1459 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.8.24 [4884,1459 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(255, 255, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.8.24 [4884,1459 180x32] padding=0px 0px 0px 15px
+table#cxd-sales-overview-control-table-0-cX-DataTableTable>tbody>tr.cX-DataTable-Row:10 [605,1492 4462x33] 
+th#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.0 [605,1492 70x33] font-weight=700; border=0px 1px 1px 0px / none solid solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=100000
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.0 [605,1492 66x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.1 [675,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.1 [675,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.2 [858,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.2 [858,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.3 [1041,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.3 [1041,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.4 [1224,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.4 [1224,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.5 [1407,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.5 [1407,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.6 [1590,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.6 [1590,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.7 [1773,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.7 [1773,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.8 [1956,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.8 [1956,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.9 [2139,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.9 [2139,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.10 [2322,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.10 [2322,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.11 [2505,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.11 [2505,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.12 [2688,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.12 [2688,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.13 [2871,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.13 [2871,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.14 [3054,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.14 [3054,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.15 [3237,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.15 [3237,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.16 [3420,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.16 [3420,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.17 [3603,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.17 [3603,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.18 [3786,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.18 [3786,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.19 [3969,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.19 [3969,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.20 [4152,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.20 [4152,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.21 [4335,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.21 [4335,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.22 [4518,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.22 [4518,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.23 [4701,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.23 [4701,1492 180x32] padding=0px 0px 0px 15px
+td#cxd-sales-overview-control-table-0-cX-DataTable-Cell.9.24 [4884,1492 183x33] border=0px 0px 1px 0px / none none solid none / rgb(34, 34, 34) rgb(83, 105, 255) rgb(83, 105, 255) rgb(34, 34, 34); padding=0px 3px 0px 0px; bg=rgb(220, 226, 255); z=99999
+div#cxd-sales-overview-control-table-0-cX-DataTable-Cell-Content.9.24 [4884,1492 180x32] padding=0px 0px 0px 15px
+div#cxd-sales-overview-control-table-0-cX-DataTable-Vertical-Scrollbar [1332,1197 16x276] bg=rgb(255, 255, 255)
+img#cxd-sales-overview-control-table-0-cX-DataTable-Vertical-Scrollbar-Image [1332,1197 1x199] 
+div#cxd-sales-overview-control-table-0-cX-DataTable-Horizontal-Scrollbar [607,1470 728x16] bg=rgb(255, 255, 255)
+img#cxd-sales-overview-control-table-0-cX-DataTable-Horizontal-Scrollbar-Image [607,1484 623x1] 
+div#cxd-sales-overview-control-table-0-cX-DataTable-Status [605,1489 746x32] color=rgb(255, 255, 255); border=1px 0px 0px 0px / solid none none none / rgb(83, 105, 255) rgb(255, 255, 255) rgb(255, 255, 255) rgb(255, 255, 255); bg=rgb(61, 88, 255)
+div#cxd-sales-overview-control-table-0-cX-DataTable-Status-Left [605,1496 162x18] 
+svg#cxd-sales-overview-control-table-0-cX-DataTable-Pagination-Show-Hide-Image [615,1496 18x18] fill=rgb(0, 0, 0)
+span#cxd-sales-overview-control-table-0-cX-DataTable-Dimensions [653,1496 114x18] 
+div#cxd-sales-overview-control-table-0-cX-Container-Workflow [604,1522 748x0] 
+div#cxd-sales-overview-control-table-0-cX-Version-Info-Trigger [604,1162 25x25] z=10000
+div#cxd-sales-overview-control-table-0-cX-Version-Info-Container [636,1194 160x78] font-size=17px; border=1px / solid / rgb(83, 105, 255); radius=10px; padding=8px; bg=rgb(255, 255, 255); z=1001; opacity=0
+div#cxd-sales-overview-control-table-0-cX-Version-Info-Container>b:1 [645,1203 117x20] font-weight=700
+div#cxd-sales-overview-control-table-0-cX-Version-Info-Container>br:1 [762,1203 0x20] 
+div#cxd-sales-overview-control-table-0-cX-Version-Info-Container>b:2 [645,1223 26x20] font-weight=700
+div#cxd-sales-overview-control-table-0-cX-Version-Info-Container>br:2 [713,1223 0x20] 
+div#cxd-sales-overview-control-table-0-cX-Version-Info-Container>b:3 [645,1243 37x20] font-weight=700
+table#cxd-sales-overview-control-table-0-cX-a11y-table [603,1161 313x64] 
+table#cxd-sales-overview-control-table-0-cX-a11y-table>caption [603,1161 313x18] 
+table#cxd-sales-overview-control-table-0-cX-a11y-table>thead [605,1181 309x20] 
+table#cxd-sales-overview-control-table-0-cX-a11y-table>thead>tr [605,1181 309x20] 
+table#cxd-sales-overview-control-table-0-cX-a11y-table>thead>tr>td [605,1181 68x20] padding=1px
+table#cxd-sales-overview-control-table-0-cX-a11y-table>thead>tr>th:1 [675,1181 47x20] font-weight=700; padding=1px
+table#cxd-sales-overview-control-table-0-cX-a11y-table>thead>tr>th:2 [724,1181 48x20] font-weight=700; padding=1px
+table#cxd-sales-overview-control-table-0-cX-a11y-table>thead>tr>th:3 [774,1181 36x20] font-weight=700; padding=1px
+table#cxd-sales-overview-control-table-0-cX-a11y-table>thead>tr>th:4 [812,1181 41x20] font-weight=700; padding=1px
+table#cxd-sales-overview-control-table-0-cX-a11y-table>thead>tr>th:5 [855,1181 59x20] font-weight=700; padding=1px
+table#cxd-sales-overview-control-table-0-cX-a11y-table>tbody [605,1203 309x20] 
+table#cxd-sales-overview-control-table-0-cX-a11y-table>tbody>tr [605,1203 309x20] 
+table#cxd-sales-overview-control-table-0-cX-a11y-table>tbody>tr>th [605,1203 68x20] font-weight=700; padding=1px
+table#cxd-sales-overview-control-table-0-cX-a11y-table>tbody>tr>td:1 [675,1203 47x20] padding=1px
+table#cxd-sales-overview-control-table-0-cX-a11y-table>tbody>tr>td:2 [724,1203 48x20] padding=1px
+table#cxd-sales-overview-control-table-0-cX-a11y-table>tbody>tr>td:3 [774,1203 36x20] padding=1px
+table#cxd-sales-overview-control-table-0-cX-a11y-table>tbody>tr>td:4 [812,1203 41x20] padding=1px
+table#cxd-sales-overview-control-table-0-cX-a11y-table>tbody>tr>td:5 [855,1203 59x20] padding=1px
+div#cxd-sales-overview-control-table-0-cX-a11y-live [603,1161 1x1] 

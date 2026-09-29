@@ -72,7 +72,7 @@ class SnapshotRenderer:
             "<link rel='stylesheet' href='%s/canvasXpress.css'>" % self.canvasxpress_url +
             "<script src='%s/canvasXpress.min.js'></script>" % self.canvasxpress_url +
             "<script src='%s/canvasxpress-dashboards.umd.js'></script>" % _ASSET_HOST +
-            "<style>body{margin:0;background:#fff;font-family:system-ui,sans-serif}"
+            "<style>body{margin:0;background:var(--cx-ui-surface,#fff);font-family:var(--cx-font-sans,system-ui,sans-serif)}"
             "#cxd-title{font-size:20px;font-weight:600;padding:16px 16px 0}"
             "#dash{padding:12px}</style></head>"
             "<body style='width:%dpx'><div id='cxd-shot'><div id='cxd-title'></div>" % self.width +

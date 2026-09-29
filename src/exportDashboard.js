@@ -18,15 +18,16 @@
 import { createDataStore } from './dataStore.js';
 
 /**
- * Inline SVG favicon (a CanvasXpress-blue bar-chart glyph) as a data URI, so the
- * exported page shows a tab icon without any external request.
+ * Inline SVG favicon (a bar-chart glyph in the accent-strong role colour; a data URI cannot use
+ * var(), so this mirrors --cx-ui-accent-strong) so the exported page shows a tab icon without any
+ * external request.
  * @type {string}
  * @private
  */
 var FAVICON_DATA_URI =
   'data:image/svg+xml,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">' +
-    '<rect width="16" height="16" rx="3" fill="#2563eb"/>' +
+    '<rect width="16" height="16" rx="3" fill="#3d58ff"/>' +
     '<rect x="3" y="8" width="2.4" height="5" rx="0.6" fill="#fff"/>' +
     '<rect x="6.8" y="5" width="2.4" height="8" rx="0.6" fill="#fff"/>' +
     '<rect x="10.6" y="3" width="2.4" height="10" rx="0.6" fill="#fff"/>' +
@@ -245,26 +246,29 @@ export function buildDashboardHtml(spec, opts) {
     var full = parts[0], css = parts[1], cxLib = parts[2], cxdLib = parts[3];
     var title = (full.title || full.id || 'Dashboard') + ' · CanvasXpress Dashboards';
     var specJson = guardScript(JSON.stringify(full));
-    return '<!doctype html>\n<html lang="en">\n<head>\n' +
+    return '<!doctype html>\n<html lang="en" data-cx-ui-theme="auto">\n<head>\n' +
       '<meta charset="utf-8" />\n' +
       '<meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
       '<title>' + escapeHtml(title) + '</title>\n' +
       '<link rel="icon" href="' + FAVICON_DATA_URI + '" />\n' +
       '<style>\n' + css + '\n</style>\n' +
-      '<style>\nbody{margin:0;font-family:system-ui,sans-serif;background:#f2f4f7;color:#222}' +
+      '<style>\nbody{margin:0;font-family:var(--cx-font-sans);background:var(--cx-ui-surface-sunken);color:var(--cx-ui-text)}' +
       '#dashboard{padding:16px 24px 32px}\n' +
-      '.cxd-export-footer{padding:16px 24px 28px;font:13px/1.5 system-ui,sans-serif;color:#6b7280;' +
-      'border-top:1px solid #e4e7eb;display:flex;flex-wrap:wrap;gap:6px 16px}\n' +
-      '.cxd-export-footer a{color:#2563eb;text-decoration:none}\n' +
+      '.cxd-export-footer{padding:16px 24px 28px;font:13px/1.5 var(--cx-font-sans);color:var(--cx-ui-text-muted);' +
+      'border-top:1px solid var(--cx-ui-border-subtle);display:flex;flex-wrap:wrap;gap:6px 16px}\n' +
+      '.cxd-export-footer a{color:var(--cx-ui-accent-strong);text-decoration:none}\n' +
       '.cxd-export-footer a:hover{text-decoration:underline}\n' +
-      '@media (prefers-color-scheme: dark){body{background:#0e1013;color:#e6e8ec}' +
-      '.cxd-export-footer{color:#8a9099;border-top-color:#262b33}.cxd-export-footer a{color:#6ea8fe}}\n</style>\n' +
+      '</style>\n' +
       '</head>\n<body>\n<div id="dashboard"></div>\n' +
       buildFooter(full, siteUrl, dashboardUrl) +
       '<script>' + guardScript(cxLib) + '</scr' + 'ipt>\n' +
       '<script>' + guardScript(cxdLib) + '</scr' + 'ipt>\n' +
       '<script>\nvar SPEC = ' + specJson + ';\n' +
-      'CanvasXpressDashboards.renderDashboard(SPEC, "dashboard", {});\n' +
+      // The page (footer) follows the dashboard's light/dark theme, like the viewer
+      'CanvasXpressDashboards.renderDashboard(SPEC, "dashboard", {}).then(function () {\n' +
+      '  document.documentElement.setAttribute("data-cx-ui-theme",\n' +
+      '    document.getElementById("dashboard").getAttribute("data-cx-ui-theme") || "auto");\n' +
+      '});\n' +
       '</scr' + 'ipt>\n</body>\n</html>\n';
   });
 }

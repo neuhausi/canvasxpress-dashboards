@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-cx-ui-theme="auto">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -21,9 +21,11 @@
   <!--CX-LIB-END-->
 
   <style>
-    :root { --rail-bg: #ffffff; --rail-border: #e6e9ee; --muted: #6b7280; --accent: #087ad1; }
+    /* The shell's own names default to the shared CanvasXpress UI roles (canvasXpress.css / the
+       dashboards token fallback); <html data-cx-ui-theme> switches them to the dark roles. */
+    :root { --rail-bg: var(--cx-ui-surface); --rail-border: var(--cx-ui-border-subtle); --muted: var(--cx-ui-text-muted); --accent: var(--cx-ui-accent-strong); }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    body { margin: 0; font-family: var(--cx-font-sans); background: var(--cx-ui-surface-sunken); color: var(--cx-ui-text); }
 
     .app { display: flex; min-height: 100vh; }
 
@@ -35,22 +37,22 @@
     .brand img { width: 32px; height: 32px; }
     .brand span { font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
     .rail nav { display: flex; flex-direction: column; gap: 2px; }
-    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 10px; border-radius: 8px;
-      color: #444; font-size:16px; cursor: pointer; text-decoration: none; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 10px; border-radius: var(--cx-radius-md);
+      color: var(--cx-ui-text); font-size:16px; cursor: pointer; text-decoration: none; }
     .nav-item .ic { width: 24px; text-align: center; font-size: 21px; }
-    .nav-item:hover { background: #f4f6f8; }
-    .nav-item.active { background: #eaf3fb; color: var(--accent); font-weight: 600; }
+    .nav-item:hover { background: var(--cx-ui-surface-sunken); }
+    .nav-item.active { background: var(--cx-ui-accent-tint-subtle); color: var(--cx-ui-accent-strong); font-weight: 600; }
     .rail-foot { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px 8px;
       border-top: 1px solid var(--rail-border); color: var(--muted); font-size:16px; }
-    .rail-foot .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--accent);
-      color: #fff; display: flex; align-items: center; justify-content: center; font-size:14px; font-weight: 700; }
+    .rail-foot .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--cx-ui-accent-strong);
+      color: var(--cx-ui-on-accent); display: flex; align-items: center; justify-content: center; font-size:14px; font-weight: 700; }
 
     /* Main content */
     .content { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
     /* min-height fits the Builder's two-row toolbar, so the strip is the
        same height on every view (Builder / Dashboards / Settings). */
     .topstrip { display: flex; align-items: center; gap: 12px; padding: 10px 20px; min-height: 102px;
-      border-bottom: 1px solid var(--rail-border); background: #fff; }
+      border-bottom: 1px solid var(--rail-border); background: var(--cx-ui-surface); }
     .toolbar-host { width: 100%; }
     .view-title { margin: 0; font-size:16px; font-weight: 600; }
     .view { padding: 16px 20px 32px; }
@@ -60,7 +62,7 @@
     .home { max-width: 1400px; margin: 0 auto; }
 
     /* Home view */
-    .hero { background: linear-gradient(120deg, #eaf3fb, #f4f7fb); border-radius: 12px;
+    .hero { background: linear-gradient(120deg, var(--cx-ui-accent-tint-subtle), var(--cx-ui-surface-sunken)); border-radius: var(--cx-radius-lg);
       padding: 28px; margin-bottom: 20px; position: relative; }
     .hero-gh { position: absolute; top: 20px; right: 20px; color: var(--muted);
       opacity: .75; transition: opacity .15s, color .15s; }
@@ -68,9 +70,9 @@
     .hero-gh svg { width: 26px; height: 26px; display: block; fill: currentColor; }
     .hero h1 { margin: 0 0 6px; font-size: 26px; }
     .hero p { margin: 0 0 16px; color: var(--muted); font-size:16px; }
-    .cta { padding: 10px 18px; background: var(--accent); color: #fff; border: none;
-      border-radius: 8px; font-size:16px; font-weight: 600; cursor: pointer; }
-    .cta:hover { background: #065fa3; }
+    .cta { padding: 10px 18px; background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent); border: none;
+      border-radius: var(--cx-radius-md); font-size:16px; font-weight: 600; cursor: pointer; }
+    .cta:hover { background: var(--cx-ui-accent-hover); }
     /* Editorial layout: a 6-col grid with cards of varied widths. */
     /* align-items: stretch makes every card in a row take the tallest card's
        height, so each row lines up cleanly regardless of how the text wraps. */
@@ -82,19 +84,19 @@
     @media (max-width: 900px) { .notices { grid-template-columns: 1fr; } .notices .notice { grid-column: auto; } }
     .howto { display: flex; gap: 8px; align-items: stretch; margin: 0 0 22px; }
     .howto-step { flex: 1; min-width: 0; background: var(--rail-bg); border: 1px solid var(--rail-border);
-      border-radius: 12px; padding: 14px; cursor: pointer; transition: box-shadow .15s, transform .15s; }
-    .howto-step:hover { box-shadow: 0 6px 20px rgba(16,40,70,.10); transform: translateY(-1px); }
+      border-radius: var(--cx-radius-lg); padding: 14px; cursor: pointer; transition: box-shadow .15s, transform .15s; }
+    .howto-step:hover { box-shadow: var(--cx-shadow-2); transform: translateY(-1px); }
     .howto-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-    .howto-n { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff;
+    .howto-n { width: 22px; height: 22px; border-radius: 50%; background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent);
       font-size:16px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
     .howto-step h4 { margin: 0; font-size:16px; }
     .howto-step img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: top;
-      border: 1px solid var(--rail-border); border-radius: 8px; background: #fff; }
+      border: 1px solid var(--rail-border); border-radius: var(--cx-radius-lg); background: var(--cx-ui-surface); }
     .howto-step p { margin: 10px 0 0; font-size:16px; color: var(--muted); line-height: 1.5; }
     .howto-arrow { align-self: center; font-size: 20px; color: var(--muted); flex: none; }
     @media (max-width: 1000px) { .howto { flex-direction: column; } .howto-arrow { transform: rotate(90deg); align-self: flex-start; margin-left: 24px; } }
-    .notice { display: flex; gap: 12px; background: #fff; border: 1px solid var(--rail-border);
-      border-radius: 10px; padding: 16px; }
+    .notice { display: flex; gap: 12px; background: var(--cx-ui-surface); border: 1px solid var(--rail-border);
+      border-radius: var(--cx-radius-lg); padding: 16px; }
     .notice .ni { font-size: 22px; line-height: 1; }
     .notice h3 { margin: 0 0 4px; font-size:16px; }
     .notice p { margin: 0; color: var(--muted); font-size:16px; line-height: 1.5; }
@@ -102,7 +104,7 @@
     .conn-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
     .conn-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px;
       font-weight: 500; letter-spacing: .1px; padding: 3px 9px; border: 1px solid var(--rail-border);
-      border-radius: 6px; background: transparent; color: var(--muted); white-space: nowrap; }
+      border-radius: var(--cx-radius-md); background: transparent; color: var(--muted); white-space: nowrap; }
     .conn-chip .ci { font-size: 19px; line-height: 1; }
     .placeholder { padding: 60px 20px; text-align: center; color: var(--muted); }
 
@@ -111,18 +113,18 @@
     /* An outer panel (like the Dashboards list) holding one card per
        category. */
     .settings-form { flex: 0 0 320px; min-width: 0; box-sizing: border-box;
-      background: #fff; border: 1px solid var(--rail-border); border-radius: 10px;
+      background: var(--cx-ui-surface); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-lg);
       padding: 10px; display: flex; flex-direction: column; gap: 12px; }
     .settings-form h3 { margin: 0 0 4px; font-size:16px; }
     /* Category cards get a slightly darker border than the inputs inside
        them, so the grouping reads at a glance. */
-    .settings-card { background: #fff; border: 1px solid #c9cfd8; border-radius: 10px;
+    .settings-card { background: var(--cx-ui-surface); border: 1px solid var(--cx-ui-border); border-radius: var(--cx-radius-lg);
       padding: 12px; display: flex; flex-direction: column; gap: 12px; }
     .settings-cat { margin: 0; font-size: 15px; font-weight: 700; }
     .settings-form label { display: flex; flex-direction: column; gap: 4px; font-size:14px;
       font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
-    .settings-form input, .settings-form select { padding: 6px 8px; border: 1px solid var(--rail-border);
-      border-radius: 6px; font: inherit; font-weight: 400; text-transform: none; color: inherit; background: #fff; }
+    .settings-form input:not(:where([type=checkbox], [type=radio])), .settings-form select { padding: 6px 8px; border: 1px solid var(--rail-border);
+      border-radius: var(--cx-radius-md); font: inherit; font-weight: 400; text-transform: none; color: inherit; background: var(--cx-ui-surface); }
     .settings-form input[type=color] { padding: 2px; height: 34px; }
     .settings-form .settings-field { display: flex; flex-direction: column; gap: 4px; }
     .settings-form .settings-lbl { font-size: 14px; font-weight: 700; text-transform: uppercase;
@@ -131,58 +133,40 @@
     .settings-form .settings-inline select { flex: 1 1 auto; min-width: 0; }
     .settings-form label.settings-check { flex-direction: row; align-items: center; gap: 6px;
       text-transform: none; letter-spacing: 0; font-weight: 400; color: inherit; white-space: nowrap; }
-    .settings-form label.settings-check input[type=checkbox] { width: auto; padding: 0; }
     .settings-form input:disabled { opacity: .5; cursor: not-allowed; }
     .settings-preview { flex: 1 1 380px; min-width: 320px; }
-    .settings-preview #s-preview { border: 1px dashed var(--rail-border); border-radius: 10px; padding: 0 12px 12px; }
-    @media (prefers-color-scheme: dark) {
-      .settings-form, .settings-card { background: #16181d; }
-      .settings-card { border-color: #3a414c; }
-      .settings-form input, .settings-form select { background: #1d2027; }
-    }
+    .settings-preview #s-preview { border: 1px dashed var(--rail-border); border-radius: var(--cx-radius-lg); padding: 0 12px 12px; }
 
     /* Data view: dataset list + CanvasXpress table preview */
     .data-view { display: flex; gap: 16px; align-items: stretch; }
-    .data-list { flex: 0 0 260px; width: 260px; box-sizing: border-box; align-self: flex-start; background: #fff;
-      border: 1px solid var(--rail-border); border-radius: 10px; overflow: hidden; }
+    .data-list { flex: 0 0 260px; width: 260px; box-sizing: border-box; align-self: flex-start; background: var(--cx-ui-surface);
+      border: 1px solid var(--rail-border); border-radius: var(--cx-radius-lg); overflow: hidden; }
     /* Cards: breathing room on all sides instead of edge-to-edge rows. */
     .data-item { padding: 10px 12px; margin: 10px; border: 1px solid var(--rail-border);
-      border-radius: 8px; cursor: pointer; }
+      border-radius: var(--cx-radius-md); cursor: pointer; }
     .data-item + .data-item { margin-top: 0; }
-    .data-item:hover { background: #f4f6f8; }
-    .data-item.active { background: #eaf3fb; border-color: var(--accent); }
+    .data-item:hover { background: var(--cx-ui-surface-sunken); }
+    .data-item.active { background: var(--cx-ui-accent-tint-subtle); border-color: var(--accent);
+      /* muted text on the accent tint is below AA (dark 3.8:1): a selected card's secondary lines use the text colour */
+      --muted: var(--cx-ui-text); }
     .data-item-title { font-weight: 600; font-size:16px; }
     .data-item-meta { color: var(--muted); font-size:14px; margin-top: 2px; }
-    .data-preview { flex: 1 1 auto; min-width: 320px; background: #fff;
-      border: 1px solid var(--rail-border); border-radius: 10px; padding: 12px; }
-    .data-preview-title { font-weight: 600; margin-bottom: 10px; color: #333; }
+    .data-preview { flex: 1 1 auto; min-width: 320px; background: var(--cx-ui-surface);
+      border: 1px solid var(--rail-border); border-radius: var(--cx-radius-lg); padding: 12px; }
+    .data-preview-title { font-weight: 600; margin-bottom: 10px; color: var(--cx-ui-text); }
     #data-canvas-host { height: calc(100vh - 220px); min-height: 460px; overflow: hidden; }
     .data-preview.drop-active { outline: 2px dashed var(--accent); outline-offset: -6px;
-      background: rgba(8,122,209,0.05); }
-    .data-dropzone { border: 2px dashed var(--rail-border); border-radius: 10px;
+      background: var(--cx-ui-accent-tint-subtle); }
+    .data-dropzone { border: 2px dashed var(--rail-border); border-radius: var(--cx-radius-lg);
       padding: 18px 14px; margin-top: 12px; text-align: center; color: var(--muted);
       font-size:16px; line-height: 1.5; background: transparent; }
     .data-dropzone .dz-icon { font-size: 22px; display: block; margin-bottom: 6px; }
     .data-dropzone strong { color: inherit; }
     .data-dropzone.drop-active { border-color: var(--accent); color: var(--accent);
-      background: rgba(8,122,209,0.06); }
-    @media (prefers-color-scheme: dark) {
-      .data-list, .data-preview { background: #16181d; }
-      .data-item:hover { background: #1d2027; }
-      .data-item.active { background: #12283a; }
-      .data-preview-title { color: #e6e8ec; }
-    }
+      background: var(--cx-ui-accent-tint-subtle); }
 
-    @media (prefers-color-scheme: dark) {
-      :root { --rail-bg: #16181d; --rail-border: #2c313a; --muted: #8a9099; }
-      body { background: #0e1013; color: #e6e8ec; }
-      .topstrip { background: #16181d; }
-      .nav-item { color: #c9ccd1; }
-      .nav-item:hover { background: #1d2027; }
-      .nav-item.active { background: #12283a; }
-      .hero { background: linear-gradient(120deg, #12283a, #1a1d24); }
-      .notice { background: #16181d; }
-    }
+    /* Dark: <html data-cx-ui-theme="auto"> (follows the OS) swaps the --cx-ui-* roles these read; a
+       dashboard sets its own theme on its container, and builder modals copy it. */
       .access-icon { font-size: 14px; cursor: help; vertical-align: middle; margin-left: 2px; }
       .admin-tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--rail-border); margin: 0 0 16px; }
     .admin-tab { padding: 8px 14px; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px;
@@ -191,7 +175,7 @@
     .admin-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
   </style>
 </head>
-<body>
+<body class="cX-UI-Controls">
   <div class="app">
     <aside class="rail">
       <a class="brand" href="/" title="CanvasXpress home">
@@ -236,6 +220,12 @@
     // Default the API base to the path prefix the app is mounted under, so the
     // same page works at / (dev server) and behind a reverse-proxy subpath
     // like /dashboards/ (e.g. canvasxpress.org).
+    // The shell styles itself with the shared CanvasXpress UI roles (--cx-ui-*): inject the
+    // dashboards stylesheet now, whose generated token fallback covers a page served with an
+    // older canvasXpress.css (Home and other views never render a dashboard).
+    if (window.CanvasXpressDashboards && CanvasXpressDashboards.injectStyles) {
+      CanvasXpressDashboards.injectStyles(document);
+    }
     var API_BASE = new URLSearchParams(location.search).get('api') ||
       location.pathname.replace(/\/(examples\/)?[^/]*$/, '');
     // Static markup can't embed API_BASE — fix up absolute links here.
@@ -364,20 +354,20 @@
           // scroll internally instead of running off the page.
           // Outer panel + one card per section, matching the Dashboards and
           // Settings left panels.
-          '<div id="chat-panel" style="flex:0 0 320px;box-sizing:border-box;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--rail-border);border-radius:10px;background:var(--rail-bg);padding:10px;overflow:hidden">' +
-            '<div class="data-dropzone" style="flex:none;margin:0;padding:12px 12px;text-align:left;border-style:solid;background:var(--rail-bg);border:1px solid #c9cfd8;border-radius:10px;border-style:solid">' +
+          '<div id="chat-panel" style="flex:0 0 320px;box-sizing:border-box;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-lg);background:var(--rail-bg);padding:10px;overflow:hidden">' +
+            '<div class="data-dropzone" style="flex:none;margin:0;padding:12px 12px;text-align:left;border-style:solid;background:var(--rail-bg);border:1px solid var(--cx-ui-border);border-radius:var(--cx-radius-lg);border-style:solid">' +
               '<div style="font-weight:600;font-size:16px;margin-bottom:6px">💬 Assistant</div>' +
               '<strong>How it works:</strong> tick the datasets to use, then describe the ' +
               'dashboard you want — it appears on the canvas, where you keep refining by hand ' +
               'or by chat. Prefer manual? Tick a dataset and click <strong>+ Panel</strong>.' +
             '</div>' +
-            '<div id="chat-datasets" style="flex:none;height:250px;min-height:250px;display:flex;flex-direction:column;padding:10px 12px;font-size:16px;overflow:hidden;background:var(--rail-bg);border:1px solid #c9cfd8;border-radius:10px">' +
+            '<div id="chat-datasets" style="flex:none;height:250px;min-height:250px;display:flex;flex-direction:column;padding:10px 12px;font-size:16px;overflow:hidden;background:var(--rail-bg);border:1px solid var(--cx-ui-border);border-radius:var(--cx-radius-lg)">' +
               '<div style="flex:none;font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:4px">Datasets to use</div>' +
-              '<input id="chat-dataset-search" type="search" placeholder="Search datasets…" style="flex:none;width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:6px;font:inherit;font-size:15px;border:1px solid var(--rail-border);border-radius:6px"/>' +
+              '<input id="chat-dataset-search" type="search" placeholder="Search datasets…" style="flex:none;width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:6px;font:inherit;font-size:15px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)"/>' +
               '<div id="chat-dataset-list" style="flex:1;min-height:0;display:flex;flex-direction:column;gap:7px;overflow-y:auto;padding:2px 0">Loading…</div>' +
             '</div>' +
             '<div id="chat-splitter" title="Drag to resize" style="flex:none;height:8px;cursor:ns-resize;border-top:1px solid var(--rail-border);border-bottom:1px solid var(--rail-border);background:repeating-linear-gradient(90deg,transparent,transparent 4px,var(--rail-border) 4px,var(--rail-border) 8px);background-size:24px 2px;background-position:center;background-repeat:no-repeat"></div>' +
-            '<div id="chat-section" style="flex:1;min-height:250px;display:flex;flex-direction:column;overflow:hidden;background:var(--rail-bg);border:1px solid #c9cfd8;border-radius:10px">' +
+            '<div id="chat-section" style="flex:1;min-height:250px;display:flex;flex-direction:column;overflow:hidden;background:var(--rail-bg);border:1px solid var(--cx-ui-border);border-radius:var(--cx-radius-lg)">' +
               '<div id="chat-log" style="flex:1;min-height:0;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>' +
               '<div style="flex:none;display:flex;gap:6px;padding:8px;border-top:1px solid var(--rail-border)">' +
                 '<textarea id="chat-input" rows="4" placeholder="Describe the dashboard you want…" style="flex:1;resize:none;padding:7px;font:inherit;font-size:16px"></textarea>' +
@@ -385,7 +375,7 @@
               '</div>' +
             '</div>' +
           '</div>' +
-          '<div id="builder-host" style="flex:1;min-width:0;border:1px solid var(--rail-border);border-radius:12px;padding:0 12px 12px;background:var(--rail-bg)"></div>' +
+          '<div id="builder-host" style="flex:1;min-width:0;border:1px solid var(--rail-border);border-radius:var(--cx-radius-lg);padding:0 12px 12px;background:var(--rail-bg)"></div>' +
         '</div>';
       currentBuilder = CXD.createBuilder(document.getElementById('builder-host'), {
         toolbar: toolbarEl,
@@ -464,7 +454,7 @@
               'delimited text (CSV / TSV / TXT),<br>' +
               'CanvasXpress JSON, or a CanvasXpress PNG.' +
             '</div>' +
-            '<input id="data-search" type="search" placeholder="Search datasets…" style="flex:none;width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:8px;font:inherit;font-size:15px;border:1px solid var(--rail-border);border-radius:6px"/>' +
+            '<input id="data-search" type="search" placeholder="Search datasets…" style="flex:none;width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:8px;font:inherit;font-size:15px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)"/>' +
             '<div class="data-list" id="file-sources" style="flex:none;width:auto;align-self:stretch;padding:10px;display:flex;flex-direction:column;height:420px;min-height:250px">' +
               '<div style="font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:6px">File sources</div>' +
               '<div id="data-list" style="flex:1;min-height:0;overflow-y:auto"><div class="placeholder">Loading…</div></div>' +
@@ -501,14 +491,14 @@
     // external URL / connector (restores the old "+ Data" dialog capabilities).
     function openAddDataDialog() {
       var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;' +
-        'align-items:center;justify-content:center;z-index:20000';
+      overlay.style.cssText = 'position:fixed;inset:0;background:var(--cx-ui-backdrop);display:flex;' +
+        'align-items:center;justify-content:center;z-index:var(--cx-z-modal)';
       var modal = document.createElement('div');
-      modal.style.cssText = 'background:var(--rail-bg,#fff);color:inherit;border-radius:12px;' +
+      modal.style.cssText = 'background:var(--rail-bg);color:inherit;border-radius:var(--cx-radius-lg);' +
         'padding:20px;width:520px;max-width:92vw;box-shadow:0 12px 48px rgba(0,0,0,.3)';
       modal.innerHTML =
         '<h3 style="margin:0 0 12px">Add data</h3>' +
-        '<div id="ad-err" style="color:#d64545;min-height:16px;font-size:16px;margin-bottom:4px"></div>' +
+        '<div id="ad-err" style="color:var(--cx-ui-danger);min-height:16px;font-size:16px;margin-bottom:4px"></div>' +
         '<label style="display:block;font-size:14px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:4px 0 2px">Name</label>' +
         '<input id="ad-name" style="width:100%;padding:8px;box-sizing:border-box" placeholder="e.g. my-data"/>' +
         '<label style="display:block;font-size:14px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:12px 0 2px">Source</label>' +
@@ -822,7 +812,7 @@
         '<div class="hero" style="max-width:420px;margin:40px auto">' +
           '<h1 style="font-size:22px">Sign in to CanvasXpress Dashboards</h1>' +
           '<p style="color:var(--muted)">Save, load, and share dashboards on this server.</p>' +
-          '<div id="login-err" style="color:#d64545;min-height:18px;font-size:16px;margin:6px 0"></div>' +
+          '<div id="login-err" style="color:var(--cx-ui-danger);min-height:18px;font-size:16px;margin:6px 0"></div>' +
           '<button class="cta" id="login-sso" style="width:100%;margin:4px 0 12px;display:none"></button>' +
           '<div id="login-sso-or" style="display:none;text-align:center;color:var(--muted);font-size:14px;margin-bottom:6px">or with a password</div>' +
           '<div id="login-password">' +
@@ -915,7 +905,7 @@
         '<div class="settings">' +
           '<div class="settings-form" style="flex:0 0 280px">' +
             '<h3>Create user</h3>' +
-            '<div id="admin-err" style="color:#d64545;min-height:16px;font-size:16px"></div>' +
+            '<div id="admin-err" style="color:var(--cx-ui-danger);min-height:16px;font-size:16px"></div>' +
             '<label>Username<input id="admin-new-user" autocomplete="off"/></label>' +
             '<label>Password<input id="admin-new-pass" type="text" autocomplete="off"/></label>' +
             '<button class="cta" id="admin-create">Create user</button>' +
@@ -930,7 +920,7 @@
         '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">A role is a set of permissions. Give one to a user ' +
           '(above) or a group (below); a user gets every permission of their own and their groups’ roles. ' +
           'Users with no role anywhere get the default role. Admins can do everything.</p>' +
-        '<div id="gov-err" style="color:#d64545;min-height:16px;font-size:15px"></div>' +
+        '<div id="gov-err" style="color:var(--cx-ui-danger);min-height:16px;font-size:15px"></div>' +
         '<div class="settings">' +
           '<div class="settings-form" style="flex:0 0 280px">' +
             '<h3>Custom role</h3>' +
@@ -965,7 +955,7 @@
         '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">Datasets and dashboards owned by the <b>app</b> account. ' +
           'They are shared read-only to every user and are locked so they survive code updates. ' +
           'Only you (admin) can unlock or delete them here.</p>' +
-        '<div id="admin-ex-err" style="color:#d64545;min-height:16px;font-size:16px"></div>' +
+        '<div id="admin-ex-err" style="color:var(--cx-ui-danger);min-height:16px;font-size:16px"></div>' +
         '<div class="settings">' +
           '<div class="settings-preview" style="flex:1 1 320px">' +
             '<h4 style="margin:0 0 6px">Example dashboards</h4>' +
@@ -992,9 +982,9 @@
           '<a id="audit-export" href="#" download>Export CSV</a>' +
         '</div>' +
         '<div id="audit-status" style="min-height:18px;font-size:14px;margin-bottom:6px"></div>' +
-        '<div style="overflow:auto;max-height:480px;border:1px solid var(--border,#e2e5ea);border-radius:8px">' +
+        '<div style="overflow:auto;max-height:480px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)">' +
           '<table class="audit-table" style="width:100%;border-collapse:collapse;font-size:13px">' +
-            '<thead><tr style="text-align:left;position:sticky;top:0;background:var(--panel-bg,#f7f8fa)">' +
+            '<thead><tr style="text-align:left;position:sticky;top:0;background:var(--cx-ui-surface-sunken)">' +
               '<th style="padding:6px 8px">Time (UTC)</th><th style="padding:6px 8px">User</th>' +
               '<th style="padding:6px 8px">Action</th><th style="padding:6px 8px">Target</th>' +
               '<th style="padding:6px 8px">Outcome</th><th style="padding:6px 8px">Details</th></tr></thead>' +
@@ -1067,6 +1057,7 @@
           if (!u.via_config && u.username !== currentUser) {
             var toggle = document.createElement('button');
             toggle.textContent = u.is_admin ? 'Revoke admin' : 'Make admin';
+            toggle.className = 'cX-Button';
             toggle.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer';
             toggle.onclick = function () {
               errEl.textContent = '';
@@ -1081,6 +1072,7 @@
           }
           var mail = document.createElement('button');
           mail.textContent = 'Email…';
+          mail.className = 'cX-Button';
           mail.title = 'The address alerts and subscriptions go to';
           mail.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer';
           mail.onclick = function () {
@@ -1092,20 +1084,22 @@
           row.appendChild(mail);
           var reset = document.createElement('button');
           reset.textContent = 'Reset password';
+          reset.className = 'cX-Button';
           reset.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer';
           reset.onclick = function () {
             var pw = window.prompt('New password for "' + u.username + '" (≥6 chars):');
             if (!pw) return;
             errEl.textContent = '';
             client.setUserPassword(u.username, pw).then(function () {
-              errEl.style.color = '#2e7d32'; errEl.textContent = 'Password reset for ' + u.username + '.';
+              errEl.style.color = 'var(--cx-ui-success)'; errEl.textContent = 'Password reset for ' + u.username + '.';
             }, fail);
           };
           row.appendChild(reset);
           if (!u.is_admin && u.username !== currentUser) {
             var del = document.createElement('button');
             del.textContent = 'Delete';
-            del.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer;color:#d64545';
+            del.className = 'cX-Button';
+            del.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer;color:var(--cx-ui-danger)';
             del.onclick = function () {
               if (!window.confirm('Delete "' + u.username + '" and all their dashboards?')) return;
               errEl.textContent = '';
@@ -1123,7 +1117,9 @@
       // Checkbox rows inside .settings-form, undoing its uppercase block-label style.
       var CHECK_LABEL = 'display:flex;flex-direction:row;gap:8px;align-items:flex-start;margin:0;' +
         'font-weight:400;font-size:14px;text-transform:none;letter-spacing:0;color:inherit';
-      var CHECK_INPUT = 'width:auto;margin:2px 0 0;padding:0;flex:none';
+      // The shared CanvasXpress checkbox (body.cX-UI-Controls); an explicit size, since `auto` collapses
+      // an appearance:none box (this used to undo a full-width input rule)
+      var CHECK_INPUT = 'width:16px;height:16px;margin:2px 0 0;padding:0;flex:none';
       var govErr = document.getElementById('gov-err');
       function govFail(err) { govErr.textContent = (err && err.message) || String(err); }
       function renderRoles(gov) {
@@ -1157,7 +1153,7 @@
             row.appendChild(smallButton('Delete', function () {
               if (!window.confirm('Delete role "' + r.name + '"? Users and groups with it fall back to their other roles.')) return;
               client.deleteRole(r.name).then(loadGovernance, govFail);
-            }, 'color:#d64545'));
+            }, 'color:var(--cx-ui-danger)'));
           }
           host.appendChild(row);
         });
@@ -1178,7 +1174,7 @@
           row.className = 'data-item';
           row.style.cssText = 'display:flex;align-items:center;gap:10px';
           row.innerHTML = '<div style="flex:1"><div class="data-item-title">👥 ' + esc(g.name) +
-            (g.managed ? ' <span style="font-size:13px;color:#6b4fbb" title="Members are set by the identity provider at each sign-in">SSO</span>' : '') +
+            (g.managed ? ' <span style="font-size:13px;color:var(--cx-ui-info-strong)" title="Members are set by the identity provider at each sign-in">SSO</span>' : '') +
             (g.role ? ' <span style="font-size:13px;color:var(--accent)">role: ' + esc(g.role) + '</span>' : '') + '</div>' +
             '<div class="data-item-meta">' + (g.description ? esc(g.description) + ' · ' : '') +
             (g.members.length ? esc(g.members.join(', ')) : 'no members') + '</div></div>';
@@ -1194,7 +1190,7 @@
           row.appendChild(smallButton('Delete', function () {
             if (!window.confirm('Delete group "' + g.name + '"? Its shares and role go with it.')) return;
             client.deleteGroup(g.name).then(loadGovernance, govFail);
-          }, 'color:#d64545'));
+          }, 'color:var(--cx-ui-danger)'));
           host.appendChild(row);
         });
       }
@@ -1255,7 +1251,7 @@
       };
 
       function load() {
-        errEl.style.color = '#d64545';
+        errEl.style.color = 'var(--cx-ui-danger)';
         client.listUsers().then(function (users) {
           govUsers = (users || []).map(function (u) { return u.username; });
           renderUsers(users);
@@ -1268,7 +1264,7 @@
       document.getElementById('admin-create').onclick = function () {
         var u = document.getElementById('admin-new-user').value.trim();
         var p = document.getElementById('admin-new-pass').value;
-        errEl.style.color = '#d64545'; errEl.textContent = '';
+        errEl.style.color = 'var(--cx-ui-danger)'; errEl.textContent = '';
         client.createUser(u, p).then(function () {
           document.getElementById('admin-new-user').value = '';
           document.getElementById('admin-new-pass').value = '';
@@ -1287,7 +1283,7 @@
         };
       }
       function auditCell(text, extra) {
-        return '<td style="padding:5px 8px;border-top:1px solid var(--border,#e2e5ea);' + (extra || '') + '">' + text + '</td>';
+        return '<td style="padding:5px 8px;border-top:1px solid var(--rail-border);' + (extra || '') + '">' + text + '</td>';
       }
       function renderAudit(page, append) {
         var body = document.getElementById('audit-rows');
@@ -1299,7 +1295,7 @@
           body.innerHTML = '<tr><td colspan="6" style="padding:8px">No matching events.</td></tr>';
         }
         page.events.forEach(function (e) {
-          var colour = e.outcome === 'denied' ? '#b26a00' : e.outcome === 'error' ? '#d64545' : 'inherit';
+          var colour = e.outcome === 'denied' ? 'var(--cx-ui-warning-strong)' : e.outcome === 'error' ? 'var(--cx-ui-danger)' : 'inherit';
           var detail = e.detail ? esc(JSON.stringify(e.detail)) : '';
           var tr = document.createElement('tr');
           tr.innerHTML =
@@ -1334,7 +1330,7 @@
           }
           renderAudit(page, append);
         }, function (err) {
-          auditStatus.style.color = '#d64545';
+          auditStatus.style.color = 'var(--cx-ui-danger)';
           auditStatus.textContent = (err && err.message) || String(err);
         });
       }
@@ -1344,12 +1340,12 @@
         auditStatus.style.color = 'inherit';
         auditStatus.textContent = 'Verifying…';
         client.auditVerify().then(function (r) {
-          auditStatus.style.color = r.ok ? '#2e7d32' : '#d64545';
+          auditStatus.style.color = r.ok ? 'var(--cx-ui-success)' : 'var(--cx-ui-danger)';
           auditStatus.textContent = r.ok
             ? 'Chain intact: ' + r.checked + ' events verified' + (r.checked ? ' (#' + r.first_seq + '–#' + r.last_seq + ').' : '.')
             : 'Chain BROKEN at event #' + r.broken_at + ': an entry was edited or deleted.';
         }, function (err) {
-          auditStatus.style.color = '#d64545';
+          auditStatus.style.color = 'var(--cx-ui-danger)';
           auditStatus.textContent = (err && err.message) || String(err);
         });
       };
@@ -1385,6 +1381,7 @@
         var params = 'owner=' + encodeURIComponent(EX_OWNER) + (item.store ? '&store=' + encodeURIComponent(item.store) : '');
         var lockBtn = document.createElement('button');
         lockBtn.textContent = item.locked ? 'Unlock' : 'Lock';
+        lockBtn.className = 'cX-Button';
         lockBtn.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer';
         lockBtn.onclick = function () {
           exErr.textContent = '';
@@ -1394,7 +1391,8 @@
         row.appendChild(lockBtn);
         var del = document.createElement('button');
         del.textContent = 'Delete';
-        del.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer;color:#d64545';
+        del.className = 'cX-Button';
+        del.style.cssText = 'font-size:14px;padding:4px 8px;cursor:pointer;color:var(--cx-ui-danger)';
         del.onclick = function () {
           if (!window.confirm('Delete example ' + kind.slice(0, -1) + ' "' + (item.title || item.id) + '"? This removes it for everyone.')) return;
           exErr.textContent = '';
@@ -1412,7 +1410,7 @@
         mine.forEach(function (it) { exRow(host, it, kind); });
       }
       function loadExamples() {
-        exErr.style.color = '#d64545';
+        exErr.style.color = 'var(--cx-ui-danger)';
         apiJSON('GET', '/api/dashboards').then(function (r) {
           fillExamples('admin-ex-dash', r.dashboards, 'dashboards');
         }, exFail);
@@ -1498,7 +1496,7 @@
           var name = src.name;
           var row = document.createElement('div');
           row.style.cssText = 'display:flex;align-items:flex-start;gap:6px;padding:6px 8px;' +
-            'border:1px solid var(--rail-border);border-radius:8px;cursor:pointer';
+            'border:1px solid var(--rail-border);border-radius:var(--cx-radius-md);cursor:pointer';
           // Same presentation as the dataset cards: bold title, muted meta
           // line underneath (rows×cols · location · date).
           var bits = [];
@@ -1512,11 +1510,13 @@
           fillDbSourceDims(name, label.querySelector('[data-dims]'));
           var edit = document.createElement('button');
           edit.textContent = '✎';
+          edit.className = 'cX-Button cX-Button--icon';
           edit.title = 'Edit source';
           edit.style.cssText = 'border:none;background:transparent;color:var(--muted);font-size:15px;cursor:pointer;padding:0 2px';
           edit.onclick = function (ev) { ev.stopPropagation(); editDbSource(name); };
           var del = document.createElement('button');
           del.textContent = '×';
+          del.className = 'cX-Button cX-Button--icon';
           del.title = 'Delete source';
           del.style.cssText = 'border:none;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;padding:0 2px';
           del.onclick = function (ev) {
@@ -1540,14 +1540,14 @@
     // as "+ Data"), so the form never pushes the source list around.
     function openDbSourceDialog(prefill) {
       var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;' +
-        'align-items:center;justify-content:center;z-index:20000';
+      overlay.style.cssText = 'position:fixed;inset:0;background:var(--cx-ui-backdrop);display:flex;' +
+        'align-items:center;justify-content:center;z-index:var(--cx-z-modal)';
       var modal = document.createElement('div');
-      modal.style.cssText = 'background:var(--rail-bg,#fff);color:inherit;border-radius:12px;' +
+      modal.style.cssText = 'background:var(--rail-bg);color:inherit;border-radius:var(--cx-radius-lg);' +
         'padding:20px;width:560px;max-width:92vw;box-shadow:0 12px 48px rgba(0,0,0,.3);' +
         'display:flex;flex-direction:column;gap:10px';
       var FIELD = 'width:100%;box-sizing:border-box;padding:8px;font:inherit;font-size:14px;' +
-        'border:1px solid var(--rail-border);border-radius:6px';
+        'border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)';
       modal.innerHTML =
         '<h3 style="margin:0;font-size:17px">' + (prefill ? 'Edit database source' : 'Add database source') + '</h3>' +
         '<label style="font-size:13px;font-weight:600;text-transform:uppercase;color:var(--muted)">Name' +
@@ -1556,7 +1556,7 @@
           '<input id="db-src-url" placeholder="sqlite:///path.db · postgresql+psycopg://user:pw@host/db" style="' + FIELD + ';margin-top:4px"></label>' +
         '<label style="font-size:13px;font-weight:600;text-transform:uppercase;color:var(--muted)">Read-only SQL' +
           '<textarea id="db-src-sql" rows="5" placeholder="SELECT …" style="' + FIELD + ';margin-top:4px;font-family:monospace;font-size:13px;resize:vertical"></textarea></label>' +
-        '<div id="db-src-err" style="color:#c0392b;font-size:13px;min-height:16px"></div>' +
+        '<div id="db-src-err" style="color:var(--cx-ui-danger);font-size:13px;min-height:16px"></div>' +
         '<div style="display:flex;justify-content:flex-end;gap:8px">' +
           '<button class="cta" id="db-src-cancel" style="padding:6px 14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Cancel</button>' +
           '<button class="cta" id="db-src-save" style="padding:6px 14px">' + (prefill ? 'Save' : 'Add') + '</button>' +
@@ -1760,6 +1760,7 @@
           if (!SAMPLE_IDS[d.id] && !d.shared) {
             var del = document.createElement('button');
             del.textContent = '×';
+            del.className = 'cX-Button cX-Button--icon';
             del.title = 'Delete dataset';
             del.style.cssText = 'border:none;background:transparent;color:var(--muted);' +
               'font-size:20px;line-height:1;cursor:pointer;padding:0 4px';
@@ -1900,28 +1901,38 @@
     function smallButton(text, onclick, extra) {
       var b = document.createElement('button');
       b.textContent = text;
+      // The shared button primitive (light and dark); the shell's compact size stays inline
+      b.className = 'cX-Button';
       b.style.cssText = 'font-size:14px;padding:3px 10px;cursor:pointer;' + (extra || '');
       b.onclick = function (e) { e.stopPropagation(); onclick(e); };
       return b;
     }
     // A simple modal; returns its body element. Esc or the ✕ closes it.
+    // Built on the shared CanvasXpress modal primitive (.cX-Modal*: tokens, light and dark);
+    // only the shell's own layout stays inline (top-aligned, wider, a block-flow body).
     function openModal(title, onClose) {
       var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:2147483647;display:flex;align-items:flex-start;justify-content:center;padding-top:8vh';
+      overlay.className = 'cX-Modal-Overlay';
+      overlay.style.cssText = 'align-items:flex-start;padding-top:8vh';
       var card = document.createElement('div');
-      card.style.cssText = 'background:var(--rail-bg,#fff);color:inherit;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.25);width:min(720px,92vw);max-height:80vh;display:flex;flex-direction:column';
+      card.className = 'cX-Modal';
+      card.style.cssText = 'width:min(720px,92vw);max-width:none;max-height:80vh';
       var head = document.createElement('div');
-      head.style.cssText = 'display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--rail-border)';
-      head.innerHTML = '<div style="font-weight:700;font-size:17px;flex:1">' + esc(title) + '</div>';
+      head.className = 'cX-Modal-Head';
+      head.innerHTML = '<h3 class="cX-Modal-Title" style="font-size:17px;flex:1">' + esc(title) + '</h3>';
       var body = document.createElement('div');
-      body.style.cssText = 'padding:14px 16px;overflow:auto;font-size:15px';
+      body.className = 'cX-Modal-Body';
+      body.style.cssText = 'display:block;padding:14px 16px;font-size:15px';
       function close() {
         document.removeEventListener('keydown', onKey);
         if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
         if (onClose) onClose();
       }
       function onKey(e) { if (e.key === 'Escape') close(); }
-      head.appendChild(smallButton('✕', close, 'border:none;background:transparent;font-size:18px'));
+      var x = smallButton('✕', close, 'font-size:18px');
+      x.className = 'cX-Button cX-Button--icon';
+      x.setAttribute('aria-label', 'Close');
+      head.appendChild(x);
       card.appendChild(head); card.appendChild(body); overlay.appendChild(card);
       overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
       document.addEventListener('keydown', onKey);
@@ -1953,7 +1964,7 @@
             ? 'People you share with see it under Dashboards. They read its stored datasets through it, subject to each dataset’s security policy.'
             : 'People you share with see it under Data, subject to its security policy.') + '</p>';
         var err = document.createElement('div');
-        err.style.cssText = 'color:#d64545;min-height:18px;font-size:14px';
+        err.style.cssText = 'color:var(--cx-ui-danger);min-height:18px;font-size:14px';
         var list = document.createElement('div');
         function apply(principal, level) {
           err.textContent = '';
@@ -1979,7 +1990,7 @@
         addRow.appendChild(smallButton('Share', function () {
           if (!who.value) { err.textContent = 'Pick a person or group.'; return; }
           apply(who.value, lvl.value);
-        }, 'background:var(--accent);color:#fff;border:none;border-radius:6px'));
+        }, 'background:var(--cx-ui-accent-strong);color:var(--cx-ui-on-accent);border:none;border-radius:var(--cx-radius-md)'));
         body.appendChild(list); body.appendChild(addRow); body.appendChild(err);
       }
       body.textContent = 'Loading…';
@@ -2023,7 +2034,7 @@
             '<h4 style="margin:6px 0">Rows</h4>';
           rows.forEach(function (rule, ri) {
             var box = document.createElement('div');
-            box.style.cssText = 'border:1px solid var(--rail-border);border-radius:8px;padding:8px 10px;margin-bottom:8px';
+            box.style.cssText = 'border:1px solid var(--rail-border);border-radius:var(--cx-radius-md);padding:8px 10px;margin-bottom:8px';
             var head = document.createElement('div');
             head.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px';
             head.innerHTML = '<span>Show only rows whose</span>';
@@ -2065,7 +2076,7 @@
           body.appendChild(colHead);
           hides.forEach(function (rule, hi) {
             var box = document.createElement('div');
-            box.style.cssText = 'border:1px solid var(--rail-border);border-radius:8px;padding:8px 10px;margin-bottom:8px';
+            box.style.cssText = 'border:1px solid var(--rail-border);border-radius:var(--cx-radius-md);padding:8px 10px;margin-bottom:8px';
             box.innerHTML = '<div style="margin-bottom:4px">Hide these columns…</div>';
             var checks = document.createElement('div');
             checks.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px 12px;max-height:120px;overflow:auto';
@@ -2113,9 +2124,9 @@
             };
             err.style.color = 'inherit'; err.textContent = 'Saving…';
             client.setPolicy(res.id, out.rows.length || out.columns.length ? out : null, opts).then(function () {
-              err.style.color = '#2e7d32'; err.textContent = 'Saved.';
-            }, function (e) { err.style.color = '#d64545'; err.textContent = e.message; });
-          }, 'background:var(--accent);color:#fff;border:none;border-radius:6px'));
+              err.style.color = 'var(--cx-ui-success)'; err.textContent = 'Saved.';
+            }, function (e) { err.style.color = 'var(--cx-ui-danger)'; err.textContent = e.message; });
+          }, 'background:var(--cx-ui-accent-strong);color:var(--cx-ui-on-accent);border:none;border-radius:var(--cx-radius-md)'));
           actions.appendChild(smallButton('Remove all rules', function () {
             rows = []; hides = [];
             client.setPolicy(res.id, null, opts).then(draw, function (e) { err.textContent = e.message; });
@@ -2154,7 +2165,7 @@
       return isNaN(d) ? iso : d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
     }
     function statusBadge(status) {
-      var colour = status === 'ok' ? '#2e7d32' : status === 'warning' ? '#b26a00' : status === 'error' ? '#d64545' : 'var(--muted)';
+      var colour = status === 'ok' ? 'var(--cx-ui-success)' : status === 'warning' ? 'var(--cx-ui-warning-strong)' : status === 'error' ? 'var(--cx-ui-danger)' : 'var(--muted)';
       return '<span style="font-weight:600;color:' + colour + '">' + esc(status || 'not run yet') + '</span>';
     }
 
@@ -2178,8 +2189,8 @@
         var host = document.getElementById('sched-status');
         if (!host) return;
         function chip(on, text, off) {
-          return '<span style="font-size:13px;border:1px solid var(--rail-border);border-radius:99px;padding:2px 10px;color:' +
-            (on ? '#2e7d32' : 'var(--muted)') + '">' + (on ? '✓ ' + text : '✗ ' + (off || text)) + '</span>';
+          return '<span style="font-size:13px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-pill);padding:2px 10px;color:' +
+            (on ? 'var(--cx-ui-success)' : 'var(--muted)') + '">' + (on ? '✓ ' + text : '✗ ' + (off || text)) + '</span>';
         }
         host.innerHTML =
           '<label style="display:flex;gap:6px;align-items:center">Your email for alerts and subscriptions ' +
@@ -2199,8 +2210,8 @@
         function showVerified(email, verified, sent) {
           resend.style.display = email && !verified && status.email ? '' : 'none';
           if (!email) { msg.style.color = 'var(--muted)'; msg.textContent = ''; return; }
-          if (verified) { msg.style.color = '#2e7d32'; msg.textContent = '✓ confirmed'; return; }
-          msg.style.color = '#b26a00';
+          if (verified) { msg.style.color = 'var(--cx-ui-success)'; msg.textContent = '✓ confirmed'; return; }
+          msg.style.color = 'var(--cx-ui-warning-strong)';
           msg.textContent = sent ? 'Check your inbox: click the link we sent to confirm it.'
             : 'Not confirmed yet: nothing is sent there until you click the emailed link.';
         }
@@ -2209,13 +2220,13 @@
           client.setProfile({ email: input.value.trim() }).then(function (r) {
             status.email_address = r.email; status.email_verified = r.verified;
             showVerified(r.email, r.verified, r.confirmation_sent);
-          }, function (e) { msg.style.color = '#d64545'; msg.textContent = e.message; });
+          }, function (e) { msg.style.color = 'var(--cx-ui-danger)'; msg.textContent = e.message; });
         };
         resend.onclick = function () {
           client.resendConfirmation().then(function (r) {
             showVerified(r.email, r.verified, r.confirmation_sent);
             if (!r.confirmation_sent && !r.verified) msg.textContent = 'A link was sent in the last 10 minutes; check your inbox.';
-          }, function (e) { msg.style.color = '#d64545'; msg.textContent = e.message; });
+          }, function (e) { msg.style.color = 'var(--cx-ui-danger)'; msg.textContent = e.message; });
         };
         var newHost = document.getElementById('sched-new-host');
         newHost.innerHTML = '';
@@ -2223,7 +2234,7 @@
           Object.keys(SCHEDULE_KINDS).forEach(function (kind) {
             newHost.appendChild(smallButton('+ ' + SCHEDULE_KINDS[kind].label, function () {
               editSchedule({ kind: kind }, status, load);
-            }, 'border-radius:6px'));
+            }, 'border-radius:var(--cx-radius-md)'));
           });
         }
       }
@@ -2250,7 +2261,7 @@
               (cfg.snapshot === false ? ' (link only)' : '');
         var card = document.createElement('div');
         card.className = 'data-item';
-        card.style.cssText = 'padding:10px 12px;border:1px solid var(--rail-border);border-radius:10px;margin-bottom:8px;cursor:default';
+        card.style.cssText = 'padding:10px 12px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-lg);margin-bottom:8px;cursor:default';
         card.innerHTML =
           '<div style="display:flex;gap:10px;align-items:flex-start">' +
             '<div style="font-size:22px;line-height:1">' + kind.icon + '</div>' +
@@ -2283,7 +2294,7 @@
         actions.appendChild(smallButton('Delete', function () {
           if (!confirm('Delete the schedule “' + sc.name + '”?')) return;
           client.deleteSchedule(sc.id).then(load, function (e) { alert(e.message); });
-        }, 'color:#d64545'));
+        }, 'color:var(--cx-ui-danger)'));
         card.appendChild(actions);
         return card;
       }
@@ -2338,7 +2349,7 @@
         if (value != null) sel.value = value;
         return sel;
       }
-      var err = document.createElement('div'); err.style.cssText = 'color:#d64545;min-height:18px;font-size:14px;margin-top:8px';
+      var err = document.createElement('div'); err.style.cssText = 'color:var(--cx-ui-danger);min-height:18px;font-size:14px;margin-top:8px';
       var fields = document.createElement('div');
       var name = input(sc.name || '', 'A name you will recognise');
       name.style.width = '100%';
@@ -2381,7 +2392,7 @@
           client.cronPreview(cronValue(), tz.value.trim() || 'UTC').then(function (r) {
             preview.style.color = 'var(--muted)';
             preview.textContent = 'Runs ' + r.description + '. Next: ' + r.next.map(whenText).join(' · ');
-          }, function (e) { preview.style.color = '#d64545'; preview.textContent = e.message; });
+          }, function (e) { preview.style.color = 'var(--cx-ui-danger)'; preview.textContent = e.message; });
         }, 250);
       }
       [preset, time, day, custom, tz].forEach(function (el) { el.onchange = syncWhen; el.oninput = syncWhen; });
@@ -2508,7 +2519,7 @@
         }
         if (!status.email && kind !== 'refresh') {
           var warn = document.createElement('div');
-          warn.style.cssText = 'font-size:14px;color:#b26a00;margin:6px 0';
+          warn.style.cssText = 'font-size:14px;color:var(--cx-ui-warning-strong);margin:6px 0';
           warn.textContent = 'Email is not configured on this server (CXD_SMTP_HOST), so runs are recorded but nothing is sent.';
           specific.appendChild(warn);
         }
@@ -2522,7 +2533,7 @@
         client.saveSchedule({ id: sc.id, kind: kind, name: name.value.trim() || SCHEDULE_KINDS[kind].label,
           cron: cronValue(), tz: tz.value.trim() || 'UTC', enabled: sc.enabled !== false, config: getConfig() })
           .then(function () { body.close(); if (onSaved) onSaved(); }, function (e) { err.textContent = e.message; });
-      }, 'background:var(--accent);color:#fff;border:none;border-radius:6px'));
+      }, 'background:var(--cx-ui-accent-strong);color:var(--cx-ui-on-accent);border:none;border-radius:var(--cx-radius-md)'));
       actions.appendChild(smallButton('Cancel', function () { body.close(); }));
       body.appendChild(fields); body.appendChild(actions); body.appendChild(err);
       syncWhen();
@@ -2710,8 +2721,9 @@
         if (!host) return;
         host.classList.remove('cxd-theme-light', 'cxd-theme-dark', 'cxd-theme-auto');
         var theme = currentSpec.theme;
-        if (!theme || theme === 'auto') { host.classList.add('cxd-theme-auto'); return; }
-        host.classList.add(isDarkHex(themeBg(theme)) ? 'cxd-theme-dark' : 'cxd-theme-light');
+        var mode = !theme || theme === 'auto' ? 'auto' : isDarkHex(themeBg(theme)) ? 'dark' : 'light';
+        host.classList.add('cxd-theme-' + mode);
+        host.setAttribute('data-cx-ui-theme', mode);
       }
       function applyChromeLive(host) {
         if (!host) return;
@@ -2856,6 +2868,8 @@
         apply({ theme: theme.value });   // renderer re-derives the coordinated bg
         reflectBgControls();
         if (panelCoord.checked) { applyChromeLive(document.getElementById('s-preview')); reflectPanelControls(); }
+        // The preview's light/dark chrome first, so the re-themed charts pick up its theme
+        applyThemeClassLive(document.getElementById('s-preview'));
         liveApplyTheme(theme.value);
       });
       bgCoord.addEventListener('change', function () {
@@ -2914,7 +2928,7 @@
       viewEl.innerHTML =
         '<div class="data-view">' +
           '<div style="flex:0 0 320px;width:320px;box-sizing:border-box;display:flex;flex-direction:column">' +
-            '<input id="dash-search" type="search" placeholder="Search dashboards…" style="flex:none;width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:8px;font:inherit;font-size:15px;border:1px solid var(--rail-border);border-radius:6px"/>' +
+            '<input id="dash-search" type="search" placeholder="Search dashboards…" style="flex:none;width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:8px;font:inherit;font-size:15px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)"/>' +
             '<div class="data-list" id="dash-list" style="flex:none;width:auto;align-self:stretch"><div class="placeholder">Loading…</div></div>' +
           '</div>' +
           '<div class="data-preview" id="dash-preview" style="padding:0 12px 12px">' +
@@ -2963,14 +2977,14 @@
         rows.forEach(function (d) {
           var item = document.createElement('div');
           item.className = 'data-item';
-          item.style.cssText = 'padding:10px 12px;border:1px solid var(--rail-border);border-radius:10px;margin-bottom:8px;cursor:pointer';
+          item.style.cssText = 'padding:10px 12px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-lg);margin-bottom:8px;cursor:pointer';
           var when = (d.updated_at || '').replace('T', ' ').slice(0, 16);
           var isShared = d.visibility === 'public' || d.visibility === 'auth';
           // Shared WITH me (by another owner) vs mine: only the owner manages it.
           var fromOther = !!d.shared;
           var mine = !fromOther && !d.example;
           var sharedBadge = isShared && mine
-            ? ' <span style="font-size:13px;font-weight:600;color:var(--accent);background:#eaf3fb;border-radius:99px;padding:1px 8px;vertical-align:middle">🔗 shared' +
+            ? ' <span style="font-size:13px;font-weight:600;color:var(--cx-ui-text);background:var(--cx-ui-accent-tint-subtle);border-radius:var(--cx-radius-pill);padding:1px 8px;vertical-align:middle">🔗 shared' +
               (d.visibility === 'auth' ? ' (sign-in)' : '') + '</span>'
             : '';
           // A compact access icon describing YOUR access; hovering shows the owner
@@ -3097,7 +3111,7 @@
         box.innerHTML = '';
         var input = document.createElement('input');
         input.value = url; input.readOnly = true;
-        input.style.cssText = 'width:100%;box-sizing:border-box;padding:4px 6px;font-size:14px;border:1px solid var(--rail-border);border-radius:6px';
+        input.style.cssText = 'width:100%;box-sizing:border-box;padding:4px 6px;font-size:14px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)';
         input.onclick = function (e) { e.stopPropagation(); input.select(); };
         var row = document.createElement('div');
         row.style.cssText = 'display:flex;gap:6px;margin-top:4px';
@@ -3142,15 +3156,15 @@
             'that cannot be changed. A signature binds a person, a meaning and a time to one version’s exact content ' +
             '(its fingerprint); an edit makes a new, unsigned version.</p>';
           var err = document.createElement('div');
-          err.style.cssText = 'color:#d64545;min-height:18px;font-size:14px';
+          err.style.cssText = 'color:var(--cx-ui-danger);min-height:18px;font-size:14px';
           r.versions.forEach(function (v, i) {
             var box = document.createElement('div');
             box.className = 'cxd-version';
-            box.style.cssText = 'border:1px solid var(--rail-border);border-radius:8px;padding:8px 10px;margin-bottom:8px';
+            box.style.cssText = 'border:1px solid var(--rail-border);border-radius:var(--cx-radius-md);padding:8px 10px;margin-bottom:8px';
             var sigs = v.signatures.map(function (sg) {
               return '<div style="font-size:14px;margin-top:3px">' + (sg.valid ? '✍️ ' : '⚠️ ') + '<b>' + esc(sg.meaning) + '</b> by ' +
                 esc(sg.signer) + ' · ' + esc(whenText(sg.signed_at)) + ' <span style="color:var(--muted)">(' + esc(sg.method) + ')</span>' +
-                (sg.valid ? '' : ' <span style="color:#d64545">content changed since signing</span>') + '</div>';
+                (sg.valid ? '' : ' <span style="color:var(--cx-ui-danger)">content changed since signing</span>') + '</div>';
             }).join('');
             box.innerHTML = '<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">' +
               '<b>Version ' + v.version + '</b>' + (i === 0 ? ' <span style="font-size:13px;color:var(--accent)">current</span>' : '') +
@@ -3194,7 +3208,7 @@
                   }
                   err.textContent = e.message;
                 });
-              }, 'background:var(--accent);color:#fff;border:none;border-radius:6px'));
+              }, 'background:var(--cx-ui-accent-strong);color:var(--cx-ui-on-accent);border:none;border-radius:var(--cx-radius-md)'));
             }
             box.appendChild(actions);
             body.appendChild(box);
@@ -3459,8 +3473,8 @@
       if (!log) return;
       var b = document.createElement('div');
       var user = role === 'user';
-      b.style.cssText = 'max-width:88%;padding:8px 12px;border-radius:12px;font-size:16px;line-height:1.45;white-space:pre-wrap;' +
-        (user ? 'align-self:flex-end;background:var(--accent);color:#fff'
+      b.style.cssText = 'max-width:88%;padding:8px 12px;border-radius:var(--cx-radius-lg);font-size:16px;line-height:1.45;white-space:pre-wrap;' +
+        (user ? 'align-self:flex-end;background:var(--cx-ui-accent-strong);color:var(--cx-ui-on-accent)'
               : 'align-self:flex-start;background:rgba(127,127,127,.12)');
       b.textContent = text;
       log.appendChild(b);
@@ -3528,7 +3542,7 @@
         '<div style="display:flex;align-items:center;gap:8px;width:100%">' +
           '<h2 class="view-title">Logs</h2>' +
           '<span id="logs-path" style="font-size:13px;color:var(--muted)"></span>' +
-          '<button class="cta" id="logs-clear" style="margin-left:auto;padding:6px 14px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:#c5221f">Delete all</button>' +
+          '<button class="cta" id="logs-clear" style="margin-left:auto;padding:6px 14px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:var(--cx-ui-danger)">Delete all</button>' +
           '<button class="cta" id="logs-refresh" style="padding:6px 14px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
         '</div>';
       viewEl.innerHTML = '<div id="logs-list" style="display:flex;flex-direction:column;gap:10px;max-width:1100px"><div class="placeholder">Loading…</div></div>';
@@ -3573,11 +3587,11 @@
             var req = e.request || {};
             var head = document.createElement('div');
             var card = document.createElement('details');
-            card.style.cssText = 'border:1px solid var(--rail-border);border-radius:10px;background:var(--rail-bg);padding:10px 14px';
+            card.style.cssText = 'border:1px solid var(--rail-border);border-radius:var(--cx-radius-lg);background:var(--rail-bg);padding:10px 14px';
             var sum = document.createElement('summary');
             sum.style.cssText = 'cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap;list-style:none';
             sum.innerHTML =
-              '<span style="font-size:12.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:' + (ok ? '#e6f4ea;color:#137333' : '#fce8e6;color:#c5221f') + '">' + (ok ? 'OK' : 'FAIL') + '</span>' +
+              '<span style="font-size:12.5px;font-weight:700;padding:2px 8px;border-radius:var(--cx-radius-pill);background:' + (ok ? 'var(--cx-ui-success-tint);color:var(--cx-ui-success)' : 'var(--cx-ui-danger-tint);color:var(--cx-ui-danger)') + '">' + (ok ? 'OK' : 'FAIL') + '</span>' +
               '<span style="font-weight:600">' + (e.endpoint || '?') + '</span>' +
               (cfg.graphType ? '<span style="color:var(--accent)">' + cfg.graphType + '</span>' : '') +
               '<span style="color:var(--muted);font-size:13px">' + (e.ts || '') + '</span>' +
@@ -3590,7 +3604,7 @@
               var d = document.createElement('div');
               d.innerHTML = '<div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:2px">' + title + '</div>';
               var pre = document.createElement('pre');
-              pre.style.cssText = 'margin:0;padding:8px 10px;background:rgba(127,127,127,.08);border-radius:8px;font-size:12.5px;overflow-x:auto;white-space:pre-wrap';
+              pre.style.cssText = 'margin:0;padding:8px 10px;background:rgba(127,127,127,.08);border-radius:var(--cx-radius-md);font-size:12.5px;overflow-x:auto;white-space:pre-wrap';
               pre.textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
               d.appendChild(pre);
               body.appendChild(d);

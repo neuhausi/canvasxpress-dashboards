@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-cx-ui-theme="auto">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -14,55 +14,17 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <style>
-    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    body { margin: 0; font-family: var(--cx-font-sans); background: var(--cx-ui-surface-sunken); color: var(--cx-ui-text); }
     #dashboard { padding: 16px 24px 32px; }
-    #message { padding: 32px 24px; color: #6b7280; }
+    #message { padding: 32px 24px; color: var(--cx-ui-text-muted); }
     #cxd-toolbar {
       display: none; align-items: center; justify-content: flex-end;
-      gap: 4px; padding: 7px 18px; background: #f5f6f7;
-      border-bottom: 1px solid #e4e7eb;
-    }
-    .cxd-tb-menu { position: relative; }
-    .cxd-tb-btn {
-      display: inline-flex; align-items: center; gap: 7px; font: inherit;
-      color: #444a54; background: transparent; border: 1px solid transparent;
-      border-radius: 6px; padding: 6px 10px; cursor: pointer; line-height: 1;
-    }
-    .cxd-tb-btn:hover { background: #e9ebef; color: #1f242b; }
-    .cxd-tb-btn svg { width: 16px; height: 16px; display: block; }
-    .cxd-tb-btn .cxd-caret { width: 11px; height: 11px; opacity: .7; }
-    .cxd-tb-dropdown {
-      position: absolute; right: 0; top: calc(100% + 6px); z-index: 20;
-      min-width: 224px; background: #fff; color: #222;
-      border: 1px solid #e0e3e8; border-radius: 10px;
-      box-shadow: 0 12px 32px rgba(16,24,40,.16); padding: 6px;
-    }
-    .cxd-tb-dropdown[hidden] { display: none; }
-    .cxd-tb-item {
-      display: flex; align-items: center; gap: 11px; width: 100%; font: inherit;
-      text-align: left; color: #333a44; background: transparent; border: 0;
-      border-radius: 7px; padding: 9px 10px; cursor: pointer;
-    }
-    .cxd-tb-item:hover { background: #f1f3f6; }
-    .cxd-tb-item svg { width: 19px; height: 19px; color: #5b6472; flex: 0 0 auto; }
-    .cxd-tb-item b { font-weight: 600; font-size: 13px; }
-    .cxd-tb-item small { display: block; color: #8a92a0; font-size: 11px; margin-top: 1px; }
-    .cxd-tb-item:disabled { opacity: .5; cursor: default; }
-    @media (prefers-color-scheme: dark) {
-      body { background: #0e1013; color: #e6e8ec; }
-      #message { color: #8a9099; }
-      #cxd-toolbar { background: #14171c; border-bottom-color: #262b33; }
-      .cxd-tb-btn { color: #b9c0cb; }
-      .cxd-tb-btn:hover { background: #222731; color: #f0f2f5; }
-      .cxd-tb-dropdown { background: #1a1e24; color: #e6e8ec; border-color: #2c313a; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
-      .cxd-tb-item { color: #cdd3dc; }
-      .cxd-tb-item:hover { background: #232832; }
-      .cxd-tb-item svg { color: #8a92a0; }
-      .cxd-tb-item small { color: #7a828f; }
+      gap: 4px; padding: 7px 18px; background: var(--cx-ui-surface-alt);
+      border-bottom: 1px solid var(--cx-ui-border-subtle);
     }
   </style>
 </head>
-<body>
+<body class="cX-UI-Controls">
   <!-- Full-page dashboard preview: renders one saved dashboard, name-free,
        exactly as the renderer draws it everywhere else. Opened from the
        Dashboards page's "Preview" button (?id=<dashboard-id>); uses the
@@ -98,6 +60,9 @@
     // it, so it must be handed the same path this page loads it from.
     var UMD_URL = './canvasxpress-dashboards.umd.js';
 
+    // The toolbar CSS lives in the dashboards stylesheet (one copy for both viewer pages): inject it
+    // now so the toolbar is styled before the first render.
+    if (CanvasXpressDashboards.injectStyles) { CanvasXpressDashboards.injectStyles(document); }
     var id = new URLSearchParams(location.search).get('id');
     // ?owner= opens a dashboard someone shared with you (e.g. from an emailed link).
     var owner = new URLSearchParams(location.search).get('owner');
@@ -164,7 +129,12 @@
         document.title = (spec.title || spec.id) + ' · CanvasXpress Dashboards';
         document.getElementById('message').style.display = 'none';
         return CanvasXpressDashboards.renderDashboard(spec, 'dashboard', { baseUrl: base })
-          .then(function (handle) { wireToolbar(spec, handle); });
+          .then(function (handle) {
+            // The page chrome (toolbar) follows the dashboard's light/dark theme, not only the OS
+            document.documentElement.setAttribute('data-cx-ui-theme',
+              document.getElementById('dashboard').getAttribute('data-cx-ui-theme') || 'auto');
+            wireToolbar(spec, handle);
+          });
       }).catch(function (err) {
         if (err && err.status === 401) fail('Sign in to view this dashboard.');
         else if (err && err.status === 404) fail('Dashboard "' + id + '" not found.');

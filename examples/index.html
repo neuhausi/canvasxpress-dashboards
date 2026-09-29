@@ -1,14 +1,15 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-cx-ui-theme="auto">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="/favicon.png" />
+  <link rel="stylesheet" href="ui-tokens.css" />
   <title>CanvasXpress Dashboards — examples</title>
   <style>
-    :root { --accent: #087ad1; --muted: #6b7280; --border: #e6e9ee; }
+    :root { --accent: var(--cx-ui-accent-strong); --muted: var(--cx-ui-text-muted); --border: var(--cx-ui-border-subtle); }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    body { margin: 0; font-family: var(--cx-font-sans); background: var(--cx-ui-surface-sunken); color: var(--cx-ui-text); }
     .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 64px; }
     header h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.01em; }
     header p { margin: 0 0 8px; color: var(--muted); max-width: 62ch; }
@@ -17,10 +18,10 @@
          color: var(--muted); margin: 36px 0 14px; }
     .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
     .ex-search { width: 100%; max-width: 440px; padding: 10px 12px; margin: 6px 0 4px;
-      font: inherit; font-size: 15px; border: 1px solid var(--border); border-radius: 8px;
-      background: #fff; color: inherit; box-sizing: border-box; }
+      font: inherit; font-size: 15px; border: 1px solid var(--border); border-radius: var(--cx-radius-md);
+      background: var(--cx-ui-surface); color: inherit; box-sizing: border-box; }
     .ex-empty { color: var(--muted); font-size: 14px; margin: 10px 0; }
-    .card { background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    .card { background: var(--cx-ui-surface); border: 1px solid var(--border); border-radius: var(--cx-radius-lg);
             padding: 18px 18px 16px; text-decoration: none; color: inherit; display: block;
             transition: box-shadow .15s, transform .15s; }
     .card:hover { box-shadow: 0 6px 20px rgba(16, 40, 70, .10); transform: translateY(-1px); }
@@ -30,37 +31,24 @@
     .card p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--muted); }
     .card .tags { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
     .tag { font-size: 11.5px; padding: 2px 8px; border-radius: 99px;
-           background: #eaf3fb; color: var(--accent); }
+           background: var(--cx-ui-accent-tint-subtle); color: var(--accent); }
     /* "Open in Builder" action inside a dashboard card (a span so it can live
        inside the card's anchor; JS handles the click and stops navigation). */
     .open-builder { display: inline-block; margin-top: 12px; font-size: 12.5px; font-weight: 600;
-           color: var(--accent); background: #eaf3fb; border: 1px solid #d3e5f7;
-           border-radius: 7px; padding: 5px 10px; cursor: pointer; }
-    .open-builder:hover { background: #dcecfb; }
+           color: var(--accent); background: var(--cx-ui-accent-tint-subtle); border: 1px solid var(--cx-ui-accent-tint);
+           border-radius: var(--cx-radius-md); padding: 5px 10px; cursor: pointer; }
+    .open-builder:hover { background: var(--cx-ui-accent-tint); }
     footer { margin-top: 44px; font-size: 13px; color: var(--muted); }
-    footer code { background: #e9ecf1; padding: 1px 5px; border-radius: 4px; }
+    footer code { background: var(--cx-ui-border-subtle); padding: 1px 5px; border-radius: var(--cx-radius-sm); }
     .cxd-topnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-      background: #fff; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--cx-ui-surface); border: 1px solid var(--border); border-radius: var(--cx-radius-lg);
       padding: 8px 14px; margin-bottom: 24px; font-size: 13.5px; }
     .cxd-topnav .cxd-brand { margin-right: 10px; color: var(--muted); }
-    .cxd-topnav .cxd-brand b { color: #24292f; }
-    .cxd-topnav a { color: var(--accent); text-decoration: none; padding: 4px 10px; border-radius: 7px; }
-    .cxd-topnav a:hover { background: #eaf3fb; }
+    .cxd-topnav .cxd-brand b { color: var(--cx-ui-text); }
+    .cxd-topnav a { color: var(--accent); text-decoration: none; padding: 4px 10px; border-radius: var(--cx-radius-md); }
+    .cxd-topnav a:hover { background: var(--cx-ui-accent-tint-subtle); }
     .cxd-topnav .cxd-here { margin-left: auto; color: var(--muted); padding: 4px 10px;
-      background: #f2f4f7; border-radius: 7px; }
-    @media (prefers-color-scheme: dark) {
-      body { background: #14161a; color: #e6e6e6; }
-      .card { background: #1b1e24; border-color: #2a2e36; }
-      .ex-search { background: #1b1e24; border-color: #2a2e36; }
-      .open-builder { background: #12283a; border-color: #24405c; }
-      .open-builder:hover { background: #163149; }
-      .tag { background: #12283a; }
-      footer code { background: #23262d; }
-      .cxd-topnav { background: #1b1e24; border-color: #2a2e36; }
-      .cxd-topnav .cxd-brand b { color: #e6e8ec; }
-      .cxd-topnav a:hover { background: #12283a; }
-      .cxd-topnav .cxd-here { background: #23262d; }
-    }
+      background: var(--cx-ui-surface-sunken); border-radius: var(--cx-radius-md); }
   </style>
 </head>
 <body>

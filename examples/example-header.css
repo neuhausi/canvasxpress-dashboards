@@ -9,6 +9,22 @@
  * renderer's own default (spec.maxWidth defaults to 1400px, centered), so the intro
  * lines up edge-to-edge with the dashboard grid.
  */
+/* ---- Shared by every example page (each carried an identical inline copy) -------------- */
+/* Built on the CanvasXpress UI tokens (canvasXpress.css / the dashboards token fallback). */
+body { margin: 0; font-family: var(--cx-font-sans); background: var(--cx-ui-surface-sunken); color: var(--cx-ui-text); }
+
+.cxd-topnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--cx-ui-surface); border: 1px solid var(--cx-ui-border-subtle); border-radius: var(--cx-radius-lg);
+  padding: 8px 14px; margin: 16px 24px; font-size: 13.5px; }
+.cxd-topnav .cxd-brand { font-weight: 400; margin-right: 10px; color: var(--cx-ui-text-muted); }
+.cxd-topnav .cxd-brand b { color: var(--cx-ui-text); }
+.cxd-topnav a { color: var(--cx-ui-accent-strong); text-decoration: none; padding: 4px 10px;
+  border-radius: var(--cx-radius-md); }
+.cxd-topnav a:hover { background: var(--cx-ui-accent-tint-subtle); }
+.cxd-topnav .cxd-here { margin-left: auto; color: var(--cx-ui-text-muted); padding: 4px 10px;
+  background: var(--cx-ui-surface-sunken); border-radius: var(--cx-radius-md); }
+
+
 /* "Open in Builder" link in the top nav — pushed to the right, emphasised. */
 .cxd-topnav .cxd-open { margin-left: auto; font-weight: 600; }
 
@@ -36,14 +52,14 @@ header h1 {
   line-height: 1.2;
   letter-spacing: -0.3px;
   text-wrap: balance;
-  color: #1f242b;
+  color: var(--cx-ui-text);
 }
 header p {
   margin: 0;
   max-width: none;              /* span the full dashboard width */
   font-size: 16.5px;
   line-height: 1.55;
-  color: #5b6472;
+  color: var(--cx-ui-text-muted);
   text-wrap: pretty;
 }
 /* The status line under the header (e.g. "Ready — change the Gene…") shares the
@@ -57,14 +73,10 @@ header p {
 }
 header code,
 #status code {
-  background: #e6e9ee;
+  background: var(--cx-ui-border-subtle);
+  color: var(--cx-ui-text);
   padding: 1px 6px;
-  border-radius: 5px;
+  border-radius: var(--cx-radius-md);
   font-size: 0.86em;
 }
 
-@media (prefers-color-scheme: dark) {
-  header h1 { color: #f0f2f5; }
-  header p { color: #9aa2ad; }
-  header code { background: #23262d; }
-}

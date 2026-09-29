@@ -2493,9 +2493,11 @@ def create_dashboards_app(
 
 _BANNER_STYLE = (
     ".cxd-banner{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);"
-    "z-index:10000;max-width:min(90vw,720px);padding:8px 34px 8px 14px;border-radius:8px;"
-    "background:#fff7e0;border:1px solid #f0c36d;color:#5c4400;"
-    "font:14px/1.4 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.12)}"
+    "z-index:var(--cx-z-panel,10000);max-width:min(90vw,720px);padding:8px 34px 8px 14px;"
+    "border-radius:var(--cx-radius-md,6px);background:var(--cx-ui-warning-tint,#fff7e0);"
+    "border:1px solid var(--cx-color-amber-300,#fcd34d);color:var(--cx-ui-warning-strong,#92400e);"
+    "font:14px/1.4 var(--cx-font-sans,system-ui,sans-serif);"
+    "box-shadow:var(--cx-shadow-1,0 2px 8px rgba(0,0,0,.12))}"
     ".cxd-banner button{position:absolute;top:4px;right:6px;border:0;background:none;"
     "color:inherit;font-size:16px;cursor:pointer}")
 

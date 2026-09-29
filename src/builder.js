@@ -807,7 +807,7 @@ export function createBuilder(target, options) {
    * @returns {void}
    */
   function doEditJson() {
-    var overlay = el('div', 'cxb-modal-overlay');
+    var overlay = modalOverlay();
     var modal = el('div', 'cxb-modal cxb-modal-wide');
     var heading = el('h3', 'cxb-modal-title');
     heading.textContent = 'Edit dashboard JSON';
@@ -3107,6 +3107,24 @@ function clampCol(x, cols) { return Math.max(0, Math.min(cols - 1, x)); }
  * @returns {HTMLElement} The element.
  * @private
  */
+
+/**
+ * A builder modal's overlay, in the dashboard's light/dark theme: modals are appended to <body>,
+ * outside the dashboard, so they copy the data-cx-ui-theme of the dashboard in the builder stage
+ * (the builder follows the dashboard, not the OS). Without one it follows the page's theme.
+ * @returns {HTMLElement} The overlay element.
+ * @private
+ */
+function modalOverlay() {
+  var overlay = el('div', 'cxb-modal-overlay cX-UI-Controls');
+  var doc = typeof document !== 'undefined' ? document : null;
+  var themed = doc && doc.querySelector ? doc.querySelector('.cxb-stage [data-cx-ui-theme]') : null;
+  if (themed) {
+    overlay.setAttribute('data-cx-ui-theme', themed.getAttribute('data-cx-ui-theme'));
+  }
+  return overlay;
+}
+
 function el(tag, className) {
   var node = document.createElement(tag);
   if (className) node.className = className;
@@ -3122,7 +3140,9 @@ function el(tag, className) {
  * @private
  */
 function button(label, handler, extra) {
-  var b = el('button', 'cxb-btn' + (extra ? ' ' + extra : ''));
+  // The shared UI primitive (.cX-Button, canvasXpress.css); the cxb-btn* hooks stay for tests.
+  var primary = extra && /\bcxb-btn-primary\b/.test(extra);
+  var b = el('button', 'cxb-btn cX-Button' + (primary ? ' cX-Button--primary' : '') + (extra ? ' ' + extra : ''));
   b.type = 'button';
   b.textContent = label;
   on(b, 'click', handler);
@@ -3248,7 +3268,7 @@ function principalName(principal) {
  */
 function openSaveDialog(doc, opts) {
   return new Promise(function (resolve) {
-    var overlay = el('div', 'cxb-modal-overlay');
+    var overlay = modalOverlay();
     var modal = el('div', 'cxb-modal');
     var heading = el('h3', 'cxb-modal-title');
     heading.textContent = opts.foreignOwner ? 'Save a copy' : 'Save dashboard';
@@ -3413,7 +3433,7 @@ function openDataDialog(doc, existingNames, opts) {
   var canJoin = !!opts.spec && existingNames.length >= 2;
 
   return new Promise(function (resolve) {
-    var overlay = el('div', 'cxb-modal-overlay');
+    var overlay = modalOverlay();
     var modal = el('div', 'cxb-modal');
 
     var heading = el('h3', 'cxb-modal-title');
@@ -3820,7 +3840,7 @@ function openLinksDialog(doc, spec, dataOf) {
   var refs = Object.keys(spec.data || {});
   var working = spec;
   return new Promise(function (resolve) {
-    var overlay = el('div', 'cxb-modal-overlay');
+    var overlay = modalOverlay();
     var modal = el('div', 'cxb-modal');
 
     var heading = el('h3', 'cxb-modal-title');
@@ -3940,7 +3960,7 @@ function openFieldsDialog(doc, spec, rawDataOf, CX) {
   var raw = null;          // the selected source's data without fields
   var token = 0;           // ignores a slow resolve superseded by a newer pick
   return new Promise(function (resolve) {
-    var overlay = el('div', 'cxb-modal-overlay');
+    var overlay = modalOverlay();
     var modal = el('div', 'cxb-modal');
     var heading = el('h3', 'cxb-modal-title');
     heading.textContent = 'Calculated fields';
@@ -4207,7 +4227,7 @@ function openShapeDialog(doc, spec, dataOf) {
   var token = 0;           // ignores a slow resolve superseded by a newer pick
   var state = null;        // {where, columns, groupBy, measures, sort, desc, limit, mode}
   return new Promise(function (resolve) {
-    var overlay = el('div', 'cxb-modal-overlay');
+    var overlay = modalOverlay();
     var modal = el('div', 'cxb-modal cxb-modal-wide');
     var heading = el('h3', 'cxb-modal-title');
     heading.textContent = 'Shape data';

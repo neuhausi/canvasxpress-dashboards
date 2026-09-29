@@ -10847,7 +10847,7 @@
   "panels": {
     "intro": {
       "type": "text",
-      "html": "<div style=\"font-weight: 700; font-size: 25px\">Manufacturing Quality Metrics</div><div style=\"font-size: 18px; color: #5b6472\">Manufacturing quality across four production lines from 500 inspection records: ring meters for yield, defect rate and on-time delivery, a per-line yield run chart, and a defect-rate bar. Line and Shift controls filter the board.</div>"
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Manufacturing Quality Metrics</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">Manufacturing quality across four production lines from 500 inspection records: ring meters for yield, defect rate and on-time delivery, a per-line yield run chart, and a defect-rate bar. Line and Shift controls filter the board.</div>"
     },
     "line-control": {
       "type": "control",

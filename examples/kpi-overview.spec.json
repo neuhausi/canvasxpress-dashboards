@@ -1105,7 +1105,7 @@
   "panels": {
     "intro": {
       "type": "text",
-      "html": "<div style=\"font-weight: 700; font-size: 25px\">KPI Overview</div><div style=\"font-size: 18px; color: #5b6472\">A backend-free KPI board: three ring-card meters summarize raw records into headline metrics, alongside a grouped orders bar and a 24-month revenue trend. Use the Region control to filter every panel.</div>"
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">KPI Overview</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">A backend-free KPI board: three ring-card meters summarize raw records into headline metrics, alongside a grouped orders bar and a 24-month revenue trend. Use the Region control to filter every panel.</div>"
     },
     "region-control": {
       "type": "control",

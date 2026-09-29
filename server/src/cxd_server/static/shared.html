@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-cx-ui-theme="auto">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -11,21 +11,17 @@
   <script src="./canvasxpress-dashboards.umd.js"></script>
 
   <style>
-    body { margin: 0; font-family: system-ui, sans-serif; background: #f2f4f7; color: #222; }
+    body { margin: 0; font-family: var(--cx-font-sans); background: var(--cx-ui-surface-sunken); color: var(--cx-ui-text); }
     header { padding: 16px 24px 8px; display: flex; align-items: baseline; gap: 12px; }
     header h1 { margin: 0; font-size: 18px; }
     header .badge { font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
-      color: #fff; background: #6b7280; padding: 2px 8px; border-radius: 10px; }
-    header .owner { color: #6b7280; font-size: 13px; }
+      color: var(--cx-ui-on-accent); background: var(--cx-ui-text-muted); padding: 2px 8px; border-radius: var(--cx-radius-lg); }
+    header .owner { color: var(--cx-ui-text-muted); font-size: 13px; }
     #dashboard { padding: 8px 24px 32px; }
-    #message { padding: 32px 24px; color: #6b7280; }
-    @media (prefers-color-scheme: dark) {
-      body { background: #0e1013; color: #e6e8ec; }
-      header .owner, #message { color: #8a9099; }
-    }
+    #message { padding: 32px 24px; color: var(--cx-ui-text-muted); }
   </style>
 </head>
-<body>
+<body class="cX-UI-Controls">
   <!-- No dashboard name: the dashboard renders name-free everywhere (builder,
        dashboards page, share view) — only a read-only badge + owner remain. -->
   <header>
@@ -57,7 +53,11 @@
         var spec = result.spec;
         document.getElementById('message').style.display = 'none';
         if (result.owner) document.getElementById('owner').textContent = 'shared by ' + result.owner;
-        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard');
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard').then(function () {
+          // The page chrome follows the dashboard's light/dark theme, not only the OS
+          document.documentElement.setAttribute('data-cx-ui-theme',
+            document.getElementById('dashboard').getAttribute('data-cx-ui-theme') || 'auto');
+        });
       }).catch(function (err) {
         if (err.status === 401) fail('This dashboard requires you to be logged in to view it.');
         else if (err.status === 404) fail('Share link not found or no longer shared.');

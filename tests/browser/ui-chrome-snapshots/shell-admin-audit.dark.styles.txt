@@ -1,0 +1,75 @@
+div.app [0,0 1400x900] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto
+div.app>aside.rail [0,0 220x900] border=0px 1px 0px 0px / none solid none none / rgb(230, 232, 236) rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236); padding=14px 10px 14px 10px; bg=rgb(27, 30, 36)
+div.app>aside.rail>a.brand [10,14 199x54] padding=6px 8px 16px 8px
+div.app>aside.rail>a.brand>img [18,20 32x32] 
+div.app>aside.rail>a.brand>span [60,26 121x21] font-size=18px; font-weight=700
+div.app>aside.rail>nav [10,68 199x466] 
+div.app>aside.rail>nav>a.nav-item:1 [10,68 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:1>span.ic [20,78 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:2 [10,120 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:2>span.ic [20,130 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:3 [10,172 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:3>span.ic [20,182 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:4 [10,224 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:4>span.ic [20,234 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:5 [10,276 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:5>span.ic [20,286 24x30] font-size=21px
+div.app>aside.rail>nav>a.nav-item:6 [10,328 199x50] radius=6px; padding=10px
+div.app>aside.rail>nav>a.nav-item:6>span.ic [20,338 24x30] font-size=21px
+a#nav-admin [10,380 199x50] color=rgb(138, 153, 255); font-weight=600; radius=6px; padding=10px; bg=rgba(123, 140, 255, 0.2)
+a#nav-admin>span.ic [20,390 24x30] font-size=21px
+a#nav-logs [10,432 199x50] radius=6px; padding=10px
+a#nav-logs>span.ic [20,442 24x30] font-size=21px
+a#nav-examples [10,484 199x50] radius=6px; padding=10px
+a#nav-examples>span.ic [20,494 24x30] font-size=21px
+div#rail-foot [10,839 199x47] color=rgb(138, 144, 153); border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(138, 144, 153) rgb(138, 144, 153) rgb(138, 144, 153); padding=10px 8px 10px 8px
+span#rail-avatar [18,850 26x26] color=rgb(14, 16, 19); font-size=14px; font-weight=700; radius=50%; bg=rgb(138, 153, 255)
+span#rail-user [54,854 84x18] 
+a#rail-auth [148,855 53x17] font-size=14px
+div.app>main.content [220,0 1180x900] 
+div.app>main.content>div.topstrip:1 [220,0 1180x102] border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(42, 47, 54) rgb(230, 232, 236); padding=10px 20px 10px 20px; bg=rgb(27, 30, 36)
+div#toolbar [240,42 1140x18] 
+div#toolbar>h2.view-title [240,42 1140x18] font-weight=600
+div#view [220,102 1180x262] padding=16px 20px 32px 20px
+div#view>div.admin-tabs:1 [240,118 1140x36] border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(42, 47, 54) rgb(230, 232, 236)
+div#view>div.admin-tabs:1>button.admin-tab:1 [240,118 182x36] color=rgb(138, 144, 153); font-size=15px; font-weight=600; border=0px 0px 2px 0px / none none solid none / rgb(138, 144, 153) rgb(138, 144, 153) rgba(0, 0, 0, 0) rgb(138, 144, 153); padding=8px 14px 8px 14px
+div#view>div.admin-tabs:1>button.admin-tab:2 [426,118 84x36] color=rgb(138, 144, 153); font-size=15px; font-weight=600; border=0px 0px 2px 0px / none none solid none / rgb(138, 144, 153) rgb(138, 144, 153) rgba(0, 0, 0, 0) rgb(138, 144, 153); padding=8px 14px 8px 14px
+div#view>div.admin-tabs:1>button.admin-tab:3 [514,118 152x36] color=rgb(138, 144, 153); font-size=15px; font-weight=600; border=0px 0px 2px 0px / none none solid none / rgb(138, 144, 153) rgb(138, 144, 153) rgba(0, 0, 0, 0) rgb(138, 144, 153); padding=8px 14px 8px 14px
+div#view>div.admin-tabs:1>button.active.admin-tab:4 [670,118 92x36] color=rgb(138, 153, 255); font-size=15px; font-weight=600; border=0px 0px 2px 0px / none none solid none / rgb(138, 153, 255); padding=8px 14px 8px 14px
+div#view>div.admin-pane:5 [240,170 1140x162] 
+div#view>div.admin-pane:5>p [240,170 1140x17] color=rgb(138, 144, 153); font-size=14px
+div#view>div.admin-pane:5>p>b [975,170 82x17] font-weight=700
+div#view>div.admin-pane:5>div:1 [240,195 1140x21] 
+input#audit-actor [240,195 130x21] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=2px / inset / rgb(133, 133, 133); padding=1px 2px 1px 2px; bg=rgb(59, 59, 59)
+select#audit-action [378,196 117x19] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(133, 133, 133); bg=rgb(59, 59, 59)
+select#audit-outcome [503,196 100x19] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(133, 133, 133); bg=rgb(59, 59, 59)
+button#audit-apply [611,195 49x21] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=2px / outset / rgb(255, 255, 255); padding=1px 6px 1px 6px; bg=rgb(107, 107, 107)
+button#audit-verify [668,195 85x21] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=2px / outset / rgb(255, 255, 255); padding=1px 6px 1px 6px; bg=rgb(107, 107, 107)
+a#audit-export [761,197 83x18] color=rgb(158, 158, 255)
+div#audit-status [240,224 1140x18] font-size=14px
+div#view>div.admin-pane:5>div:3 [240,248 1140x84] border=1px / solid / rgb(42, 47, 54); radius=6px
+div#view>div.admin-pane:5>div:3>table.audit-table [241,249 1138x82] font-size=13px
+div#view>div.admin-pane:5>div:3>table.audit-table>thead [241,249 1138x29] 
+div#view>div.admin-pane:5>div:3>table.audit-table>thead>tr [241,249 1138x29] bg=rgb(14, 16, 19)
+div#view>div.admin-pane:5>div:3>table.audit-table>thead>tr>th:1 [241,249 284x29] font-weight=700; padding=6px 8px 6px 8px
+div#view>div.admin-pane:5>div:3>table.audit-table>thead>tr>th:2 [525,249 87x29] font-weight=700; padding=6px 8px 6px 8px
+div#view>div.admin-pane:5>div:3>table.audit-table>thead>tr>th:3 [612,249 209x29] font-weight=700; padding=6px 8px 6px 8px
+div#view>div.admin-pane:5>div:3>table.audit-table>thead>tr>th:4 [820,249 199x29] font-weight=700; padding=6px 8px 6px 8px
+div#view>div.admin-pane:5>div:3>table.audit-table>thead>tr>th:5 [1020,249 155x29] font-weight=700; padding=6px 8px 6px 8px
+div#view>div.admin-pane:5>div:3>table.audit-table>thead>tr>th:6 [1175,249 204x29] font-weight=700; padding=6px 8px 6px 8px
+tbody#audit-rows [241,278 1138x54] 
+tbody#audit-rows>tr:1 [241,278 1138x27] 
+tbody#audit-rows>tr:1>td:1 [241,278 284x27] border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236) rgb(230, 232, 236); padding=5px 8px 5px 8px
+tbody#audit-rows>tr:1>td:2 [525,278 87x27] border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236) rgb(230, 232, 236); padding=5px 8px 5px 8px
+tbody#audit-rows>tr:1>td:3 [612,278 209x27] border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236) rgb(230, 232, 236); padding=5px 8px 5px 8px
+tbody#audit-rows>tr:1>td:4 [820,278 199x27] border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236) rgb(230, 232, 236); padding=5px 8px 5px 8px
+tbody#audit-rows>tr:1>td:5 [1020,278 155x27] border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236) rgb(230, 232, 236); padding=5px 8px 5px 8px
+tbody#audit-rows>tr:1>td:6 [1175,278 204x27] border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236) rgb(230, 232, 236); padding=5px 8px 5px 8px
+tbody#audit-rows>tr:1>td:6>code [1183,285 94x14] font-family=monospace; font-size=12px
+tbody#audit-rows>tr:2 [241,305 1138x27] 
+tbody#audit-rows>tr:2>td:1 [241,305 284x27] border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236) rgb(230, 232, 236); padding=5px 8px 5px 8px
+tbody#audit-rows>tr:2>td:2 [525,305 87x27] border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236) rgb(230, 232, 236); padding=5px 8px 5px 8px
+tbody#audit-rows>tr:2>td:3 [612,305 209x27] border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236) rgb(230, 232, 236); padding=5px 8px 5px 8px
+tbody#audit-rows>tr:2>td:4 [820,305 199x27] border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236) rgb(230, 232, 236); padding=5px 8px 5px 8px
+tbody#audit-rows>tr:2>td:5 [1020,305 155x27] color=rgb(252, 211, 77); border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(252, 211, 77) rgb(252, 211, 77) rgb(252, 211, 77); padding=5px 8px 5px 8px
+tbody#audit-rows>tr:2>td:6 [1175,305 204x27] border=1px 0px 0px 0px / solid none none none / rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236) rgb(230, 232, 236); padding=5px 8px 5px 8px

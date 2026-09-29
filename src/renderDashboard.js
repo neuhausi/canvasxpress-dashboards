@@ -107,6 +107,8 @@ export function renderDashboard(spec, target, options) {
   injectStyles(container.ownerDocument || document);
   container.innerHTML = '';
   container.classList.add('cxd-dashboard');
+  // Checkboxes / radios inside are the shared CanvasXpress control (canvasXpress.css)
+  container.classList.add('cX-UI-Controls');
   applyTheme(container, spec.theme);
   applyPanelColor(container, spec);
   applyDashboardFont(container, spec);
@@ -3566,8 +3568,8 @@ function applyDashboardChartStyle(config, spec) {
 }
 
 /**
- * Apply the dashboard shell (chrome) theme class to the container. The chrome is
- * only light or dark; we derive which from the chosen CanvasXpress library
+ * Apply the dashboard shell (chrome) theme to the container: the data-cx-ui-theme
+ * attribute (light / dark / auto) plus a cxd-theme-* class. The chrome is only light or dark; we derive which from the chosen CanvasXpress library
  * theme's panel background luminance (read from the library), so e.g. `cxdark`
  * and `cxblue` yield the dark chrome. The literal `auto` keeps the old
  * OS-following behavior via the `cxd-theme-auto` class.
@@ -3578,12 +3580,12 @@ function applyDashboardChartStyle(config, spec) {
  */
 function applyTheme(container, theme) {
   container.classList.remove('cxd-theme-light', 'cxd-theme-dark', 'cxd-theme-auto');
-  if (!theme || theme === 'auto') {
-    container.classList.add('cxd-theme-auto');
-    return;
-  }
-  var bg = themeBackground(theme);
-  container.classList.add(isDarkColor(bg) ? 'cxd-theme-dark' : 'cxd-theme-light');
+  var mode = !theme || theme === 'auto' ? 'auto' : isDarkColor(themeBackground(theme)) ? 'dark' : 'light';
+  // The cxd-theme-* classes stay as hooks; the look comes from data-cx-ui-theme, the one light/dark
+  // switch shared with CanvasXpress: it swaps the --cx-ui-* roles for the dashboard chrome AND for
+  // the charts inside it (their toolbar, menus, Customizer, data table follow the dashboard).
+  container.classList.add('cxd-theme-' + mode);
+  container.setAttribute('data-cx-ui-theme', mode);
 }
 
 /**

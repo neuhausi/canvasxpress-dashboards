@@ -1,0 +1,1218 @@
+div#host [20,20 1360x1440] color=rgb(0, 0, 0); font-family=system-ui, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto
+div#host>div.cxb [20,20 1360x1440] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif
+div#host>div.cxb>div.cxb-topbar:1 [20,20 1360x90] 
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1 [20,20 1360x40] 
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>input.cxb-title-input [20,25 204x30] color=rgb(27, 30, 36); font-weight=600; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=5px 8px 5px 8px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>button.cX-Button.cxb-btn:1 [232,24 43x32] color=rgb(27, 30, 36); font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>button.cX-Button.cxb-btn:2 [283,24 83x32] color=rgb(27, 30, 36); font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>button.cX-Button.cxb-btn:3 [373,24 73x32] color=rgb(27, 30, 36); font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>button.cX-Button.cxb-btn:4 [455,24 88x32] color=rgb(27, 30, 36); font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>button.cX-Button.cxb-btn:5 [550,24 97x32] color=rgb(27, 30, 36); font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>button.cX-Button.cxb-btn:6 [655,24 88x32] color=rgb(27, 30, 36); font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>button.cX-Button.cxb-btn:7 [751,20 91x40] color=rgb(27, 30, 36); font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>button.cX-Button.cxb-btn:8 [849,24 90x32] color=rgb(27, 30, 36); font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>button.cX-Button.cxb-btn:9 [947,24 130x32] color=rgb(27, 30, 36); font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>button.cX-Button.cxb-btn:11 [1085,24 77x32] color=rgb(27, 30, 36); font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-trow:1>button.cX-Button.cX-Button--primary.cxb-btn.cxb-btn-primary:12 [1170,24 64x32] color=rgb(255, 255, 255); font-weight=500; border=1px / solid / rgb(61, 88, 255); radius=6px; padding=6px 13px 6px 13px; bg=rgb(61, 88, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2 [20,72 1360x38] 
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-tlabel:1 [20,84 33x15] color=rgb(87, 96, 106); font-size=12px; font-weight=600
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2 [59,72 502x38] border=1px / solid / rgb(208, 212, 218); radius=10px; padding=3px; bg=rgb(242, 244, 247)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn:1 [63,76 28x30] color=rgb(27, 30, 36); font-weight=700; line-height=16px; border=1px / solid / rgba(0, 0, 0, 0); radius=6px; padding=0px 0px 5px 0px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn:2 [93,76 28x30] color=rgb(27, 30, 36); font-style=italic; line-height=16px; border=1px / solid / rgba(0, 0, 0, 0); radius=6px; padding=0px 0px 5px 0px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn:3 [123,76 28x30] color=rgb(27, 30, 36); line-height=16px; border=1px / solid / rgba(0, 0, 0, 0); radius=6px; padding=0px 0px 5px 0px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn:4 [153,76 28x30] color=rgb(27, 30, 36); line-height=16px; border=1px / solid / rgba(0, 0, 0, 0); radius=6px; padding=0px 0px 5px 0px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn.cxb-fmtsizebtn:5 [183,76 35x30] color=rgb(27, 30, 36); line-height=16px; border=1px / solid / rgba(0, 0, 0, 0); radius=6px; padding=0px 5px 5px 5px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn.cxb-fmtsizebtn:5>span.cxb-fmtsizeA:1 [189,84 11x16] font-weight=700
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn.cxb-fmtsizebtn:5>span.cxb-fmtsizechev:2 [201,89 11x11] color=rgb(87, 96, 106); line-height=0px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn.cxb-fmtsizebtn:5>span.cxb-fmtsizechev:2>svg [201,89 11x11] fill=none; stroke=rgb(41, 41, 41)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn.cxb-fmtsizebtn:6 [220,76 32x30] color=rgb(27, 30, 36); line-height=16px; border=1px / solid / rgba(0, 0, 0, 0); radius=6px; padding=0px 5px 5px 5px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn.cxb-fmtsizebtn:6>span.cxb-fmtsizeA.cxb-fmtsizeA-small:1 [226,89 8x11] font-size=11px; font-weight=700; line-height=11px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn.cxb-fmtsizebtn:6>span.cxb-fmtsizechev:2 [236,89 11x11] color=rgb(87, 96, 106); line-height=0px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn.cxb-fmtsizebtn:6>span.cxb-fmtsizechev:2>svg [236,89 11x11] fill=none; stroke=rgb(41, 41, 41)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn:7 [255,76 28x30] color=rgb(27, 30, 36); font-size=15px; line-height=15px; border=1px / solid / rgba(0, 0, 0, 0); radius=6px; padding=0px 0px 5px 0px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-fmtbtn:8 [285,76 28x30] color=rgb(27, 30, 36); font-size=15px; line-height=15px; border=1px / solid / rgba(0, 0, 0, 0); radius=6px; padding=0px 0px 5px 0px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>select.cxb-fmtfont [315,76 182x30] color=rgb(27, 30, 36); border=1px / solid / rgb(208, 212, 218); radius=6px; padding=5px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-colorctl:9 [499,76 28x30] color=rgb(27, 30, 36); border=1px / solid / rgba(0, 0, 0, 0); radius=6px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-colorctl:9>span.cxb-colorctl-ic:1 [505,82 15x15] line-height=0px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-colorctl:9>span.cxb-colorctl-ic:1>svg [505,82 15x15] fill=none; stroke=rgb(41, 41, 41)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-colorctl:9>span.cxb-colorctl-bar:2 [505,98 16x3] radius=1px; bg=rgb(0, 0, 0); box-shadow=rgba(0, 0, 0, 0.15) 0px 0px 0px 1px inset
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-colorctl:9>input.cxb-colorctl-input [500,77 26x28] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; bg=rgb(239, 239, 239); opacity=0
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-colorctl:10 [529,76 28x30] color=rgb(27, 30, 36); border=1px / solid / rgba(0, 0, 0, 0); radius=6px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-colorctl:10>span.cxb-colorctl-ic:1 [535,82 15x15] line-height=0px
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-colorctl:10>span.cxb-colorctl-ic:1>svg [535,82 15x15] fill=none; stroke=rgb(41, 41, 41)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-colorctl:10>span.cxb-colorctl-bar:2 [535,98 16x3] radius=1px; bg=rgb(255, 255, 255); box-shadow=rgba(0, 0, 0, 0.15) 0px 0px 0px 1px inset
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-fmt:2>span.cxb-colorctl:10>input.cxb-colorctl-input [530,77 26x28] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; bg=rgb(239, 239, 239); opacity=0
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>span.cxb-tlabel:3 [567,84 39x15] color=rgb(87, 96, 106); font-size=12px; font-weight=600
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>select:1 [612,75 81x32] color=rgb(27, 30, 36); border=1px / solid / rgb(208, 212, 218); radius=6px; padding=5px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-topbar:1>div.cxb-props.cxb-tgroup:2>select:2 [699,75 85x32] color=rgb(27, 30, 36); border=1px / solid / rgb(208, 212, 218); radius=6px; padding=5px; bg=rgb(255, 255, 255)
+div#host>div.cxb>div.cxb-stage:2 [20,120 1360x1312] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto [20,120 1360x1312] padding=12px; bg=rgb(14, 16, 19)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid [32,132 1336x1288] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxb-selected.cxd-panel.cxd-text-cell:1 [32,132 1336x92] radius=10px; z=1; outline=2px solid rgb(123, 140, 255)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxb-selected.cxd-panel.cxd-text-cell:1>div.cxd-panel-body:1 [32,132 1336x92] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxb-selected.cxd-panel.cxd-text-cell:1>div.cxd-panel-body:1>div.cxb-editable.cxd-text:2 [32,132 1336x92] color=rgb(230, 232, 236); line-height=21.6px; radius=4px; padding=5px 12px 5px 12px; box-shadow=rgba(123, 140, 255, 0.2) 0px 0px 0px 2px inset
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxb-selected.cxd-panel.cxd-text-cell:1>div.cxd-panel-body:1>div.cxb-editable.cxd-text:2>div:1 [44,137 1312x34] font-size=25px; font-weight=700; line-height=33.75px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxb-selected.cxd-panel.cxd-text-cell:1>div.cxd-panel-body:1>div.cxb-editable.cxd-text:2>div:2 [44,171 1312x49] color=rgb(138, 144, 153); font-size=18px; line-height=24.3px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxb-selected.cxd-panel.cxd-text-cell:1>div.cxb-chrome:2 [1305,136 59x32] border=1px / solid / rgb(58, 65, 76); radius=6px; padding=2px 4px 2px 4px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0.12) 0px 2px 8px 0px; z=10010
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxb-selected.cxd-panel.cxd-text-cell:1>div.cxb-chrome:2>span.cxb-grip:1 [1310,141 22x22] color=rgb(138, 144, 153); line-height=22px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxb-selected.cxd-panel.cxd-text-cell:1>div.cxb-chrome:2>span.cxb-tools:2 [1333,139 26x26] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxb-selected.cxd-panel.cxd-text-cell:1>div.cxb-chrome:2>span.cxb-tools:2>span.cxb-tool [1333,139 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxb-selected.cxd-panel.cxd-text-cell:1>div.cxb-resize:3 [1354,210 14x14] radius=0px 0px 10px 0px; background-image=linear-gradient(135deg, rgba(0, 0, 0, 0) 50%, rgb(123, 140, 255) 50%); z=10006
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:2 [32,236 662x40] radius=10px; z=3
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:2>div.cxd-panel-body:1 [32,236 662x40] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:2>div.cxd-panel-body:1>div.cxd-annctl:2 [32,236 191x39] color=rgb(230, 232, 236); font-size=14px; line-height=18.2px; padding=5px 0px 5px 0px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:2>div.cxd-panel-body:1>div.cxd-annctl:2>span.cxd-annctl-label [32,246 106x18] font-weight=600
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:2>div.cxd-panel-body:1>div.cxd-annctl:2>select.cxd-annctl-select [146,241 77x29] line-height=normal; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=4px 7px 4px 7px; bg=rgb(27, 30, 36)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:2>div.cxb-chrome:2 [631,240 59x32] border=1px / solid / rgb(58, 65, 76); radius=6px; padding=2px 4px 2px 4px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0.12) 0px 2px 8px 0px; z=10010; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:2>div.cxb-chrome:2>span.cxb-grip:1 [636,245 22x22] color=rgb(138, 144, 153); line-height=22px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:2>div.cxb-chrome:2>span.cxb-tools:2 [659,243 26x26] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:2>div.cxb-chrome:2>span.cxb-tools:2>span.cxb-tool [659,243 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:2>div.cxb-resize:3 [680,262 14x14] radius=0px 0px 10px 0px; background-image=linear-gradient(135deg, rgba(0, 0, 0, 0) 50%, rgb(123, 140, 255) 50%); z=10006; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3 [706,236 662x40] radius=10px; z=3
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxd-panel-body:1 [706,236 662x40] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxd-panel-body:1>div.cxd-annctl:2 [706,236 186x38] color=rgb(230, 232, 236); font-size=14px; line-height=18.2px; padding=5px 0px 5px 0px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxd-panel-body:1>div.cxd-annctl:2>span.cxd-annctl-label:1 [706,246 32x18] font-weight=600
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxd-panel-body:1>div.cxd-annctl:2>span.cxd-annctl-seg:2 [746,241 146x28] border=1px / solid / rgb(58, 65, 76); radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxd-panel-body:1>div.cxd-annctl:2>span.cxd-annctl-seg:2>button.cxd-annctl-on.cxd-annctl-segbtn:1 [747,242 39x26] color=rgb(14, 16, 19); border=0px 1px 0px 0px / none solid none none / rgb(14, 16, 19) rgb(58, 65, 76) rgb(14, 16, 19) rgb(14, 16, 19); padding=4px 11px 4px 11px; bg=rgb(138, 153, 255)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxd-panel-body:1>div.cxd-annctl:2>span.cxd-annctl-seg:2>button.cxd-annctl-segbtn:2 [786,242 48x26] border=0px 1px 0px 0px / none solid none none / rgb(230, 232, 236) rgb(58, 65, 76) rgb(230, 232, 236) rgb(230, 232, 236); padding=4px 11px 4px 11px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxd-panel-body:1>div.cxd-annctl:2>span.cxd-annctl-seg:2>button.cxd-annctl-segbtn:3 [834,242 57x26] padding=4px 11px 4px 11px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxb-chrome:2 [1305,240 59x32] border=1px / solid / rgb(58, 65, 76); radius=6px; padding=2px 4px 2px 4px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0.12) 0px 2px 8px 0px; z=10010; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxb-chrome:2>span.cxb-grip:1 [1310,245 22x22] color=rgb(138, 144, 153); line-height=22px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxb-chrome:2>span.cxb-tools:2 [1333,243 26x26] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxb-chrome:2>span.cxb-tools:2>span.cxb-tool [1333,243 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-annctl-cell.cxd-panel:3>div.cxb-resize:3 [1354,262 14x14] radius=0px 0px 10px 0px; background-image=linear-gradient(135deg, rgba(0, 0, 0, 0) 50%, rgb(123, 140, 255) 50%); z=10006; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:4 [32,288 325x300] border=1px / solid / rgb(58, 65, 76); radius=10px; bg=rgb(27, 30, 36)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:4>div.cxd-panel-title:1 [33,289 323x34] color=rgb(230, 232, 236); font-weight=600; line-height=20.8px; border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(58, 65, 76) rgb(230, 232, 236); padding=6px 10px 6px 10px; bg=rgb(14, 16, 19)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:4>div.cxd-panel-body:2 [33,323 323x264] 
+div#CanvasXpress-ParentNode-cxd-quality-metrics-panel-yield-meter-0 [35,325 319x260] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-DOM [35,325 319x260] bg=rgb(27, 30, 36)
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Container-HTMLWidgets [35,325 319x0] color=rgb(230, 232, 236); font-size=13px
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Container-DOE [35,325 319x0] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Container-Code [35,325 319x0] z=100000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Container-Menus [35,325 319x0] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Resizer-Container [35,325 319x0] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Resize-Indicator [304,567 20x8] color=rgb(255, 255, 255); font-size=12px; font-weight=700; radius=5px; padding=4px 10px 4px 10px; bg=rgb(83, 105, 255); z=10001; opacity=0
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Resizer-Container>div.cX-Resizer.t:2 [35,325 319x8] z=2000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Resizer-Container>div.b.cX-Resizer:3 [35,577 319x8] z=2000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Resizer-Container>div.cX-Resizer.l:4 [35,325 8x260] z=2000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Resizer-Container>div.cX-Resizer.r:5 [346,325 8x260] z=2000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Resizer-Container>div.cX-Resizer.lt:6 [35,325 12x12] z=2000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Resizer-Container>div.cX-Resizer.rt:7 [342,325 12x12] z=2000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Resizer-Container>div.cX-Resizer.lb:8 [35,573 12x12] z=2000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Resizer-Container>div.cX-Resizer.rb:9 [342,573 12x12] z=2000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Wrapper [35,325 319x260] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-UI [35,325 319x260] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Toolbars [35,325 0x260] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Toolbar-Top [35,325 319x32] z=1000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Toolbar-Container-Top [69,315 252x28] border=0px 1px 1px 1px / none solid solid solid / rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255); radius=0px 0px 5px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+svg#cxd-quality-metrics-panel-yield-meter-0-cX-ToolbarTopReset [76,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-yield-meter-0-cX-ToolbarTopSave [111,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-yield-meter-0-cX-ToolbarTopChat [146,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-yield-meter-0-cX-ToolbarTopTable [182,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-yield-meter-0-cX-ToolbarTopExplore [217,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-yield-meter-0-cX-ToolbarTopCustomize [253,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-yield-meter-0-cX-ToolbarTopMaximize [288,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Toolbar-Bottom [35,553 319x32] z=1000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Toolbar-Container-Bottom [193,592 4x3] border=1px 1px 0px 1px / solid solid none solid / rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255); radius=5px 5px 0px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Toolbar-Left [35,325 32x260] z=1000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Toolbar-Container-Left [25,453 3x4] border=1px 1px 1px 0px / solid solid solid none / rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0); radius=0px 5px 5px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Toolbar-Right [322,325 32x260] z=1000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Toolbar-Container-Right [361,453 3x4] border=1px 0px 1px 1px / solid none solid solid / rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255); radius=5px 0px 0px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Container [35,325 319x260] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Container-Viewer [35,325 319x260] color=rgb(255, 255, 255)
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Canvas-Container [35,325 319x260] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Container-Workflow [35,585 319x0] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Trigger [35,325 25x25] z=10000
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container [67,357 160x78] font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container>b:1 [76,366 117x20] font-weight=700
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container>br:1 [193,366 0x20] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container>b:2 [76,386 26x20] font-weight=700
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container>br:2 [144,386 0x20] 
+div#cxd-quality-metrics-panel-yield-meter-0-cX-Version-Info-Container>b:3 [76,406 37x20] font-weight=700
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table [34,324 3663x64] 
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>caption [34,324 3663x18] 
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead [36,344 3659x20] 
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr [36,344 3659x20] 
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>td [36,344 41x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:1 [79,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:2 [150,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:3 [223,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:4 [296,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:5 [370,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:6 [443,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:7 [517,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:8 [589,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:9 [663,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:10 [736,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:11 [807,344 66x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:12 [875,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:13 [945,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:14 [1016,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:15 [1087,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:16 [1157,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:17 [1228,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:18 [1298,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:19 [1369,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:20 [1440,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:21 [1513,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:22 [1583,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:23 [1655,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:24 [1728,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:25 [1801,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:26 [1874,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:27 [1947,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:28 [2018,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:29 [2091,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:30 [2164,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:31 [2238,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:32 [2308,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:33 [2381,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:34 [2454,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:35 [2527,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:36 [2600,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:37 [2673,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:38 [2745,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:39 [2819,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:40 [2892,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:41 [2965,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:42 [3036,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:43 [3109,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:44 [3183,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:45 [3256,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:46 [3330,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:47 [3403,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:48 [3476,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:49 [3550,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>thead>tr>th:50 [3623,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody [36,366 3659x20] 
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr [36,366 3659x20] 
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>th [36,366 41x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:1 [79,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:2 [150,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:3 [223,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:4 [296,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:5 [370,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:6 [443,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:7 [517,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:8 [589,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:9 [663,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:10 [736,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:11 [807,366 66x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:12 [875,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:13 [945,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:14 [1016,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:15 [1087,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:16 [1157,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:17 [1228,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:18 [1298,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:19 [1369,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:20 [1440,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:21 [1513,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:22 [1583,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:23 [1655,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:24 [1728,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:25 [1801,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:26 [1874,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:27 [1947,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:28 [2018,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:29 [2091,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:30 [2164,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:31 [2238,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:32 [2308,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:33 [2381,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:34 [2454,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:35 [2527,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:36 [2600,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:37 [2673,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:38 [2745,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:39 [2819,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:40 [2892,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:41 [2965,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:42 [3036,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:43 [3109,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:44 [3183,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:45 [3256,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:46 [3330,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:47 [3403,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:48 [3476,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:49 [3550,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-table>tbody>tr>td:50 [3623,366 71x20] padding=1px
+div#cxd-quality-metrics-panel-yield-meter-0-cX-a11y-live [34,324 1x1] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:4>div.cxb-chrome:3 [265,293 87x32] border=1px / solid / rgb(58, 65, 76); radius=6px; padding=2px 4px 2px 4px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0.12) 0px 2px 8px 0px; z=10010; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:4>div.cxb-chrome:3>span.cxb-grip:1 [270,298 22x22] color=rgb(138, 144, 153); line-height=22px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:4>div.cxb-chrome:3>span.cxb-tools:2 [293,296 54x26] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:4>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:1 [293,296 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:4>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:2 [321,296 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:4>div.cxb-resize:4 [342,573 14x14] radius=0px 0px 10px 0px; background-image=linear-gradient(135deg, rgba(0, 0, 0, 0) 50%, rgb(123, 140, 255) 50%); z=10006; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:5 [369,288 325x300] border=1px / solid / rgb(58, 65, 76); radius=10px; bg=rgb(27, 30, 36)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:5>div.cxd-panel-title:1 [370,289 323x34] color=rgb(230, 232, 236); font-weight=600; line-height=20.8px; border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(58, 65, 76) rgb(230, 232, 236); padding=6px 10px 6px 10px; bg=rgb(14, 16, 19)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:5>div.cxd-panel-body:2 [370,323 323x264] 
+div#CanvasXpress-ParentNode-cxd-quality-metrics-panel-defect-meter-1 [372,325 319x260] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-DOM [372,325 319x260] bg=rgb(27, 30, 36)
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Container-HTMLWidgets [372,325 319x0] color=rgb(230, 232, 236); font-size=13px
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Container-DOE [372,325 319x0] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Container-Code [372,325 319x0] z=100000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Container-Menus [372,325 319x0] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Resizer-Container [372,325 319x0] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Resize-Indicator [641,567 20x8] color=rgb(255, 255, 255); font-size=12px; font-weight=700; radius=5px; padding=4px 10px 4px 10px; bg=rgb(83, 105, 255); z=10001; opacity=0
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Resizer-Container>div.cX-Resizer.t:2 [372,325 319x8] z=2000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Resizer-Container>div.b.cX-Resizer:3 [372,577 319x8] z=2000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Resizer-Container>div.cX-Resizer.l:4 [372,325 8x260] z=2000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Resizer-Container>div.cX-Resizer.r:5 [683,325 8x260] z=2000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Resizer-Container>div.cX-Resizer.lt:6 [372,325 12x12] z=2000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Resizer-Container>div.cX-Resizer.rt:7 [679,325 12x12] z=2000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Resizer-Container>div.cX-Resizer.lb:8 [372,573 12x12] z=2000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Resizer-Container>div.cX-Resizer.rb:9 [679,573 12x12] z=2000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Wrapper [372,325 319x260] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-UI [372,325 319x260] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Toolbars [372,325 0x260] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Toolbar-Top [372,325 319x32] z=1000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Toolbar-Container-Top [406,315 252x28] border=0px 1px 1px 1px / none solid solid solid / rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255); radius=0px 0px 5px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+svg#cxd-quality-metrics-panel-defect-meter-1-cX-ToolbarTopReset [413,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defect-meter-1-cX-ToolbarTopSave [448,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defect-meter-1-cX-ToolbarTopChat [483,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defect-meter-1-cX-ToolbarTopTable [519,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defect-meter-1-cX-ToolbarTopExplore [554,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defect-meter-1-cX-ToolbarTopCustomize [590,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defect-meter-1-cX-ToolbarTopMaximize [625,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Toolbar-Bottom [372,553 319x32] z=1000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Toolbar-Container-Bottom [530,592 4x3] border=1px 1px 0px 1px / solid solid none solid / rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255); radius=5px 5px 0px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Toolbar-Left [372,325 32x260] z=1000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Toolbar-Container-Left [362,453 3x4] border=1px 1px 1px 0px / solid solid solid none / rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0); radius=0px 5px 5px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Toolbar-Right [659,325 32x260] z=1000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Toolbar-Container-Right [698,453 3x4] border=1px 0px 1px 1px / solid none solid solid / rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255); radius=5px 0px 0px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Container [372,325 319x260] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Container-Viewer [372,325 319x260] color=rgb(255, 255, 255)
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Canvas-Container [372,325 319x260] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Container-Workflow [372,585 319x0] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Trigger [372,325 25x25] z=10000
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container [404,357 160x78] font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container>b:1 [413,366 117x20] font-weight=700
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container>br:1 [530,366 0x20] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container>b:2 [413,386 26x20] font-weight=700
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container>br:2 [481,386 0x20] 
+div#cxd-quality-metrics-panel-defect-meter-1-cX-Version-Info-Container>b:3 [413,406 37x20] font-weight=700
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table [371,324 3684x64] 
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>caption [371,324 3684x18] 
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead [373,344 3680x20] 
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr [373,344 3680x20] 
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>td [373,344 62x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:1 [437,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:2 [508,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:3 [581,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:4 [654,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:5 [728,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:6 [801,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:7 [875,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:8 [947,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:9 [1021,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:10 [1095,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:11 [1165,344 66x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:12 [1234,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:13 [1304,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:14 [1374,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:15 [1445,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:16 [1516,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:17 [1587,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:18 [1656,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:19 [1727,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:20 [1798,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:21 [1871,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:22 [1941,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:23 [2014,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:24 [2086,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:25 [2159,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:26 [2232,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:27 [2305,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:28 [2377,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:29 [2450,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:30 [2523,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:31 [2596,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:32 [2666,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:33 [2739,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:34 [2812,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:35 [2885,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:36 [2958,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:37 [3032,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:38 [3104,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:39 [3177,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:40 [3250,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:41 [3324,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:42 [3395,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:43 [3468,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:44 [3541,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:45 [3615,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:46 [3688,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:47 [3762,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:48 [3834,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:49 [3908,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>thead>tr>th:50 [3982,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody [373,366 3680x20] 
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr [373,366 3680x20] 
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>th [373,366 62x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:1 [437,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:2 [508,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:3 [581,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:4 [654,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:5 [728,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:6 [801,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:7 [875,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:8 [947,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:9 [1021,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:10 [1095,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:11 [1165,366 66x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:12 [1234,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:13 [1304,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:14 [1374,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:15 [1445,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:16 [1516,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:17 [1587,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:18 [1656,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:19 [1727,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:20 [1798,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:21 [1871,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:22 [1941,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:23 [2014,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:24 [2086,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:25 [2159,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:26 [2232,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:27 [2305,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:28 [2377,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:29 [2450,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:30 [2523,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:31 [2596,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:32 [2666,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:33 [2739,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:34 [2812,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:35 [2885,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:36 [2958,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:37 [3032,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:38 [3104,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:39 [3177,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:40 [3250,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:41 [3324,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:42 [3395,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:43 [3468,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:44 [3541,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:45 [3615,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:46 [3688,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:47 [3762,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:48 [3834,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:49 [3908,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-table>tbody>tr>td:50 [3982,366 71x20] padding=1px
+div#cxd-quality-metrics-panel-defect-meter-1-cX-a11y-live [371,324 1x1] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:5>div.cxb-chrome:3 [602,293 87x32] border=1px / solid / rgb(58, 65, 76); radius=6px; padding=2px 4px 2px 4px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0.12) 0px 2px 8px 0px; z=10010; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:5>div.cxb-chrome:3>span.cxb-grip:1 [607,298 22x22] color=rgb(138, 144, 153); line-height=22px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:5>div.cxb-chrome:3>span.cxb-tools:2 [630,296 54x26] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:5>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:1 [630,296 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:5>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:2 [658,296 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:5>div.cxb-resize:4 [679,573 14x14] radius=0px 0px 10px 0px; background-image=linear-gradient(135deg, rgba(0, 0, 0, 0) 50%, rgb(123, 140, 255) 50%); z=10006; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:6 [706,288 325x300] border=1px / solid / rgb(58, 65, 76); radius=10px; bg=rgb(27, 30, 36)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:6>div.cxd-panel-title:1 [707,289 323x34] color=rgb(230, 232, 236); font-weight=600; line-height=20.8px; border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(58, 65, 76) rgb(230, 232, 236); padding=6px 10px 6px 10px; bg=rgb(14, 16, 19)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:6>div.cxd-panel-body:2 [707,323 323x264] 
+div#CanvasXpress-ParentNode-cxd-quality-metrics-panel-ontime-meter-2 [709,325 319x260] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-DOM [709,325 319x260] bg=rgb(27, 30, 36)
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Container-HTMLWidgets [709,325 319x0] color=rgb(230, 232, 236); font-size=13px
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Container-DOE [709,325 319x0] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Container-Code [709,325 319x0] z=100000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Container-Menus [709,325 319x0] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Resizer-Container [709,325 319x0] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Resize-Indicator [978,567 20x8] color=rgb(255, 255, 255); font-size=12px; font-weight=700; radius=5px; padding=4px 10px 4px 10px; bg=rgb(83, 105, 255); z=10001; opacity=0
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Resizer-Container>div.cX-Resizer.t:2 [709,325 319x8] z=2000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Resizer-Container>div.b.cX-Resizer:3 [709,577 319x8] z=2000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Resizer-Container>div.cX-Resizer.l:4 [709,325 8x260] z=2000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Resizer-Container>div.cX-Resizer.r:5 [1020,325 8x260] z=2000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Resizer-Container>div.cX-Resizer.lt:6 [709,325 12x12] z=2000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Resizer-Container>div.cX-Resizer.rt:7 [1016,325 12x12] z=2000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Resizer-Container>div.cX-Resizer.lb:8 [709,573 12x12] z=2000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Resizer-Container>div.cX-Resizer.rb:9 [1016,573 12x12] z=2000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Wrapper [709,325 319x260] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-UI [709,325 319x260] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Toolbars [709,325 0x260] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Toolbar-Top [709,325 319x32] z=1000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Toolbar-Container-Top [743,315 252x28] border=0px 1px 1px 1px / none solid solid solid / rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255); radius=0px 0px 5px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+svg#cxd-quality-metrics-panel-ontime-meter-2-cX-ToolbarTopReset [750,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-ontime-meter-2-cX-ToolbarTopSave [785,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-ontime-meter-2-cX-ToolbarTopChat [820,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-ontime-meter-2-cX-ToolbarTopTable [856,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-ontime-meter-2-cX-ToolbarTopExplore [891,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-ontime-meter-2-cX-ToolbarTopCustomize [927,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-ontime-meter-2-cX-ToolbarTopMaximize [962,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Toolbar-Bottom [709,553 319x32] z=1000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Toolbar-Container-Bottom [867,592 4x3] border=1px 1px 0px 1px / solid solid none solid / rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255); radius=5px 5px 0px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Toolbar-Left [709,325 32x260] z=1000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Toolbar-Container-Left [699,453 3x4] border=1px 1px 1px 0px / solid solid solid none / rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0); radius=0px 5px 5px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Toolbar-Right [996,325 32x260] z=1000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Toolbar-Container-Right [1035,453 3x4] border=1px 0px 1px 1px / solid none solid solid / rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255); radius=5px 0px 0px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Container [709,325 319x260] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Container-Viewer [709,325 319x260] color=rgb(255, 255, 255)
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Canvas-Container [709,325 319x260] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Container-Workflow [709,585 319x0] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Trigger [709,325 25x25] z=10000
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container [741,357 160x78] font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container>b:1 [750,366 117x20] font-weight=700
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container>br:1 [867,366 0x20] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container>b:2 [750,386 26x20] font-weight=700
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container>br:2 [818,386 0x20] 
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-Version-Info-Container>b:3 [750,406 37x20] font-weight=700
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table [708,324 3683x64] 
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>caption [708,324 3683x18] 
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead [710,344 3679x20] 
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr [710,344 3679x20] 
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>td [710,344 61x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:1 [773,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:2 [844,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:3 [917,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:4 [990,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:5 [1064,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:6 [1137,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:7 [1211,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:8 [1283,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:9 [1357,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:10 [1430,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:11 [1501,344 66x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:12 [1569,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:13 [1640,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:14 [1710,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:15 [1781,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:16 [1852,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:17 [1923,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:18 [1992,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:19 [2063,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:20 [2134,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:21 [2207,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:22 [2277,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:23 [2350,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:24 [2422,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:25 [2495,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:26 [2568,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:27 [2641,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:28 [2713,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:29 [2786,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:30 [2859,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:31 [2932,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:32 [3002,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:33 [3075,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:34 [3148,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:35 [3221,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:36 [3294,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:37 [3367,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:38 [3439,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:39 [3513,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:40 [3586,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:41 [3660,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:42 [3730,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:43 [3803,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:44 [3877,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:45 [3951,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:46 [4024,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:47 [4098,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:48 [4170,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:49 [4244,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>thead>tr>th:50 [4318,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody [710,366 3679x20] 
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr [710,366 3679x20] 
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>th [710,366 61x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:1 [773,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:2 [844,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:3 [917,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:4 [990,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:5 [1064,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:6 [1137,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:7 [1211,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:8 [1283,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:9 [1357,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:10 [1430,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:11 [1501,366 66x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:12 [1569,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:13 [1640,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:14 [1710,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:15 [1781,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:16 [1852,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:17 [1923,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:18 [1992,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:19 [2063,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:20 [2134,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:21 [2207,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:22 [2277,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:23 [2350,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:24 [2422,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:25 [2495,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:26 [2568,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:27 [2641,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:28 [2713,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:29 [2786,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:30 [2859,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:31 [2932,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:32 [3002,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:33 [3075,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:34 [3148,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:35 [3221,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:36 [3294,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:37 [3367,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:38 [3439,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:39 [3513,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:40 [3586,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:41 [3660,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:42 [3730,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:43 [3803,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:44 [3877,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:45 [3951,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:46 [4024,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:47 [4098,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:48 [4170,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:49 [4244,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-table>tbody>tr>td:50 [4318,366 71x20] padding=1px
+div#cxd-quality-metrics-panel-ontime-meter-2-cX-a11y-live [708,324 1x1] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:6>div.cxb-chrome:3 [939,293 87x32] border=1px / solid / rgb(58, 65, 76); radius=6px; padding=2px 4px 2px 4px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0.12) 0px 2px 8px 0px; z=10010; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:6>div.cxb-chrome:3>span.cxb-grip:1 [944,298 22x22] color=rgb(138, 144, 153); line-height=22px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:6>div.cxb-chrome:3>span.cxb-tools:2 [967,296 54x26] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:6>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:1 [967,296 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:6>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:2 [995,296 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:6>div.cxb-resize:4 [1016,573 14x14] radius=0px 0px 10px 0px; background-image=linear-gradient(135deg, rgba(0, 0, 0, 0) 50%, rgb(123, 140, 255) 50%); z=10006; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:7 [1043,288 325x300] border=1px / solid / rgb(58, 65, 76); radius=10px; bg=rgb(27, 30, 36)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:7>div.cxd-panel-title:1 [1044,289 323x34] color=rgb(230, 232, 236); font-weight=600; line-height=20.8px; border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(58, 65, 76) rgb(230, 232, 236); padding=6px 10px 6px 10px; bg=rgb(14, 16, 19)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:7>div.cxd-panel-body:2 [1044,323 323x264] 
+div#CanvasXpress-ParentNode-cxd-quality-metrics-panel-count-meter-3 [1046,325 319x260] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-DOM [1046,325 319x260] bg=rgb(27, 30, 36)
+div#cxd-quality-metrics-panel-count-meter-3-cX-Container-HTMLWidgets [1046,325 319x0] color=rgb(230, 232, 236); font-size=13px
+div#cxd-quality-metrics-panel-count-meter-3-cX-Container-DOE [1046,325 319x0] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-Container-Code [1046,325 319x0] z=100000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Container-Menus [1046,325 319x0] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-Resizer-Container [1046,325 319x0] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-Resize-Indicator [1315,567 20x8] color=rgb(255, 255, 255); font-size=12px; font-weight=700; radius=5px; padding=4px 10px 4px 10px; bg=rgb(83, 105, 255); z=10001; opacity=0
+div#cxd-quality-metrics-panel-count-meter-3-cX-Resizer-Container>div.cX-Resizer.t:2 [1046,325 319x8] z=2000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Resizer-Container>div.b.cX-Resizer:3 [1046,577 319x8] z=2000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Resizer-Container>div.cX-Resizer.l:4 [1046,325 8x260] z=2000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Resizer-Container>div.cX-Resizer.r:5 [1357,325 8x260] z=2000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Resizer-Container>div.cX-Resizer.lt:6 [1046,325 12x12] z=2000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Resizer-Container>div.cX-Resizer.rt:7 [1353,325 12x12] z=2000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Resizer-Container>div.cX-Resizer.lb:8 [1046,573 12x12] z=2000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Resizer-Container>div.cX-Resizer.rb:9 [1353,573 12x12] z=2000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Wrapper [1046,325 319x260] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-UI [1046,325 319x260] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-Toolbars [1046,325 0x260] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-Toolbar-Top [1046,325 319x32] z=1000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Toolbar-Container-Top [1080,315 252x28] border=0px 1px 1px 1px / none solid solid solid / rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255); radius=0px 0px 5px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+svg#cxd-quality-metrics-panel-count-meter-3-cX-ToolbarTopReset [1087,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-count-meter-3-cX-ToolbarTopSave [1122,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-count-meter-3-cX-ToolbarTopChat [1157,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-count-meter-3-cX-ToolbarTopTable [1193,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-count-meter-3-cX-ToolbarTopExplore [1228,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-count-meter-3-cX-ToolbarTopCustomize [1264,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-count-meter-3-cX-ToolbarTopMaximize [1299,316 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+div#cxd-quality-metrics-panel-count-meter-3-cX-Toolbar-Bottom [1046,553 319x32] z=1000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Toolbar-Container-Bottom [1204,592 4x3] border=1px 1px 0px 1px / solid solid none solid / rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255); radius=5px 5px 0px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-count-meter-3-cX-Toolbar-Left [1046,325 32x260] z=1000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Toolbar-Container-Left [1036,453 3x4] border=1px 1px 1px 0px / solid solid solid none / rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0); radius=0px 5px 5px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-count-meter-3-cX-Toolbar-Right [1333,325 32x260] z=1000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Toolbar-Container-Right [1372,453 3x4] border=1px 0px 1px 1px / solid none solid solid / rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255); radius=5px 0px 0px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-count-meter-3-cX-Container [1046,325 319x260] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-Container-Viewer [1046,325 319x260] color=rgb(255, 255, 255)
+div#cxd-quality-metrics-panel-count-meter-3-cX-Canvas-Container [1046,325 319x260] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-Container-Workflow [1046,585 319x0] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Trigger [1046,325 25x25] z=10000
+div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container [1078,357 160x78] font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container>b:1 [1087,366 117x20] font-weight=700
+div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container>br:1 [1204,366 0x20] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container>b:2 [1087,386 26x20] font-weight=700
+div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container>br:2 [1155,386 0x20] 
+div#cxd-quality-metrics-panel-count-meter-3-cX-Version-Info-Container>b:3 [1087,406 37x20] font-weight=700
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table [1045,324 3714x64] 
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>caption [1045,324 3714x18] 
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead [1047,344 3710x20] 
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr [1047,344 3710x20] 
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>td [1047,344 92x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:1 [1141,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:2 [1212,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:3 [1285,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:4 [1359,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:5 [1432,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:6 [1506,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:7 [1579,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:8 [1651,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:9 [1725,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:10 [1799,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:11 [1870,344 66x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:12 [1938,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:13 [2008,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:14 [2078,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:15 [2149,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:16 [2220,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:17 [2291,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:18 [2360,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:19 [2431,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:20 [2502,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:21 [2575,344 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:22 [2646,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:23 [2718,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:24 [2791,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:25 [2863,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:26 [2936,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:27 [3009,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:28 [3081,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:29 [3154,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:30 [3227,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:31 [3300,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:32 [3371,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:33 [3443,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:34 [3516,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:35 [3590,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:36 [3662,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:37 [3736,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:38 [3808,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:39 [3881,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:40 [3954,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:41 [4028,344 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:42 [4099,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:43 [4172,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:44 [4245,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:45 [4319,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:46 [4392,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:47 [4466,344 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:48 [4538,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:49 [4612,344 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>thead>tr>th:50 [4686,344 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody [1047,366 3710x20] 
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr [1047,366 3710x20] 
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>th [1047,366 92x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:1 [1141,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:2 [1212,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:3 [1285,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:4 [1359,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:5 [1432,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:6 [1506,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:7 [1579,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:8 [1651,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:9 [1725,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:10 [1799,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:11 [1870,366 66x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:12 [1938,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:13 [2008,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:14 [2078,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:15 [2149,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:16 [2220,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:17 [2291,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:18 [2360,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:19 [2431,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:20 [2502,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:21 [2575,366 68x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:22 [2646,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:23 [2718,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:24 [2791,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:25 [2863,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:26 [2936,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:27 [3009,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:28 [3081,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:29 [3154,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:30 [3227,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:31 [3300,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:32 [3371,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:33 [3443,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:34 [3516,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:35 [3590,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:36 [3662,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:37 [3736,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:38 [3808,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:39 [3881,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:40 [3954,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:41 [4028,366 69x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:42 [4099,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:43 [4172,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:44 [4245,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:45 [4319,366 71x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:46 [4392,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:47 [4466,366 70x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:48 [4538,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:49 [4612,366 72x20] padding=1px
+table#cxd-quality-metrics-panel-count-meter-3-cX-a11y-table>tbody>tr>td:50 [4686,366 71x20] padding=1px
+div#cxd-quality-metrics-panel-count-meter-3-cX-a11y-live [1045,324 1x1] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:7>div.cxb-chrome:3 [1276,293 87x32] border=1px / solid / rgb(58, 65, 76); radius=6px; padding=2px 4px 2px 4px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0.12) 0px 2px 8px 0px; z=10010; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:7>div.cxb-chrome:3>span.cxb-grip:1 [1281,298 22x22] color=rgb(138, 144, 153); line-height=22px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:7>div.cxb-chrome:3>span.cxb-tools:2 [1304,296 54x26] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:7>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:1 [1304,296 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:7>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:2 [1332,296 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:7>div.cxb-resize:4 [1353,573 14x14] radius=0px 0px 10px 0px; background-image=linear-gradient(135deg, rgba(0, 0, 0, 0) 50%, rgb(123, 140, 255) 50%); z=10006; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:8 [32,600 1336x404] border=1px / solid / rgb(58, 65, 76); radius=10px; bg=rgb(27, 30, 36)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:8>div.cxd-panel-title:1 [33,601 1334x34] color=rgb(230, 232, 236); font-weight=600; line-height=20.8px; border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(58, 65, 76) rgb(230, 232, 236); padding=6px 10px 6px 10px; bg=rgb(14, 16, 19)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:8>div.cxd-panel-body:2 [33,635 1334x368] 
+div#CanvasXpress-ParentNode-cxd-quality-metrics-panel-trend-4 [35,637 1330x364] 
+div#cxd-quality-metrics-panel-trend-4-cX-DOM [35,637 1330x364] bg=rgb(27, 30, 36)
+div#cxd-quality-metrics-panel-trend-4-cX-Container-HTMLWidgets [35,637 1330x0] color=rgb(230, 232, 236); font-size=13px
+div#cxd-quality-metrics-panel-trend-4-cX-Container-DOE [35,637 1330x0] 
+div#cxd-quality-metrics-panel-trend-4-cX-Container-Code [35,637 1330x0] z=100000
+div#cxd-quality-metrics-panel-trend-4-cX-Container-Menus [35,637 1330x0] 
+div#cxd-quality-metrics-panel-trend-4-cX-Resizer-Container [35,637 1330x0] 
+div#cxd-quality-metrics-panel-trend-4-cX-Resize-Indicator [1315,983 20x8] color=rgb(255, 255, 255); font-size=12px; font-weight=700; radius=5px; padding=4px 10px 4px 10px; bg=rgb(83, 105, 255); z=10001; opacity=0
+div#cxd-quality-metrics-panel-trend-4-cX-Resizer-Container>div.cX-Resizer.t:2 [35,637 1330x8] z=2000
+div#cxd-quality-metrics-panel-trend-4-cX-Resizer-Container>div.b.cX-Resizer:3 [35,993 1330x8] z=2000
+div#cxd-quality-metrics-panel-trend-4-cX-Resizer-Container>div.cX-Resizer.l:4 [35,637 8x364] z=2000
+div#cxd-quality-metrics-panel-trend-4-cX-Resizer-Container>div.cX-Resizer.r:5 [1357,637 8x364] z=2000
+div#cxd-quality-metrics-panel-trend-4-cX-Resizer-Container>div.cX-Resizer.lt:6 [35,637 12x12] z=2000
+div#cxd-quality-metrics-panel-trend-4-cX-Resizer-Container>div.cX-Resizer.rt:7 [1353,637 12x12] z=2000
+div#cxd-quality-metrics-panel-trend-4-cX-Resizer-Container>div.cX-Resizer.lb:8 [35,989 12x12] z=2000
+div#cxd-quality-metrics-panel-trend-4-cX-Resizer-Container>div.cX-Resizer.rb:9 [1353,989 12x12] z=2000
+div#cxd-quality-metrics-panel-trend-4-cX-Wrapper [35,637 1330x364] 
+div#cxd-quality-metrics-panel-trend-4-cX-UI [35,637 1330x364] 
+div#cxd-quality-metrics-panel-trend-4-cX-Toolbars [35,637 0x364] 
+div#cxd-quality-metrics-panel-trend-4-cX-Toolbar-Top [35,637 1330x32] z=1000
+div#cxd-quality-metrics-panel-trend-4-cX-Toolbar-Container-Top [574,627 252x28] border=0px 1px 1px 1px / none solid solid solid / rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255); radius=0px 0px 5px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+svg#cxd-quality-metrics-panel-trend-4-cX-ToolbarTopReset [581,628 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-trend-4-cX-ToolbarTopSave [616,628 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-trend-4-cX-ToolbarTopChat [652,628 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-trend-4-cX-ToolbarTopTable [687,628 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-trend-4-cX-ToolbarTopExplore [723,628 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-trend-4-cX-ToolbarTopCustomize [758,628 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-trend-4-cX-ToolbarTopMaximize [794,628 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+div#cxd-quality-metrics-panel-trend-4-cX-Toolbar-Bottom [35,969 1330x32] z=1000
+div#cxd-quality-metrics-panel-trend-4-cX-Toolbar-Container-Bottom [698,1008 4x3] border=1px 1px 0px 1px / solid solid none solid / rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255); radius=5px 5px 0px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-trend-4-cX-Toolbar-Left [35,637 32x364] z=1000
+div#cxd-quality-metrics-panel-trend-4-cX-Toolbar-Container-Left [25,817 3x4] border=1px 1px 1px 0px / solid solid solid none / rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0); radius=0px 5px 5px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-trend-4-cX-Toolbar-Right [1333,637 32x364] z=1000
+div#cxd-quality-metrics-panel-trend-4-cX-Toolbar-Container-Right [1372,817 3x4] border=1px 0px 1px 1px / solid none solid solid / rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255); radius=5px 0px 0px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-trend-4-cX-Container [35,637 1330x364] 
+div#cxd-quality-metrics-panel-trend-4-cX-Container-Viewer [35,637 1330x364] color=rgb(255, 255, 255)
+div#cxd-quality-metrics-panel-trend-4-cX-Canvas-Container [35,637 1330x364] 
+div#cxd-quality-metrics-panel-trend-4-cX-Container-Workflow [35,1001 1330x0] 
+div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Trigger [35,637 25x25] z=10000
+div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container [67,669 160x78] font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container>b:1 [76,678 117x20] font-weight=700
+div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container>br:1 [193,678 0x20] 
+div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container>b:2 [76,698 26x20] font-weight=700
+div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container>br:2 [144,698 0x20] 
+div#cxd-quality-metrics-panel-trend-4-cX-Version-Info-Container>b:3 [76,718 37x20] font-weight=700
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table [34,636 2376x130] 
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>caption [34,636 2376x18] 
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead [36,656 2372x20] 
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr [36,656 2372x20] 
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>td [36,656 50x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:1 [88,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:2 [134,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:3 [180,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:4 [226,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:5 [272,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:6 [319,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:7 [365,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:8 [412,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:9 [458,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:10 [505,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:11 [551,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:12 [598,656 43x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:13 [644,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:14 [690,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:15 [737,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:16 [784,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:17 [830,656 42x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:18 [874,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:19 [921,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:20 [967,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:21 [1014,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:22 [1060,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:23 [1107,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:24 [1154,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:25 [1200,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:26 [1247,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:27 [1294,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:28 [1340,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:29 [1387,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:30 [1434,656 43x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:31 [1479,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:32 [1525,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:33 [1572,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:34 [1619,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:35 [1666,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:36 [1712,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:37 [1759,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:38 [1805,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:39 [1852,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:40 [1899,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:41 [1945,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:42 [1992,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:43 [2038,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:44 [2085,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:45 [2131,656 44x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:46 [2178,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:47 [2225,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:48 [2271,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:49 [2318,656 45x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>thead>tr>th:50 [2365,656 43x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody [36,678 2372x86] 
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1 [36,678 2372x20] 
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>th [36,678 50x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:1 [88,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:2 [134,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:3 [180,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:4 [226,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:5 [272,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:6 [319,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:7 [365,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:8 [412,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:9 [458,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:10 [505,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:11 [551,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:12 [598,678 43x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:13 [644,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:14 [690,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:15 [737,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:16 [784,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:17 [830,678 42x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:18 [874,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:19 [921,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:20 [967,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:21 [1014,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:22 [1060,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:23 [1107,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:24 [1154,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:25 [1200,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:26 [1247,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:27 [1294,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:28 [1340,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:29 [1387,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:30 [1434,678 43x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:31 [1479,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:32 [1525,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:33 [1572,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:34 [1619,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:35 [1666,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:36 [1712,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:37 [1759,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:38 [1805,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:39 [1852,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:40 [1899,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:41 [1945,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:42 [1992,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:43 [2038,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:44 [2085,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:45 [2131,678 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:46 [2178,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:47 [2225,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:48 [2271,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:49 [2318,678 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:1>td:50 [2365,678 43x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2 [36,700 2372x20] 
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>th [36,700 50x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:1 [88,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:2 [134,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:3 [180,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:4 [226,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:5 [272,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:6 [319,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:7 [365,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:8 [412,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:9 [458,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:10 [505,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:11 [551,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:12 [598,700 43x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:13 [644,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:14 [690,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:15 [737,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:16 [784,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:17 [830,700 42x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:18 [874,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:19 [921,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:20 [967,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:21 [1014,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:22 [1060,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:23 [1107,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:24 [1154,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:25 [1200,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:26 [1247,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:27 [1294,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:28 [1340,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:29 [1387,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:30 [1434,700 43x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:31 [1479,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:32 [1525,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:33 [1572,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:34 [1619,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:35 [1666,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:36 [1712,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:37 [1759,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:38 [1805,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:39 [1852,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:40 [1899,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:41 [1945,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:42 [1992,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:43 [2038,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:44 [2085,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:45 [2131,700 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:46 [2178,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:47 [2225,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:48 [2271,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:49 [2318,700 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:2>td:50 [2365,700 43x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3 [36,722 2372x20] 
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>th [36,722 50x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:1 [88,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:2 [134,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:3 [180,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:4 [226,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:5 [272,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:6 [319,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:7 [365,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:8 [412,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:9 [458,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:10 [505,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:11 [551,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:12 [598,722 43x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:13 [644,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:14 [690,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:15 [737,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:16 [784,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:17 [830,722 42x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:18 [874,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:19 [921,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:20 [967,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:21 [1014,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:22 [1060,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:23 [1107,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:24 [1154,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:25 [1200,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:26 [1247,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:27 [1294,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:28 [1340,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:29 [1387,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:30 [1434,722 43x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:31 [1479,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:32 [1525,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:33 [1572,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:34 [1619,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:35 [1666,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:36 [1712,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:37 [1759,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:38 [1805,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:39 [1852,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:40 [1899,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:41 [1945,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:42 [1992,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:43 [2038,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:44 [2085,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:45 [2131,722 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:46 [2178,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:47 [2225,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:48 [2271,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:49 [2318,722 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:3>td:50 [2365,722 43x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4 [36,744 2372x20] 
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>th [36,744 50x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:1 [88,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:2 [134,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:3 [180,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:4 [226,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:5 [272,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:6 [319,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:7 [365,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:8 [412,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:9 [458,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:10 [505,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:11 [551,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:12 [598,744 43x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:13 [644,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:14 [690,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:15 [737,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:16 [784,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:17 [830,744 42x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:18 [874,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:19 [921,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:20 [967,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:21 [1014,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:22 [1060,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:23 [1107,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:24 [1154,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:25 [1200,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:26 [1247,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:27 [1294,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:28 [1340,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:29 [1387,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:30 [1434,744 43x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:31 [1479,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:32 [1525,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:33 [1572,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:34 [1619,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:35 [1666,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:36 [1712,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:37 [1759,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:38 [1805,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:39 [1852,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:40 [1899,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:41 [1945,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:42 [1992,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:43 [2038,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:44 [2085,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:45 [2131,744 44x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:46 [2178,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:47 [2225,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:48 [2271,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:49 [2318,744 45x20] padding=1px
+table#cxd-quality-metrics-panel-trend-4-cX-a11y-table>tbody>tr:4>td:50 [2365,744 43x20] padding=1px
+div#cxd-quality-metrics-panel-trend-4-cX-a11y-live [34,636 1x1] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:8>div.cxb-chrome:3 [1276,605 87x32] border=1px / solid / rgb(58, 65, 76); radius=6px; padding=2px 4px 2px 4px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0.12) 0px 2px 8px 0px; z=10010; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:8>div.cxb-chrome:3>span.cxb-grip:1 [1281,610 22x22] color=rgb(138, 144, 153); line-height=22px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:8>div.cxb-chrome:3>span.cxb-tools:2 [1304,608 54x26] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:8>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:1 [1304,608 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:8>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:2 [1332,608 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:8>div.cxb-resize:4 [1353,989 14x14] radius=0px 0px 10px 0px; background-image=linear-gradient(135deg, rgba(0, 0, 0, 0) 50%, rgb(123, 140, 255) 50%); z=10006; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:9 [32,1016 1336x404] border=1px / solid / rgb(58, 65, 76); radius=10px; bg=rgb(27, 30, 36)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:9>div.cxd-panel-title:1 [33,1017 1334x34] color=rgb(230, 232, 236); font-weight=600; line-height=20.8px; border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(58, 65, 76) rgb(230, 232, 236); padding=6px 10px 6px 10px; bg=rgb(14, 16, 19)
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:9>div.cxd-panel-body:2 [33,1051 1334x368] 
+div#CanvasXpress-ParentNode-cxd-quality-metrics-panel-defects-bar-5 [35,1053 1330x364] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-DOM [35,1053 1330x364] bg=rgb(27, 30, 36)
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Container-HTMLWidgets [35,1053 1330x0] color=rgb(230, 232, 236); font-size=13px
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Container-DOE [35,1053 1330x0] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Container-Code [35,1053 1330x0] z=100000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Container-Menus [35,1053 1330x0] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Resizer-Container [35,1053 1330x0] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Resize-Indicator [1315,1399 20x8] color=rgb(255, 255, 255); font-size=12px; font-weight=700; radius=5px; padding=4px 10px 4px 10px; bg=rgb(83, 105, 255); z=10001; opacity=0
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Resizer-Container>div.cX-Resizer.t:2 [35,1053 1330x8] z=2000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Resizer-Container>div.b.cX-Resizer:3 [35,1409 1330x8] z=2000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Resizer-Container>div.cX-Resizer.l:4 [35,1053 8x364] z=2000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Resizer-Container>div.cX-Resizer.r:5 [1357,1053 8x364] z=2000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Resizer-Container>div.cX-Resizer.lt:6 [35,1053 12x12] z=2000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Resizer-Container>div.cX-Resizer.rt:7 [1353,1053 12x12] z=2000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Resizer-Container>div.cX-Resizer.lb:8 [35,1405 12x12] z=2000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Resizer-Container>div.cX-Resizer.rb:9 [1353,1405 12x12] z=2000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Wrapper [35,1053 1330x364] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-UI [35,1053 1330x364] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Toolbars [35,1053 0x364] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Toolbar-Top [35,1053 1330x32] z=1000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Toolbar-Container-Top [574,1043 252x28] border=0px 1px 1px 1px / none solid solid solid / rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255); radius=0px 0px 5px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+svg#cxd-quality-metrics-panel-defects-bar-5-cX-ToolbarTopReset [581,1044 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defects-bar-5-cX-ToolbarTopSave [616,1044 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defects-bar-5-cX-ToolbarTopChat [652,1044 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defects-bar-5-cX-ToolbarTopTable [687,1044 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defects-bar-5-cX-ToolbarTopExplore [723,1044 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defects-bar-5-cX-ToolbarTopCustomize [758,1044 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+svg#cxd-quality-metrics-panel-defects-bar-5-cX-ToolbarTopMaximize [794,1044 20x20] padding=4px 0px 0px 0px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0) 0px 0px 0px 0px; fill=none; stroke=rgb(41, 41, 41)
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Toolbar-Bottom [35,1385 1330x32] z=1000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Toolbar-Container-Bottom [698,1424 4x3] border=1px 1px 0px 1px / solid solid none solid / rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255); radius=5px 5px 0px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Toolbar-Left [35,1053 32x364] z=1000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Toolbar-Container-Left [25,1233 3x4] border=1px 1px 1px 0px / solid solid solid none / rgb(123, 140, 255) rgb(123, 140, 255) rgb(123, 140, 255) rgb(0, 0, 0); radius=0px 5px 5px 0px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Toolbar-Right [1333,1053 32x364] z=1000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Toolbar-Container-Right [1372,1233 3x4] border=1px 0px 1px 1px / solid none solid solid / rgb(123, 140, 255) rgb(0, 0, 0) rgb(123, 140, 255) rgb(123, 140, 255); radius=5px 0px 0px 5px; padding=1px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Container [35,1053 1330x364] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Container-Viewer [35,1053 1330x364] color=rgb(255, 255, 255)
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Canvas-Container [35,1053 1330x364] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Container-Workflow [35,1417 1330x0] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Trigger [35,1053 25x25] z=10000
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container [67,1085 160x78] font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container>b:1 [76,1094 117x20] font-weight=700
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container>br:1 [193,1094 0x20] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container>b:2 [76,1114 26x20] font-weight=700
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container>br:2 [144,1114 0x20] 
+div#cxd-quality-metrics-panel-defects-bar-5-cX-Version-Info-Container>b:3 [76,1134 37x20] font-weight=700
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table [34,1052 3684x64] 
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>caption [34,1052 3684x18] 
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead [36,1072 3680x20] 
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr [36,1072 3680x20] 
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>td [36,1072 62x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:1 [100,1072 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:2 [171,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:3 [244,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:4 [317,1072 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:5 [391,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:6 [464,1072 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:7 [538,1072 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:8 [610,1072 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:9 [684,1072 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:10 [758,1072 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:11 [828,1072 66x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:12 [897,1072 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:13 [967,1072 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:14 [1037,1072 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:15 [1108,1072 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:16 [1179,1072 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:17 [1250,1072 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:18 [1319,1072 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:19 [1390,1072 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:20 [1461,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:21 [1534,1072 68x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:22 [1604,1072 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:23 [1677,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:24 [1749,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:25 [1822,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:26 [1895,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:27 [1968,1072 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:28 [2040,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:29 [2113,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:30 [2186,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:31 [2259,1072 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:32 [2329,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:33 [2402,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:34 [2475,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:35 [2548,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:36 [2621,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:37 [2695,1072 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:38 [2767,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:39 [2840,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:40 [2913,1072 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:41 [2987,1072 69x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:42 [3058,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:43 [3131,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:44 [3204,1072 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:45 [3278,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:46 [3351,1072 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:47 [3425,1072 70x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:48 [3497,1072 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:49 [3571,1072 72x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>thead>tr>th:50 [3645,1072 71x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody [36,1094 3680x20] 
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr [36,1094 3680x20] 
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>th [36,1094 62x20] font-weight=700; padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:1 [100,1094 69x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:2 [171,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:3 [244,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:4 [317,1094 72x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:5 [391,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:6 [464,1094 72x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:7 [538,1094 70x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:8 [610,1094 72x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:9 [684,1094 72x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:10 [758,1094 69x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:11 [828,1094 66x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:12 [897,1094 68x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:13 [967,1094 69x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:14 [1037,1094 69x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:15 [1108,1094 69x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:16 [1179,1094 69x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:17 [1250,1094 68x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:18 [1319,1094 69x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:19 [1390,1094 69x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:20 [1461,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:21 [1534,1094 68x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:22 [1604,1094 70x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:23 [1677,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:24 [1749,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:25 [1822,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:26 [1895,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:27 [1968,1094 70x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:28 [2040,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:29 [2113,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:30 [2186,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:31 [2259,1094 69x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:32 [2329,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:33 [2402,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:34 [2475,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:35 [2548,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:36 [2621,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:37 [2695,1094 70x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:38 [2767,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:39 [2840,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:40 [2913,1094 72x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:41 [2987,1094 69x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:42 [3058,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:43 [3131,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:44 [3204,1094 72x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:45 [3278,1094 71x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:46 [3351,1094 72x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:47 [3425,1094 70x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:48 [3497,1094 72x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:49 [3571,1094 72x20] padding=1px
+table#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-table>tbody>tr>td:50 [3645,1094 71x20] padding=1px
+div#cxd-quality-metrics-panel-defects-bar-5-cX-a11y-live [34,1052 1x1] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:9>div.cxb-chrome:3 [1276,1021 87x32] border=1px / solid / rgb(58, 65, 76); radius=6px; padding=2px 4px 2px 4px; bg=rgb(27, 30, 36); box-shadow=rgba(0, 0, 0, 0.12) 0px 2px 8px 0px; z=10010; opacity=0
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:9>div.cxb-chrome:3>span.cxb-grip:1 [1281,1026 22x22] color=rgb(138, 144, 153); line-height=22px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:9>div.cxb-chrome:3>span.cxb-tools:2 [1304,1024 54x26] 
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:9>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:1 [1304,1024 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:9>div.cxb-chrome:3>span.cxb-tools:2>span.cxb-tool:2 [1332,1024 26x26] color=rgb(138, 144, 153); font-size=19px; line-height=24px; radius=6px
+div#host>div.cxb>div.cxb-stage:2>div.cX-UI-Controls.cxd-dashboard.cxd-theme-auto>div.cxd-grid>div.cxb-cell.cxd-panel:9>div.cxb-resize:4 [1353,1405 14x14] radius=0px 0px 10px 0px; background-image=linear-gradient(135deg, rgba(0, 0, 0, 0) 50%, rgb(123, 140, 255) 50%); z=10006; opacity=0
+div#host>div.cxb>div.cxb-msg:3 [20,1442 1360x18] color=rgb(87, 96, 106)

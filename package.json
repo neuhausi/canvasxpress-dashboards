@@ -28,7 +28,10 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test \"tests/**/*.test.js\"",
-    "test:roundtrip": "node tests/browser/roundtrip.cjs"
+    "test:roundtrip": "node tests/browser/roundtrip.cjs",
+    "test:ui": "node tests/browser/ui-chrome.cjs",
+    "tokens": "node scripts/gen-ui-tokens.mjs",
+    "tokens:check": "node scripts/gen-ui-tokens.mjs --check"
   },
   "keywords": [
     "canvasxpress",

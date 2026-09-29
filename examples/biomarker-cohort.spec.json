@@ -3237,7 +3237,7 @@
   "panels": {
     "intro": {
       "type": "text",
-      "html": "<div style=\"font-weight: 700; font-size: 25px\">Immuno-Oncology Biomarker Cohort</div><div style=\"font-size: 18px; color: #5b6472\">A 60-sample immuno-oncology study: IL-6 and TNF-α boxplots with individual samples, an IL-6 vs TNF-α scatter, and a 24-gene inflammation heatmap. Treatment-group and response controls filter every panel.</div>"
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Immuno-Oncology Biomarker Cohort</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">A 60-sample immuno-oncology study: IL-6 and TNF-α boxplots with individual samples, an IL-6 vs TNF-α scatter, and a 24-gene inflammation heatmap. Treatment-group and response controls filter every panel.</div>"
     },
     "sex-control": {
       "type": "control",

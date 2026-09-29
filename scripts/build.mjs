@@ -19,10 +19,14 @@ import { dirname, join } from 'node:path';
 var here = dirname(fileURLToPath(import.meta.url));
 var root = join(here, '..');
 var srcDir = join(root, 'src');
-var distDir = join(root, 'dist');
+// CXD_BUILD_OUT: build into another directory (e.g. a temp dir) and skip the server-static mirror
+// below -- the UI gate (tests/browser/ui-chrome.cjs) bundles src/ this way without touching the
+// committed dist/ or server/static.
+var outOverride = process.env.CXD_BUILD_OUT || '';
+var distDir = outOverride || join(root, 'dist');
 
 // Dependency order — leaves first, entry last-ish. index.js only re-exports.
-var MODULES = ['styles.js', 'spec.js', 'join.js', 'pushdown.js', 'marking.js', 'filters.js', 'dataStore.js', 'exportDashboard.js', 'gridLayout.js', 'validateSpec.js', 'renderDashboard.js', 'persistence.js', 'builderModel.js', 'builder.js'];
+var MODULES = ['uiTokens.js', 'styles.js', 'spec.js', 'join.js', 'pushdown.js', 'marking.js', 'filters.js', 'dataStore.js', 'exportDashboard.js', 'gridLayout.js', 'validateSpec.js', 'renderDashboard.js', 'persistence.js', 'builderModel.js', 'builder.js'];
 
 // Public API exposed by both bundles: exactly what src/index.js exports (the
 // single source of truth; a hand-kept list drifted from it more than once).
@@ -89,7 +93,7 @@ writeFileSync(join(distDir, 'canvasxpress-dashboards.umd.js'), umd);
 // swapping its dev asset URLs for production ones so cxd_server serves the full
 // no-code app at `/`.
 var serverStatic = join(root, 'server', 'src', 'cxd_server', 'static');
-try {
+if (!outOverride) try {
   mkdirSync(serverStatic, { recursive: true });
   writeFileSync(join(serverStatic, 'canvasxpress-dashboards.umd.js'), umd);
   writeFileSync(join(serverStatic, 'index.html'), buildAppShell());
@@ -97,7 +101,7 @@ try {
   // Server package may be absent in a slim checkout — non-fatal.
 }
 
-console.log('Built dist/canvasxpress-dashboards.esm.js and .umd.js (v' + VERSION + ')');
+console.log('Built ' + (outOverride || 'dist') + '/canvasxpress-dashboards.esm.js and .umd.js (v' + VERSION + ')');
 
 /**
  * Build the production app shell (served at `/` by cxd_server) from the

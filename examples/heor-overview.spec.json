@@ -8636,7 +8636,7 @@
   "panels": {
     "intro": {
       "type": "text",
-      "html": "<div style=\"font-weight: 700; font-size: 25px\">HEOR \u2014 Cost-Effectiveness &amp; Outcomes</div><div style=\"font-size: 18px; color: #5b6472\">Health-economics board over 600 patient records across five indications: average cost per patient, cost per QALY and cohort size (filtered by indication), a patient-level cost-effectiveness cloud, cost per QALY by indication and treatment, and a 12-month budget-impact trend.</div>"
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">HEOR \u2014 Cost-Effectiveness &amp; Outcomes</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">Health-economics board over 600 patient records across five indications: average cost per patient, cost per QALY and cohort size (filtered by indication), a patient-level cost-effectiveness cloud, cost per QALY by indication and treatment, and a 12-month budget-impact trend.</div>"
     },
     "indication": {
       "type": "control",
