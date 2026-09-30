@@ -140,6 +140,12 @@
   --cx-ui-code-comment: rgb(58, 115, 0);
  
 }
+:root {
+  --cx-ui-dark-ref-surface: var(--cx-color-gray-900);
+  --cx-ui-dark-ref-accent: var(--cx-color-indigo-400);
+  --cx-ui-dark-ref-accent-strong: var(--cx-color-indigo-300);
+  --cx-ui-dark-ref-accent-tint: var(--cx-color-indigo-dark-a20);
+}
 :where([data-cx-ui-theme="light"]) {
   color-scheme: light;
   --cx-ui-surface: var(--cx-color-white);
@@ -256,14 +262,14 @@
   --cx-ui-border: var(--cx-color-gray-700) !important;
   --cx-ui-border-subtle: var(--cx-color-gray-800) !important;
   --cx-ui-divider: var(--cx-color-gray-800) !important;
-  --cx-ui-border-accent: var(--cx-color-indigo-400) !important;
-  --cx-ui-accent: var(--cx-color-indigo-400) !important;
-  --cx-ui-accent-strong: var(--cx-color-indigo-300) !important;
-  --cx-ui-accent-hover: var(--cx-color-indigo-400) !important;
-  --cx-ui-accent-tint: var(--cx-color-indigo-dark-a20) !important;
-  --cx-ui-accent-tint-subtle: var(--cx-color-indigo-dark-a20) !important;
+  --cx-ui-border-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
+  --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
+  --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;
+  --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
+  --cx-ui-accent-tint: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;
+  --cx-ui-accent-tint-subtle: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;
   --cx-ui-on-accent: var(--cx-color-gray-950) !important;
-  --cx-ui-focus: var(--cx-color-indigo-300) !important;
+  --cx-ui-focus: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;
   --cx-ui-info: var(--cx-color-blue-400) !important;
   --cx-ui-info-strong: var(--cx-color-blue-300) !important;
   --cx-ui-info-tint: var(--cx-color-blue-a15) !important;
@@ -279,8 +285,8 @@
   --cx-ui-scrollbar-track-alt: var(--cx-color-gray-850) !important;
   --cx-ui-scrollbar-thumb: var(--cx-color-gray-700) !important;
   --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-500) !important;
-  --cx-ui-control-on: var(--cx-color-indigo-400) !important;
-  --cx-ui-active-cell: var(--cx-color-indigo-400) !important;
+  --cx-ui-control-on: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
+  --cx-ui-active-cell: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
   --cx-ui-code-key: #ff7b72 !important;
   --cx-ui-code-value: #79c0ff !important;
   --cx-ui-code-string: #ffa657 !important;
@@ -306,14 +312,14 @@
     --cx-ui-border: var(--cx-color-gray-700) !important;
     --cx-ui-border-subtle: var(--cx-color-gray-800) !important;
     --cx-ui-divider: var(--cx-color-gray-800) !important;
-    --cx-ui-border-accent: var(--cx-color-indigo-400) !important;
-    --cx-ui-accent: var(--cx-color-indigo-400) !important;
-    --cx-ui-accent-strong: var(--cx-color-indigo-300) !important;
-    --cx-ui-accent-hover: var(--cx-color-indigo-400) !important;
-    --cx-ui-accent-tint: var(--cx-color-indigo-dark-a20) !important;
-    --cx-ui-accent-tint-subtle: var(--cx-color-indigo-dark-a20) !important;
+    --cx-ui-border-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
+    --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
+    --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;
+    --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
+    --cx-ui-accent-tint: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;
+    --cx-ui-accent-tint-subtle: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;
     --cx-ui-on-accent: var(--cx-color-gray-950) !important;
-    --cx-ui-focus: var(--cx-color-indigo-300) !important;
+    --cx-ui-focus: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;
     --cx-ui-info: var(--cx-color-blue-400) !important;
     --cx-ui-info-strong: var(--cx-color-blue-300) !important;
     --cx-ui-info-tint: var(--cx-color-blue-a15) !important;
@@ -329,8 +335,8 @@
     --cx-ui-scrollbar-track-alt: var(--cx-color-gray-850) !important;
     --cx-ui-scrollbar-thumb: var(--cx-color-gray-700) !important;
     --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-500) !important;
-    --cx-ui-control-on: var(--cx-color-indigo-400) !important;
-    --cx-ui-active-cell: var(--cx-color-indigo-400) !important;
+    --cx-ui-control-on: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
+    --cx-ui-active-cell: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
     --cx-ui-code-key: #ff7b72 !important;
     --cx-ui-code-value: #79c0ff !important;
     --cx-ui-code-string: #ffa657 !important;
