@@ -284,6 +284,12 @@ const CASES = [
     await settle(p);
     await p.evaluate('showHistory({ id: "sales-overview", title: "Sales Overview", owner: "alice" })');
   }) },
+  { name: 'shell-wizard', open: shell(async function (p) {
+    // Data-first wizard (P9), first step: the Upload form inside the shared modal.
+    await p.evaluate('activate("Dashboards")');
+    await settle(p);
+    await p.evaluate('showWizard()');
+  }) },
   { name: 'shell-data', open: shell(function (p) { return p.evaluate('activate("Data")'); }) },
   { name: 'shell-people', open: shell(async function (p) {
     await p.evaluate('activate("Data")');

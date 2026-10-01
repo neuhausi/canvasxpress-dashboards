@@ -73,6 +73,24 @@ test('client.load / list / share / loadShared unwrap the payloads', async functi
   assert.equal(viewer.owner, 'alice');
 });
 
+test('client.loadShared({panel}) and embedCodes hit the publish & embed routes', async function () {
+  var embed = { url: 'http://x/embed.html?token=tok&panel=p', iframe: '<iframe>', script: '<cxd-embed>', image: 'http://x/i.png' };
+  var fetchStub = routedFetch({
+    'GET /api/shared/tok?panel=p': { status: 200, body: { spec: SPEC, readOnly: true, owner: 'alice' } },
+    'GET /api/shared/tok/embed?panel=p&height=300': { status: 200, body: { embed: embed } },
+    'GET /api/shared/tok/embed': { status: 200, body: { embed: embed } }
+  });
+  var client = createDashboardClient({ fetch: fetchStub, baseUrl: 'http://x' });
+  assert.equal((await client.loadShared('tok', { panel: 'p' })).owner, 'alice');
+  assert.deepEqual(await client.embedCodes('tok', { panel: 'p', height: 300 }), embed);
+  assert.deepEqual(await client.embedCodes('tok'), embed);       // whole dashboard: no query
+  assert.deepEqual(fetchStub.calls.map(function (c) { return c.key; }), [
+    'GET /api/shared/tok?panel=p',
+    'GET /api/shared/tok/embed?panel=p&height=300',
+    'GET /api/shared/tok/embed'
+  ]);
+});
+
 test('client.listDatasets / deleteDataset unwrap the payloads', async function () {
   var fetchStub = routedFetch({
     'GET /api/datasets': { status: 200, body: { datasets: [{ id: 'sales-abc', rows: 2, cols: 1 }] } },

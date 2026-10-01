@@ -30,6 +30,8 @@
     "test": "node --test \"tests/**/*.test.js\"",
     "test:roundtrip": "node tests/browser/roundtrip.cjs",
     "test:ui": "node tests/browser/ui-chrome.cjs",
+    "test:embed": "node tests/browser/embed.cjs",
+    "test:wizard": "node tests/browser/wizard.cjs",
     "tokens": "node scripts/gen-ui-tokens.mjs",
     "tokens:check": "node scripts/gen-ui-tokens.mjs --check"
   },

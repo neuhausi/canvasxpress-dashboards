@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" data-cx-ui-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CanvasXpress chart</title>
+
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+  <script src="./canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    /* Minimal chrome: the chart is the page. The host page frames it. */
+    html, body { margin: 0; background: var(--cx-ui-surface); color: var(--cx-ui-text); font-family: var(--cx-font-sans); }
+    #dashboard { padding: 4px; }
+    #message { padding: 16px; color: var(--cx-ui-text-muted); font-size: 14px; }
+  </style>
+</head>
+<body class="cX-UI-Controls">
+  <div id="message">Loading…</div>
+  <div id="dashboard"></div>
+
+  <script>
+    // Embeddable viewer for a published share (?token=…), optionally one panel
+    // (&panel=…). The host page sizes the iframe from the height this page posts
+    // ({type:'cxd-embed:resize', height}); both the iframe snippet and the
+    // <cxd-embed> element match messages by event.source, so several embeds on
+    // one page never mix up their heights.
+    var params = new URLSearchParams(location.search);
+    var token = params.get('token');
+    var panel = params.get('panel');
+    var client = CanvasXpressDashboards.createDashboardClient({
+      baseUrl: location.pathname.replace(/\/[^/]*$/, '')
+    });
+
+    var lastHeight = 0;
+    function reportHeight() {
+      var height = Math.ceil(document.documentElement.getBoundingClientRect().height);
+      if (height && height !== lastHeight && window.parent !== window) {
+        lastHeight = height;
+        window.parent.postMessage({ type: 'cxd-embed:resize', height: height }, '*');
+      }
+    }
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(reportHeight).observe(document.body);
+    }
+    window.addEventListener('load', reportHeight);
+
+    function fail(msg) {
+      document.getElementById('message').textContent = msg;
+      reportHeight();
+    }
+
+    if (!token) {
+      fail('No share token in the URL (expected ?token=…).');
+    } else {
+      client.loadShared(token, panel ? { panel: panel } : undefined).then(function (result) {
+        document.getElementById('message').style.display = 'none';
+        return CanvasXpressDashboards.renderDashboard(result.spec, 'dashboard').then(function (handle) {
+          document.documentElement.setAttribute('data-cx-ui-theme',
+            document.getElementById('dashboard').getAttribute('data-cx-ui-theme') || 'auto');
+          reportHeight();
+          return handle && handle.ready;
+        }).then(reportHeight);
+      }).catch(function (err) {
+        if (err.status === 401) fail('This chart requires you to be logged in to view it.');
+        else if (err.status === 404) fail('This chart is not published (or no longer shared).');
+        else fail('Could not load chart: ' + err.message);
+      });
+    }
+  </script>
+</body>
+</html>

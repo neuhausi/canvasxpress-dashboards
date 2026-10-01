@@ -87,8 +87,8 @@ class SnapshotRenderer:
             " window.cxdDone = true; });"
             "</script></body></html>")
 
-    def render(self, spec: Dict[str, Any], username: str) -> bytes:
-        """Render ``spec`` as ``username`` and return PNG bytes.
+    def render(self, spec: Dict[str, Any], username: Optional[str]) -> bytes:
+        """Render ``spec`` as ``username`` (``None`` = anonymously) and return PNG bytes.
 
         :raises SnapshotUnavailable: When snapshots are off or not installed.
         :raises RuntimeError: When the page fails to render.
@@ -99,13 +99,16 @@ class SnapshotRenderer:
 
         with open(self.umd_path, "rb") as fh:
             umd = fh.read()
-        cookie = session_cookie(self.session_secret, {"user": username})
         with sync_playwright() as pw:
             browser = pw.chromium.launch()
             try:
                 context = browser.new_context(viewport={"width": self.width, "height": 900})
-                context.add_cookies([{"name": self.cookie_name, "value": cookie,
-                                      "url": self.internal_url}])
+                # username=None renders anonymously (public share images): no session
+                # cookie, so every fetch is subject to the anonymous viewer's access.
+                if username:
+                    cookie = session_cookie(self.session_secret, {"user": username})
+                    context.add_cookies([{"name": self.cookie_name, "value": cookie,
+                                          "url": self.internal_url}])
                 page = context.new_page()
                 page.route(_ASSET_HOST + "/**", lambda route: route.fulfill(
                     status=200, body=umd, content_type="text/javascript"))

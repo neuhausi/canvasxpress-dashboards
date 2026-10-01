@@ -239,6 +239,35 @@ def modify_config(config: dict, instruction: str, headers: Optional[list] = None
     return None
 
 
+# /select infers column types and factor cardinalities from the rows it is sent;
+# a bounded sample keeps the GET request small on big tables (the true row count
+# still goes along as n_samples).
+_SELECT_SAMPLE_ROWS = 200
+
+
+def select_charts(rows: list, intent: str = "") -> Optional[dict]:
+    """Rank chart types for tabular data with the MCP selector.
+
+    Structural + column-name scoring; works without an LLM key (the MCP server
+    only uses its LLM, when it has one, to break near-ties).
+
+    :param rows: Array of arrays, first row = headers (as the wizard previews it).
+    :param intent: Optional plain-English goal (activates the selector's intent boosts).
+    :returns: The MCP response (``top_recommendation`` with a ``minimal_config``,
+        ``alternatives``, ...) or None when disabled/unreachable/unsuccessful.
+    """
+    if not isinstance(rows, list) or len(rows) < 2:
+        return None
+    params = {"data": json.dumps(rows[:_SELECT_SAMPLE_ROWS + 1]),
+              "n_samples": str(len(rows) - 1)}
+    if intent:
+        params["intent"] = intent
+    body = _get("/select", params)
+    if body and body.get("top_recommendation"):
+        return body
+    return None
+
+
 def dataset_columns(data: dict):
     """Column names + coarse types for a stored CanvasXpress data object.
 

@@ -261,11 +261,37 @@ export function createDashboardClient(options) {
         .then(function (r) { return r.dashboard; });
     },
     /**
+     * Data-first wizard: rank chart types for a table (canvasxpress-mcp selector).
+     * @param {Array<Array>} rows - `[[headers…], [row…], …]`.
+     * @param {string} [intent] - Optional plain-English goal.
+     * @returns {Promise<object>} `{ source: 'mcp'|'none', suggestions: [{graphType, score, reason, config}] }`.
+     */
+    wizardSuggest: function (rows, intent) {
+      return request('POST', '/api/wizard/suggest', { rows: rows, intent: intent || '' });
+    },
+    /**
      * Resolve a share token to its read-only spec.
      * @param {string} token - Share token.
+     * @param {object} [opts] - `{panel}`: prune to that one panel (single-chart
+     *   embed); the server never reads the other panels' data.
      * @returns {Promise<object>} `{ spec, readOnly, owner }`.
      */
-    loadShared: function (token) { return request('GET', '/api/shared/' + encodeURIComponent(token)); },
+    loadShared: function (token, opts) {
+      return request('GET', '/api/shared/' + encodeURIComponent(token) + queryString({ panel: opts && opts.panel }));
+    },
+    /**
+     * Copy-paste embed codes for a published share (publish & embed).
+     * @param {string} token - Share token.
+     * @param {object} [opts] - `{panel, height}`: embed one panel; initial iframe height.
+     * @returns {Promise<object>} `{ url, iframe, script, image }` — the stable
+     *   embed URL, an auto-resizing `<iframe>`, a `<cxd-embed>` web component and
+     *   a PNG fallback URL for RSS / email.
+     */
+    embedCodes: function (token, opts) {
+      return request('GET', '/api/shared/' + encodeURIComponent(token) + '/embed' +
+        queryString({ panel: opts && opts.panel, height: opts && opts.height }))
+        .then(function (r) { return r.embed; });
+    },
 
     // ---- sharing with users and groups, dataset security, lineage ----
     /** @returns {Promise<object>} `{ users, groups }` a resource can be shared with. */

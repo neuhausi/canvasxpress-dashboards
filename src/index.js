@@ -28,6 +28,8 @@ export {
   setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown
 } from './builderModel.js';
 export { runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS } from './pushdown.js';
+export { tableFromData, profileColumns, applyDecimalComma, wizardSpec } from './wizard.js';
+export { transposeCxData } from './join.js';
 
 /** @type {string} Package version. */
 export var version = '0.11.0';

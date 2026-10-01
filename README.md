@@ -548,6 +548,67 @@ measure has no column to filter the source rows by.
 In the builder, **▦ Shape data** writes this query without JSON, for any source:
 filters, keep columns or summarize, sort and top N, with a live preview.
 
+## New chart from data (wizard)
+
+**Dashboards → ＋ Chart from data** walks from raw data to a published chart in
+four steps:
+
+1. **Upload** — a file, pasted text (comma-, tab- or semicolon-separated, or
+   JSON) or a URL. Everything is parsed by the **CanvasXpress engine itself**
+   (`loadFile`: CSV/TSV/TXT/JSON/PNG/Parquet …), never by a second parser.
+   Databases and Google Sheets come in through **+ Database** in Data.
+2. **Check** — rows × columns, each column's detected type (number / date /
+   text), missing values, and the **cells that don't match their column**
+   (e.g. a typo in a number column, flagged with its row), over a live table
+   preview. **Transpose** and **decimal comma → numbers** ("1.234,5") fix the
+   common problems in place.
+3. **Visualize** — the canvasxpress-mcp **chart selector** ranks chart types
+   for the columns (structural + column-name scoring; an optional goal sharpens
+   it) and each suggestion is drawn live with your data. The **editorial**
+   theme is preselected. Without the MCP service (`CXD_MCP_*`), the full chart
+   picker is offered instead.
+4. **Publish** — stores the dataset, saves a one-chart dashboard, shares it and
+   shows the link plus the embed codes (see below); open it in the builder to
+   keep editing.
+
+API: `POST /api/wizard/suggest {rows, intent?}` →
+`{source: 'mcp'|'none', suggestions: [{graphType, score, reason, config}]}`;
+helpers `tableFromData`, `profileColumns`, `applyDecimalComma`, `wizardSpec`
+(and the existing `transposeCxData`).
+
+## Publish & embed a chart (server)
+
+Sharing a dashboard (`POST /api/dashboards/{id}/share`, or **Share** in the
+builder) publishes it under a stable token. The same token embeds the whole
+dashboard **or any single chart** in another page:
+
+| Embed code | What it is |
+|---|---|
+| `<iframe src="…/embed.html?token=…&panel=…">` + a small listener | Minimal-chrome page that grows the iframe to its content (`postMessage {type:'cxd-embed:resize', height}`) |
+| `<script src="…/embed.js"></script><cxd-embed src="…">` | Web component doing the same; any number per page, matched by `event.source` |
+| `…/api/shared/{token}/image.png?panel=…` | Static PNG fallback for RSS readers and email (needs the snapshot renderer: Playwright + Chromium) |
+
+- **Get the codes:** the builder's share box has an **Embed** picker (whole
+  dashboard or one chart, with copy buttons), or call
+  `GET /api/shared/{token}/embed?panel=…&height=…` → `{url, iframe, script, image}`
+  (`client.embedCodes(token, {panel})` in JS). The share response also carries
+  `embed` codes for the whole dashboard. URLs use `CXD_PUBLISH_BASE_URL` when set.
+- **One chart only:** `?panel=` prunes the spec to that panel and the sources it
+  depends on (join and function inputs) **before** stored datasets are read, so
+  the other panels' data is never loaded or sent.
+- **Republish in place:** saving the dashboard updates every embed (same URL),
+  and every save is already a version in the dashboard's history. Unsharing
+  (`private`) turns every embed off.
+- The PNG is rendered **anonymously** (the viewer's access, never the owner's)
+  and cached until the published spec changes.
+
+**Organisation brand lock.** `CXD_BRAND` (a JSON object of top-level spec keys,
+e.g. `{"theme": "editorial", "colorScheme": "Tableau", "fontName": "Inter"}`)
+is forced onto every save by a non-admin and onto every shared or embedded view.
+`/auth/me` reports `brand` and `brandLocked`, and the builder greys out those
+style controls. Admins are exempt (they maintain the brand). A malformed
+`CXD_BRAND` stops the server at startup instead of silently not enforcing.
+
 ## Governance and audit (server)
 
 The dashboards server controls who can do what and who sees which data, and
@@ -847,7 +908,13 @@ colour, override the variable with `!important` on `.cxd-dashboard` (dashboard c
 ```bash
 npm run build     # regenerate dist/ (ESM + UMD) from src/
 npm test          # node --test unit + renderer smoke tests
+npm run test:embed  # browser: real server + host page, iframe and <cxd-embed> resize to content
+npm run test:wizard # browser: the data-first wizard end to end (paste → check → suggest → publish)
 ```
+
+The browser gates (`test:roundtrip`, `test:ui`, `test:embed`, `test:wizard`) need Playwright
+(`PLAYWRIGHT_MODULE` can point at an installed copy); `test:embed` also needs a
+Python with the server deps (`CXD_PYTHON`) and runs on ports 8899/8898 (`test:wizard`: 8899).
 
 The source is authored as small ES modules under `src/`; `scripts/build.mjs` is a
 zero-dependency bundler that inlines them into `dist/*.esm.js` and `dist/*.umd.js`.

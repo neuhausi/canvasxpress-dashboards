@@ -613,6 +613,19 @@ def _shared():
     return FileResponse(os.path.join(_PKG_STATIC, "shared.html"), media_type="text/html")
 
 
+# Publish & embed: the minimal-chrome embed page and the <cxd-embed> element.
+@app.get("/embed.html", include_in_schema=False)
+def _embed_page():
+    from fastapi.responses import FileResponse
+    return FileResponse(os.path.join(_PKG_STATIC, "embed.html"), media_type="text/html")
+
+
+@app.get("/embed.js", include_in_schema=False)
+def _embed_script():
+    from fastapi.responses import FileResponse
+    return FileResponse(os.path.join(_PKG_STATIC, "embed.js"), media_type="text/javascript")
+
+
 # --- canvasxpress-connectors BYO-database app (bridged session) -------------
 # The integration lives in cxd_server.connectors: the same code the
 # `python -m cxd_server` launcher installs with CXD_CONNECTORS=on (mount at

@@ -173,6 +173,31 @@
       background: none; color: var(--muted); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
     .admin-tab:hover { color: inherit; }
     .admin-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    /* Publish & embed codes in the share box */
+    .cxd-embed-codes { margin-top: 8px; font-size: 13px; }
+    .cxd-embed-head { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+    .cxd-embed-pick { flex: 1; font-size: 13px; }
+    .cxd-embed-row { display: flex; gap: 6px; margin-top: 4px; align-items: flex-start; }
+    .cxd-embed-code { flex: 1; font: 12px var(--cx-font-mono); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); padding: 4px; }
+    .cxd-embed-copy { padding: 3px 8px; font-size: 12px; white-space: nowrap; }
+    /* Data-first wizard: Upload -> Check -> Visualize -> Publish */
+    .cxd-wizard-steps { display: flex; gap: 6px; margin-bottom: 12px; font-size: 13px; }
+    .cxd-wizard-step { padding: 3px 10px; border-radius: var(--cx-radius-lg); color: var(--cx-ui-text-muted); border: 1px solid var(--rail-border); }
+    .cxd-wizard-step.cxd-wizard-step--active { color: var(--cx-ui-on-accent); background: var(--cx-ui-accent); border-color: var(--cx-ui-accent); }
+    .cxd-wizard-field { display: block; margin: 0 0 10px; font-size: 14px; }
+    .cxd-wizard-field input[type=text], .cxd-wizard-field input[type=url], .cxd-wizard-field textarea { width: 100%; box-sizing: border-box; padding: 6px 8px; font: 14px var(--cx-font-sans); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); }
+    .cxd-wizard-field textarea { font: 13px var(--cx-font-mono); }
+    .cxd-wizard-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+    .cxd-wizard-msg { min-height: 18px; font-size: 13px; color: var(--cx-ui-danger); }
+    .cxd-wizard-note { font-size: 13px; color: var(--cx-ui-text-muted); }
+    .cxd-wizard-profile { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 8px; }
+    .cxd-wizard-profile th, .cxd-wizard-profile td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--rail-border); }
+    .cxd-wizard-bad { color: var(--cx-ui-danger); }
+    .cxd-wizard-host { height: 220px; overflow: auto; }
+    .cxd-wizard-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .cxd-wizard-card { border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); padding: 6px; cursor: pointer; font-size: 13px; }
+    .cxd-wizard-card.cxd-wizard-card--chosen { border-color: var(--cx-ui-accent); box-shadow: var(--cx-shadow-sm); }
+    .cxd-wizard-card-host { height: 150px; }
   </style>
 </head>
 <body class="cX-UI-Controls">
@@ -745,6 +770,8 @@
     var currentUser = null;
     var isAdmin = false;
     var currentPermissions = [];   // from /auth/me (the server enforces them)
+    var currentBrand = null;       // organisation brand (CXD_BRAND), from /auth/me
+    var brandLocked = false;       // true when the server forces the brand on your saves
     var currentOwner = null;       // owner of a shared dashboard open for editing
     var DEMO_USER = 'demo', DEMO_PASS = 'demo1234';
 
@@ -787,6 +814,8 @@
         currentUser = (r && r.user) || null;
         isAdmin = !!(r && r.is_admin);
         currentPermissions = (r && r.permissions) || [];
+        currentBrand = (r && r.brand) || null;
+        brandLocked = !!(r && r.brandLocked);
         directoryCache = null;
         renderUserChip();
         return currentUser;
@@ -1941,6 +1970,347 @@
       return body;
     }
 
+    // ---- data-first wizard: Upload → Check → Visualize → Publish -------------
+    // Parsing is the CanvasXpress engine's own (loadFile: CSV/TSV/TXT/JSON/PNG/
+    // Parquet/…) — never a dashboards parser. CXD wizard helpers only inspect
+    // and reshape the parsed data; the chart ranking is the canvasxpress-mcp
+    // selector (/api/wizard/suggest); publishing reuses save + share + embed.
+    var WIZARD_STEPS = ['Upload', 'Check', 'Visualize', 'Publish'];
+    var WIZARD_FALLBACK_TYPES = ['Bar', 'Line', 'Area', 'Stacked', 'Scatter2D', 'Boxplot', 'Dotplot', 'Dumbbell', 'Pie', 'Heatmap'];
+    var NOOP_EVENT = { preventDefault: function () {}, stopPropagation: function () {} };
+
+    function showWizard() {
+      var state = { data: null, title: '', intent: '', config: null, editorial: true };
+      var instances = [];
+      var body = openModal('New chart from data', function () { destroyAll(); });
+
+      function destroyAll() {
+        instances.forEach(function (inst) { try { inst.destroy(); } catch (e) { /* gone */ } });
+        instances = [];
+      }
+      function newCanvas(host, height) {
+        var canvas = document.createElement('canvas');
+        canvas.id = 'cxd-wizard-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
+        var width = Math.max(240, host.clientWidth || 560);
+        canvas.setAttribute('width', width);
+        canvas.setAttribute('height', height);
+        host.appendChild(canvas);
+        return canvas.id;
+      }
+      function frame(stepIndex) {
+        destroyAll();
+        body.innerHTML = '';
+        var steps = document.createElement('div');
+        steps.className = 'cxd-wizard-steps';
+        WIZARD_STEPS.forEach(function (name, i) {
+          var chip = document.createElement('span');
+          chip.className = 'cxd-wizard-step' + (i === stepIndex ? ' cxd-wizard-step--active' : '');
+          chip.textContent = (i + 1) + ' ' + name;
+          steps.appendChild(chip);
+        });
+        body.appendChild(steps);
+        var msg = document.createElement('div');
+        msg.className = 'cxd-wizard-msg';
+        body.appendChild(msg);
+        return msg;
+      }
+      function actions(buttons) {
+        var row = document.createElement('div');
+        row.className = 'cxd-wizard-actions';
+        buttons.forEach(function (b) { if (b) row.appendChild(b); });
+        body.appendChild(row);
+      }
+      function labeled(text, control) {
+        var label = document.createElement('label');
+        label.className = 'cxd-wizard-field';
+        label.appendChild(document.createTextNode(text));
+        label.appendChild(document.createElement('br'));
+        label.appendChild(control);
+        return label;
+      }
+
+      // Hand any file to the engine; the callback gets the parsed data object.
+      function parseWithEngine(file, done, fail) {
+        var host = document.createElement('div');
+        host.className = 'cxd-wizard-host';
+        body.appendChild(host);
+        var id = newCanvas(host, 200);
+        var inst = new window.CanvasXpress(id, { y: { vars: ['-'], smps: ['-'], data: [[0]] } },
+          { view: 'table', resizable: false }, {});
+        instances.push(inst);
+        // The CanvasXpress constructor is asynchronous: its methods (loadFile)
+        // attach after it returns, so wait for them (bounded) before parsing.
+        var waited = 0;
+        (function whenReady() {
+          if (typeof inst.loadFile !== 'function') {
+            waited += 50;
+            if (waited > 10000) { fail('CanvasXpress did not finish loading.'); return; }
+            setTimeout(whenReady, 50);
+            return;
+          }
+          try {
+            inst.loadFile(NOOP_EVENT, false, function (parsed) {
+              if (parsed && parsed !== inst) instances.push(parsed);
+              var d = parsed && parsed.data;
+              if (!d || !d.y || !(d.y.vars || []).length) { fail('That isn’t a dataset CanvasXpress can read.'); return; }
+              done(JSON.parse(JSON.stringify({ y: d.y, x: d.x || undefined, z: d.z || undefined })));
+            }, file, true);
+          } catch (e) { fail('Could not read it: ' + (e && e.message || e)); }
+        })();
+      }
+      function textToFile(text, hint) {
+        var trimmed = String(text || '').replace(/^﻿/, '').trim();
+        var json = trimmed.charAt(0) === '{' || trimmed.charAt(0) === '[';
+        var name = (hint || 'pasted') + (json ? '.json' : '.txt');
+        return new File([trimmed], name, { type: json ? 'application/json' : 'text/plain' });
+      }
+
+      // ---- 1 Upload ----
+      function stepUpload() {
+        var msg = frame(0);
+        var title = document.createElement('input');
+        title.type = 'text'; title.value = state.title || ''; title.placeholder = 'e.g. Life expectancy 2024';
+        var file = document.createElement('input');
+        file.type = 'file'; file.accept = '.csv,.tsv,.tab,.txt,.json,.png,.parquet';
+        var paste = document.createElement('textarea');
+        paste.rows = 5; paste.placeholder = 'Paste a table (comma-, tab- or semicolon-separated), first row = headers';
+        var url = document.createElement('input');
+        url.type = 'url'; url.placeholder = 'https://… (CSV, TSV or JSON)';
+        body.appendChild(labeled('Chart title', title));
+        body.appendChild(labeled('Upload a file', file));
+        body.appendChild(labeled('…or paste data', paste));
+        body.appendChild(labeled('…or load from a URL', url));
+        var note = document.createElement('div');
+        note.className = 'cxd-wizard-note';
+        note.textContent = 'Databases and Google Sheets: add them with “+ Database” in Data, then build from the dataset.';
+        body.appendChild(note);
+        var next = smallButton('Next: check data', function () {
+          msg.textContent = '';
+          state.title = title.value.trim();
+          function parsed(data) { state.data = data; stepCheck(); }
+          function fail(text) { msg.textContent = text; }
+          if (file.files && file.files[0]) {
+            if (!state.title) state.title = file.files[0].name.replace(/\.[^.]+$/, '');
+            parseWithEngine(file.files[0], parsed, fail);
+          } else if (paste.value.trim()) {
+            parseWithEngine(textToFile(paste.value, 'pasted'), parsed, fail);
+          } else if (url.value.trim()) {
+            msg.textContent = '';
+            fetch(url.value.trim()).then(function (r) {
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              return r.text();
+            }).then(function (text) {
+              var base = (url.value.split('/').pop() || 'data').replace(/[?#].*$/, '').replace(/\.[^.]+$/, '') || 'data';
+              if (!state.title) state.title = base;
+              parseWithEngine(textToFile(text, base), parsed, fail);
+            }, function (e) { fail('Could not load the URL: ' + e.message + ' (it must allow cross-origin requests)'); });
+          } else {
+            fail('Choose a file, paste data or enter a URL.');
+          }
+        });
+        next.className = 'cX-Button cX-Button--primary';
+        actions([next]);
+      }
+
+      // ---- 2 Check ----
+      function stepCheck() {
+        var msg = frame(1);
+        var table = CXD.tableFromData(state.data);
+        var profile = CXD.profileColumns(table);
+        var rows = table.length - 1;
+        var summary = document.createElement('div');
+        summary.className = 'cxd-wizard-note';
+        var badTotal = profile.reduce(function (n, c) { return n + c.bad; }, 0);
+        summary.textContent = rows + ' rows × ' + (profile.length - 1) + ' columns' +
+          (badTotal ? ' · ' + badTotal + ' cell(s) don’t match their column type' : ' · every cell matches its column type');
+        body.appendChild(summary);
+        var grid = document.createElement('table');
+        grid.className = 'cxd-wizard-profile';
+        grid.innerHTML = '<thead><tr><th>Column</th><th>Type</th><th>Missing</th><th>Problems</th></tr></thead>';
+        var tb = document.createElement('tbody');
+        profile.slice(1).forEach(function (c) {
+          var tr = document.createElement('tr');
+          tr.innerHTML = '<td>' + esc(c.name) + '</td><td>' + esc(c.type) + '</td><td>' + c.missing + '</td>' +
+            '<td' + (c.bad ? ' class="cxd-wizard-bad"' : '') + '>' +
+            (c.bad ? c.bad + ' (row ' + c.badRows.join(', ') + (c.bad > c.badRows.length ? ', …' : '') + ')' : '–') + '</td>';
+          tb.appendChild(tr);
+        });
+        grid.appendChild(tb);
+        body.appendChild(grid);
+        var host = document.createElement('div');
+        host.className = 'cxd-wizard-host';
+        body.appendChild(host);
+        instances.push(new window.CanvasXpress(newCanvas(host, 210), state.data, { view: 'table', resizable: false }, {}));
+
+        var transpose = smallButton('Transpose', function () {
+          state.data = CXD.transposeCxData(state.data);
+          stepCheck();
+        });
+        var comma = smallButton('Decimal comma → numbers', function () {
+          var out = CXD.applyDecimalComma(state.data);
+          state.data = out.data;
+          stepCheck();
+          body.querySelector('.cxd-wizard-msg').textContent = out.converted
+            ? 'Converted ' + out.converted + ' cell(s) like “1.234,5” to numbers.' : 'No comma-decimal numbers found.';
+        });
+        var back = smallButton('Back', stepUpload);
+        var next = smallButton('Next: pick a chart', stepVisualize);
+        next.className = 'cX-Button cX-Button--primary';
+        actions([transpose, comma, back, next]);
+      }
+
+      // ---- 3 Visualize ----
+      function stepVisualize() {
+        var msg = frame(2);
+        var table = CXD.tableFromData(state.data);
+        var intent = document.createElement('input');
+        intent.type = 'text'; intent.value = state.intent; intent.placeholder = 'Optional: what should the chart show? e.g. compare regions over time';
+        body.appendChild(labeled('Goal', intent));
+        var editorial = document.createElement('input');
+        editorial.type = 'checkbox'; editorial.checked = state.editorial;
+        editorial.onchange = function () { state.editorial = editorial.checked; drawCards(lastSuggestions); };
+        var editorialLabel = document.createElement('label');
+        editorialLabel.className = 'cxd-wizard-field';
+        editorialLabel.appendChild(editorial);
+        editorialLabel.appendChild(document.createTextNode(' Editorial (publication) theme'));
+        body.appendChild(editorialLabel);
+        var cards = document.createElement('div');
+        cards.className = 'cxd-wizard-cards';
+        body.appendChild(cards);
+        var lastSuggestions = [];
+
+        function withTheme(config) {
+          var c = JSON.parse(JSON.stringify(config || {}));
+          if (state.editorial) c.theme = 'editorial';
+          return c;
+        }
+        function drawCards(suggestions) {
+          destroyAll();
+          cards.innerHTML = '';
+          lastSuggestions = suggestions;
+          suggestions.forEach(function (s) {
+            var card = document.createElement('div');
+            card.className = 'cxd-wizard-card' + (state.config && state.config.graphType === s.config.graphType ? ' cxd-wizard-card--chosen' : '');
+            card.innerHTML = '<b>' + esc(s.graphType) + '</b>' + (s.reason ? ' — <span class="cxd-wizard-note">' + esc(s.reason) + '</span>' : '');
+            var host = document.createElement('div');
+            host.className = 'cxd-wizard-card-host';
+            card.appendChild(host);
+            card.onclick = function () {
+              state.config = s.config;
+              Array.prototype.forEach.call(cards.children, function (el) { el.classList.remove('cxd-wizard-card--chosen'); });
+              card.classList.add('cxd-wizard-card--chosen');
+            };
+            cards.appendChild(card);
+            try {
+              instances.push(new window.CanvasXpress(newCanvas(host, 150), state.data,
+                Object.assign(withTheme(s.config), { resizable: false, showLegend: false }), {}));
+            } catch (e) { host.textContent = 'Preview unavailable for this data.'; }
+          });
+          if (!state.config && suggestions[0]) {
+            state.config = suggestions[0].config;
+            cards.firstChild.classList.add('cxd-wizard-card--chosen');
+          }
+        }
+        function fallback(reason) {
+          msg.textContent = '';
+          var note = document.createElement('div');
+          note.className = 'cxd-wizard-note';
+          note.textContent = reason + ' Pick a chart type:';
+          cards.parentNode.insertBefore(note, cards);
+          drawCards(WIZARD_FALLBACK_TYPES.slice(0, 4).map(function (t) {
+            return { graphType: t, reason: '', config: { graphType: t } };
+          }));
+          var pick = document.createElement('select');
+          WIZARD_FALLBACK_TYPES.forEach(function (t) {
+            var o = document.createElement('option'); o.value = t; o.textContent = t; pick.appendChild(o);
+          });
+          pick.onchange = function () {
+            drawCards([{ graphType: pick.value, reason: '', config: { graphType: pick.value } }]);
+            state.config = { graphType: pick.value };
+          };
+          cards.parentNode.insertBefore(labeled('All types', pick), cards);
+        }
+        function suggest() {
+          state.intent = intent.value.trim();
+          state.config = null;
+          cards.textContent = 'Asking the chart selector…';
+          client.wizardSuggest(table, state.intent).then(function (r) {
+            if (r && r.suggestions && r.suggestions.length) { cards.textContent = ''; drawCards(r.suggestions); }
+            else { cards.textContent = ''; fallback('Chart suggestions are unavailable (the canvasxpress-mcp service is off).'); }
+          }, function (e) { cards.textContent = ''; fallback('Chart suggestions failed: ' + e.message + '.'); });
+        }
+        intent.onchange = suggest;
+        var back = smallButton('Back', stepCheck);
+        var next = smallButton('Next: publish', function () {
+          if (!state.config) { msg.textContent = 'Pick a chart first.'; return; }
+          stepPublish();
+        });
+        next.className = 'cX-Button cX-Button--primary';
+        actions([back, next]);
+        suggest();
+      }
+
+      // ---- 4 Publish ----
+      function stepPublish() {
+        var msg = frame(3);
+        var status = document.createElement('div');
+        status.className = 'cxd-wizard-note';
+        status.textContent = 'Saves the data as a dataset, creates a one-chart dashboard, and publishes it (anyone with the link can view).';
+        body.appendChild(status);
+        var box = document.createElement('div');
+        body.appendChild(box);
+        var back = smallButton('Back', stepVisualize);
+        var publish = smallButton('Save & publish', function () {
+          publish.disabled = true;
+          msg.textContent = '';
+          status.textContent = 'Saving the dataset…';
+          var title = state.title || 'Chart';
+          var config = JSON.parse(JSON.stringify(state.config));
+          var slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'chart';
+          client.uploadDataset(state.data, { format: 'cx', title: title }).then(function (dataset) {
+            var spec = CXD.wizardSpec({ id: slug + '-' + Date.now().toString(36), title: title,
+              datasetId: dataset.id, store: dataset.store, config: config });
+            if (state.editorial) spec.theme = 'editorial';
+            status.textContent = 'Saving the dashboard…';
+            return client.save(spec).then(function () {
+              status.textContent = 'Publishing…';
+              return client.share(spec.id, 'public').then(function (summary) {
+                return { spec: spec, summary: summary };
+              }, function (e) {
+                // Saved but not shareable (e.g. the role lacks share.public): still openable.
+                return { spec: spec, summary: null, shareError: e };
+              });
+            });
+          }).then(function (result) {
+            status.textContent = result.summary ? 'Published.' : 'Saved — but not published: ' + result.shareError.message;
+            var open = smallButton('Open in builder', function () {
+              body.close();
+              currentSpec = result.spec; currentOwner = null;
+              activate('Builder');
+            });
+            back.style.display = 'none';
+            publish.style.display = 'none';
+            if (result.summary) {
+              var url = result.summary.share_url || (location.origin + '/shared.html?token=' + result.summary.share_token);
+              var link = document.createElement('input');
+              link.type = 'text'; link.readOnly = true; link.value = url;
+              box.appendChild(labeled('Share link', link));
+              renderEmbedCodes(box, result.summary.share_token);
+            }
+            box.appendChild(open);
+          }, function (e) {
+            publish.disabled = false;
+            status.textContent = '';
+            msg.textContent = 'Publishing failed: ' + e.message;
+          });
+        });
+        publish.className = 'cX-Button cX-Button--primary';
+        actions([back, publish]);
+      }
+
+      stepUpload();
+    }
+
     // "People" panel: who a dashboard/dataset is shared with, and at what level.
     // res = {kind: 'dashboard'|'dataset', id, title, store?, owner?}
     function showPeople(res, onChanged) {
@@ -2630,7 +3000,7 @@
         ['cxblue', 'CanvasXpress Blue'], ['light', 'Light'], ['dark', 'Dark'],
         ['minimal', 'Minimal'], ['classic', 'Classic'], ['grey', 'Grey (ggplot)'],
         ['bw', 'Black & White'], ['linedraw', 'Line Draw'], ['void', 'Void'],
-        ['economist', 'Economist'], ['excel', 'Excel'], ['solarized', 'Solarized'],
+        ['economist', 'Economist'], ['editorial', 'Editorial'], ['excel', 'Excel'], ['solarized', 'Solarized'],
         ['ptol', 'Paul Tol'], ['highcharts', 'Highcharts'], ['wsj', 'Wall Street Journal'],
         ['tableau', 'Tableau'], ['stata', 'Stata'], ['ggblanket', 'ggblanket']
       ];
@@ -2674,6 +3044,20 @@
       panelText.value = currentSpec.panelColor || '';
       panelCoord.checked = !!currentSpec.coordinatePanel;
       fontSel.value = currentSpec.fontName || 'Arial';
+      // Organisation brand lock: show the brand's values and disable the
+      // controls it owns. The server re-applies the brand on every save, so
+      // this is the honest UI for a rule that is enforced either way.
+      if (brandLocked && currentBrand) {
+        var BRAND_CONTROLS = { theme: [theme], colorScheme: [colors], fontName: [fontSel], background: [bg, bgText] };
+        Object.keys(currentBrand).forEach(function (key) {
+          (BRAND_CONTROLS[key] || []).forEach(function (control) {
+            if (key === 'background' && control === bg) control.value = hexOr(currentBrand[key], control.value);
+            else control.value = currentBrand[key];
+            control.disabled = true;
+            control.title = 'Set by your organisation brand';
+          });
+        });
+      }
 
       var previewTimer = null;
       function apply(changes) {
@@ -2924,6 +3308,7 @@
         '<div style="display:flex;align-items:center;gap:8px;width:100%">' +
           '<h2 class="view-title">Dashboards</h2>' +
           '<button class="cta" id="dash-refresh" style="margin-left:auto;padding:6px 14px;font-size:16px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
+          '<button class="cta" id="dash-wizard">＋ Chart from data</button>' +
         '</div>';
       viewEl.innerHTML =
         '<div class="data-view">' +
@@ -2937,6 +3322,7 @@
           '</div>' +
         '</div>';
       document.getElementById('dash-refresh').onclick = loadDashList;
+      document.getElementById('dash-wizard').onclick = showWizard;
       loadDashList();
     }
 
@@ -3135,9 +3521,72 @@
         };
         row.appendChild(copy); row.appendChild(revoke);
         box.appendChild(input); box.appendChild(row);
+        if (summary.share_token) renderEmbedCodes(box, summary.share_token);
       }, function (err) {
         box.textContent = 'Share failed: ' + err.message;
       });
+    }
+
+    // Publish & embed: per-panel (or whole-dashboard) embed codes for a shared
+    // dashboard. The share token is the stable handle, so saving republishes
+    // every embed in place.
+    function renderEmbedCodes(box, token) {
+      var wrap = document.createElement('div');
+      wrap.className = 'cxd-embed-codes';
+      wrap.onclick = function (e) { e.stopPropagation(); };
+      var head = document.createElement('div');
+      head.className = 'cxd-embed-head';
+      head.innerHTML = '<b>Embed</b>';
+      var pick = document.createElement('select');
+      pick.setAttribute('aria-label', 'Chart to embed');
+      pick.className = 'cxd-embed-pick';
+      var whole = document.createElement('option');
+      whole.value = ''; whole.textContent = 'Whole dashboard';
+      pick.appendChild(whole);
+      head.appendChild(pick);
+      wrap.appendChild(head);
+      var codes = document.createElement('div');
+      wrap.appendChild(codes);
+      box.appendChild(wrap);
+
+      function codeRow(label, text) {
+        var row = document.createElement('div');
+        row.className = 'cxd-embed-row';
+        var area = document.createElement('textarea');
+        area.readOnly = true; area.value = text; area.rows = label === 'Image' ? 1 : 3;
+        area.setAttribute('aria-label', label + ' embed code');
+        area.className = 'cxd-embed-code';
+        var btn = document.createElement('button');
+        btn.className = 'cta cxd-embed-copy'; btn.textContent = 'Copy ' + label;
+        btn.onclick = function () {
+          (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+            .then(function () { btn.textContent = 'Copied ✓'; },
+                  function () { area.select(); document.execCommand('copy'); btn.textContent = 'Copied ✓'; });
+        };
+        row.appendChild(area); row.appendChild(btn);
+        return row;
+      }
+      function load() {
+        codes.textContent = 'Loading embed codes…';
+        client.embedCodes(token, pick.value ? { panel: pick.value } : undefined).then(function (embed) {
+          codes.innerHTML = '';
+          codes.appendChild(codeRow('iframe', embed.iframe));
+          codes.appendChild(codeRow('script', embed.script));
+          codes.appendChild(codeRow('Image', embed.image));
+        }, function (err) { codes.textContent = 'Embed codes unavailable: ' + err.message; });
+      }
+      // Panel list comes from the published spec itself (what viewers see).
+      client.loadShared(token).then(function (result) {
+        var panels = (result.spec && result.spec.panels) || {};
+        Object.keys(panels).forEach(function (id) {
+          var p = panels[id] || {};
+          if (p.type && p.type !== 'graph') return;      // charts only
+          var o = document.createElement('option');
+          o.value = id; o.textContent = p.title || id;
+          pick.appendChild(o);
+        });
+      }).then(load, load);
+      pick.onchange = load;
     }
 
     // Version history and electronic signatures for one dashboard (a modal).

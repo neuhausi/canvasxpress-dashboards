@@ -50,7 +50,8 @@ from . import posit_connect
 from .oidc import (IdentityStore, OidcClient, OidcConfig, OidcError, groups_from, pkce_pair,
                    username_from)
 from .scheduler import Cron, ScheduleError, ScheduleStore, Scheduler
-from .snapshot import SnapshotRenderer
+from .snapshot import SnapshotRenderer, SnapshotUnavailable
+from .embed import apply_brand, embed_snippets, single_panel_spec
 from .sqldashboard import open_dashboard_store
 from .store import DashboardStore
 from .stores import StoreRegistry
@@ -404,6 +405,7 @@ def create_dashboards_app(
     scheduler_enabled: Optional[bool] = None,
     oidc: Optional[OidcClient] = None,
     posit_connect_auth: Optional[bool] = None,
+    brand: Optional[dict] = None,
 ) -> FastAPI:
     """Build the dashboards FastAPI app.
 
@@ -527,6 +529,17 @@ def create_dashboards_app(
             drive_client_factory=drive_client_factory,
         )
     publish_base_url = publish_base_url or os.getenv("CXD_PUBLISH_BASE_URL")
+    # Organisation brand lock: top-level spec keys (theme, colorScheme, fontName,
+    # background, ...) forced on every non-admin save and on every shared/embedded
+    # view. A malformed CXD_BRAND fails fast rather than silently not enforcing.
+    if brand is None and os.getenv("CXD_BRAND"):
+        try:
+            brand = json.loads(os.getenv("CXD_BRAND"))
+        except ValueError as exc:
+            raise ValueError("CXD_BRAND must be a JSON object: %s" % exc)
+    if brand is not None and not isinstance(brand, dict):
+        raise ValueError("CXD_BRAND must be a JSON object of top-level spec keys")
+    brand = brand or None
     # Served-app runtime config (injected into index.html at serve time).
     canvasxpress_url = (canvasxpress_url or os.getenv("CXD_CANVASXPRESS_URL")
                         or DEFAULT_CANVASXPRESS_URL)
@@ -985,7 +998,9 @@ def create_dashboards_app(
                 "sso": bool(request.session.get("sso")),
                 "permissions": sorted(permissions_of(user)),
                 "groups": governance.groups_of(user),
-                "roles": governance.roles_of(user) if user else []}
+                "roles": governance.roles_of(user) if user else [],
+                "brand": brand,
+                "brandLocked": bool(brand) and not user_is_admin(user)}
 
     # ---- admin: user management (gated by CXD_ADMINS) ----
     @app.get("/api/admin/users")
@@ -1138,6 +1153,8 @@ def create_dashboards_app(
             raise HTTPException(status_code=403, detail="Your role does not allow this: "
                                 + PERMISSIONS["dashboard.create"].lower())
         _unpin_dataset_owners(spec, target)
+        if brand and not user_is_admin(user):
+            apply_brand(spec, brand)
         note(request, target=spec["id"], owner=target,
              created=store.get_summary(target, spec["id"]) is None, lock=lock)
         saved = store.save_dashboard(target, spec, _now_iso())
@@ -1230,18 +1247,34 @@ def create_dashboards_app(
         if summary is None:
             raise HTTPException(status_code=404, detail="No such dashboard")
         summary["share_url"] = _share_url(request, summary["share_token"], publish_base_url)
+        if summary.get("share_token"):
+            # Publish & embed: the share token is the stable publish handle, so
+            # saving the dashboard updates every embed in place.
+            summary["embed"] = embed_snippets(
+                (publish_base_url or str(request.base_url)).rstrip("/"), summary["share_token"])
         return {"dashboard": summary}
 
-    @app.get("/api/shared/{token}")
-    def get_shared(request: Request, token: str):
+    def resolve_shared(request: Request, token: str, panel: Optional[str] = None) -> dict:
+        """Load a share for this viewer: 404 unknown, 401 auth-gated without login.
+
+        With ``panel`` the spec is pruned to that one panel (single-chart embed)
+        BEFORE stored datasets resolve, so the other panels' data is never read.
+        The organisation brand (CXD_BRAND) is applied to every shared view.
+        """
         shared = store.get_shared(token)
         if not shared:
             raise HTTPException(status_code=404, detail="Share link not found")
         note(request, target=(shared.get("spec") or {}).get("id") or target_from({"token": token}),
-             owner=shared["owner"], visibility=shared["visibility"])
+             owner=shared["owner"], visibility=shared["visibility"], panel=panel)
         # auth-gated shares require *any* logged-in viewer; public shares are open.
         if shared["visibility"] == "auth" and not request.session.get("user"):
             raise HTTPException(status_code=401, detail="Login required to view this dashboard")
+        spec = shared["spec"]
+        if panel:
+            try:
+                spec = single_panel_spec(spec, panel)
+            except KeyError:
+                raise HTTPException(status_code=404, detail="No such panel in this dashboard")
         # Resolve kind:"dataset" sources into inline data using the OWNER's
         # datasets: the viewer has no session that could fetch /api/datasets/*,
         # and sharing means sharing the (read-only) data the spec binds to. The
@@ -1249,7 +1282,6 @@ def create_dashboards_app(
         # Row/column security applies with the viewer's principals (anonymous
         # when not signed in); a source pinned to another owner resolves only
         # if the sharing owner may read it.
-        spec = shared["spec"]
         viewer = request.session.get("user")
         for ref, source in list((spec.get("data") or {}).items()):
             if not (isinstance(source, dict) and source.get("kind") == "dataset"):
@@ -1266,7 +1298,48 @@ def create_dashboards_app(
                 data = secured(data, viewer, data_owner, source.get("store"), source.get("id"))
             if data is not None:
                 spec["data"][ref] = {"kind": "inline", "value": data}
-        return {"spec": spec, "readOnly": True, "owner": shared["owner"]}
+        if brand:
+            apply_brand(spec, brand)
+        return {"spec": spec, "owner": shared["owner"], "visibility": shared["visibility"]}
+
+    @app.get("/api/shared/{token}")
+    def get_shared(request: Request, token: str, panel: Optional[str] = None):
+        shared = resolve_shared(request, token, panel)
+        return {"spec": shared["spec"], "readOnly": True, "owner": shared["owner"]}
+
+    @app.get("/api/shared/{token}/embed")
+    def get_shared_embed(request: Request, token: str, panel: Optional[str] = None,
+                         height: int = 480):
+        """Copy-paste embed codes (iframe, <cxd-embed>, PNG fallback) for a share."""
+        resolve_shared(request, token, panel)
+        base = (publish_base_url or str(request.base_url)).rstrip("/")
+        return {"embed": embed_snippets(base, token, panel, height)}
+
+    # PNG fallback renders are expensive (headless Chromium): memoize by token,
+    # panel and the exact resolved spec, so a republish invalidates naturally.
+    shared_image_cache: dict = {}
+
+    @app.get("/api/shared/{token}/image.png")
+    def get_shared_image(request: Request, token: str, panel: Optional[str] = None):
+        """Static PNG of a shared dashboard / panel for RSS readers and email."""
+        shared = resolve_shared(request, token, panel)
+        key = (token, panel or "", hashlib.sha256(
+            json.dumps(shared["spec"], sort_keys=True, default=str).encode("utf-8")).hexdigest())
+        png = shared_image_cache.get(key)
+        if png is None:
+            try:
+                # Rendered anonymously (no session): the spec was already secured
+                # for this viewer, and an owner session could expose more rows.
+                png = snapshots.render(shared["spec"], None)
+            except SnapshotUnavailable as exc:
+                raise HTTPException(status_code=503, detail=str(exc))
+            except RuntimeError as exc:
+                raise HTTPException(status_code=502, detail=str(exc))
+            if len(shared_image_cache) > 64:
+                shared_image_cache.clear()
+            shared_image_cache[key] = png
+        return Response(content=png, media_type="image/png",
+                        headers={"Cache-Control": "public, max-age=300"})
 
     def resolve_dataset_store(name: Optional[str]) -> DatasetStore:
         """Resolve a (validated) named dataset store, 400/404 on a bad name."""
@@ -2065,6 +2138,39 @@ def create_dashboards_app(
         result = audit.verify()
         note(request, ok=result["ok"], checked=result["checked"], broken_at=result["broken_at"])
         return result
+
+    @app.post("/api/wizard/suggest")
+    async def wizard_suggest(request: Request):
+        """Data-first wizard, Visualize step: rank chart types for the checked data.
+
+        Delegates to the canvasxpress-mcp selector (structural + column-name
+        scoring; an LLM only breaks near-ties when the MCP server has one). Body ``{rows: [[headers…], [row…], …], intent?}``.
+        Returns ``{source: "mcp", suggestions: [{graphType, score, reason,
+        config}]}``, or ``{source: "none", suggestions: []}`` when the MCP server
+        is off or unreachable — the wizard then offers the full chart picker.
+        """
+        require_user(request)
+        body = await request.json() if _has_body(request) else {}
+        rows = (body or {}).get("rows")
+        if not isinstance(rows, list) or len(rows) < 2 or not isinstance(rows[0], list):
+            raise HTTPException(status_code=400, detail="rows must be [[headers…], [row…], …]")
+        intent = str((body or {}).get("intent") or "")[:500]
+        result = mcp_bridge.select_charts(rows, intent)
+        if not result:
+            return {"source": "none", "suggestions": []}
+        ranked = [result["top_recommendation"]] + list(result.get("alternatives") or [])
+        suggestions = []
+        for pick in ranked:
+            if not isinstance(pick, dict) or not pick.get("graphType"):
+                continue
+            suggestions.append({
+                "graphType": pick["graphType"],
+                "score": pick.get("score"),
+                "reason": pick.get("description") or "",
+                "config": pick.get("minimal_config") or {"graphType": pick["graphType"]},
+            })
+        note(request, suggestions=len(suggestions))
+        return {"source": "mcp", "suggestions": suggestions[:4]}
 
     @app.get("/api/llm/status")
     def llm_status(request: Request):

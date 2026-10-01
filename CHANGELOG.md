@@ -3,6 +3,37 @@
 Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 (`cxd_server`). Versions follow the package version.
 
+## Unreleased
+
+### New chart from data (data-first wizard)
+- **Dashboards → ＋ Chart from data:** Upload (file, paste or URL — parsed by the
+  CanvasXpress engine's `loadFile`, no new parser) → Check (per-column type,
+  missing values and flagged bad cells over a live table; transpose; decimal-comma
+  conversion) → Visualize (chart types ranked by the canvasxpress-mcp selector,
+  each drawn live; editorial theme preselected; full picker without the MCP) →
+  Publish (dataset + one-chart dashboard + share link + embed codes).
+- `POST /api/wizard/suggest` (via `mcp_bridge.select_charts`, bounded sample);
+  helpers `tableFromData`, `profileColumns`, `applyDecimalComma`, `wizardSpec`;
+  client `wizardSuggest`. New browser gate `npm run test:wizard`; new `shell-wizard`
+  UI case.
+
+### Publish & embed a chart
+- **Embed a whole dashboard or one chart** from its share token: a minimal-chrome
+  `embed.html` that grows its iframe to its content (`postMessage`), a `<cxd-embed>`
+  web component (`embed.js`), and a PNG fallback (`/api/shared/{token}/image.png`)
+  for RSS and email, rendered anonymously through the snapshot renderer and cached.
+- `GET /api/shared/{token}?panel=…` prunes to one panel and its source dependencies
+  **before** datasets are read; `GET /api/shared/{token}/embed` returns the codes;
+  the share response carries whole-dashboard codes. Client: `loadShared(token,
+  {panel})`, `embedCodes(token, {panel, height})`.
+- The builder's share box gains an **Embed** picker with copy buttons. Saving
+  republishes every embed in place (same URL; every save is a version).
+- **Organisation brand lock:** `CXD_BRAND` forces top-level spec keys (theme,
+  colorScheme, fontName, background, …) on non-admin saves and on every shared
+  view; the builder greys out those controls.
+- The builder's theme list includes the engine's new `editorial` theme.
+- New browser gate `npm run test:embed` (real server + cross-origin host page).
+
 ## 0.11.0 — 2026-09-29
 
 ### One look with CanvasXpress (UI design system)
