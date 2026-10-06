@@ -24,12 +24,15 @@
  *    `relationships`, `markingMode`, `type:"filters"` panels, `filterSchemes`.
  *  - `1.2` — `kind:"live"` (streaming) sources: `url`, `window`, `variables`,
  *    `initial`.
+ *  - `1.3` — source `calculatedFields`.
+ *  - `1.4` — per-panel `actions` (drill-through): `setParam` / `setFilter` /
+ *    `focusPanel` on a mark event, generalizing `clickParam` / `clickField`.
  *
  * @module spec
  */
 
 /** @type {string} The format version this library writes. */
-export var DASHBOARD_SCHEMA_VERSION = '1.3';
+export var DASHBOARD_SCHEMA_VERSION = '1.4';
 
 /** @type {string} The URL of the published JSON Schema. */
 export var DASHBOARD_SCHEMA_URL = 'https://canvasxpress.org/schema/dashboard.schema.json';
@@ -58,6 +61,12 @@ export var MIGRATIONS = [
     from: '1.2',
     to: '1.3',
     description: 'Additive: source calculatedFields (no rewrite)',
+    up: function (spec) { return spec; }
+  },
+  {
+    from: '1.3',
+    to: '1.4',
+    description: 'Additive: per-panel actions (drill-through) (no rewrite)',
     up: function (spec) { return spec; }
   }
 ];

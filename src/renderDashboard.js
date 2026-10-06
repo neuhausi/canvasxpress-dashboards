@@ -655,23 +655,56 @@ export function renderDashboard(spec, target, options) {
    * @returns {object} The events object to hand to the CanvasXpress instance.
    * @private
    */
+  // Run one declarative click action (spec 1.4 drill-through) against a clicked mark.
+  // setParam reuses the clickParam path; setFilter writes a values predicate into the
+  // global filter model; focusPanel scrolls the target panel into view.
+  function runClickAction(action, clicked) {
+    if (!action) return;
+    if (action.setParam && action.setParam.name) {
+      var pv = extractClickValue(clicked, action.setParam.field);
+      if (pv != null) applyParamChange(action.setParam.name, pv);
+    } else if (action.setFilter && action.setFilter.dataRef && action.setFilter.field) {
+      var fv = extractClickValue(clicked, action.setFilter.field);
+      if (fv != null) setFilterPredicate(action.setFilter.dataRef, action.setFilter.field, { values: [String(fv)] });
+    } else if (action.focusPanel) {
+      focusPanelById(action.focusPanel);
+    }
+  }
+
+  // Scroll a panel into view by its id — the focusPanel action.
+  function focusPanelById(id) {
+    var c = cellByPanel[id];
+    if (c && c.cell && c.cell.root && typeof c.cell.root.scrollIntoView === 'function') {
+      c.cell.root.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
   function paramClickEvents(panel) {
     var events = (panel && panel.events) || {};
     var clicks = !!(panel && panel.clickParam);
+    // Declarative drill-through actions (spec 1.4), run on a mark click.
+    var clickActions = (panel && Array.isArray(panel.actions))
+      ? panel.actions.filter(function (a) { return a && (a.on == null || a.on === 'click'); })
+      : [];
     // Every bound panel reports its selections: related sources are marked
     // through the relationship graph, and same-source panels shown in the other
     // orientation (transposed) — which the engine's own broadcast cannot reach.
     var marks = !!(panel && panel.dataRef);
-    if (!clicks && !marks) return events;
+    if (!clicks && !clickActions.length && !marks) return events;
     var merged = {};
     for (var key in events) {
       if (Object.prototype.hasOwnProperty.call(events, key)) merged[key] = events[key];
     }
-    if (clicks) {
+    if (clicks || clickActions.length) {
       var authorClick = events.click;
       merged.click = function (clicked, mouseEvent, target) {
-        var value = extractClickValue(clicked, panel.clickField);
-        if (value != null) applyParamChange(panel.clickParam, value);
+        if (clicks) {
+          var value = extractClickValue(clicked, panel.clickField);
+          if (value != null) applyParamChange(panel.clickParam, value);
+        }
+        for (var ai = 0; ai < clickActions.length; ai++) {
+          runClickAction(clickActions[ai], clicked);
+        }
         if (typeof authorClick === 'function') authorClick.call(this, clicked, mouseEvent, target);
       };
     }

@@ -32,4 +32,4 @@ export { tableFromData, profileColumns, applyDecimalComma, wizardSpec } from './
 export { transposeCxData } from './join.js';
 
 /** @type {string} Package version. */
-export var version = '0.11.0';
+export var version = '0.12.0';

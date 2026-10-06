@@ -206,6 +206,40 @@ export function validateSpec(spec) {
           errors.push(at + '.clickParam "' + panel.clickParam + '" has no matching entry in spec.params');
         }
       }
+      // Drill-through actions (spec 1.4): setParam.name in params, setFilter.dataRef in
+      // data, focusPanel is a panel id.
+      if (panel.actions != null) {
+        if (!Array.isArray(panel.actions)) {
+          errors.push(at + '.actions must be an array');
+        } else {
+          panel.actions.forEach(function (action, ai) {
+            var aAt = at + '.actions[' + ai + ']';
+            if (action == null || typeof action !== 'object') {
+              errors.push(aAt + ' must be an object');
+              return;
+            }
+            if (action.setParam != null) {
+              if (action.setParam.name == null) {
+                errors.push(aAt + '.setParam.name is required');
+              } else if (spec.params == null || !hasOwn(spec.params, action.setParam.name)) {
+                errors.push(aAt + '.setParam.name "' + action.setParam.name + '" has no matching entry in spec.params');
+              }
+            }
+            if (action.setFilter != null) {
+              if (action.setFilter.dataRef == null) {
+                errors.push(aAt + '.setFilter.dataRef is required');
+              } else if (spec.data == null || !hasOwn(spec.data, action.setFilter.dataRef)) {
+                errors.push(aAt + '.setFilter.dataRef "' + action.setFilter.dataRef + '" has no matching entry in spec.data');
+              }
+            }
+            if (action.focusPanel != null) {
+              if (spec.panels == null || !hasOwn(spec.panels, action.focusPanel)) {
+                errors.push(aAt + '.focusPanel "' + action.focusPanel + '" has no matching entry in spec.panels');
+              }
+            }
+          });
+        }
+      }
     });
   }
 

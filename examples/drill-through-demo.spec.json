@@ -1,0 +1,76 @@
+{
+  "id": "drill-through-demo",
+  "title": "Drill-through Actions",
+  "theme": "auto",
+  "params": {
+    "region": "North"
+  },
+  "layout": {
+    "cols": 12,
+    "rowHeight": 40,
+    "gap": 12,
+    "items": [
+      { "panel": "intro", "x": 0, "y": 0, "w": 12, "h": 2 },
+      { "panel": "region-bar", "x": 0, "y": 2, "w": 6, "h": 8 },
+      { "panel": "detail", "x": 6, "y": 2, "w": 6, "h": 8 }
+    ]
+  },
+  "data": {
+    "sales": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": ["Revenue"],
+          "smps": ["r1", "r2", "r3", "r4", "r5", "r6"],
+          "data": [[120, 90, 150, 80, 110, 70]]
+        },
+        "x": {
+          "Region": ["North", "North", "South", "South", "East", "East"],
+          "State": ["NY", "MA", "GA", "FL", "OH", "MI"]
+        }
+      }
+    },
+    "detail": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": ["Orders"],
+          "smps": ["NY", "MA", "GA", "FL", "OH", "MI"],
+          "data": [[40, 32, 55, 28, 38, 24]]
+        },
+        "x": {
+          "Region": ["North", "North", "South", "South", "East", "East"]
+        }
+      }
+    }
+  },
+  "panels": {
+    "intro": {
+      "type": "text",
+      "html": "<div style=\"font-weight:700;font-size:22px\">Drill-through Actions</div><div style=\"font-size:16px;color:var(--cxd-muted)\">Click a region bar: it sets the <code>region</code> parameter, filters the detail source to that region, and scrolls the detail panel into view (spec 1.4 actions).</div>"
+    },
+    "region-bar": {
+      "title": "Revenue by Region",
+      "dataRef": "sales",
+      "config": {
+        "graphType": "Bar",
+        "groupingFactors": ["Region"],
+        "summaryType": "sum",
+        "title": false
+      },
+      "actions": [
+        { "on": "click", "setParam": { "name": "region", "field": "Region" } },
+        { "on": "click", "setFilter": { "dataRef": "detail", "field": "Region" } },
+        { "on": "click", "focusPanel": "detail" }
+      ]
+    },
+    "detail": {
+      "title": "Orders by State",
+      "dataRef": "detail",
+      "config": {
+        "graphType": "Bar",
+        "title": false
+      }
+    }
+  }
+}

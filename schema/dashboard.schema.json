@@ -555,6 +555,35 @@
         "clickField": {
           "type": "string",
           "description": "Graph panels: which annotation/field of the clicked mark supplies the clickParam value (defaults to the clicked sample name)."
+        },
+        "actions": {
+          "type": "array",
+          "description": "Graph panels: declarative drill-through run on a mark event. Each action fires on 'click' and does one of: setParam (set a dashboard parameter and re-query, like clickParam/clickField), setFilter (write a values predicate into the global filter model for a data source), or focusPanel (scroll/flash another panel into view).",
+          "items": {
+            "type": "object",
+            "required": ["on"],
+            "additionalProperties": true,
+            "properties": {
+              "on": { "type": "string", "enum": ["click"] },
+              "setParam": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "field": { "type": "string" }
+                }
+              },
+              "setFilter": {
+                "type": "object",
+                "required": ["dataRef", "field"],
+                "properties": {
+                  "dataRef": { "type": "string" },
+                  "field": { "type": "string" }
+                }
+              },
+              "focusPanel": { "type": "string" }
+            }
+          }
         }
       }
     },

@@ -307,6 +307,10 @@ export function updatePanel(spec, panelId, changes) {
     if (changes.clickField) panel.clickField = changes.clickField;
     else delete panel.clickField;
   }
+  if (Object.prototype.hasOwnProperty.call(changes, 'actions')) {
+    if (Array.isArray(changes.actions) && changes.actions.length) panel.actions = changes.actions;
+    else delete panel.actions;
+  }
   return next;
 }
 

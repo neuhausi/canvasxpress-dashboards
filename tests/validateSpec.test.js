@@ -346,6 +346,38 @@ test('source calculatedFields: formula and bin shapes are checked', function () 
   assert.ok(validateSpec(base([{ name: 'X', formula: '1' }], 'live')).errors.some(function (e) { return /not supported on a live source/.test(e); }));
 });
 
+test('drill-through actions: setParam/setFilter/focusPanel references are checked', function () {
+  var base = function (actions) {
+    return {
+      id: 'd', layout: { cols: 12, items: [] },
+      data: { sales: { kind: 'inline', value: { y: {} } } },
+      params: { region: 'West' },
+      panels: {
+        bar: { dataRef: 'sales', config: { graphType: 'Bar' }, actions: actions },
+        detail: { dataRef: 'sales', config: { graphType: 'Bar' } }
+      }
+    };
+  };
+  // Valid: a param that exists, a data source that exists, a panel that exists.
+  assert.deepEqual(validateSpec(base([
+    { on: 'click', setParam: { name: 'region', field: 'Region' } },
+    { on: 'click', setFilter: { dataRef: 'sales', field: 'Region' } },
+    { on: 'click', focusPanel: 'detail' }
+  ])).errors, []);
+  // Invalid references.
+  var errors = validateSpec(base([
+    { on: 'click', setParam: { name: 'ghostParam' } },
+    { on: 'click', setFilter: { dataRef: 'ghostData', field: 'Region' } },
+    { on: 'click', focusPanel: 'ghostPanel' }
+  ])).errors;
+  ['.setParam.name "ghostParam" has no matching entry in spec.params',
+    '.setFilter.dataRef "ghostData" has no matching entry in spec.data',
+    '.focusPanel "ghostPanel" has no matching entry in spec.panels'].forEach(function (fragment) {
+    assert.ok(errors.some(function (e) { return e.indexOf(fragment) > -1; }), fragment + ' in ' + JSON.stringify(errors));
+  });
+  assert.ok(validateSpec(base({ on: 'click' })).errors.some(function (e) { return /actions must be an array/.test(e); }));
+});
+
 test('pushdown: allowed on any source except live (it runs in the browser when there is no database)', function () {
   var spec = function (src) { return { id: 'd', layout: { cols: 12, items: [] }, data: { s: src }, panels: {} }; };
   var q = { groupBy: ['region'], measures: [{ fn: 'count' }] };

@@ -5,6 +5,15 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Drill-through actions (spec 1.4)
+- **Per-panel `actions`:** graph panels can declare `actions` — on a mark click,
+  `setParam` (set a dashboard parameter and re-query, generalizing
+  `clickParam`/`clickField`), `setFilter` (`{dataRef, field}` → write a `values`
+  predicate into the global filter model so the Filters panel and cross-source marking
+  follow), or `focusPanel` (scroll a target panel into view). Additive spec **1.4**
+  (`clickParam`/`clickField` still accepted). Schema, validator (name ∈ params, dataRef ∈
+  data, focusPanel ∈ panels) and builder model updated.
+
 ### New chart from data (data-first wizard)
 - **Dashboards → ＋ Chart from data:** Upload (file, paste or URL — parsed by the
   CanvasXpress engine's `loadFile`, no new parser) → Check (per-column type,
