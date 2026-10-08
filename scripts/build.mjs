@@ -97,6 +97,11 @@ if (!outOverride) try {
   mkdirSync(serverStatic, { recursive: true });
   writeFileSync(join(serverStatic, 'canvasxpress-dashboards.umd.js'), umd);
   writeFileSync(join(serverStatic, 'index.html'), buildAppShell());
+  // The website-style preset bridge the shell links app-root-relative (see
+  // examples/builder.html): copy both next to the shell so the served app finds them.
+  ['site-themes.css', 'site-theme.js'].forEach(function (f) {
+    writeFileSync(join(serverStatic, f), readFileSync(join(root, 'examples', f)));
+  });
 } catch (e) {
   // Server package may be absent in a slim checkout — non-fatal.
 }

@@ -735,6 +735,22 @@ def _shared_bundle():
                         media_type="text/javascript")
 
 
+# The website-style preset bridge (examples/site-themes.css, generated from the
+# canvasxpress.org tokens, + examples/site-theme.js). builder.html links both
+# app-root-relative like the bundle, so they must resolve at / and under a
+# /dashboards/ subpath; the packaged server gets copies in its static/ dir.
+@app.get("/site-themes.css", include_in_schema=False)
+def _site_themes_css():
+    from fastapi.responses import FileResponse
+    return FileResponse(os.path.join(HERE, "site-themes.css"), media_type="text/css")
+
+
+@app.get("/site-theme.js", include_in_schema=False)
+def _site_theme_js():
+    from fastapi.responses import FileResponse
+    return FileResponse(os.path.join(HERE, "site-theme.js"), media_type="text/javascript")
+
+
 app.mount("/", StaticFiles(directory=ROOT, html=True), name="repo")
 
 

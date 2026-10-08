@@ -54,6 +54,7 @@ from .snapshot import SnapshotRenderer, SnapshotUnavailable
 from .embed import apply_brand, embed_snippets, single_panel_spec
 from .sqldashboard import open_dashboard_store
 from .store import DashboardStore
+from .spec_features import spec_features
 from .stores import StoreRegistry
 from .validate_spec import validate_bindings, validate_spec
 
@@ -1131,6 +1132,15 @@ def create_dashboards_app(
             if is_disposable(row["owner"], row["id"]):
                 row["disposable"] = True
         return {"dashboards": rows}
+
+    @app.get("/api/dashboards/features")
+    def dashboard_features(request: Request):
+        """Building blocks each listed dashboard uses, keyed "owner/id" (read-only; list filter chips)."""
+        out = {}
+        for row in list_dashboards(request)["dashboards"]:
+            spec = store.get_dashboard(row["owner"], row["id"])
+            out[row["owner"] + "/" + row["id"]] = spec_features(spec)
+        return {"features": out}
 
     @app.post("/api/dashboards")
     async def save_dashboard(request: Request, owner: Optional[str] = None, lock: Optional[int] = None):

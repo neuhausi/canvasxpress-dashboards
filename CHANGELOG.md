@@ -5,6 +5,16 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Follow the website's style preset
+- **Site-theme bridge:** the app shell now follows the style preset a visitor picks on
+  canvasxpress.org (navbar palette icon; same-origin `localStorage` `cx-site-theme`, or
+  `?theme=<name>`). `examples/site-themes.css` is GENERATED from the website's design
+  tokens (`canvas-ai/tools/site-theme/gen-dashboards-themes.py`) and maps each preset
+  onto the `--cx-ui-*` roles the chrome is built on; `examples/site-theme.js` applies the
+  pick before paint and forces `data-cx-ui-theme="dark"` for the always-dark presets.
+  No pick (or "classic") = the engine look, unchanged. `scripts/build.mjs` copies both
+  next to the served shell; `examples/serve.py` routes them app-root-relative.
+
 ### Drill-through actions (spec 1.4)
 - **Per-panel `actions`:** graph panels can declare `actions` — on a mark click,
   `setParam` (set a dashboard parameter and re-query, generalizing
