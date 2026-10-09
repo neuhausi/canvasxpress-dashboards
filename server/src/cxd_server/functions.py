@@ -202,6 +202,7 @@ def _execute(request: Dict[str, Any], config: FunctionsConfig) -> Any:
         try:
             proc = subprocess.run(
                 config.wrapper() + command, cwd=workdir, env=env, capture_output=True,
+                stdin=subprocess.DEVNULL,
                 timeout=config.timeout, preexec_fn=_limits(config) if os.name == "posix" else None,
             )
         except subprocess.TimeoutExpired:
