@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+"""Standalone launcher for the CanvasXpress Cloud token-pool admin CLI.
+
+Runs ``cxd_server.billing:main`` WITHOUT importing the full server package
+(which pulls in FastAPI and the rest), so a pool can be filled or inspected on a
+box that only needs the billing helper. On a fully-installed server you can use
+the ``cxd-pool`` console script instead — both reach the same CLI.
+
+    bin/cxd-pool fill --tier pro --count 100
+    bin/cxd-pool status
+
+Needs CXD_TOKEN_SIGNING_KEY (or SESSION_SECRET) and respects CXD_TOKEN_POOL.
+"""
+import importlib.util
+import os
+import sys
+
+_here = os.path.dirname(os.path.abspath(__file__))
+_billing = os.path.join(_here, "..", "src", "cxd_server", "billing.py")
+_spec = importlib.util.spec_from_file_location("cxd_billing_cli", _billing)
+_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_mod)
+
+if __name__ == "__main__":
+    sys.exit(_mod.main())

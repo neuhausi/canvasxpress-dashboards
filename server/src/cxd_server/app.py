@@ -36,6 +36,8 @@ from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import mcp_bridge
+from . import billing
+from .billing import EntitlementStore, TokenPool
 from .datasets import DatasetStore, reshape_to_cx, filter_cx_data
 from .engine import DEFAULT_CANVASXPRESS_URL, EngineMiddleware, engine_is_default
 from .audit import (AuditLog, NullAuditLog, SqlAuditLog, SqliteAuditLog, action_for, iter_actions,
@@ -628,6 +630,20 @@ def create_dashboards_app(
     # Electronic records: dashboard version history and e-signatures.
     records = RecordStore(governance._db)
     app.state.records = records
+
+    # CanvasXpress Cloud entitlements (the hosted-platform paywall). This gates
+    # THIS hosted instance only; the server is MIT, so a self-hoster is free and
+    # unmetered by design. See cxd_server/billing.py + the monetization plan.
+    _bill_dir = os.getenv("CXD_BILLING_DIR", os.path.dirname(os.path.abspath(db_path)) or ".")
+    entitlements = EntitlementStore(os.getenv("CXD_ENTITLEMENTS",
+                                              os.path.join(_bill_dir, "entitlements.json")))
+    token_pool = TokenPool(os.getenv("CXD_TOKEN_POOL",
+                                     os.path.join(_bill_dir, "token-pool.json")))
+    app.state.entitlements = entitlements
+    app.state.token_pool = token_pool
+    # Paywall is OFF unless explicitly enabled (so self-hosters and dev are never
+    # gated). Set CXD_PAYWALL=on only on the hosted Cloud instance.
+    paywall_on = (os.getenv("CXD_PAYWALL", "off").lower() in ("on", "1", "true", "yes"))
     signature_meanings = [m.strip() for m in (os.getenv("CXD_SIGNATURE_MEANINGS")
                                                or "Authored,Reviewed,Approved").split(",")
                           if m.strip()]
@@ -758,6 +774,51 @@ def create_dashboards_app(
             raise HTTPException(status_code=403, detail="Your role does not allow this: %s"
                                 % PERMISSIONS[permission].lower())
         return user
+
+    # ---- CanvasXpress Cloud entitlements (hosted paywall; no-op when off) ----
+
+    def entitlement_tier(user: Optional[str]) -> str:
+        """The paid tier for ``user`` on this hosted instance. Admins and the
+        shipped-examples owner are always treated as Pro; everyone else reads the
+        entitlement store. Returns ``community`` when the paywall is off so no
+        path is ever blocked on a self-hosted/dev server."""
+        if not paywall_on:
+            return billing.TIER_ENTERPRISE  # paywall off: full access, never gated
+        if user and (user_is_admin(user) or user == examples_owner):
+            return billing.TIER_ENTERPRISE
+        return entitlements.get(user).get("tier", billing.TIER_COMMUNITY) if user \
+            else billing.TIER_COMMUNITY
+
+    def has_pro(user: Optional[str]) -> bool:
+        return entitlement_tier(user) in (billing.TIER_PRO, billing.TIER_ENTERPRISE)
+
+    def enforce_live_source_gate(user: Optional[str], spec: dict) -> None:
+        """Block saving/opening a dashboard that binds a live/streaming source
+        unless the user is Pro. No-op when the paywall is off. The free library
+        and static dashboards are never gated — only live data is a Pro feature."""
+        if not paywall_on or has_pro(user):
+            return
+        for s in spec_sources(spec) if isinstance(spec, dict) else []:
+            if s.get("kind") == "live":
+                raise HTTPException(status_code=402, detail=(
+                    "Live data connectors are a CanvasXpress Cloud Pro feature. "
+                    "Upgrade at /cloud.html — static and file-based dashboards "
+                    "stay free."))
+
+    def enforce_free_dashboard_limit(user: str, dashboard_id: str) -> None:
+        """Hold Community accounts to the free saved-dashboard count. No-op when
+        the paywall is off or the user is Pro. Updates to an existing dashboard
+        are always allowed; only creating beyond the limit is blocked."""
+        if not paywall_on or has_pro(user):
+            return
+        if store.get_summary(user, dashboard_id) is not None:
+            return  # updating an existing one
+        existing = [d for d in store.list_dashboards(user)] if hasattr(store, "list_dashboards") else []
+        limit = billing.COMMUNITY_LIMITS["saved_dashboards"]
+        if len(existing) >= limit:
+            raise HTTPException(status_code=402, detail=(
+                "The free plan includes %d saved dashboards. Upgrade to Pro at "
+                "/cloud.html for unlimited dashboards." % limit))
 
     def store_key(name: Optional[str]) -> str:
         """A dataset store name as grants and policies key it (default resolved)."""
@@ -896,6 +957,95 @@ def create_dashboards_app(
             except OidcError:
                 logout_url = None
         return {"user": None, "logout_url": logout_url}
+
+    # ---- CanvasXpress Cloud billing routes (hosted instance only) ----
+
+    @app.get("/billing/status")
+    def billing_status(request: Request):
+        """The signed-in user's plan + AI credit balance + free-tier limits.
+        Drives the account UI and the Pro/upgrade prompts."""
+        user = require_user(request)
+        rec = entitlements.get(user)
+        return {
+            "paywall": paywall_on,
+            "tier": entitlement_tier(user),
+            "ai_credits": int(rec.get("ai_credits", 0)),
+            "limits": billing.COMMUNITY_LIMITS,
+            "pool_available": {t: token_pool.count_available(t)
+                               for t in billing.SELF_SERVE_TIERS} if user_is_admin(user) else None,
+        }
+
+    @app.post("/billing/paypal/webhook")
+    async def paypal_webhook(request: Request):
+        """PayPal subscription/payment webhook. Verifies the event against PayPal,
+        resolves the account from the event's ``custom_id``, then grants/revokes
+        the tier or tops up AI credits. Fails closed on an unverified event."""
+        body = await request.body()
+        if not billing.verify_paypal_webhook(request.headers, body):
+            raise HTTPException(status_code=400, detail="Webhook verification failed")
+        try:
+            event = json.loads(body.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            raise HTTPException(status_code=400, detail="Bad event body")
+        resource = (event.get("resource") or {})
+        # The checkout binds the account (and, for AI packs, the credit count) as
+        # custom_id on the subscription/order; parse it, then fall back to the
+        # PayPal subscriber email when no custom_id was set.
+        account, pack_credits = billing.parse_custom_id(resource.get("custom_id"))
+        if not account:
+            account = (resource.get("subscriber") or {}).get("email_address")
+        if not account:
+            return {"action": "ignored", "reason": "no account on event"}
+        pack = pack_credits or int(os.getenv("CXD_AI_PACK_CREDITS",
+                                             billing.DEFAULT_AI_PACK_CREDITS))
+        result = await run_in_threadpool(
+            billing.apply_webhook_event, event, account, token_pool, entitlements, pack)
+        note(request, billing=result.get("action"), account=account)
+        return result
+
+    @app.post("/billing/dev/grant")
+    async def billing_dev_grant(request: Request):
+        """Admin-only: grant a tier or AI credits without a real payment, for
+        sandbox testing before the PayPal webhook is live. Refuses on a server
+        where the paywall is off (nothing to grant)."""
+        admin = require_admin(request)
+        if not paywall_on:
+            raise HTTPException(status_code=409, detail="Paywall is off; nothing to grant")
+        payload = await request.json()
+        account = payload.get("account") or admin
+        tier = payload.get("tier")
+        credits = int(payload.get("credits", 0) or 0)
+        out = {}
+        if tier in billing.SELF_SERVE_TIERS:
+            token = token_pool.claim(tier, account)
+            if not token:
+                raise HTTPException(status_code=409, detail="Token pool exhausted for " + tier)
+            p = billing.verify_token(token) or {}
+            entitlements.set_tier(account, tier, token, expires=p.get("exp"))
+            out["granted"] = tier
+        if credits:
+            out["ai_credits"] = entitlements.add_credits(account, credits)
+        return out or {"action": "noop"}
+
+    @app.post("/billing/consume")
+    async def billing_consume(request: Request):
+        """Internal server-to-server AI credit meter (called by the MCP server).
+
+        Authenticated by the ``CXD_METER_KEY`` shared secret, not a session —
+        disabled (403) unless that key is configured. Decrements ``n`` prepaid AI
+        credits for ``account`` and reports whether there was balance. Keyed by
+        whatever opaque ``account`` id the caller sends (the MCP server passes its
+        ``api_key_id``)."""
+        meter_key = os.getenv("CXD_METER_KEY")
+        if not meter_key or request.headers.get("X-Cloud-Meter-Key") != meter_key:
+            raise HTTPException(status_code=403, detail="Metering not enabled")
+        payload = await request.json()
+        account = payload.get("account")
+        if not account:
+            raise HTTPException(status_code=400, detail="account required")
+        n = int(payload.get("n", 1) or 1)
+        ok = entitlements.consume_credit(account, n)
+        return {"ok": ok, "ai_credits": int(entitlements.get(account).get("ai_credits", 0))}
 
     def app_url(request: Request) -> str:
         return (publish_base_url or str(request.base_url)).rstrip("/") + "/"
@@ -1162,6 +1312,11 @@ def create_dashboards_app(
         if target == user and "dashboard.create" not in permissions_of(user):
             raise HTTPException(status_code=403, detail="Your role does not allow this: "
                                 + PERMISSIONS["dashboard.create"].lower())
+        # CanvasXpress Cloud paywall (hosted instance only; no-op when off):
+        # live-data connectors and the saved-dashboard count are Pro features.
+        if target == user:
+            enforce_free_dashboard_limit(user, spec["id"])
+        enforce_live_source_gate(user, spec)
         _unpin_dataset_owners(spec, target)
         if brand and not user_is_admin(user):
             apply_brand(spec, brand)
