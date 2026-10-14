@@ -8,7 +8,7 @@ from them on a schedule. Connection strings are stored ENCRYPTED and never sent
 to the browser by the connectors app.
 
 Enabled with ``CXD_CONNECTORS=on``. It needs the ``canvasxpress-connectors``
-package (0.6+, the ``[connectors]`` extra) and ``ENCRYPTION_KEY``: the Fernet
+package (0.8+, the ``[connectors]`` extra) and ``ENCRYPTION_KEY``: the Fernet
 key that encrypts every stored connection string. The key is never generated
 here: it is the only way to read the stored connections back, so the operator
 must own it (and back it up). Generate one with::
@@ -200,7 +200,10 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
     (``/api/connectors/credentials``, ``/sources-meta``, ``/source``, ``/schema``, ``/test``).
 
     :param app: The dashboards FastAPI app (with its session middleware).
-    :param db_path: The connectors store (SQLite) path.
+    :param db_path: The connectors store. A bare filesystem path (SQLite, as
+        before) or a database URL — ``sqlite://`` / ``postgresql://`` — so the
+        store can live in the same database as the rest of the deployment
+        (:func:`cx_connectors.sqlstore.open_store` dispatches on the scheme).
     :param encryption_key: ENCRYPTION_KEY (a Fernet key).
     :param seed: Optional ``seed(store, user)``, run when a user is bridged
         (e.g. to register demo sources).
@@ -218,14 +221,17 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
         raise RuntimeError("the connectors app needs a session secret: set SESSION_SECRET "
                            "(python -m cxd_server sets one for you)")
     try:
-        from cx_connectors.store import Store
+        from cx_connectors.sqlstore import open_store
         from cx_connectors.web.byo_app import create_byo_app
     except ImportError as exc:
-        raise RuntimeError("CXD_CONNECTORS=on needs canvasxpress-connectors 0.6+ "
+        raise RuntimeError("CXD_CONNECTORS=on needs canvasxpress-connectors 0.8+ "
                            "(pip install 'canvasxpress-dashboards-server[connectors]'): %s" % exc)
-    os.makedirs(os.path.dirname(os.path.abspath(db_path)) or ".", exist_ok=True)
+    # Only a bare filesystem path gets its directory created; a database URL
+    # (sqlite:// / postgresql://) addresses an existing server, never a local dir.
+    if not _is_store_url(db_path):
+        os.makedirs(os.path.dirname(os.path.abspath(db_path)) or ".", exist_ok=True)
     try:
-        store = Store(db_path, encryption_key)
+        store = open_store(db_path, encryption_key)
     except ValueError as exc:
         raise RuntimeError("ENCRYPTION_KEY is not a valid Fernet key (%s); %s" % (exc, _KEY_HINT))
 
@@ -393,8 +399,28 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
     app.add_api_route("/api/connectors/schema", schema, methods=["POST"], include_in_schema=False)
     app.add_api_route("/api/connectors/test", test_sql, methods=["POST"], include_in_schema=False)
     _before_root_mount(app, [r for r in app.router.routes if r not in before])
-    print("  [connectors] database sources enabled at /connectors (store: %s)" % db_path)
+    print("  [connectors] database sources enabled at /connectors (store: %s)"
+          % _store_location_label(db_path))
     return store
+
+
+def _is_store_url(target: str) -> bool:
+    """Whether ``target`` is a database URL (has a scheme) rather than a bare path."""
+    from urllib.parse import urlsplit
+
+    return bool(target) and bool(urlsplit(target).scheme)
+
+
+def _store_location_label(target: str) -> str:
+    """A credential-free label for the store, safe to log: a bare path as-is, a
+    URL reduced to ``scheme@host`` (never its password)."""
+    if not _is_store_url(target):
+        return target
+    from urllib.parse import urlsplit
+
+    parts = urlsplit(target)
+    scheme = (parts.scheme or "").split("+")[0]
+    return scheme + ("@" + parts.hostname if parts.hostname else "")
 
 
 def _before_root_mount(app: Any, routes: list) -> None:
@@ -414,8 +440,17 @@ def install_from_env(app: Any) -> Optional[Any]:
     """Install the integration when ``CXD_CONNECTORS`` is on (the launcher's
     hook). Misconfiguration raises, so it surfaces at startup.
 
+    With ``CXD_CONNECTORS_DEMO_SOURCES=on`` every bridged user is also seeded
+    with the package's demo database sources (:mod:`cxd_server.demo_sources`), so
+    a plain server-only deploy has something to chart from — the same seeding the
+    examples' dev launcher uses.
+
     :returns: The connectors ``Store``, or None when not enabled.
     """
     if not connectors_enabled():
         return None
-    return install_connectors(app, default_db_path(), os.environ.get("ENCRYPTION_KEY"))
+    seed = None
+    from . import demo_sources
+    if demo_sources.demo_sources_enabled():
+        seed = demo_sources.seed_demo_sources
+    return install_connectors(app, default_db_path(), os.environ.get("ENCRYPTION_KEY"), seed=seed)

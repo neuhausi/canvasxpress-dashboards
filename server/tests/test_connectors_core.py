@@ -42,7 +42,7 @@ def test_a_missing_package_is_a_clear_error(monkeypatch, tmp_path):
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", no_connectors)
-    with pytest.raises(RuntimeError, match=r"needs canvasxpress-connectors 0\.6\+.*\[connectors\]"):
+    with pytest.raises(RuntimeError, match=r"needs canvasxpress-connectors 0\.8\+.*\[connectors\]"):
         install_connectors(object(), str(tmp_path / "c.db"), "any-key", session_secret="s")
     monkeypatch.setenv("CXD_CONNECTORS", "off")
     assert install_from_env(object()) is None, "off: nothing installed"
@@ -208,3 +208,123 @@ def test_schema_route_403_without_a_viewer_session(app):
     r = client.post("/api/connectors/schema", json={"conn_url": _VIEWER_DBX})
     assert r.status_code == 403
     assert "signed-in viewer" in r.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Store backend: bare path vs. database URL (cx_connectors.sqlstore.open_store)
+# ---------------------------------------------------------------------------
+
+def test_store_target_is_classified_and_logged_without_credentials():
+    from cxd_server.connectors import _is_store_url, _store_location_label
+    assert _is_store_url("sqlite:///x.db") and _is_store_url("postgresql://h/db")
+    assert _is_store_url("postgresql+psycopg://h/db")
+    assert not _is_store_url("/var/lib/connectors.db") and not _is_store_url("connectors.db")
+    # A URL is logged as scheme@host only — never its password.
+    assert _store_location_label("postgresql://user:s3cret@db.host:5432/app") == "postgresql@db.host"
+    assert "s3cret" not in _store_location_label("postgresql://user:s3cret@db.host/app")
+    assert _store_location_label("/var/lib/connectors.db") == "/var/lib/connectors.db"
+
+
+def test_a_bare_path_store_creates_its_directory(tmp_path):
+    """A bare path still gets its parent directory created (as before)."""
+    pytest.importorskip("cx_connectors.sqlstore")
+    app = create_dashboards_app(store=DashboardStore(str(tmp_path / "dash.db")), session_secret="s",
+                                serve_static=False, dataset_store_uri="file://" + str(tmp_path / "ds"),
+                                scheduler_enabled=False)
+    install_connectors(app, str(tmp_path / "made" / "connectors.db"), generate_key(), session_secret="s")
+    assert (tmp_path / "made").is_dir()
+
+
+def test_schema_and_test_work_against_a_url_backed_store(tmp_path, warehouse):
+    """With the store itself addressed by a sqlite:// URL (open_store dispatch),
+    bridging and the wizard's schema / Test routes still work end-to-end."""
+    pytest.importorskip("cx_connectors.sqlstore")
+    app = create_dashboards_app(store=DashboardStore(str(tmp_path / "dash.db")), session_secret="s",
+                                serve_static=False, dataset_store_uri="file://" + str(tmp_path / "ds"),
+                                scheduler_enabled=False)
+    store_url = "sqlite:///" + str(tmp_path / "store.sqlite")
+    install_connectors(app, store_url, generate_key(), session_secret="s")
+    client = _bridged(app, "ann")
+    sql = "SELECT item, qty FROM stock ORDER BY item"
+    assert client.post("/connectors/api/sources",
+                       json={"name": "stock", "conn_url": warehouse, "sql": sql}).status_code == 200
+    r = client.post("/api/connectors/schema", json={"conn_url": warehouse})
+    assert r.status_code == 200 and any(t["name"] == "stock" for t in r.json()["tables"])
+    r = client.post("/api/connectors/test", json={"conn_url": warehouse, "sql": sql})
+    assert r.status_code == 200 and r.json()["rows"] == 3
+
+
+# ---------------------------------------------------------------------------
+# Packaged demo sources (cxd_server.demo_sources)
+# ---------------------------------------------------------------------------
+
+def test_demo_sources_enabled_flag():
+    from cxd_server.demo_sources import demo_sources_enabled
+    assert demo_sources_enabled({"CXD_CONNECTORS_DEMO_SOURCES": "on"})
+    assert not demo_sources_enabled({}) and not demo_sources_enabled({"CXD_CONNECTORS_DEMO_SOURCES": "off"})
+
+
+def test_demo_databases_are_available_and_read_only(tmp_path):
+    from cxd_server.demo_sources import demo_db_url, ensure_demo_db
+    for name in ("inventory.db", "sales.db"):
+        path = ensure_demo_db(name)
+        assert os.path.isfile(path)
+        assert demo_db_url(name) == "sqlite:///file:" + path + "?mode=ro&uri=true"
+    # The read-only copy rejects writes at the driver.
+    inv = ensure_demo_db("inventory.db")
+    conn = sqlite3.connect("file:" + inv + "?mode=ro", uri=True)
+    try:
+        with pytest.raises(sqlite3.OperationalError):
+            conn.execute("INSERT INTO product_inventory VALUES ('x', 'y', 'z', 1, 1.0)")
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def test_seed_adds_once_updates_stale_and_leaves_user_sources_alone():
+    sqlstore = pytest.importorskip("cx_connectors.sqlstore")
+    from cxd_server.demo_sources import demo_db_url, seed_demo_sources
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as d:
+        store = sqlstore.open_store(os.path.join(d, "c.db"), generate_key())
+        # Added once.
+        seed_demo_sources(store, "ann")
+        assert set(store.list_sources("ann")) >= {"inventory", "furniture-only"}
+        current = demo_db_url("inventory.db")
+        assert store.get_source("ann", "inventory")["conn_url"] == current
+        # Idempotent: a second pass adds no duplicates and changes nothing.
+        before = sorted(store.list_sources("ann"))
+        seed_demo_sources(store, "ann")
+        assert sorted(store.list_sources("ann")) == before
+
+        # A demo source whose stored path drifted (a different cxd-demo-data path,
+        # e.g. a prior deploy) is re-saved to the current URL.
+        stale = "sqlite:///file:/tmp/old/cxd-demo-data/inventory.db?mode=ro&uri=true"
+        store.save_source("ann", "inventory", stale, "SELECT 1")
+        seed_demo_sources(store, "ann")
+        assert store.get_source("ann", "inventory")["conn_url"] == current
+
+        # A source the USER created that happens to share a demo name (its URL is
+        # not a demo-copy URL) is never modified.
+        mine = "sqlite:///file:/home/ann/my.db?mode=ro&uri=true"
+        store.save_source("ann", "furniture-only", mine, "SELECT 2")
+        seed_demo_sources(store, "ann")
+        kept = store.get_source("ann", "furniture-only")
+        assert kept["conn_url"] == mine and kept["sql"] == "SELECT 2"
+
+
+def test_launcher_hook_seeds_demo_sources_when_enabled(monkeypatch, tmp_path):
+    pytest.importorskip("cx_connectors.sqlstore")
+    monkeypatch.setenv("CXD_CONNECTORS", "on")
+    monkeypatch.setenv("CXD_CONNECTORS_DB", str(tmp_path / "c.db"))
+    monkeypatch.setenv("CXD_CONNECTORS_DEMO_SOURCES", "on")
+    monkeypatch.setenv("ENCRYPTION_KEY", generate_key())
+    monkeypatch.setenv("SESSION_SECRET", "s")
+    app = create_dashboards_app(store=DashboardStore(str(tmp_path / "dash.db")), session_secret="s",
+                                serve_static=False, dataset_store_uri="file://" + str(tmp_path / "ds"),
+                                scheduler_enabled=False)
+    assert install_from_env(app) is not None
+    client = _bridged(app, "ann")
+    names = {s["name"] for s in client.get("/api/connectors/sources-meta").json()["sources"]}
+    assert {"inventory", "furniture-only"} <= names

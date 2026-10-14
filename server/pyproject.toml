@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "canvasxpress-dashboards-server"
-version = "0.13.0"
+version = "0.14.0"
 description = "Persistence & sharing service for canvasxpress-dashboards specs — save/load/share dashboards behind your own origin, mirroring the canvasxpress-connectors auth model."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -16,7 +16,10 @@ keywords = ["canvasxpress", "dashboard", "visualization", "persistence", "sharin
 dependencies = []
 
 [project.optional-dependencies]
-web = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "itsdangerous>=2.1", "python-dotenv>=1.0"]
+web = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "itsdangerous>=2.1", "python-dotenv>=1.0",
+       # httpx is the async client the main app uses to forward data-function runs to a
+       # standalone runtime (CXD_FUNCTIONS_RUNTIME_URL). It is also FastAPI's TestClient dep.
+       "httpx>=0.27"]
 s3 = ["boto3>=1.34"]
 # SQL object + dashboard stores (postgres:// / sqlite://). SQLite needs no
 # driver; for Postgres add a driver too — or use the `postgres` extra below,
@@ -40,11 +43,16 @@ sso = ["PyJWT[crypto]>=2.8"]
 # Per-user database sources + scheduled refresh from them (CXD_CONNECTORS=on,
 # ENCRYPTION_KEY required). Add the driver extra for your database too, e.g.
 # canvasxpress-connectors[postgres].
-connectors = ["canvasxpress-connectors[web,sql]>=0.6"]
+# 0.8+: the integration opens its store with cx_connectors.sqlstore.open_store (so
+# CXD_CONNECTORS_DB may be a bare path, a sqlite:// URL, or a postgresql:// URL) and
+# uses cx_connectors.databricks_oauth. Add the driver extra for your database too, e.g.
+# canvasxpress-connectors[postgres].
+connectors = ["canvasxpress-connectors[web,sql]>=0.8"]
 # Databricks "sign in as the viewer" for connector sources when the app runs on
-# Posit Connect (databricks://posit-connect@host...). Needs connectors 0.7+ (the
-# cx_connectors.databricks_oauth resolver) and its posit-sdk extra. See connectors.py.
-posit-connect = ["canvasxpress-connectors[web,sql,posit-connect]>=0.7"]
+# Posit Connect (databricks://posit-connect@host...). Uses the cx_connectors
+# databricks_oauth resolver and open_store, so it needs the same 0.8+ as above
+# plus its posit-sdk extra. See connectors.py.
+posit-connect = ["canvasxpress-connectors[web,sql,posit-connect]>=0.8"]
 dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6", "pandas>=2.0", "PyJWT[crypto]>=2.8"]
 
 [project.urls]
@@ -56,6 +64,10 @@ cxd-pool = "cxd_server.billing:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cxd_server"]
+# Ship the small demo SQLite databases so the built-in connectors integration can
+# seed demo sources on any install (CXD_CONNECTORS_DEMO_SOURCES=on), not just the
+# examples/ dev launcher.
+artifacts = ["src/cxd_server/demo_data/*.db"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

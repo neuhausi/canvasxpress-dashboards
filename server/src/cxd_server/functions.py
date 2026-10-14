@@ -60,6 +60,16 @@ from typing import Any, Dict, List, Optional
 LANGUAGES = ("python", "r")
 MODES = ("off", "admin", "users")
 
+# The main app forwards each authorized run to a standalone runtime
+# (CXD_FUNCTIONS_RUNTIME_URL), proving itself with this shared secret in this
+# header. Defined here so both the forwarder (below) and the runtime app
+# (functions_app) share one definition. The token is never logged.
+RUNTIME_TOKEN_HEADER = "X-Cxd-Runtime-Token"
+RUNTIME_TOKEN_ENV = "CXD_FUNCTIONS_RUNTIME_TOKEN"
+# Added to the runtime's own timeout when the main app forwards, so the HTTP wait
+# always outlasts the runtime's wall-clock limit (which returns 504 first).
+FORWARD_TIMEOUT_MARGIN = 5.0
+
 
 class FunctionError(Exception):
     """A data function failed; ``status`` is the HTTP status to report."""
@@ -76,7 +86,8 @@ class FunctionsConfig:
                  max_input: int = 20_000_000, max_output: int = 20_000_000,
                  max_concurrent: int = 2, python: Optional[str] = None,
                  rscript: Optional[str] = None, wrapper: str = "auto",
-                 runtime_url: Optional[str] = None, probe_target: Optional[str] = None):
+                 runtime_url: Optional[str] = None, probe_target: Optional[str] = None,
+                 runtime_token: Optional[str] = None):
         self.mode = mode if mode in MODES else "off"
         self.timeout = timeout
         self.memory_mb = memory_mb
@@ -89,6 +100,9 @@ class FunctionsConfig:
         # ``runtime`` of their own (a per-spec ``runtime`` still wins). Injected
         # into the served app's client config; see app.py.
         self.runtime_url = (runtime_url or "").strip() or None
+        # Shared secret sent to that runtime (header ``X-Cxd-Runtime-Token``) to
+        # prove the request came from this authorizing app. Never logged.
+        self.runtime_token = (runtime_token or "").strip() or None
         # ``host:port`` the isolation self-check tries to reach (skipped unset).
         self.probe_target = (probe_target or "").strip() or None
         self._slots = threading.BoundedSemaphore(max(1, max_concurrent))
@@ -116,6 +130,7 @@ class FunctionsConfig:
             wrapper=os.getenv("CXD_FUNCTIONS_WRAPPER", "auto"),
             runtime_url=os.getenv("CXD_FUNCTIONS_RUNTIME_URL") or None,
             probe_target=os.getenv("CXD_FUNCTIONS_PROBE_TARGET") or None,
+            runtime_token=os.getenv(RUNTIME_TOKEN_ENV) or None,
         )
 
     def wrapper(self) -> List[str]:
@@ -266,6 +281,77 @@ def run_function(payload: Any, config: FunctionsConfig) -> Dict[str, Any]:
         return {"data": _execute(request, config)}
     finally:
         config._slots.release()
+
+
+def _selfcheck_url(run_url: str) -> str:
+    """The runtime's ``/selfcheck`` URL, derived from its ``/run`` URL."""
+    if run_url.endswith("/run"):
+        return run_url[:-len("/run")] + "/selfcheck"
+    return run_url
+
+
+async def _forward(config: FunctionsConfig, url: str, method: str,
+                   json_body: Any = None, timeout: float = None) -> Dict[str, Any]:
+    """Forward one request to the standalone runtime and return its JSON.
+
+    Sends the shared token (:data:`RUNTIME_TOKEN_HEADER`) so the runtime accepts
+    it. Maps transport problems and the runtime's own error responses to
+    :class:`FunctionError` with a matching status (504 timeout, 502 unreachable /
+    non-JSON, else the runtime's status — 429 for busy flows straight through).
+
+    :raises FunctionError: on timeout, transport failure, or a non-200 response.
+    """
+    import httpx
+
+    headers = {}
+    if config.runtime_token:
+        headers[RUNTIME_TOKEN_HEADER] = config.runtime_token
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.request(method, url, json=json_body, headers=headers)
+    except httpx.TimeoutException:
+        raise FunctionError("The data-function runtime did not respond in time", 504)
+    except httpx.HTTPError as exc:
+        raise FunctionError("Could not reach the data-function runtime: %s" % exc, 502)
+    if resp.status_code != 200:
+        raise FunctionError(_forward_detail(resp), resp.status_code)
+    try:
+        return resp.json()
+    except ValueError:
+        raise FunctionError("The data-function runtime returned a non-JSON response", 502)
+
+
+def _forward_detail(resp: Any) -> str:
+    """The ``detail`` message from a runtime error response (never a token)."""
+    try:
+        body = resp.json()
+    except ValueError:
+        body = None
+    if isinstance(body, dict) and body.get("detail"):
+        return str(body["detail"])
+    return "Data-function runtime error (HTTP %d)" % resp.status_code
+
+
+async def forward_run(payload: Any, config: FunctionsConfig) -> Dict[str, Any]:
+    """Forward an already-authorized run to ``config.runtime_url`` and return its
+    ``{"data": ...}``. The main app calls this instead of :func:`run_function`
+    when a runtime URL is configured; snippets then never execute on this host.
+
+    :raises FunctionError: on timeout (504), an unreachable runtime (502), or the
+        runtime's own error status (429 busy, 4xx/5xx) with its message.
+    """
+    return await _forward(config, config.runtime_url, "POST", json_body=payload,
+                          timeout=config.timeout + FORWARD_TIMEOUT_MARGIN)
+
+
+async def forward_self_check(config: FunctionsConfig) -> Dict[str, Any]:
+    """Forward the admin isolation self-check to the standalone runtime and return
+    its report (so an operator measures the runtime that actually runs the code).
+
+    :raises FunctionError: as :func:`forward_run`.
+    """
+    timeout = min(config.timeout, 15) + FORWARD_TIMEOUT_MARGIN
+    return await _forward(config, _selfcheck_url(config.runtime_url), "GET", timeout=timeout)
 
 
 def _validate(payload: Any, config: FunctionsConfig) -> Dict[str, Any]:

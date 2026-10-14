@@ -119,17 +119,20 @@ _CSV_DATASETS = [
 
 
 # --- Live-from-a-database demo (SQLite) -----------------------------------
-# The demo database is COMMITTED to the repo (examples/data/inventory.db —
-# regenerate with examples/data/make_inventory_db.py), so every deployment
-# serves identical data. The app opens it strictly READ-ONLY; the writable
-# runtime state (accounts, dashboards, connectors store) stays in .cxd-demo/.
-INVENTORY_DB = os.path.join(HERE, "data", "inventory.db")
-# SQLAlchemy read-only SQLite URI (mode=ro blocks any write at the driver).
-INVENTORY_URL = "sqlite:///file:" + INVENTORY_DB + "?mode=ro&uri=true"
+# The demo databases now ship WITH the package (cxd_server.demo_sources): the
+# dev launcher and a plain server-only deploy use the very same copies, so they
+# behave identically. demo_sources copies each into a writable dir and serves it
+# strictly READ-ONLY (mode=ro), rebuilding it from a deterministic builder if an
+# install is missing it. The writable runtime state (accounts, dashboards,
+# connectors store) stays in .cxd-demo/. (examples/data/*.db + their make_*.py
+# scripts remain the editable sources the package data is copied from.)
+from cxd_server import demo_sources as _demo
 
-# The real database behind the "Sales Live" example (examples/data/sales.db —
-# regenerate with examples/data/make_sales_db.py). Opened strictly read-only.
-SALES_DB = os.path.join(HERE, "data", "sales.db")
+INVENTORY_DB = _demo.ensure_demo_db("inventory.db")
+INVENTORY_URL = _demo.demo_db_url("inventory.db")
+
+# The database behind the "Sales Live" example (sales.db), opened read-only.
+SALES_DB = _demo.ensure_demo_db("sales.db")
 
 
 def _init_inventory_db():
@@ -757,21 +760,11 @@ _connectors_store = None
 
 
 def _seed_demo_sources(store, user):
-    """Every bridged user starts with the demo SQLite sources registered
-    (read-only URLs into the repo-committed database)."""
-    have_sources = store.list_sources(user)
-    if "inventory" not in have_sources:
-        store.save_source(
-            user, "inventory", INVENTORY_URL,
-            'SELECT item AS "Item", stock AS "Stock", price AS "Price",'
-            ' category AS "Category", warehouse AS "Warehouse"'
-            " FROM product_inventory ORDER BY item")
-    if "furniture-only" not in have_sources:
-        store.save_source(
-            user, "furniture-only", INVENTORY_URL,
-            'SELECT item AS "Item", stock AS "Stock", price AS "Price",'
-            ' ROUND(stock * price, 2) AS "Value", warehouse AS "Warehouse"'
-            " FROM product_inventory WHERE category = 'Furniture' ORDER BY item")
+    """Every bridged user starts with the demo SQLite sources registered. The
+    inventory/furniture sources come from the package (so the dev launcher and a
+    server-only deploy seed identically); GTEx is a dev-only extra layered on top,
+    present only on machines that have gtex.sqlite."""
+    _demo.seed_demo_sources(store, user)
     _seed_gtex_sources(store, user)
 
 

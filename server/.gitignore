@@ -2,4 +2,7 @@
 .env
 .session_secret
 *.db
+# ...except the small, deterministic demo databases shipped as package data
+# (read-only demo sources; CXD_CONNECTORS_DEMO_SOURCES). See cxd_server.demo_sources.
+!src/cxd_server/demo_data/*.db
 cxd-datasets/

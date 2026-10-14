@@ -292,22 +292,210 @@ def test_selfcheck_endpoint_is_admin_only(tmp_path):
 
 # ---- standalone secret-free runtime app ----
 
+from cxd_server.functions import RUNTIME_TOKEN_HEADER  # noqa: E402
+
+RUNTIME_TOKEN = "shared-secret-123"
+
+
+def _clear_forbidden(monkeypatch):
+    from cxd_server.functions_app import _FORBIDDEN_ENV
+    for name in _FORBIDDEN_ENV:
+        monkeypatch.delenv(name, raising=False)
+
+
+def test_standalone_runtime_refuses_to_start_without_the_token(monkeypatch):
+    from cxd_server.functions_app import create_functions_app
+    _clear_forbidden(monkeypatch)
+    monkeypatch.delenv("CXD_FUNCTIONS_RUNTIME_TOKEN", raising=False)
+    with pytest.raises(RuntimeError, match="shared secret"):
+        create_functions_app()
+
+
 def test_standalone_runtime_refuses_to_start_with_a_secret(monkeypatch):
     from cxd_server.functions_app import create_functions_app
+    monkeypatch.setenv("CXD_FUNCTIONS_RUNTIME_TOKEN", RUNTIME_TOKEN)  # token present; secret is the problem
     monkeypatch.setenv("SESSION_SECRET", "nope")
     with pytest.raises(RuntimeError, match="SESSION_SECRET"):
         create_functions_app()
 
 
 @requires_pandas
-def test_standalone_runtime_runs_a_snippet(monkeypatch):
-    from cxd_server.functions_app import create_functions_app, _FORBIDDEN_ENV
-    for name in _FORBIDDEN_ENV:
-        monkeypatch.delenv(name, raising=False)
+def test_standalone_runtime_runs_a_snippet_only_with_the_token(monkeypatch):
+    from cxd_server.functions_app import create_functions_app
+    _clear_forbidden(monkeypatch)
+    monkeypatch.setenv("CXD_FUNCTIONS_RUNTIME_TOKEN", RUNTIME_TOKEN)
     monkeypatch.setenv("CXD_FUNCTIONS", "off")   # promoted to 'users' by the app
     app = create_functions_app()
     client = TestClient(app)
+    # status is open (no token, no secrets, no code).
     assert client.get("/api/functions/status").json()["enabled"] is True
-    r = client.post("/api/functions/run", json=BODY)
+    # run and selfcheck reject a missing or wrong token with 401.
+    assert client.post("/api/functions/run", json=BODY).status_code == 401
+    assert client.post("/api/functions/run", json=BODY,
+                       headers={RUNTIME_TOKEN_HEADER: "wrong"}).status_code == 401
+    assert client.get("/api/functions/selfcheck").status_code == 401
+    # with the right token it runs the snippet.
+    r = client.post("/api/functions/run", json=BODY, headers={RUNTIME_TOKEN_HEADER: RUNTIME_TOKEN})
     assert r.status_code == 200, r.text
     assert r.json()["data"]["y"]["smps"] == ["c1", "c2", "c3", "c4"]
+
+
+# ---- the main app forwards to a standalone runtime (and stays the only authorizer) ----
+
+RUNTIME_URL = "https://runtime.example/api/functions/run"
+
+
+def _forwarding_app(tmp_path, mode):
+    """A main app pointed at a standalone runtime (so runs are forwarded, not local)."""
+    return create_dashboards_app(
+        store=DashboardStore(str(tmp_path / "dash.db")), session_secret="s", serve_static=False,
+        dataset_store_uri="file://" + str(tmp_path / "datasets"),
+        functions=FunctionsConfig(mode=mode, timeout=10, runtime_url=RUNTIME_URL,
+                                  runtime_token=RUNTIME_TOKEN),
+    )
+
+
+def _no_local(monkeypatch):
+    """Make the embedded runtime blow up if it is ever reached while forwarding."""
+    import cxd_server.app as appmod
+
+    def boom(*a, **k):
+        raise AssertionError("snippet executed locally while a runtime URL is set")
+    monkeypatch.setattr(appmod, "run_function", boom)
+
+
+def test_run_is_forwarded_and_never_executed_locally(tmp_path, monkeypatch):
+    import cxd_server.app as appmod
+    _no_local(monkeypatch)
+    seen = {}
+
+    async def fake_forward_run(payload, config):
+        seen["payload"] = payload
+        seen["url"] = config.runtime_url
+        seen["token"] = config.runtime_token
+        return {"data": {"y": {"vars": ["Age"], "smps": ["c1"], "data": [[1]]}}}
+    monkeypatch.setattr(appmod, "forward_run", fake_forward_run)
+
+    app = _forwarding_app(tmp_path, "users")
+    client = TestClient(app)
+    _login(client, "ann")
+    r = client.post("/api/functions/run", json=BODY)
+    assert r.status_code == 200, r.text
+    assert seen["payload"]["code"] == BODY["code"]
+    assert seen["url"] == RUNTIME_URL and seen["token"] == RUNTIME_TOKEN
+
+
+def test_authorization_happens_before_forwarding(tmp_path, monkeypatch):
+    import cxd_server.app as appmod
+    _no_local(monkeypatch)
+    called = {"forward": False}
+
+    async def fake_forward_run(payload, config):
+        called["forward"] = True
+        return {"data": {}}
+    monkeypatch.setattr(appmod, "forward_run", fake_forward_run)
+
+    app = _forwarding_app(tmp_path, "admin")
+    admin = TestClient(app)
+    _login(admin, "first")           # admin
+    other = TestClient(app)
+    _login(other, "second")
+    # A non-author in admin mode is rejected BEFORE any forwarding.
+    r = other.post("/api/functions/run", json=BODY)
+    assert r.status_code == 403 and called["forward"] is False
+    # Approved admin-dashboard code is forwarded.
+    spec = {"id": "fn", "title": "F", "layout": {"cols": 12, "items": []}, "panels": {},
+            "data": {"clin": {"kind": "inline", "value": CLIN},
+                     "f": {"kind": "function", "language": "python", "code": BODY["code"],
+                           "inputs": ["clin"]}}}
+    assert admin.post("/api/dashboards", json=spec).status_code == 200
+    assert other.post("/api/functions/run", json=BODY).status_code == 200
+    assert called["forward"] is True
+
+
+def test_busy_429_from_runtime_flows_through(tmp_path, monkeypatch):
+    import cxd_server.app as appmod
+    from cxd_server.functions import FunctionError
+    _no_local(monkeypatch)
+
+    async def busy(payload, config):
+        raise FunctionError("Data-function runtime is busy; try again shortly", 429)
+    monkeypatch.setattr(appmod, "forward_run", busy)
+
+    app = _forwarding_app(tmp_path, "users")
+    client = TestClient(app)
+    _login(client, "ann")
+    assert client.post("/api/functions/run", json=BODY).status_code == 429
+
+
+def test_selfcheck_is_forwarded_when_a_runtime_is_configured(tmp_path, monkeypatch):
+    import cxd_server.app as appmod
+    seen = {}
+
+    async def fake_forward_self_check(config):
+        seen["url"] = config.runtime_url
+        return {"available": True, "networkIsolation": "unshare -rn",
+                "checks": {"serverEnviron": "blocked"}}
+    monkeypatch.setattr(appmod, "forward_self_check", fake_forward_self_check)
+
+    app = _forwarding_app(tmp_path, "admin")
+    admin = TestClient(app)
+    _login(admin, "first")
+    body = admin.get("/api/functions/selfcheck").json()
+    assert body["runtime"] == "remote" and body["runtimeUrl"] == RUNTIME_URL
+    assert body["checks"]["serverEnviron"] == "blocked"
+    # The shared token is never exposed in the admin report.
+    assert RUNTIME_TOKEN not in str(body)
+
+
+def test_browser_config_no_longer_carries_a_default_runtime(tmp_path):
+    # With serve_static, the server injects client config into index.html's head.
+    # It must NOT advertise the runtime URL to the browser any more.
+    app = create_dashboards_app(
+        store=DashboardStore(str(tmp_path / "dash.db")), session_secret="s",
+        dataset_store_uri="file://" + str(tmp_path / "datasets"),
+        functions=FunctionsConfig(mode="users", runtime_url=RUNTIME_URL, runtime_token=RUNTIME_TOKEN),
+        serve_static=True,
+    )
+    client = TestClient(app)
+    html = client.get("/").text
+    # The page's own JS still reads __CXD_CONFIG__.functionsRuntime (a harmless
+    # fallback for non-cxd_server hosts); what must NOT appear is the injected
+    # runtime URL — the server no longer advertises it to the browser.
+    assert RUNTIME_URL not in html
+
+
+def test_forward_helpers_map_errors(monkeypatch):
+    """forward_run/forward_self_check surface the runtime's status + detail."""
+    import httpx
+
+    from cxd_server import functions as fn
+
+    cfg = FunctionsConfig(mode="users", timeout=2, runtime_url=RUNTIME_URL, runtime_token=RUNTIME_TOKEN)
+
+    def handler(request):
+        assert request.headers.get(RUNTIME_TOKEN_HEADER) == RUNTIME_TOKEN
+        if request.url.path.endswith("/selfcheck"):
+            return httpx.Response(200, json={"checks": {}, "networkIsolation": "none"})
+        return httpx.Response(429, json={"detail": "busy"})
+
+    class FakeClient:
+        def __init__(self, *a, **k):
+            self._c = httpx.Client(transport=httpx.MockTransport(handler))
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            self._c.close()
+
+        async def request(self, method, url, json=None, headers=None):
+            return self._c.request(method, url, json=json, headers=headers)
+
+    monkeypatch.setattr(httpx, "AsyncClient", FakeClient)
+    import asyncio
+    with pytest.raises(fn.FunctionError) as ei:
+        asyncio.run(fn.forward_run(BODY, cfg))
+    assert ei.value.status == 429 and "busy" in str(ei.value)
+    report = asyncio.run(fn.forward_self_check(cfg))
+    assert report["networkIsolation"] == "none"

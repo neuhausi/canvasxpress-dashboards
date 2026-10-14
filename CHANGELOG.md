@@ -3,6 +3,40 @@
 Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 (`cxd_server`). Versions follow the package version.
 
+## 0.14.0 — 2026-10-14
+
+### Remote function runtime: the main app is the only authorizer
+- **Authorized runs are forwarded server-side.** With `CXD_FUNCTIONS_RUNTIME_URL`
+  set, the browser still posts every function source to the main app, which applies
+  all its checks (mode, role, approved admin code, audit) and then forwards the
+  request to the runtime **server-side** — the main app never executes user code while
+  a runtime URL is set, and no longer advertises the runtime URL to the browser.
+- **Shared-secret auth on the standalone runtime.** `cxd_server.functions_app:app` now
+  **refuses to start** without `CXD_FUNCTIONS_RUNTIME_TOKEN` and rejects any
+  `run`/`selfcheck` whose `X-Cxd-Runtime-Token` header doesn't match (constant-time) with
+  `401`; `status` stays open. Set the same token on the main app and the runtime. The
+  token is never logged and never reaches the browser config. A spec's own `runtime`
+  still calls its URL directly and bypasses this authorization (document before exposing).
+- **Admin self-check forwards.** `GET /api/functions/selfcheck` forwards to the runtime
+  when a runtime URL is set and returns its report, labelled as the remote runtime's.
+
+### Harden whenever snippets may run on this host
+- The server now calls `prctl(PR_SET_DUMPABLE, 0)` at startup when functions are enabled
+  **or** a runtime URL is configured (a same-host runtime runs as the same OS user), not
+  only when the embedded runtime is on.
+
+### Built-in connectors on any database, with packaged demo sources
+- **`CXD_CONNECTORS_DB` may be a URL.** A bare SQLite path (as before), a `sqlite://` URL,
+  or a `postgresql://` URL (via `cx_connectors.sqlstore.open_store`), so the connectors
+  store can live in the same database as the rest of the deployment. A directory is only
+  created for a bare path, and the startup log shows `scheme@host` (never a password).
+- **Demo sources shipped with the package.** `CXD_CONNECTORS_DEMO_SOURCES=on` seeds every
+  bridged user with read-only demo database sources from a demo SQLite database shipped as
+  package data (rebuilt deterministically if an install lacks it) — so a plain server-only
+  deploy behaves like the `examples/` dev launcher. Seeding adds each source once, re-saves
+  one whose stored path has drifted between deploys, and never touches a user-created source.
+- Requires `canvasxpress-connectors[web,sql]>=0.8`.
+
 ## 0.13.0 — 2026-10-14
 
 ### Data functions: runtime hardening for shared hosts

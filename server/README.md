@@ -129,8 +129,10 @@ code: run `users` mode only inside a container / VM you trust.
 Three further hardening knobs for a shared host where snippets run as the same OS
 user as the server:
 
-- On **Linux**, when functions are enabled the server calls
-  `prctl(PR_SET_DUMPABLE, 0)` at startup (per worker), which makes its
+- On **Linux**, when functions may run on this host — the embedded runtime is
+  enabled (`CXD_FUNCTIONS` ≠ `off`) **or** a standalone runtime URL is configured
+  (`CXD_FUNCTIONS_RUNTIME_URL`, which may run as the same OS user) — the server
+  calls `prctl(PR_SET_DUMPABLE, 0)` at startup (per worker), which makes its
   `/proc/<pid>/environ` unreadable to same-user snippets — so a snippet cannot
   read the server's secrets (store URLs, `ENCRYPTION_KEY`, session secret) out of
   `/proc`. It is a no-op elsewhere, and protects the server's own processes, not a
@@ -141,15 +143,34 @@ user as the server:
   same-user processes' `/proc/.../environ`, opening a TCP connection to
   `CXD_FUNCTIONS_PROBE_TARGET` (`host:port`; skipped when unset), and writing
   outside its temp dir. Measure isolation instead of trusting the wrapper.
-- `CXD_FUNCTIONS_RUNTIME_URL` names a **server-wide default runtime** for function
-  sources that carry no `runtime` of their own (a spec's own `runtime` still
-  wins). Point it at the standalone, secret-free runtime app
-  (`cxd_server.functions_app:app`) — which serves only the runtime contract
-  (`POST /api/functions/run`, `GET /api/functions/status` + `.../selfcheck`),
-  needs no database or secrets, and **refuses to start** if it sees the server's
-  secret variables in its environment — deployed as its own app (e.g. a second
-  Posit Connect content item) at a same-origin path. Then the main app never
-  executes user code.
+- `CXD_FUNCTIONS_RUNTIME_URL` names a **server-wide runtime** the main app forwards
+  authorized runs to, so user code runs there instead of in this process. The
+  browser still posts every function source to the main app, which applies all its
+  checks (mode, role, approved admin code, audit) and then forwards the request
+  **server-side** to the runtime — the main app never executes user code while a
+  runtime URL is set, and never advertises the runtime URL to the browser. Point
+  it at the standalone, secret-free runtime app (`cxd_server.functions_app:app`),
+  which serves only the runtime contract (`POST /api/functions/run`,
+  `GET /api/functions/status` + `.../selfcheck`), needs no database or secrets,
+  and **refuses to start** if it sees the server's secret variables in its
+  environment — deployed as its own app (e.g. a second Posit Connect content item).
+  The main app proves each forwarded request came from it with a shared secret,
+  **`CXD_FUNCTIONS_RUNTIME_TOKEN`**, sent in the `X-Cxd-Runtime-Token` header; set
+  the same value on the runtime and the main app. The runtime refuses to start
+  without it and answers `run`/`selfcheck` without a matching token with `401`
+  (its `status` stays open). The token is the runtime's only secret, never logged,
+  and must never appear in the main app's browser config.
+  *(A single spec's own `runtime` URL is still called **directly** from the
+  browser and bypasses the main app's authorization — only expose such a runtime
+  deliberately.)*
+
+- `CXD_CONNECTORS_DEMO_SOURCES=on` seeds every bridged user with the package's
+  read-only **demo database sources** (an inventory table shipped with the server),
+  so a plain install has something to chart from without configuring a database
+  first — the same seeding the `examples/` dev launcher uses. Off by default.
+  `CXD_CONNECTORS_DB` may now be a bare SQLite path (as before), a `sqlite://` URL,
+  or a `postgresql://` URL, so the connectors store can live in the same database
+  as the rest of the deployment.
 
 To turn them on for a deployed demo (e.g. so the shipped Cohort Explorer's R
 panel computes): install the interpreters' packages on the host (`pip install
