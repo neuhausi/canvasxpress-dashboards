@@ -499,3 +499,50 @@ def test_forward_helpers_map_errors(monkeypatch):
     assert ei.value.status == 429 and "busy" in str(ei.value)
     report = asyncio.run(fn.forward_self_check(cfg))
     assert report["networkIsolation"] == "none"
+
+
+def test_forward_sends_connect_api_key_when_configured(monkeypatch):
+    """With a Posit Connect API key configured, forwarded requests carry
+    `Authorization: Key <key>` so Connect lets them through to the runtime."""
+    import httpx
+
+    from cxd_server import functions as fn
+
+    cfg = FunctionsConfig(mode="users", timeout=2, runtime_url=RUNTIME_URL,
+                          runtime_token=RUNTIME_TOKEN, runtime_connect_key="connect-key-xyz")
+    seen = {}
+
+    def handler(request):
+        seen["auth"] = request.headers.get("Authorization")
+        seen["token"] = request.headers.get(RUNTIME_TOKEN_HEADER)
+        return httpx.Response(200, json={"data": {"y": {"vars": [], "smps": [], "data": []}}})
+
+    class FakeClient:
+        def __init__(self, *a, **k):
+            self._c = httpx.Client(transport=httpx.MockTransport(handler))
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            self._c.close()
+
+        async def request(self, method, url, json=None, headers=None):
+            return self._c.request(method, url, json=json, headers=headers)
+
+    monkeypatch.setattr(httpx, "AsyncClient", FakeClient)
+    import asyncio
+    asyncio.run(fn.forward_run(BODY, cfg))
+    assert seen["auth"] == "Key connect-key-xyz"
+    assert seen["token"] == RUNTIME_TOKEN
+
+
+def test_startup_warns_when_runtime_url_set_without_token(tmp_path, capsys):
+    """A runtime URL with no token would get a confusing 401; warn at startup."""
+    create_dashboards_app(
+        store=DashboardStore(str(tmp_path / "dash.db")), session_secret="s", serve_static=False,
+        dataset_store_uri="file://" + str(tmp_path / "ds"),
+        functions=FunctionsConfig(mode="users", runtime_url=RUNTIME_URL))
+    out = capsys.readouterr().out
+    assert "CXD_FUNCTIONS_RUNTIME_URL is set without" in out
+    assert "CXD_FUNCTIONS_RUNTIME_TOKEN" in out

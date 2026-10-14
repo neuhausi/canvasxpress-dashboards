@@ -194,7 +194,8 @@ def describe_schema(conn_url: str, table: Optional[str] = None) -> dict:
 
 def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
                        seed: Optional[Callable[[Any, str], None]] = None,
-                       session_secret: Optional[str] = None) -> Any:
+                       session_secret: Optional[str] = None,
+                       https_only: Optional[bool] = None) -> Any:
     """Mount the connectors app at ``/connectors`` and wire it into this server:
     the scheduled-refresh origin ``"connector"`` and the session-bridge routes
     (``/api/connectors/credentials``, ``/sources-meta``, ``/source``, ``/schema``, ``/test``).
@@ -209,6 +210,9 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
         (e.g. to register demo sources).
     :param session_secret: Signs the connectors app's own session cookie;
         defaults to ``SESSION_SECRET`` (the launcher always sets it).
+    :param https_only: Restrict the ``/connectors`` session cookie to HTTPS
+        (``Secure`` flag); defaults to ``CXD_HTTPS_ONLY`` (off), matching the
+        dashboards app's own session cookie.
     :returns: The connectors ``Store``.
     :raises RuntimeError: When the package is missing, the key is absent /
         invalid, or there is no session secret.
@@ -220,6 +224,8 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
     if not session_secret:
         raise RuntimeError("the connectors app needs a session secret: set SESSION_SECRET "
                            "(python -m cxd_server sets one for you)")
+    if https_only is None:
+        https_only = os.getenv("CXD_HTTPS_ONLY", "0") == "1"
     try:
         from cx_connectors.sqlstore import open_store
         from cx_connectors.web.byo_app import create_byo_app
@@ -240,7 +246,7 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
 
     before = list(app.router.routes)
     app.mount("/connectors", create_byo_app(store=store, serve_static=False, session_secret=session_secret,
-                                            encryption_key=encryption_key))
+                                            encryption_key=encryption_key, https_only=https_only))
     app.state.origin_fetchers["connector"] = refresh_fetcher(store)
     app.state.connectors_store = store
 

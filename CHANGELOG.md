@@ -19,6 +19,10 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
   still calls its URL directly and bypasses this authorization (document before exposing).
 - **Admin self-check forwards.** `GET /api/functions/selfcheck` forwards to the runtime
   when a runtime URL is set and returns its report, labelled as the remote runtime's.
+- The server **warns at startup** if `CXD_FUNCTIONS_RUNTIME_URL` is set without
+  `CXD_FUNCTIONS_RUNTIME_TOKEN` (forwarded runs would otherwise get a confusing `401`).
+- `CXD_FUNCTIONS_RUNTIME_CONNECT_KEY` sends a Posit Connect API key
+  (`Authorization: Key …`) on forwarded requests, for a runtime behind Connect's login.
 
 ### Harden whenever snippets may run on this host
 - The server now calls `prctl(PR_SET_DUMPABLE, 0)` at startup when functions are enabled
@@ -35,6 +39,10 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
   package data (rebuilt deterministically if an install lacks it) — so a plain server-only
   deploy behaves like the `examples/` dev launcher. Seeding adds each source once, re-saves
   one whose stored path has drifted between deploys, and never touches a user-created source.
+- The `/connectors` session cookie now honours `CXD_HTTPS_ONLY` (gets the `Secure`
+  flag), matching the dashboards app's own session cookie.
+- Demo-database copies are written atomically (temp + `os.replace`) and re-copied if
+  their size drifts from the packaged database — safe under multiple worker processes.
 - Requires `canvasxpress-connectors[web,sql]>=0.8`.
 
 ## 0.13.0 — 2026-10-14

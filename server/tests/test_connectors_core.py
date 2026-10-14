@@ -314,6 +314,39 @@ def test_seed_adds_once_updates_stale_and_leaves_user_sources_alone():
         assert kept["conn_url"] == mine and kept["sql"] == "SELECT 2"
 
 
+def test_ensure_demo_db_is_atomic_and_repairs_a_bad_size(monkeypatch, tmp_path):
+    """A half-written copy (wrong size vs. the packaged db) is re-copied, and the
+    copy is written atomically (temp + os.replace) so a racing worker never reads
+    a partial file."""
+    import cxd_server.demo_sources as ds
+    monkeypatch.setattr(ds, "_demo_dir", lambda: str(tmp_path))
+    good = ds.ensure_demo_db("inventory.db")
+    full = os.path.getsize(good)
+    assert full > 0
+    # Simulate a half-written copy left by an older build.
+    with open(good, "wb") as fh:
+        fh.write(b"\x00" * 10)
+    repaired = ds.ensure_demo_db("inventory.db")
+    assert os.path.getsize(repaired) == full
+    # No leftover temp files from the atomic write.
+    assert not [n for n in os.listdir(tmp_path) if n.startswith(".tmp-") or ".build-" in n]
+
+
+def test_connectors_cookie_gets_secure_flag_with_https_only(tmp_path):
+    pytest.importorskip("cx_connectors.sqlstore")
+    app = create_dashboards_app(store=DashboardStore(str(tmp_path / "dash.db")), session_secret="s",
+                                serve_static=False, dataset_store_uri="file://" + str(tmp_path / "ds"),
+                                scheduler_enabled=False)
+    install_connectors(app, str(tmp_path / "c.db"), generate_key(), session_secret="s",
+                       https_only=True)
+    client = TestClient(app)
+    client.post("/auth/signup", json={"username": "ann", "password": "secret1"})
+    cred = client.get("/api/connectors/credentials").json()
+    r = client.post("/connectors/auth/login", json=cred)
+    assert r.status_code == 200
+    assert "secure" in r.headers.get("set-cookie", "").lower()
+
+
 def test_launcher_hook_seeds_demo_sources_when_enabled(monkeypatch, tmp_path):
     pytest.importorskip("cx_connectors.sqlstore")
     monkeypatch.setenv("CXD_CONNECTORS", "on")

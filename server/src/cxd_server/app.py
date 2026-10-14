@@ -559,6 +559,11 @@ def create_dashboards_app(
     llm_key_header = llm_key_header or os.getenv("CXD_LLM_KEY_HEADER")
     # Data functions (R/Python snippets) run user code: off unless configured.
     functions = functions or FunctionsConfig.from_env()
+    if functions.runtime_url and not functions.runtime_token:
+        print("  [functions] WARNING: CXD_FUNCTIONS_RUNTIME_URL is set without "
+              "CXD_FUNCTIONS_RUNTIME_TOKEN — forwarded runs will be rejected by the "
+              "runtime with 401. Set the same token on the main app and the runtime.",
+              flush=True)
     # Audit log: append-only, hash-chained, next to the dashboard store.
     if audit is None:
         audit = _default_audit_log(store, db_path)

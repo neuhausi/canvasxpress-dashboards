@@ -159,7 +159,11 @@ user as the server:
   the same value on the runtime and the main app. The runtime refuses to start
   without it and answers `run`/`selfcheck` without a matching token with `401`
   (its `status` stays open). The token is the runtime's only secret, never logged,
-  and must never appear in the main app's browser config.
+  and must never appear in the main app's browser config. The server warns at
+  startup if a runtime URL is set without the token. If the runtime sits behind
+  Posit Connect's own login, set `CXD_FUNCTIONS_RUNTIME_CONNECT_KEY` so forwarded
+  requests carry a Connect API key (`Authorization: Key …`) — forwarded requests
+  have no browser session of their own.
   *(A single spec's own `runtime` URL is still called **directly** from the
   browser and bypasses the main app's authorization — only expose such a runtime
   deliberately.)*

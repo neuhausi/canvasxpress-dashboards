@@ -68,8 +68,12 @@ def ensure_demo_db(name: str) -> str:
     """Path to a ready copy of demo database ``name`` in a writable directory.
 
     Copies the packaged database there on first use; if the install does not ship
-    it, builds it from the embedded deterministic builder. Idempotent — returns
-    the existing copy on later calls.
+    it, builds it from the embedded deterministic builder. The copy is written to
+    a temp file and atomically renamed into place (``os.replace``), so a second
+    worker process never observes a half-written file — important under a
+    multi-worker server (Connect). Idempotent: an existing copy is reused, and
+    re-copied only if its size does not match the packaged database (e.g. a
+    half-written file left by an older build, or a changed package).
 
     :param name: ``"inventory.db"`` / ``"sales.db"`` (or the bare stem).
     :returns: The absolute path to the writable, read-only-served copy.
@@ -77,17 +81,40 @@ def ensure_demo_db(name: str) -> str:
     if not name.endswith(".db"):
         name = name + ".db"
     dest = os.path.join(_demo_dir(), name)
-    if os.path.isfile(dest):
-        return dest
     data = _packaged_bytes(name)
+    if os.path.isfile(dest):
+        # Reuse unless we can prove it is stale/partial (size differs from the
+        # packaged bytes). Without packaged bytes we trust an existing copy.
+        if data is None or os.path.getsize(dest) == len(data):
+            return dest
     if data is not None:
-        with open(dest, "wb") as fh:
-            fh.write(data)
+        _atomic_write(dest, data)
     elif name in _BUILDERS:
-        _BUILDERS[name](dest)
+        tmp = dest + ".build-%d.tmp" % os.getpid()
+        try:
+            _BUILDERS[name](tmp)
+            os.replace(tmp, dest)
+        finally:
+            if os.path.exists(tmp):
+                os.remove(tmp)
     else:
         raise FileNotFoundError("no packaged demo database %r and no builder for it" % name)
     return dest
+
+
+def _atomic_write(dest: str, data: bytes) -> None:
+    """Write ``data`` to ``dest`` atomically (temp file in the same dir + rename),
+    so a concurrent reader only ever sees the complete file."""
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(dest), prefix=".tmp-", suffix=".db")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, dest)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
 
 
 def demo_db_url(name: str) -> str:

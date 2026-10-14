@@ -87,7 +87,7 @@ class FunctionsConfig:
                  max_concurrent: int = 2, python: Optional[str] = None,
                  rscript: Optional[str] = None, wrapper: str = "auto",
                  runtime_url: Optional[str] = None, probe_target: Optional[str] = None,
-                 runtime_token: Optional[str] = None):
+                 runtime_token: Optional[str] = None, runtime_connect_key: Optional[str] = None):
         self.mode = mode if mode in MODES else "off"
         self.timeout = timeout
         self.memory_mb = memory_mb
@@ -103,6 +103,11 @@ class FunctionsConfig:
         # Shared secret sent to that runtime (header ``X-Cxd-Runtime-Token``) to
         # prove the request came from this authorizing app. Never logged.
         self.runtime_token = (runtime_token or "").strip() or None
+        # Optional Posit Connect API key: when the standalone runtime sits behind
+        # Connect's own login, forwarded requests carry no browser session, so the
+        # main app must authenticate to Connect itself. Sent as ``Authorization:
+        # Key <key>`` on forwarded requests. Never logged.
+        self.runtime_connect_key = (runtime_connect_key or "").strip() or None
         # ``host:port`` the isolation self-check tries to reach (skipped unset).
         self.probe_target = (probe_target or "").strip() or None
         self._slots = threading.BoundedSemaphore(max(1, max_concurrent))
@@ -131,6 +136,7 @@ class FunctionsConfig:
             runtime_url=os.getenv("CXD_FUNCTIONS_RUNTIME_URL") or None,
             probe_target=os.getenv("CXD_FUNCTIONS_PROBE_TARGET") or None,
             runtime_token=os.getenv(RUNTIME_TOKEN_ENV) or None,
+            runtime_connect_key=os.getenv("CXD_FUNCTIONS_RUNTIME_CONNECT_KEY") or None,
         )
 
     def wrapper(self) -> List[str]:
@@ -306,6 +312,10 @@ async def _forward(config: FunctionsConfig, url: str, method: str,
     headers = {}
     if config.runtime_token:
         headers[RUNTIME_TOKEN_HEADER] = config.runtime_token
+    if config.runtime_connect_key:
+        # Authenticate to Posit Connect itself (forwarded requests carry no
+        # browser session), so Connect lets the request reach the runtime.
+        headers["Authorization"] = "Key " + config.runtime_connect_key
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
             resp = await client.request(method, url, json=json_body, headers=headers)
