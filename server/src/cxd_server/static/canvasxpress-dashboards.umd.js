@@ -4405,22 +4405,26 @@ function renderDashboard(spec, target, options) {
       var related = markingGraph && ref ? relatedRowFilter(picks.filter(function (w) {
         return applicable.indexOf(w) === -1;
       }), ref) : null;
-      // Filters-panel predicates (on this source or, translated, on related ones).
-      var panelRows = ref ? filterPanelRows(ref) : null;
-      if (panelRows) {
+      // Filters-panel predicates (on this source, translated via relationships,
+      // or applied directly to a shared field). Split by axis: sample (x) rows
+      // narrow via filterSmpBy, variable (z) rows via filterVarBy.
+      var panel = ref ? filterPanelRows(ref) : null;
+      var panelSmps = panel && panel.smps;
+      var panelVars = panel && panel.vars;
+      if (panelSmps) {
         related = related
-          ? { axis: related.axis, ids: related.ids.filter(function (id) { return panelRows.indexOf(id) !== -1; }) }
-          : { axis: sourceAxis(ref, spec.data || {}), ids: panelRows };
+          ? { axis: related.axis, ids: related.ids.filter(function (id) { return panelSmps.indexOf(id) !== -1; }) }
+          : { axis: sourceAxis(ref, spec.data || {}), ids: panelSmps };
       }
       var savedGroup = inst.broadcastGroup;
       inst.broadcastGroup = '__cxd_annctl_serial__';
       try {
-        if (!applicable.length && !related) {
+        if (!applicable.length && !related && !panelVars) {
           if (typeof inst.resetDataFilter === 'function') inst.resetDataFilter(null, false);
         } else if (typeof inst.modifyFilter === 'function') {
           if (typeof inst.resetDataFilter === 'function') inst.resetDataFilter(null, true);
           applicable.forEach(function (w, i) {
-            inst.modifyFilter('guess', w.annotation, 'exact', w.value, related ? true : i < applicable.length - 1);
+            inst.modifyFilter('guess', w.annotation, 'exact', w.value, (related || panelVars) ? true : i < applicable.length - 1);
           });
           if (related && typeof inst.filterUserData === 'function') {
             var names = related.ids.length ? related.ids : [NO_MARKED_ROWS];
@@ -4428,6 +4432,10 @@ function renderDashboard(spec, target, options) {
             if (found) related.axis = instanceAxis(found.binding, found.ref);
             if (related.axis === 'vars') inst.filterUserData('filterVarBy', 'vars', 'exact', names, false, true, false);
             else inst.filterUserData('filterSmpBy', 'smps', 'exact', names, false, true, false);
+          }
+          if (panelVars && typeof inst.filterUserData === 'function') {
+            var vnames = panelVars.length ? panelVars : [NO_MARKED_ROWS];
+            inst.filterUserData('filterVarBy', 'vars', 'exact', vnames, false, true, false);
           }
         }
       } catch (e) { /* keep filtering the remaining instances */
@@ -4481,7 +4489,35 @@ function renderDashboard(spec, target, options) {
       }
       keep = keep === null ? set : keep.filter(function (id) { return set.indexOf(id) !== -1; });
     });
-    return keep;
+    // Value-based cross-source filtering: a predicate on a field the TARGET also
+    // carries applies to it DIRECTLY — even with no declared relationship — so a
+    // shared dimension (e.g. Product) narrows every panel that has it. The field
+    // is applied on ITS OWN compartment's axis: a sample (x) annotation narrows
+    // samples, a variable (z) annotation narrows variables (so a KM/boxplot whose
+    // grouping is a variable annotation filters too). The filter's own source is
+    // skipped here (handled by the marking loop above).
+    var data = refData[targetRef];
+    var varRows = null;
+    if (data) {
+      var xPreds = [], zPreds = [];
+      filterState.forEach(function (p) {
+        if (p.dataRef === targetRef) return;
+        var clone = {};
+        for (var key in p) { if (Object.prototype.hasOwnProperty.call(p, key)) clone[key] = p[key]; }
+        clone.dataRef = targetRef;
+        if (data.x && Object.prototype.hasOwnProperty.call(data.x, p.field)) { xPreds.push(clone); }
+        else if (data.z && Object.prototype.hasOwnProperty.call(data.z, p.field)) { zPreds.push(clone); }
+      });
+      if (xPreds.length) {
+        var xRows = rowsPassing(normalizeState(xPreds), targetRef, data, 'smps');
+        if (xRows !== null) { keep = keep === null ? xRows : keep.filter(function (id) { return xRows.indexOf(id) !== -1; }); }
+      }
+      if (zPreds.length) {
+        varRows = rowsPassing(normalizeState(zPreds), targetRef, data, 'vars');
+      }
+    }
+    if (keep === null && varRows === null) return null;
+    return { smps: keep, vars: varRows };
   }
 
   /**

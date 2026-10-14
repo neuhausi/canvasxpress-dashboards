@@ -70,12 +70,12 @@ variants = {"y": {"vars": osmps, "smps": ogenes,
                   "data": onco_data, "data2": onco_cna, "data3": onco_mut},
             "z": overlays(osmps, ["cluster", "subtype", "stage"])}
 
-# Kaplan-Meier: vars = samples (rows), smps = [time, event], group in z.
+# Kaplan-Meier: vars = samples (rows), smps = [time, event], cluster in z.
 surv = list(csv.DictReader(open(rd("figures/survival.csv"))))
 survival = {"y": {"vars": [d["sample"] for d in surv],
                   "smps": ["time", "event"],
                   "data": [[float(d["time_months"]), int(d["event"])] for d in surv]},
-            "z": {"group": [d["group"] for d in surv]}}
+            "z": {"cluster": [d["group"] for d in surv]}}  # name matches the heatmap/oncoprint "cluster" so one filter control narrows all three
 
 # consistency assertions — the whole chain must agree
 assert smps == osmps, "heatmap and oncoprint sample order differ"
@@ -129,7 +129,7 @@ spec = {
             "config": {
                 "graphType": "KaplanMeier", "title": False,
                 "xAxis": ["time"], "yAxis": ["event"],
-                "colorBy": "group", "colors": pal["groups"],
+                "colorBy": "cluster", "colors": pal["groups"],
                 "showKMConfidenceIntervals": True,
                 "xAxisTitle": "Months", "yAxisTitle": "Survival probability",
             },

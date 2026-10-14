@@ -4073,16 +4073,34 @@
         scrollChatToEnd();
         chatHistory.push({ role: 'assistant', content: res.reply || '' });
         if (res.spec) {
-          // Defence in depth: the server validates and repairs before replying,
-          // so this should already be clean — but never render an invalid spec.
-          var v = CXD.validateSpec(res.spec);
-          if (v.valid) {
-            currentSpec = res.spec;
-            if (currentBuilder) currentBuilder.setSpec(res.spec);
-            syncChatChecks(res.spec);
-          } else {
-            appendChatBubble('assistant', 'The generated spec did not validate: ' + v.errors.join('; '));
-          }
+          // Underlay each bound dataset's associated config (uploadDataset's
+          // opts.config — e.g. the oncoprintCNA/MUT layer keys a flattened
+          // alteration matrix needs) beneath the generated panel config;
+          // generated keys win. Panels are documented to adopt it as their
+          // initial state — without it, asking for an oncoprint on such a
+          // dataset draws a plain heatmap (no layer wiring).
+          client.listDatasets().then(function (all) {
+            var cfgById = {};
+            (all || []).forEach(function (d) { if (d && d.config) cfgById[d.id] = d.config; });
+            var sources = res.spec.data || {};
+            Object.keys(res.spec.panels || {}).forEach(function (pid) {
+              var panel = res.spec.panels[pid];
+              var src = panel && panel.dataRef && sources[panel.dataRef];
+              var base = src && src.kind === 'dataset' && cfgById[src.id];
+              if (base) panel.config = Object.assign({}, base, panel.config || {});
+            });
+          }).catch(function () {}).then(function () {
+            // Defence in depth: the server validates and repairs before replying,
+            // so this should already be clean — but never render an invalid spec.
+            var v = CXD.validateSpec(res.spec);
+            if (v.valid) {
+              currentSpec = res.spec;
+              if (currentBuilder) currentBuilder.setSpec(res.spec);
+              syncChatChecks(res.spec);
+            } else {
+              appendChatBubble('assistant', 'The generated spec did not validate: ' + v.errors.join('; '));
+            }
+          });
         } else if (res.validation && res.validation.ok === false) {
           // The server tried to repair its own spec and ran out of attempts.
           // Say why, so the user can rephrase instead of guessing.
