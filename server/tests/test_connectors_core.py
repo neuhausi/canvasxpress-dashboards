@@ -178,3 +178,33 @@ def test_routes_are_reachable_when_the_app_shell_is_mounted_at_root(tmp_path):
     assert client.get("/api/connectors/credentials").status_code == 401    # our route, not the shell's 404
     assert client.post("/connectors/auth/login", json={"username": "x", "password": "y"}).status_code != 405
     assert client.get("/").status_code == 200                              # the shell still serves
+
+
+# ---------------------------------------------------------------------------
+# Databricks "sign in as the viewer" (Posit Connect OAuth)
+# ---------------------------------------------------------------------------
+
+# A credential-free Databricks source: it borrows the signed-in viewer's token.
+_VIEWER_DBX = ("databricks://posit-connect@dbc-1234.cloud.databricks.com"
+               "?http_path=/sql/1.0/warehouses/abc123&catalog=main&schema=default")
+
+
+def test_viewer_oauth_source_cannot_be_scheduled(app):
+    """A scheduled refresh runs with no viewer, so a viewer-OAuth source (no
+    credential of its own) must fail clearly rather than connect as nobody."""
+    client = _bridged(app, "ann")
+    assert client.post("/connectors/api/sources",
+                       json={"name": "dbx", "conn_url": _VIEWER_DBX,
+                             "sql": "SELECT a, b FROM t"}).status_code == 200
+    fetch = app.state.origin_fetchers["connector"]
+    with pytest.raises(ValueError, match="cannot be refreshed on a schedule"):
+        fetch("ann", "dbx")
+
+
+def test_schema_route_403_without_a_viewer_session(app):
+    """The wizard/editor schema route resolves a viewer-OAuth URL per request;
+    with no Posit-Connect-User-Session-Token header it is a clear 403, not a 502."""
+    client = _bridged(app, "ann")
+    r = client.post("/api/connectors/schema", json={"conn_url": _VIEWER_DBX})
+    assert r.status_code == 403
+    assert "signed-in viewer" in r.json()["detail"]

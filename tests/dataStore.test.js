@@ -305,6 +305,33 @@ test('a function source takes inputs as an array and a custom runtime URL', asyn
   assert.deepEqual(Object.keys(fetchStub.calls[0].body.inputs), ['clin']);
 });
 
+test('a configured default runtime is used, and a source\'s own runtime still wins', async function () {
+  var sources = {
+    clin: { kind: 'inline', value: LEFT },
+    f: { kind: 'function', language: 'python', code: 'result = clin', inputs: ['clin'] },
+    own: { kind: 'function', language: 'python', code: 'result = clin', inputs: ['clin'], runtime: 'https://spec.example/run' }
+  };
+  // No per-source runtime -> the server-wide default (functionsRuntime) is used.
+  var a = runtimeFetch();
+  var withDefault = createDataStore({ fetch: a, cache: new Map(), baseUrl: 'http://srv',
+    functionsRuntime: 'https://default.example/run' });
+  await withDefault.resolve('f', sources.f, { sources: sources });
+  assert.equal(a.calls[0].url, 'https://default.example/run');
+
+  // A source's own runtime overrides the configured default.
+  var b = runtimeFetch();
+  var override = createDataStore({ fetch: b, cache: new Map(), baseUrl: 'http://srv',
+    functionsRuntime: 'https://default.example/run' });
+  await override.resolve('own', sources.own, { sources: sources });
+  assert.equal(b.calls[0].url, 'https://spec.example/run');
+
+  // No default and no own runtime -> the local cxd_server endpoint.
+  var c = runtimeFetch();
+  var local = createDataStore({ fetch: c, cache: new Map(), baseUrl: 'http://srv' });
+  await local.resolve('f', sources.f, { sources: sources });
+  assert.equal(c.calls[0].url, 'http://srv/api/functions/run');
+});
+
 test('a runtime error surfaces as a DataError with its detail', async function () {
   var store = createDataStore({ fetch: runtimeFetch({ status: 400, body: { detail: 'NameError: nope' } }), cache: new Map() });
   var sources = { clin: { kind: 'inline', value: LEFT }, f: { kind: 'function', language: 'python', code: 'x', inputs: ['clin'] } };
@@ -382,6 +409,33 @@ test('a connector source with pushdown sends it as _q (and keys the cache on it)
   await store.resolve('o', src, { where: function () { return [{ column: 'r', op: 'in', value: ['A'] }]; } });
   var url = decodeURIComponent(fetchStub.calls[0].url);
   assert.ok(url.indexOf('/c/api/data?source=o&_q={"groupBy":["r"],"measures":[{"fn":"count"}],"where":[{"column":"r","op":"in","value":["A"]}]}') === 0, url);
+});
+
+test('a root-relative connector URL resolves against a subpath baseUrl only', async function () {
+  async function fetched(baseUrl, url) {
+    var fetchStub = fakeFetch();
+    var store = createDataStore({ fetch: fetchStub, cache: new Map(), baseUrl: baseUrl });
+    await store.resolve('s', { kind: 'connector', url: url });
+    return fetchStub.calls[0].url;
+  }
+  assert.equal(await fetched('/dashboards', '/api/gtex?list=genes'), '/dashboards/api/gtex?list=genes');
+  assert.equal(await fetched('/dashboards', '/dashboards/connectors/api/data?source=a'), '/dashboards/connectors/api/data?source=a', 'already under the base');
+  assert.equal(await fetched('', '/api/gtex'), '/api/gtex', 'app root');
+  assert.equal(await fetched('http://x', '/api/gtex'), '/api/gtex', 'cross-origin base leaves it on the page origin');
+  assert.equal(await fetched('/dashboards', 'api/gtex'), 'api/gtex', 'page-relative unchanged');
+  assert.equal(await fetched('/dashboards', '//cdn/x'), '//cdn/x', 'protocol-relative unchanged');
+});
+
+test('a /connectors/api/ fetch waits once for prepareConnectors', async function () {
+  var order = [];
+  var fetchStub = fakeFetch();
+  var wrapped = function (u, i) { order.push('fetch'); return fetchStub(u, i); };
+  var store = createDataStore({ fetch: wrapped, cache: new Map(),
+    prepareConnectors: function () { order.push('prepare'); return Promise.resolve(); } });
+  await store.resolve('a', { kind: 'connector', url: '/connectors/api/data?source=a' });
+  await store.resolve('b', { kind: 'connector', url: '/connectors/api/data?source=b' });
+  await store.resolve('c', { kind: 'connector', url: '/api/other' });
+  assert.deepEqual(order, ['prepare', 'fetch', 'fetch', 'fetch']);
 });
 
 test('a join with pushdown asks the connector to join in the database, else joins here', async function () {

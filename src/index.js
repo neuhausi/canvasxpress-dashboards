@@ -25,11 +25,13 @@ export { createBuilder, pointerToCell, csvToCx, buildDataSource } from './builde
 export {
   addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS,
   addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES,
-  setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown
+  setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, addQueryControl
 } from './builderModel.js';
 export { runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS } from './pushdown.js';
-export { tableFromData, profileColumns, applyDecimalComma, wizardSpec } from './wizard.js';
+export { tableFromData, profileColumns, applyDecimalComma, wizardSpec,
+  sqlParamNames, paramNameFor, choicesSql, detailSql, connectorSourceUrl, databaseExplorerSpec, orientConfig,
+  WIZARD_CHART_TYPES, chartFieldsFor, buildChartConfig, chartColumns } from './wizard.js';
 export { transposeCxData } from './join.js';
 
 /** @type {string} Package version. */
-export var version = '0.12.0';
+export var version = '0.13.0';

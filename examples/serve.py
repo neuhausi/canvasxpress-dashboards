@@ -391,17 +391,69 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     dataset store, and the specs (rewired from inline to kind:"dataset") are
     saved as demo-user dashboards, so the Dashboards view has real content."""
     import copy
+    import hashlib
     import json
+
+    # Re-sync on change. A shipped example is seeded once, then skipped on every
+    # later start — so a fix to its spec file (e.g. renaming the survival
+    # grouping annotation) never reached the stored copy the Builder opens, and
+    # the stale datasets/spec lived on forever. Now each spec file's sha256 is
+    # recorded in seed-state.json (next to the DB); when it is missing or
+    # changed, the example is treated as unsaved: its block re-runs, re-creates
+    # its datasets in place (create() overwrites by id) and upserts + re-locks
+    # the dashboard. Shipped examples are app-owned and locked, so the spec file
+    # is their source of truth; an admin edit to one is reset on the next spec
+    # change. On the first start after this landed no hashes exist, so every
+    # shipped example re-syncs once. Direct store saves add no version rows.
+    state_path = os.path.join(DATA_DIR, "seed-state.json")
+    try:
+        with open(state_path, encoding="utf-8") as handle:
+            seed_state = json.load(handle)
+    except (OSError, ValueError):
+        seed_state = {}
+    spec_hashes = {}   # spec id -> sha256 of its file (filled by load_spec)
 
     def load_spec(rel):
         path = os.path.join(HERE, rel)
         if not os.path.isfile(path):
             print("  [seed] NOTE: %s not found — skipping shipped dashboard." % path)
             return None
-        with open(path, encoding="utf-8") as handle:
-            return json.load(handle)
+        with open(path, "rb") as handle:
+            raw = handle.read()
+        spec = json.loads(raw.decode("utf-8"))
+        if isinstance(spec, dict) and spec.get("id"):
+            spec_hashes[spec["id"]] = hashlib.sha256(raw).hexdigest()
+        return spec
 
-    saved = {d["id"] for d in dashboards.list_dashboards(EXAMPLES_OWNER)}
+    saved_ids = {d["id"] for d in dashboards.list_dashboards(EXAMPLES_OWNER)}
+    have_ids = have
+
+    class _Saved(object):
+        """`spec_id in saved` == already stored AND its spec file is unchanged.
+        A stored-but-changed spec reports False so its block re-runs, and flips
+        `have.force` so that block re-creates (overwrites) its datasets."""
+
+        def __contains__(self, spec_id):
+            if spec_id not in saved_ids:
+                have.force = False
+                return False
+            if seed_state.get(spec_id) != spec_hashes.get(spec_id):
+                print("  [seed] shipped spec changed on disk — re-syncing: %s" % spec_id)
+                have.force = True
+                return False
+            have.force = False
+            return True
+
+    class _Have(object):
+        """`dataset_id in have` is the existing-dataset guard; while a block is
+        re-syncing a changed spec it reports False so every dataset is rewritten."""
+        force = False
+
+        def __contains__(self, dataset_id):
+            return (not self.force) and dataset_id in have_ids
+
+    saved = _Saved()
+    have = _Have()
 
     # Reproducible Bench: generated spec carries inline data; move each inline
     # value into the dataset store and point the spec at it.
@@ -581,9 +633,77 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.set_locked(EXAMPLES_OWNER, heor["id"], True)
         print("  [seed] shipped dashboard: %s" % heor["id"])
 
+    # Live database explorers (GTEx tissue expression, GENCODE genome browser):
+    # a param Control whose choices come from the database re-queries it on
+    # every pick. Their sources stay live connectors — nothing moves into the
+    # dataset store. The standalone pages in /examples/ use "../api/<db>"; the
+    # stored copy uses ROOT-relative URLs, which the renderer resolves against
+    # the app base ("" in dev, "/dashboards" behind Apache) from any page depth.
+    # GTEx reads the connectors database sources (GTEX_SOURCES: SQL with :gene),
+    # so the Builder shows them as 🗄 sources with their SQL and a preview.
+    # GENCODE's genome track is nested (transcripts/exons/GWAS), not a flat
+    # table, so it stays on the /api/gencode service.
+    connector_sources = {
+        "gtex-explorer": {
+            "genesList": {"kind": "connector", "url": "/connectors/api/data?source=gtex-genes",
+                          "ttl": 600000},
+            "expression": {"kind": "connector", "url": "/connectors/api/data?source=gtex-expression",
+                           "query": {"gene": "$gene"}, "ttl": 0},
+        },
+    }
+    for db_spec in ("gtex-explorer.spec.json", "gencode-explorer.spec.json"):
+        explorer = load_spec(db_spec)
+        if not explorer or explorer["id"] in saved:
+            continue
+        explorer = copy.deepcopy(explorer)
+        for ref, source in explorer.get("data", {}).items():
+            url = source.get("url")
+            if ref in connector_sources.get(explorer["id"], {}):
+                explorer["data"][ref] = connector_sources[explorer["id"]][ref]
+            elif source.get("kind") == "connector" and isinstance(url, str) and url.startswith("../api/"):
+                source["url"] = url[2:]
+        dashboards.save_dashboard(EXAMPLES_OWNER, explorer, now)
+        dashboards.set_locked(EXAMPLES_OWNER, explorer["id"], True)
+        print("  [seed] shipped dashboard: %s" % explorer["id"])
+
     # (The old Inventory (Live SQL) shipped dashboard was retired — its
     # connector endpoint /api/data?source=inventory remains for the docs and
     # for hand-built connector dashboards.)
+
+    # Display order on the Dashboards page. The list shows shipped examples
+    # newest first (updated_at DESC); seeded together they all tie, so their
+    # order was left to the database. Stamp them a microsecond apart in this
+    # order — only when the stored order differs, so restarts don't churn.
+    # A shipped example missing from the list keeps its own stamp.
+    shipped_order = [
+        "biomarker-cohort", "genomics-oncology", "heor-overview", "kpi-overview",
+        "gtex-explorer", "gencode-explorer",
+        "live-ops", "quality-metrics", "reproducible-bench", "sales-model", "sales-overview",
+    ]
+    listed = [d["id"] for d in dashboards.list_dashboards(EXAMPLES_OWNER)]
+    wanted = [i for i in shipped_order if i in listed]
+    if [i for i in listed if i in wanted] != wanted:
+        top = datetime.datetime.fromisoformat(now)
+        for position, dashboard_id in enumerate(wanted):
+            spec = dashboards.get_dashboard(EXAMPLES_OWNER, dashboard_id)
+            if spec is None:
+                continue
+            stamp = (top - datetime.timedelta(microseconds=position)).isoformat()
+            dashboards.save_dashboard(EXAMPLES_OWNER, spec, stamp)
+        print("  [seed] ordered shipped dashboards: %s" % ", ".join(wanted))
+
+    # Record the spec-file hash of every shipped example now in the store, so
+    # the next start only re-syncs the ones whose file changed (see the note at
+    # the top of this function). A write failure must never block startup.
+    stored_now = {d["id"] for d in dashboards.list_dashboards(EXAMPLES_OWNER)}
+    for spec_id, digest in spec_hashes.items():
+        if spec_id in stored_now:
+            seed_state[spec_id] = digest
+    try:
+        with open(state_path, "w", encoding="utf-8") as handle:
+            json.dump(seed_state, handle, indent=2, sort_keys=True)
+    except OSError as exc:
+        print("  [seed] NOTE: could not write %s (%s) — shipped examples will re-sync next start." % (state_path, exc))
 
 
 _seed()
@@ -652,6 +772,42 @@ def _seed_demo_sources(store, user):
             'SELECT item AS "Item", stock AS "Stock", price AS "Price",'
             ' ROUND(stock * price, 2) AS "Value", warehouse AS "Warehouse"'
             " FROM product_inventory WHERE category = 'Furniture' ORDER BY item")
+    _seed_gtex_sources(store, user)
+
+
+# GTEx Gene Explorer database sources (read-only SQL into gtex.sqlite), so the
+# Builder lists them as 🗄 database sources with their SQL and a live preview.
+# `expression` stores each gene's ~17k sample TPMs as ONE ';'-joined string in
+# sample order (the `samples` rowid order), so json_each splits it into rows
+# that join their sample. char(59) is ';' — the connectors read-only check
+# rejects a literal ';' anywhere in the statement.
+GTEX_SOURCES = {
+    "gtex-genes": (
+        "SELECT DISTINCT geneName AS id, geneName AS gene"
+        " FROM expression ORDER BY geneName"),
+    "gtex-expression": (
+        "SELECT s.sampleName AS sample, s.tissue AS tissue, CAST(e.value AS REAL) AS TPM"
+        " FROM expression AS x, json_each('[' || replace(x.tpm, char(59), ',') || ']') AS e"
+        " JOIN samples AS s ON s.rowid = e.key + 1"
+        # No gene (the Data page preview / row count) → TP53, the dashboard's
+        # default; an empty result is an error to the connectors app.
+        " WHERE x.geneName = COALESCE(:gene, 'TP53')"),
+}
+
+
+def _seed_gtex_sources(store, user):
+    """Register (or update, when the SQL changed) the GTEx sources for a user;
+    skipped when gtex.sqlite isn't present on this machine."""
+    import dbservices
+    path = dbservices.db_path("gtex")
+    if not os.path.isfile(path):
+        return
+    url = "sqlite:///file:" + path + "?mode=ro&uri=true"
+    have_sources = store.list_sources(user)
+    for name, sql in GTEX_SOURCES.items():
+        current = store.get_source(user, name) if name in have_sources else None
+        if not current or current.get("sql") != sql or current.get("conn_url") != url:
+            store.save_source(user, name, url, sql)
 
 
 try:

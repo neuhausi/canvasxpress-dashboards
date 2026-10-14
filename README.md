@@ -18,6 +18,7 @@ security, lineage, audit log) · [single sign-on](docs/sso.md) (OpenID Connect) 
 (21 CFR Part 11) · [scheduling](docs/scheduling.md) (refresh, alerts,
 emailed dashboards) · [large data](docs/large-data.md) (aggregate, filter and join in the
 database) · [live-data controls](docs/live-data-controls.md) ·
+[Databricks as the viewer](docs/databricks-viewer-oauth.md) (Posit Connect OAuth) ·
 [server](server/README.md) · [changelog](CHANGELOG.md)
 
 ---

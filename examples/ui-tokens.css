@@ -84,6 +84,7 @@
   --cx-z-raised: 10;
   --cx-z-toolbar: 1000;
   --cx-z-toolbar-edge: 1001;
+  --cx-z-footer-link: 1002;
   --cx-z-resizer: 2000;
   --cx-z-fullscreen: 9999;
   --cx-z-panel: 10000;
@@ -262,7 +263,7 @@
   --cx-ui-border: var(--cx-color-gray-700) !important;
   --cx-ui-border-subtle: var(--cx-color-gray-800) !important;
   --cx-ui-divider: var(--cx-color-gray-800) !important;
-  --cx-ui-border-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
+  --cx-ui-border-accent: var(--cx-ui-dark-border-accent, var(--cx-color-indigo-400)) !important;
   --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
   --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;
   --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
@@ -312,7 +313,7 @@
     --cx-ui-border: var(--cx-color-gray-700) !important;
     --cx-ui-border-subtle: var(--cx-color-gray-800) !important;
     --cx-ui-divider: var(--cx-color-gray-800) !important;
-    --cx-ui-border-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
+    --cx-ui-border-accent: var(--cx-ui-dark-border-accent, var(--cx-color-indigo-400)) !important;
     --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;
     --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;
     --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;

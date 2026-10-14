@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   migrateSpec, specCompatibility, parseSchemaVersion, serializeSpec, canonicalSpec,
-  dashboardDiff, dashboardsEqual, DASHBOARD_SCHEMA_VERSION
+  dashboardDiff, dashboardsEqual, DASHBOARD_SCHEMA_VERSION, sourceUsesParam
 } from '../src/spec.js';
 
 var SPEC = {
@@ -105,4 +105,14 @@ test('dashboardDiff reports added / removed / changed paths with a summary', fun
   assert.ok(d.summary.indexOf('changed panels.bar.config.graphType: "Bar" -> "Line"') !== -1);
   assert.ok(d.summary.indexOf('added panels.bar.title = "Revenue"') !== -1);
   assert.deepEqual(dashboardDiff(SPEC, Object.assign(clone(SPEC), { version: 2 }), { ignore: ['version'] }).changed, []);
+});
+
+test('sourceUsesParam: query template, pushdown where, function args, dependsOn', function () {
+  assert.equal(sourceUsesParam({ kind: 'connector', url: '/a', query: { gene: '$gene' } }, 'gene'), true);
+  assert.equal(sourceUsesParam({ kind: 'connector', url: '/a', query: { gene: 'gene' } }, 'gene'), false, 'literal, not a param');
+  assert.equal(sourceUsesParam({ kind: 'connector', url: '/a', pushdown: { where: [{ column: 'r', op: '=', value: '$region' }] } }, 'region'), true);
+  assert.equal(sourceUsesParam({ kind: 'function', args: { n: '$n' } }, 'n'), true);
+  assert.equal(sourceUsesParam({ kind: 'inline', dependsOn: ['x'] }, 'x'), true);
+  assert.equal(sourceUsesParam({ kind: 'inline' }, 'x'), false);
+  assert.equal(sourceUsesParam(null, 'x'), false);
 });

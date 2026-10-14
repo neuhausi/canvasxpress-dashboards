@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import {
   addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, setParam, removeParam, setSourceQuery,
   addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink
+, addQueryControl
 } from '../src/builderModel.js';
 import { validateSpec } from '../src/validateSpec.js';
 import { relationGraph, translateMarks } from '../src/marking.js';
@@ -401,4 +402,28 @@ test('setSourcePushdown sets, keeps the filters flag, and removes an empty query
   assert.throws(function () { setSourcePushdown(s0, 'nope', q); }, /no data source named "nope"/);
   var live = setDataSource(s0, 'feed', { kind: 'live', url: '/s' });
   assert.throws(function () { setSourcePushdown(live, 'feed', q); }, /live source cannot be shaped/);
+});
+
+
+test('addQueryControl: parameter + query binding + param control in one step', function () {
+  var spec = setDataSource(setDataSource(blankSpec('q', 'Q'), 'genes', { kind: 'connector', url: '/connectors/api/data?source=genes' }),
+    'expr', { kind: 'connector', url: '/connectors/api/data?source=expr', query: { gene: '$old' } });
+  var next = addQueryControl(spec, { id: 'c1', param: 'gene', choicesRef: 'genes', annotation: 'symbol',
+    targetRef: 'expr', value: 'TP53', style: 'search' });
+  assert.deepEqual(next.params, { gene: { value: 'TP53', type: 'string' } });
+  assert.deepEqual(next.data.expr.query, { gene: '$gene' });             // the old binding on that field is replaced
+  var c = next.panels.c1;
+  assert.equal(c.mode, 'param');
+  assert.equal(c.param, 'gene');
+  assert.equal(c.style, 'search');
+  assert.equal(c.title, 'symbol');
+  assert.deepEqual(c.optionsFrom, { dataRef: 'genes', annotation: 'symbol' });
+  assert.ok(validateSpec(next).valid, JSON.stringify(validateSpec(next).errors));
+  assert.deepEqual(spec.data.expr.query, { gene: '$old' });               // input untouched
+  // A non-SQL source: the query field differs from the parameter name.
+  var other = addQueryControl(spec, { id: 'c2', param: 'g', choicesRef: 'genes', annotation: 'symbol', targetRef: 'expr', field: 'search' });
+  assert.equal(other.data.expr.query.search, '$g');
+  assert.equal(other.params.g.value, null);
+  assert.throws(function () { addQueryControl(spec, { id: 'c3', param: 'g', choicesRef: 'nope', annotation: 'a', targetRef: 'expr' }); }, /choices/);
+  assert.throws(function () { addQueryControl(spec, { id: 'c3', param: '1x', choicesRef: 'genes', annotation: 'a', targetRef: 'expr' }); }, /parameter/);
 });

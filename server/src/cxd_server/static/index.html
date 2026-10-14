@@ -182,12 +182,25 @@
     .cxd-embed-row { display: flex; gap: 6px; margin-top: 4px; align-items: flex-start; }
     .cxd-embed-code { flex: 1; font: 12px var(--cx-font-mono); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); padding: 4px; }
     .cxd-embed-copy { padding: 3px 8px; font-size: 12px; white-space: nowrap; }
+    /* Every dropdown in the app draws the engine's chevron (two currentColor diagonals: it follows
+       the text colour in light and dark), inset from the right border instead of on it, with room
+       so the text never runs under it. The engine's own selects (customizer, data filter, its classed
+       dropdowns) keep their styling; body.cX-UI-Controls is not one of them. */
+    select:not([multiple]):not([size]):not([class*="cX-"]):not([class*="CanvasXpress"]):not(:where([class*="cX-Customizer"], [class*="cX-DataFilter"]) select) { -webkit-appearance: none; -moz-appearance: none; appearance: none;
+      padding-right: 30px; cursor: pointer;
+      background-image: linear-gradient(45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%), linear-gradient(-45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%);
+      background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+    @media (forced-colors: active) { select { -webkit-appearance: auto; appearance: auto; background-image: none; } }
     /* Data-first wizard: Upload -> Check -> Visualize -> Publish */
     .cxd-wizard-steps { display: flex; gap: 6px; margin-bottom: 12px; font-size: 13px; }
     .cxd-wizard-step { padding: 3px 10px; border-radius: var(--cx-radius-lg); color: var(--cx-ui-text-muted); border: 1px solid var(--rail-border); }
     .cxd-wizard-step.cxd-wizard-step--active { color: var(--cx-ui-on-accent); background: var(--cx-ui-accent); border-color: var(--cx-ui-accent); }
-    .cxd-wizard-field { display: block; margin: 0 0 10px; font-size: 14px; }
-    .cxd-wizard-field input[type=text], .cxd-wizard-field input[type=url], .cxd-wizard-field textarea { width: 100%; box-sizing: border-box; padding: 6px 8px; font: 14px var(--cx-font-sans); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); }
+    .cxd-wizard-field { display: block; margin: 0 0 12px; font-size: 14px; }
+    /* Inputs and dropdowns share one box (same padding, border, font: same height), 6px under their label. */
+    .cxd-wizard-field input[type=text], .cxd-wizard-field input[type=url], .cxd-wizard-field select, .cxd-wizard-field textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; padding: 8px 10px; font: 14px/1.4 var(--cx-font-sans); color: inherit; background-color: var(--cx-ui-surface); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); }
+    .cxd-wizard-field select { padding-right: 32px; }
+    .cxd-wizard-field input[type=text], .cxd-wizard-field input[type=url], .cxd-wizard-field select { height: 38px; }
+    .cxd-wizard-field br { display: none; }
     .cxd-wizard-field textarea { font: 13px var(--cx-font-mono); }
     .cxd-wizard-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
     .cxd-wizard-msg { min-height: 18px; font-size: 13px; color: var(--cx-ui-danger); }
@@ -200,6 +213,19 @@
     .cxd-wizard-card { border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); padding: 6px; cursor: pointer; font-size: 13px; }
     .cxd-wizard-card.cxd-wizard-card--chosen { border-color: var(--cx-ui-accent); box-shadow: var(--cx-shadow-sm); }
     .cxd-wizard-card-host { height: 150px; }
+    .cxd-dbsrc-cols { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; max-height: 150px; overflow-y: auto; font-size: 13px; }
+    .cxd-dbsrc-col { font: 13px var(--cx-font-mono); padding: 3px 8px; border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); background-color: var(--cx-ui-surface); color: inherit; cursor: pointer; }
+    .cxd-dbsrc-col small { color: var(--cx-ui-text-muted); font-family: var(--cx-font-sans); }
+    .cxd-dbsrc-col--on { border-color: var(--cx-ui-accent); box-shadow: inset 0 0 0 1px var(--cx-ui-accent); }
+    .cxd-dbsrc-templates { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .cxd-dbsrc-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); column-gap: 12px; }
+    .cxd-dbsrc-params > .cxd-wizard-note { grid-column: 1 / -1; margin-bottom: 6px; }
+    .cxd-dbsrc-host { min-height: 40px; margin-top: 8px; }
+    .cxd-dbwizard-cols { display: flex; gap: 18px; align-items: flex-start; }
+    .cxd-dbwizard-fields { flex: 0 0 300px; min-width: 0; }
+    .cxd-dbwizard-preview { flex: 1 1 auto; min-width: 0; min-height: 420px; }
+    @media (max-width: 800px) { .cxd-dbwizard-cols { flex-direction: column; } .cxd-dbwizard-fields { flex-basis: auto; width: 100%; } }
+    .cxd-db-card-btn { flex: 1; padding: 4px 10px; font-size: 14px; background: transparent; border: 1px solid var(--rail-border); color: var(--accent); }
     /* Dashboards page: search box + "what a dashboard uses" filter chips (tokens, no inline styles) */
     .cxb-dash-search-wrap { position: relative; flex: none; margin-bottom: 8px; }
     #dash-search { width: 100%; box-sizing: border-box; padding: 9px 40px 9px 10px; font: inherit; font-size: 15px; border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); }
@@ -355,7 +381,9 @@
         '<div class="notices">' +
           notice('🎨', 'Edit every panel', 'Every panel opens the native CanvasXpress customizer — click the ⚙ to change chart type, colors, grouping and axes. Drag panels to reorder or resize them, and every change is saved with the dashboard. Prefer to describe it? Ask the chat assistant and it applies the tweak for you. Swap a panel’s dataset on the fly and the chart updates in place — no reload.', 'n-md') +
           notice('🔌', 'Connect your data', 'Bind panels to your own sources through <b>canvasxpress-connectors</b> — SQL warehouses, spreadsheets, business apps and finance feeds:' + connChips, 'n-md') +
+          notice('🗄', 'Dashboard from database', 'Turn a database into an explorer like <b>GTEx Gene Explorer</b>: pick a connection, name the column whose values a Control lists, write the query that runs for the picked value (<code>WHERE gene = :gene</code>, always a bound parameter) and choose a chart from a live sample. Both queries are saved as your database sources, so they stay editable in <b>Data</b>; in the Builder, selecting the Control shows how it is wired, SQL included. <a href="#" class="home-dbwizard">Start the wizard</a>.', 'n-feature') +
           notice('📡', 'Real-time streams', 'A panel can follow a stream as it happens: pick a 📡 stream in the panel’s <b>Data</b> list, set how many samples to keep and how often to update, and the chart slides forward with each new reading — no reload, one redraw per frame however fast data arrives. The browser never holds a credential, and every subscription is recorded in the audit log. <a href="' + API_BASE + '/examples/live-ops.html">See it in Live Ops</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/live-streaming.md" target="_blank" rel="noopener">How it works</a>.', 'n-feature') +
+          notice('🪪', 'Sign in as the viewer', 'On <b>Posit Connect</b>, a Databricks source can read as the <b>signed-in viewer</b> instead of a shared token — each person sees only what their own Databricks grants allow, and the source stores no credential at all. Register it with the user <code>posit-connect</code> and no password; a fresh viewer token is exchanged per request, never stored. <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/databricks-viewer-oauth.md" target="_blank" rel="noopener">How it works</a>.', 'n-feature') +
           notice('🧩', 'Blend and link sources', 'Link related sources in <b>🔗 Links</b>: pick each source and its key, and selecting an order marks its customer everywhere. Join two sources from <b>+ Data → Join two sources</b>. Filter the whole board from one <b>Filters</b> panel with saved schemes. No JSON needed. <a href="' + API_BASE + '/examples/cohort-explorer.html">See it in the Cohort Explorer</a>.', 'n-md') +
           notice('🧪', 'R and Python functions', 'A data source can be a short R or Python snippet over your other sources — rank genes against survival, fit a model — and its result feeds panels like any dataset. Runs on the server in a sandbox, when an admin enables it.', 'n-md') +
           notice('ƒx', 'Calculated fields', 'Define a field once on a data source (a formula such as <code>Revenue / Units</code> or <code>Age &gt;= 50 ? "50+" : "&lt;50"</code>, or bins of a number column) and every panel, <b>Filters</b> panel, join and link on that source can use it, like a column of the source itself. Open <b>ƒx Fields</b> in the Builder: it checks the formula as you type and previews the first values. <a href="' + API_BASE + '/examples/sales-model.html">See it in the Sales Model</a>.', 'n-md') +
@@ -372,6 +400,14 @@
         '</div>';
       var create = document.getElementById('home-create');
       if (create) create.onclick = function () { activate('Builder'); };
+      [].slice.call(viewEl.querySelectorAll('.home-dbwizard')).forEach(function (link) {
+        link.onclick = function (ev) {
+          ev.preventDefault();
+          // The wizard reads the user's database sources: sign in first when needed.
+          if (!currentUser) { pendingView = 'Dashboards'; showLogin('Dashboards'); return; }
+          showDbWizard();
+        };
+      });
       [].slice.call(viewEl.querySelectorAll('.howto-step')).forEach(function (s) {
         s.onclick = function () { activate('Builder'); };
       });
@@ -431,6 +467,16 @@
               return { name: n, url: API_BASE + '/connectors/api/data?source=' + encodeURIComponent(n) };
             });
           }).catch(function () { return []; });
+        },
+        // A database source's SQL, for the Builder's data-flow card (owner-only
+        // route; the connection string is not passed on).
+        describeConnectorSource: function (name) {
+          return ensureConnectorsSession().then(function () {
+            return fetch(API_BASE + '/api/connectors/source?name=' + encodeURIComponent(name), { credentials: 'include' });
+          }).then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          }).then(function (src) { return { name: src.name, sql: src.sql }; });
         },
         // Live (SSE) streams the bridged connectors app offers: a panel bound to
         // one follows it in real time (kind:"live" source).
@@ -501,7 +547,10 @@
             '<div class="data-list" id="db-sources" style="flex:1;min-height:250px;width:auto;align-self:stretch;padding:10px;display:flex;flex-direction:column;overflow:hidden">' +
               '<div style="font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:6px">Database sources</div>' +
               '<div id="db-source-list" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px"><div class="placeholder">Loading…</div></div>' +
-              '<button class="cta" id="db-source-add" style="margin-top:8px;padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:var(--accent)">+ Database</button>' +
+              '<div style="display:flex;gap:6px;margin-top:8px">' +
+                '<button class="cta cxd-db-card-btn" id="db-source-add">+ Database</button>' +
+                '<button class="cta cxd-db-card-btn" id="db-dashboard-add" title="Build a dashboard whose Control queries your database">+ Dashboard</button>' +
+              '</div>' +
             '</div>' +
           '</div>' +
           '<div class="data-preview" id="data-preview">' +
@@ -540,7 +589,7 @@
         '<label style="display:block;font-size:14px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:4px 0 2px">Name</label>' +
         '<input id="ad-name" style="width:100%;padding:8px;box-sizing:border-box" placeholder="e.g. my-data"/>' +
         '<label style="display:block;font-size:14px;font-weight:700;text-transform:uppercase;color:var(--muted);margin:12px 0 2px">Source</label>' +
-        '<select id="ad-type" style="width:100%;padding:8px;box-sizing:border-box;appearance:none;-webkit-appearance:none;padding-right:34px;background-image:url(&quot;data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27 viewBox=%270 0 12 8%27><path d=%27M1 1.5l5 5 5-5%27 fill=%27none%27 stroke=%27%236b7280%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/></svg>&quot;);background-repeat:no-repeat;background-position:right 12px center">' +
+        '<select id="ad-type" style="width:100%;padding:8px;padding-right:32px;box-sizing:border-box">' +
           '<option value="file">Upload CSV / JSON file</option>' +
           '<option value="csv">Paste CSV</option>' +
           '<option value="url">External URL / connector</option>' +
@@ -1088,7 +1137,7 @@
           // The user's own role ('' = none: their groups' roles, else the default).
           if (!u.is_admin && govRoles.length) {
             var roleSel = document.createElement('select');
-            roleSel.style.cssText = 'font-size:14px;padding:3px 4px';
+            roleSel.style.cssText = 'font-size:14px;padding:3px 28px 3px 6px';
             roleSel.title = 'Role';
             [''].concat(govRoles.map(function (r) { return r.name; })).forEach(function (name) {
               var o = document.createElement('option'); o.value = name;
@@ -1585,60 +1634,308 @@
       });
     }
 
-    // Add/edit a database source in a FLOATING dialog (same overlay pattern
-    // as "+ Data"), so the form never pushes the source list around.
-    function openDbSourceDialog(prefill) {
-      var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;background:var(--cx-ui-backdrop);display:flex;' +
-        'align-items:center;justify-content:center;z-index:var(--cx-z-modal)';
-      var modal = document.createElement('div');
-      modal.style.cssText = 'background:var(--rail-bg);color:inherit;border-radius:var(--cx-radius-lg);' +
-        'padding:20px;width:560px;max-width:92vw;box-shadow:0 12px 48px rgba(0,0,0,.3);' +
-        'display:flex;flex-direction:column;gap:10px';
-      var FIELD = 'width:100%;box-sizing:border-box;padding:8px;font:inherit;font-size:14px;' +
-        'border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)';
-      modal.innerHTML =
-        '<h3 style="margin:0;font-size:17px">' + (prefill ? 'Edit database source' : 'Add database source') + '</h3>' +
-        '<label style="font-size:13px;font-weight:600;text-transform:uppercase;color:var(--muted)">Name' +
-          '<input id="db-src-name" placeholder="e.g. my-sales" style="' + FIELD + ';margin-top:4px"></label>' +
-        '<label style="font-size:13px;font-weight:600;text-transform:uppercase;color:var(--muted)">Connection URL' +
-          '<input id="db-src-url" placeholder="sqlite:///path.db · postgresql+psycopg://user:pw@host/db" style="' + FIELD + ';margin-top:4px"></label>' +
-        '<label style="font-size:13px;font-weight:600;text-transform:uppercase;color:var(--muted)">Read-only SQL' +
-          '<textarea id="db-src-sql" rows="5" placeholder="SELECT …" style="' + FIELD + ';margin-top:4px;font-family:monospace;font-size:13px;resize:vertical"></textarea></label>' +
-        '<div id="db-src-err" style="color:var(--cx-ui-danger);font-size:13px;min-height:16px"></div>' +
-        '<div style="display:flex;justify-content:flex-end;gap:8px">' +
-          '<button class="cta" id="db-src-cancel" style="padding:6px 14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Cancel</button>' +
-          '<button class="cta" id="db-src-save" style="padding:6px 14px">' + (prefill ? 'Save' : 'Add') + '</button>' +
-        '</div>';
-      overlay.appendChild(modal);
-      document.body.appendChild(overlay);
-      if (prefill) {
-        modal.querySelector('#db-src-name').value = prefill.name || '';
-        modal.querySelector('#db-src-url').value = prefill.conn_url || '';
-        modal.querySelector('#db-src-sql').value = prefill.sql || '';
+    // Add/edit a database source: the connection, a table browser (tables →
+    // columns, click a column to insert it), query templates (all rows /
+    // values for a Control / rows for a :param), the SQL with its :params
+    // detected, and Test — runs the UNSAVED query (read-only, capped in the
+    // database) with sample values. Resolves with {name, sql} once saved, or
+    // null when cancelled; the "Dashboard from database" wizard opens it with
+    // opts {title, intro, name, fromSource, template, hint}.
+    var DB_TEST_ROWS = 200;
+    function openDbSourceDialog(prefill, opts) {
+      opts = opts || {};
+      var editing = !!(prefill && prefill.name);
+      var resolveResult;
+      var result = new Promise(function (resolve) { resolveResult = resolve; });
+      var instances = [];
+      var done = null;
+      function destroyAll() {
+        instances.forEach(function (inst) { try { inst.destroy(); } catch (e) { /* gone */ } });
+        instances = [];
       }
-      function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
-      overlay.addEventListener('click', function (ev) { if (ev.target === overlay) close(); });
-      modal.querySelector('#db-src-cancel').onclick = close;
-      modal.querySelector('#db-src-save').onclick = function () {
-        var errEl = modal.querySelector('#db-src-err');
-        errEl.textContent = '';
-        var body = {
-          name: modal.querySelector('#db-src-name').value.trim(),
-          conn_url: modal.querySelector('#db-src-url').value.trim(),
-          sql: modal.querySelector('#db-src-sql').value.trim()
-        };
-        connectorsApi('/api/sources', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        }).then(function () {
-          close();
-          delete dbSourceDims[body.name];
-          loadDbSources();
-          previewConnectorSource(body.name);
-        }, function (e) { errEl.textContent = e.message; });
+      var body = openModal(opts.title || (editing ? 'Edit database source' : 'Add database source'), function () {
+        destroyAll();
+        resolveResult(done);
+      }, { wide: true });
+      var state = { names: [], fromSource: opts.fromSource || '', connUrl: prefill && prefill.conn_url || '',
+        tables: null, params: {}, lastTest: null };
+
+      function el(tag, cls, text) {
+        var node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text != null) node.textContent = text;
+        return node;
+      }
+      function labeledField(text, control) {
+        var label = el('label', 'cxd-wizard-field');
+        label.appendChild(document.createTextNode(text));
+        label.appendChild(control);
+        return label;
+      }
+      function textInput(value, placeholder) {
+        var i = el('input'); i.type = 'text'; i.value = value || ''; i.placeholder = placeholder || ''; return i;
+      }
+
+      if (opts.intro) { var intro = el('div', 'cxd-wizard-note'); intro.innerHTML = opts.intro; intro.style.marginBottom = '10px'; body.appendChild(intro); }
+      var msg = el('div', 'cxd-wizard-msg');
+      body.appendChild(msg);
+      var cols = el('div', 'cxd-dbwizard-cols');
+      var left = el('div', 'cxd-dbwizard-fields');
+      var right = el('div', 'cxd-dbwizard-preview');
+      cols.appendChild(left); cols.appendChild(right);
+      body.appendChild(cols);
+
+      // ---- left: name, connection, table browser, templates
+      var name = textInput(prefill && prefill.name || opts.name || '', 'e.g. sales-by-region');
+      left.appendChild(labeledField('Name', name));
+      var dbPick = el('select');
+      dbPick.innerHTML = '<option value="">Loading…</option>';
+      left.appendChild(labeledField('Database', dbPick));
+      var url = textInput(state.connUrl, 'sqlite:///path.db · postgresql+psycopg://user:pw@host/db');
+      var urlField = labeledField('Connection URL', url);
+      left.appendChild(urlField);
+      // Databricks on Posit Connect can sign in as the signed-in viewer (no stored
+      // token): user "posit-connect", no password. See docs/databricks-viewer-oauth.md.
+      var urlHint = el('div', 'cxd-wizard-note');
+      urlHint.innerHTML = 'Databricks: <code>databricks://token:&lt;PAT&gt;@host?http_path=…&amp;catalog=…&amp;schema=…</code>, ' +
+        'or on Posit Connect read as the viewer with <code>databricks://posit-connect@host?…</code> (no token stored).';
+      urlField.appendChild(urlHint);
+      var tableSel = el('select');
+      tableSel.innerHTML = '<option value="">—</option>';
+      left.appendChild(labeledField('Table', tableSel));
+      var colList = el('div', 'cxd-dbsrc-cols');
+      var colField = labeledField('Columns (click to insert)', colList);
+      left.appendChild(colField);
+      var param = textInput(opts.param || '', 'e.g. region');
+      left.appendChild(labeledField('Parameter (for templates)', param));
+      var templates = el('div', 'cxd-dbsrc-templates');
+      left.appendChild(labeledField('Start from', templates));
+
+      // ---- right: SQL, parameters, test + preview
+      var sql = el('textarea');
+      sql.rows = 7; sql.spellcheck = false; sql.value = prefill && prefill.sql || opts.sql || '';
+      sql.placeholder = 'SELECT … FROM … WHERE column = :param';
+      right.appendChild(labeledField('Read-only SQL', sql));
+      var paramsBox = el('div', 'cxd-dbsrc-params');
+      right.appendChild(paramsBox);
+      var testRow = el('div', 'cxd-wizard-actions');
+      testRow.style.justifyContent = 'flex-start';
+      testRow.style.marginTop = '0';
+      var testBtn = smallButton('▶ Test', function () { runTest(); });
+      var testNote = el('span', 'cxd-wizard-note');
+      testRow.appendChild(testBtn); testRow.appendChild(testNote);
+      right.appendChild(testRow);
+      var host = el('div', 'cxd-dbsrc-host');
+      right.appendChild(host);
+      if (opts.hint) { var hint = el('div', 'cxd-wizard-note'); hint.innerHTML = opts.hint; right.appendChild(hint); }
+
+      function connBody() {
+        return state.fromSource ? { source: state.fromSource } : { conn_url: url.value.trim() };
+      }
+      function postJson(path, payload) {
+        return ensureConnectorsSession().then(function () {
+          return fetch(API_BASE + path, { method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        }).then(function (r) {
+          return r.json().then(function (b) { if (!r.ok) throw new Error(b.detail || ('HTTP ' + r.status)); return b; });
+        });
+      }
+      function selectedColumn() {
+        var on = colList.querySelector('.cxd-dbsrc-col--on');
+        return on ? on.getAttribute('data-col') : '';
+      }
+
+      // Templates write the SQL from the picked table / column / parameter.
+      function template(kind) {
+        var t = tableSel.value, c = selectedColumn(), p = param.value.trim() || CXD.paramNameFor(c);
+        msg.textContent = '';
+        if (!t) { msg.textContent = 'Pick a table first.'; return; }
+        if (kind !== 'all' && !c) { msg.textContent = 'Pick a column first (click it in Columns).'; return; }
+        if (kind !== 'all' && !param.value.trim()) param.value = p;
+        sql.value = kind === 'all' ? 'SELECT * FROM ' + t
+          : kind === 'choices' ? CXD.choicesSql(t, c, p) : CXD.detailSql(t, c, p);
+        syncParams();
+      }
+      [['all', 'All rows'], ['choices', 'Values for a Control'], ['detail', 'Rows for a :parameter']].forEach(function (t) {
+        var b = smallButton(t[1], function () { template(t[0]); });
+        b.setAttribute('data-template', t[0]);
+        if (opts.template === t[0]) b.className = 'cX-Button cX-Button--primary';
+        templates.appendChild(b);
+      });
+
+      // :params in the SQL → one sample-value box each (kept across edits).
+      function syncParams() {
+        var names = CXD.sqlParamNames(sql.value);
+        paramsBox.innerHTML = '';
+        if (!names.length) return;
+        var head = el('div', 'cxd-wizard-note', 'Parameters — sample values for Test (a dashboard Control fills them):');
+        paramsBox.appendChild(head);
+        names.forEach(function (n) {
+          var i = textInput(state.params[n] || '', 'sample value');
+          i.setAttribute('data-param', n);
+          i.oninput = function () { state.params[n] = i.value; };
+          paramsBox.appendChild(labeledField(':' + n, i));
+        });
+      }
+      var paramTimer = null;
+      sql.oninput = function () { sql.removeAttribute('data-auto'); clearTimeout(paramTimer); paramTimer = setTimeout(syncParams, 300); };
+
+      function fillColumns(table) {
+        colList.innerHTML = '';
+        if (!table) return;
+        colList.textContent = 'Loading…';
+        var req = connBody(); req.table = table;
+        postJson('/api/connectors/schema', req).then(function (res) {
+          if (tableSel.value !== table) return;
+          colList.innerHTML = '';
+          (res.columns || []).forEach(function (c) {
+            var chip = el('button', 'cxd-dbsrc-col', c.name);
+            chip.type = 'button';
+            chip.title = (c.type || c.kind) + ' — click to insert';
+            chip.setAttribute('data-col', c.name);
+            var kind = el('small', null, ' ' + (c.type || c.kind).toLowerCase());
+            chip.appendChild(kind);
+            chip.onclick = function () {
+              [].forEach.call(colList.children, function (x) { x.classList.remove('cxd-dbsrc-col--on'); });
+              chip.classList.add('cxd-dbsrc-col--on');
+              if (!opts.param && (!param.value.trim() || param.getAttribute('data-auto'))) {
+                param.value = CXD.paramNameFor(c.name);
+                param.setAttribute('data-auto', '1');
+              }
+              // A guided step (the wizard) writes its template on the first column pick.
+              if (opts.template && (!sql.value.trim() || sql.getAttribute('data-auto'))) {
+                template(opts.template);
+                sql.setAttribute('data-auto', '1');
+                return;
+              }
+              insertAtCursor(c.name);
+            };
+            colList.appendChild(chip);
+          });
+        }, function (e) { colList.textContent = e.message; });
+      }
+      param.oninput = function () { param.removeAttribute('data-auto'); };
+      // Insert only into a query the user is writing; an empty box waits for a template.
+      function insertAtCursor(text) {
+        if (!sql.value.trim()) return;
+        var start = sql.selectionStart, end = sql.selectionEnd;
+        if (document.activeElement !== sql && start === sql.value.length && end === start) { start = end = sql.value.length; }
+        sql.value = sql.value.slice(0, start) + text + sql.value.slice(end);
+        sql.selectionStart = sql.selectionEnd = start + text.length;
+        syncParams();
+      }
+      function loadTables() {
+        tableSel.innerHTML = '<option value="">Loading tables…</option>';
+        colList.innerHTML = '';
+        if (!state.fromSource && !url.value.trim()) { tableSel.innerHTML = '<option value="">Enter a connection URL</option>'; return; }
+        postJson('/api/connectors/schema', connBody()).then(function (res) {
+          tableSel.innerHTML = '<option value="">— pick a table —</option>';
+          (res.tables || []).forEach(function (t) {
+            var o = el('option', null, t.name + (t.kind === 'view' ? '  (view)' : ''));
+            o.value = t.name;
+            tableSel.appendChild(o);
+          });
+        }, function (e) { tableSel.innerHTML = '<option value="">Tables unavailable</option>'; colList.textContent = e.message; });
+      }
+      tableSel.onchange = function () { fillColumns(tableSel.value); };
+      dbPick.onchange = function () {
+        state.fromSource = dbPick.value;
+        urlField.style.display = state.fromSource ? 'none' : '';
+        loadTables();
       };
-      modal.querySelector('#db-src-name').focus();
+      var urlTimer = null;
+      url.oninput = function () { clearTimeout(urlTimer); urlTimer = setTimeout(loadTables, 600); };
+
+      // Databases: every saved source (its connection, by reference), or a URL.
+      ensureConnectorsSession().then(function () {
+        return fetch(API_BASE + '/api/connectors/sources-meta', { credentials: 'include' })
+          .then(function (r) { return r.json().then(function (b) { if (!r.ok) throw new Error(b.detail || r.status); return b; }); });
+      }).then(function (res) {
+        var sources = res.sources || [];
+        state.names = sources.map(function (s) { return s.name; });
+        dbPick.innerHTML = '';
+        sources.forEach(function (s) {
+          if (editing && s.name === prefill.name) return;   // its own URL is in the box
+          var o = el('option', null, 'Same database as “' + s.name + '”' + (s.location ? ' (' + s.location + ')' : ''));
+          o.value = s.name;
+          dbPick.appendChild(o);
+        });
+        var other = el('option', null, editing ? 'This source’s connection URL' : 'A new connection URL…');
+        other.value = '';
+        dbPick.appendChild(other);
+        dbPick.value = editing ? '' : (state.fromSource && state.names.indexOf(state.fromSource) !== -1 ? state.fromSource
+          : (sources[0] ? sources[0].name : ''));
+        dbPick.onchange();
+      }, function (e) {
+        dbPick.innerHTML = '<option value="">A connection URL</option>';
+        dbPick.onchange();
+        msg.textContent = 'Database sources are unavailable on this server (' + e.message + ').';
+      });
+      syncParams();
+
+      function runTest() {
+        msg.textContent = '';
+        var text = sql.value.trim();
+        if (!text) { msg.textContent = 'Write a query (or start from a template).'; return; }
+        var req = connBody();
+        req.sql = text; req.limit = DB_TEST_ROWS; req.params = {};
+        CXD.sqlParamNames(text).forEach(function (n) { req.params[n] = state.params[n] || null; });
+        testNote.textContent = 'Running…';
+        destroyAll();
+        host.innerHTML = '';
+        postJson('/api/connectors/test', req).then(function (res) {
+          state.lastTest = res;
+          testNote.textContent = res.rows ? res.rows + ' row(s)' + (res.truncated ? ' (first ' + DB_TEST_ROWS + ')' : '') +
+            ' · ' + res.columns.length + ' column(s): ' + res.columns.join(', ')
+            : 'No rows' + (CXD.sqlParamNames(text).length ? ' — try other sample values.' : '.');
+          if (!res.data) return;
+          var canvas = el('canvas');
+          canvas.id = 'cxd-dbsrc-' + Date.now();
+          canvas.setAttribute('width', Math.max(320, host.clientWidth || 600));
+          canvas.setAttribute('height', 260);
+          host.appendChild(canvas);
+          try { instances.push(new window.CanvasXpress(canvas.id, res.data, { view: 'table', resizable: false }, {})); }
+          catch (e) { host.textContent = 'Preview unavailable.'; }
+        }, function (e) { testNote.textContent = ''; msg.textContent = e.message; });
+      }
+
+      function save() {
+        msg.textContent = '';
+        var n = name.value.trim(), text = sql.value.trim();
+        if (!n) { msg.textContent = 'Give the source a name.'; return; }
+        if (!text) { msg.textContent = 'Write a query (or start from a template).'; return; }
+        if ((!editing || n !== prefill.name) && state.names.indexOf(n) !== -1 &&
+            !window.confirm('A database source named “' + n + '” exists. Replace it?')) return;
+        var connPromise = state.fromSource
+          ? fetch(API_BASE + '/api/connectors/source?name=' + encodeURIComponent(state.fromSource), { credentials: 'include' })
+              .then(function (r) { return r.json().then(function (b) { if (!r.ok) throw new Error(b.detail || r.status); return b.conn_url; }); })
+          : Promise.resolve(url.value.trim());
+        saveBtn.disabled = true;
+        connPromise.then(function (connUrl) {
+          if (!connUrl) throw new Error('Enter a connection URL or pick a database.');
+          return connectorsApi('/api/sources', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: n, conn_url: connUrl, sql: text }) });
+        }).then(function () {
+          delete dbSourceDims[n];
+          done = { name: n, sql: text, params: CXD.sqlParamNames(text), sample: state.lastTest };
+          body.close();
+        }, function (e) { saveBtn.disabled = false; msg.textContent = e.message; });
+      }
+      var saveBtn = smallButton(opts.saveLabel || (editing ? 'Save' : 'Add source'), save);
+      saveBtn.className = 'cX-Button cX-Button--primary';
+      var footer = el('div', 'cxd-wizard-actions');
+      footer.appendChild(smallButton('Cancel', function () { body.close(); }));
+      footer.appendChild(saveBtn);
+      body.appendChild(footer);
+      setTimeout(function () { (editing ? sql : name).focus(); }, 0);
+      return result;
+    }
+
+    // Data page: a saved source shows up in the list and opens in the preview.
+    function afterDbSourceSaved(saved) {
+      if (!saved) return;
+      loadDbSources();
+      previewConnectorSource(saved.name);
     }
 
     // Edit = fetch the source (owner-only endpoint) and open the dialog
@@ -1646,7 +1943,7 @@
     function editDbSource(name) {
       fetch(API_BASE + '/api/connectors/source?name=' + encodeURIComponent(name), { credentials: 'include' })
         .then(function (r) { return r.json().then(function (b) { if (!r.ok) throw new Error(b.detail || r.status); return b; }); })
-        .then(openDbSourceDialog,
+        .then(function (src) { return openDbSourceDialog(src).then(afterDbSourceSaved); },
           function (e) { window.alert('Could not load source: ' + e.message); });
     }
 
@@ -1707,7 +2004,9 @@
 
     function wireDbSourceForm() {
       var addBtn = document.getElementById('db-source-add');
-      if (addBtn) addBtn.onclick = function () { openDbSourceDialog(null); };
+      if (addBtn) addBtn.onclick = function () { openDbSourceDialog(null).then(afterDbSourceSaved); };
+      var dashBtn = document.getElementById('db-dashboard-add');
+      if (dashBtn) dashBtn.onclick = showDbWizard;
     }
 
     // Preview a database source: query it LIVE through the connectors app and
@@ -1719,7 +2018,12 @@
       if (titleEl) { titleEl.style.display = ''; titleEl.textContent = name + '  ·  live database query'; }
       destroyDataPreview();
       host.innerHTML = '<div class="placeholder">Querying database…</div>';
-      connectorsApi('/api/data?source=' + encodeURIComponent(name)).then(function (data) {
+      // Cap the preview IN THE DATABASE (pushdown limit) so a large table is
+      // never pulled whole into the browser just to show a sample of it.
+      var PREVIEW_DB_ROWS = 500;
+      if (titleEl) titleEl.textContent = name + '  ·  live database query (first ' + PREVIEW_DB_ROWS + ' rows)';
+      connectorsApi('/api/data?source=' + encodeURIComponent(name) +
+          '&_q=' + encodeURIComponent(JSON.stringify({ limit: PREVIEW_DB_ROWS }))).then(function (data) {
         host.innerHTML = '';
         requestAnimationFrame(function () {
           if (document.getElementById('data-title') == null) return;
@@ -1933,7 +2237,7 @@
     function principalSelect(dir, opts) {
       opts = opts || {};
       var sel = document.createElement('select');
-      sel.style.cssText = 'font-size:14px;padding:3px 4px;max-width:220px';
+      sel.style.cssText = 'font-size:14px;padding:3px 28px 3px 6px;max-width:220px';
       var add = function (value, label) {
         var o = document.createElement('option'); o.value = value; o.textContent = label; sel.appendChild(o);
       };
@@ -1959,13 +2263,15 @@
     // A simple modal; returns its body element. Esc or the ✕ closes it.
     // Built on the shared CanvasXpress modal primitive (.cX-Modal*: tokens, light and dark);
     // only the shell's own layout stays inline (top-aligned, wider, a block-flow body).
-    function openModal(title, onClose) {
+    // opts.wide: a larger card (wizards with a live preview).
+    function openModal(title, onClose, opts) {
       var overlay = document.createElement('div');
       overlay.className = 'cX-Modal-Overlay';
       overlay.style.cssText = 'align-items:flex-start;padding-top:8vh';
       var card = document.createElement('div');
       card.className = 'cX-Modal';
-      card.style.cssText = 'width:min(720px,92vw);max-width:none;max-height:80vh';
+      card.style.cssText = opts && opts.wide ? 'width:min(1120px,95vw);max-width:none;max-height:92vh'
+        : 'width:min(720px,92vw);max-width:none;max-height:80vh';
       var head = document.createElement('div');
       head.className = 'cX-Modal-Head';
       head.innerHTML = '<h3 class="cX-Modal-Title" style="font-size:17px;flex:1">' + esc(title) + '</h3>';
@@ -2205,6 +2511,10 @@
           return c;
         }
         function drawCards(suggestions) {
+          // Scatter-family charts over row-per-sample data need transposeData.
+          suggestions = suggestions.map(function (s) {
+            return { graphType: s.graphType, reason: s.reason, config: CXD.orientConfig(s.config, state.data) };
+          });
           destroyAll();
           cards.innerHTML = '';
           lastSuggestions = suggestions;
@@ -2215,11 +2525,13 @@
             var host = document.createElement('div');
             host.className = 'cxd-wizard-card-host';
             card.appendChild(host);
-            card.onclick = function () {
+            // Capture phase: a click on the preview chart is the chart's own
+            // (CanvasXpress stops it there), so the card must see it first.
+            card.addEventListener('click', function () {
               state.config = s.config;
               Array.prototype.forEach.call(cards.children, function (el) { el.classList.remove('cxd-wizard-card--chosen'); });
               card.classList.add('cxd-wizard-card--chosen');
-            };
+            }, true);
             cards.appendChild(card);
             try {
               instances.push(new window.CanvasXpress(newCanvas(host, 150), state.data,
@@ -2246,7 +2558,7 @@
           });
           pick.onchange = function () {
             drawCards([{ graphType: pick.value, reason: '', config: { graphType: pick.value } }]);
-            state.config = { graphType: pick.value };
+            state.config = CXD.orientConfig({ graphType: pick.value }, state.data);
           };
           cards.parentNode.insertBefore(labeled('All types', pick), cards);
         }
@@ -2339,7 +2651,7 @@
       var levels = res.kind === 'dataset' ? ['view'] : ['view', 'edit'];
       function levelSelect(value) {
         var sel = document.createElement('select');
-        sel.style.cssText = 'font-size:14px;padding:3px 4px';
+        sel.style.cssText = 'font-size:14px;padding:3px 28px 3px 6px';
         levels.forEach(function (l) {
           var o = document.createElement('option'); o.value = l;
           o.textContent = l === 'edit' ? 'Can edit' : 'Can view'; sel.appendChild(o);
@@ -2734,7 +3046,7 @@
         if (placeholder) i.placeholder = placeholder; i.style.cssText = S; return i;
       }
       function select(options, value) {
-        var sel = document.createElement('select'); sel.style.cssText = S;
+        var sel = document.createElement('select'); sel.style.cssText = S + ';padding-right:30px';
         options.forEach(function (o) { var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op); });
         if (value != null) sel.value = value;
         return sel;
@@ -2802,7 +3114,7 @@
             wrap.appendChild(smallButton(principalLabel(p) + ' ✕', function () { chosen.splice(i, 1); draw(); }));
           });
           var pick = document.createElement('select');
-          pick.style.cssText = 'font-size:14px;padding:3px 4px';
+          pick.style.cssText = 'font-size:14px;padding:3px 28px 3px 6px';
           pick.innerHTML = '<option value="">+ add a person or group…</option>' +
             (dir.groups || []).map(function (g) { return '<option value="group:' + esc(g) + '">' + esc(principalLabel('group:' + g)) + '</option>'; }).join('') +
             (dir.users || []).map(function (u) { return '<option value="user:' + esc(u) + '">' + esc(principalLabel('user:' + u)) + '</option>'; }).join('');
@@ -3320,6 +3632,107 @@
     function isHex(v) { return /^#[0-9a-fA-F]{3,8}$/.test(v || ''); }
     function hexOr(v, fallback) { return isHex(v) ? v : fallback; }
 
+    // ---- "Dashboard from database": a guided path through the three tools it
+    // is made of — the database-source editor (Data → + Database) twice, then
+    // the Builder's + Control ("Query a source") and + Panel dialogs on a new
+    // dashboard. Nothing here is wizard-only: each step is the same dialog the
+    // user meets later, so the dashboard stays editable with the same tools.
+    function showDbWizard() {
+      var created = [];
+      function dropCreated() {
+        created.forEach(function (n) {
+          connectorsApi('/api/sources/' + encodeURIComponent(n), { method: 'DELETE' }).catch(function () {});
+        });
+      }
+      var body = openModal('New dashboard from a database', null);
+      var intro = document.createElement('div');
+      intro.className = 'cxd-wizard-note';
+      intro.style.marginBottom = '12px';
+      intro.innerHTML = 'A dashboard like <b>GTEx Gene Explorer</b>, in four steps — each one is a tool you can use on its own later:' +
+        '<ol style="margin:8px 0 0;padding-left:20px;line-height:1.6">' +
+        '<li><b>The values to pick from</b> — a database query (Data → + Database).</li>' +
+        '<li><b>The query a pick re-runs</b> — a query with a <code>:parameter</code>.</li>' +
+        '<li><b>The Control</b> — lists the values and re-runs the query (Builder → + Control).</li>' +
+        '<li><b>The chart</b> — of the re-run query, with a live preview (Builder → + Panel).</li></ol>';
+      body.appendChild(intro);
+      var title = document.createElement('input');
+      title.type = 'text';
+      title.placeholder = 'e.g. Sales by store';
+      var label = document.createElement('label');
+      label.className = 'cxd-wizard-field';
+      label.appendChild(document.createTextNode('Dashboard title'));
+      label.appendChild(title);
+      body.appendChild(label);
+      var msg = document.createElement('div');
+      msg.className = 'cxd-wizard-msg';
+      body.appendChild(msg);
+      var row = document.createElement('div');
+      row.className = 'cxd-wizard-actions';
+      var start = smallButton('Start', function () {
+        var t = title.value.trim();
+        if (!t) { msg.textContent = 'Give the dashboard a title.'; return; }
+        body.close();
+        runChain(t);
+      });
+      start.className = 'cX-Button cX-Button--primary';
+      row.appendChild(smallButton('Cancel', function () { body.close(); }));
+      row.appendChild(start);
+      body.appendChild(row);
+      setTimeout(function () { title.focus(); }, 0);
+
+      function slugOf(text) {
+        return String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32) || 'explorer';
+      }
+      function runChain(dashTitle) {
+        var slug = slugOf(dashTitle);
+        var choices = null;
+        openDbSourceDialog(null, {
+          title: 'Step 1 of 4 — The values to pick from', name: slug + '-choices', template: 'choices',
+          saveLabel: 'Save and continue',
+          intro: 'Pick the <b>database</b>, the <b>table</b>, then click the <b>column</b> whose values the Control will list: ' +
+            'the query is written for you. <b>Test</b> it, then continue.'
+        }).then(function (saved) {
+          if (!saved) return null;
+          created.push(saved.name);
+          choices = saved;
+          var cols = saved.sample && saved.sample.columns || [];
+          return openDbSourceDialog(null, {
+            title: 'Step 2 of 4 — The query a pick re-runs', name: slug + '-detail', template: 'detail',
+            fromSource: saved.name, param: cols[1] || '', saveLabel: 'Save and continue',
+            intro: 'Pick the <b>table</b> and the <b>column</b> the picked value filters: the query gets a <b>:' + esc(cols[1] || 'parameter') +
+              '</b> where the Control’s value goes (always bound, never pasted into the SQL). Give it a sample value and <b>Test</b>.'
+          });
+        }).then(function (detail) {
+          if (!detail) { dropCreated(); return; }
+          created.push(detail.name);
+          // A new dashboard with both sources, then the Builder's own dialogs.
+          var spec = CXD.blankSpec(slug + '-' + Date.now().toString(36), dashTitle);
+          spec = CXD.setDataSource(spec, choices.name, { kind: 'connector', url: CXD.connectorSourceUrl(choices.name), ttl: 600000 });
+          spec = CXD.setDataSource(spec, detail.name, { kind: 'connector', url: CXD.connectorSourceUrl(detail.name), ttl: 0 });
+          currentSpec = spec; currentOwner = null;
+          activate('Builder');
+          var builder = currentBuilder;
+          var choiceCols = choices.sample && choices.sample.columns || [];
+          return builder.openControlDialog({
+            choices: 'ref:' + choices.name, target: 'ref:' + detail.name,
+            annotation: choiceCols[1] || '', param: detail.params[0] || ''
+          }).then(function (control) {
+            if (!control) return null;
+            return builder.whenReady().then(function () {
+              return builder.openPanelDialog({ source: 'ref:' + detail.name, title: dashTitle });
+            });
+          }).then(function (panel) {
+            // Saved either way: the sources and the Control are already useful.
+            var finalSpec = builder.getSpec();
+            currentSpec = finalSpec;
+            return client.save(finalSpec).then(function () {
+              if (!panel) window.alert('Saved “' + dashTitle + '”. Add its chart with + Panel.');
+            });
+          });
+        }).catch(function (e) { window.alert('Dashboard from database: ' + (e && e.message || e)); });
+      }
+    }
+
     // --- Dashboards view: the user's saved dashboards (the shipped examples
     // are seeded here by examples/serve.py) — open in Builder, preview, delete.
     function showDashboards() {
@@ -3330,6 +3743,7 @@
           '<h2 class="view-title">Dashboards</h2>' +
           '<button class="cta" id="dash-refresh" style="margin-left:auto;padding:6px 14px;font-size:16px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
           '<button class="cta" id="dash-wizard">＋ Chart from data</button>' +
+          '<button class="cta" id="dash-dbwizard" title="A Control that lists values from your database, over a chart that re-queries it for the picked value">＋ Dashboard from database</button>' +
         '</div>';
       viewEl.innerHTML =
         '<div class="data-view">' +
@@ -3348,6 +3762,7 @@
         '</div>';
       document.getElementById('dash-refresh').onclick = loadDashList;
       document.getElementById('dash-wizard').onclick = showWizard;
+      document.getElementById('dash-dbwizard').onclick = showDbWizard;
       loadDashList();
     }
 
@@ -3751,7 +4166,7 @@
             }
             if (r.can_sign) {
               var meaning = document.createElement('select');
-              meaning.style.cssText = 'font-size:14px;padding:3px 4px';
+              meaning.style.cssText = 'font-size:14px;padding:3px 28px 3px 6px';
               r.meanings.forEach(function (m) { meaning.appendChild(new Option(m, m)); });
               var pw = document.createElement('input');
               pw.type = 'password'; pw.placeholder = 'your password';

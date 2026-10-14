@@ -160,6 +160,40 @@ export function migrateSpec(spec) {
 }
 
 /**
+ * Whether a data source reads dashboard parameter `param` — through its
+ * `query` template ("$name"), a pushdown `where` value, a data function's
+ * `args`, or an explicit `dependsOn` list. The single definition of "this
+ * parameter feeds this source": the renderer re-queries such sources when the
+ * parameter changes, and the Builder's data-flow card draws the same wiring.
+ * @param {object} source - A spec data source.
+ * @param {string} param - The parameter name.
+ * @returns {boolean} True when the source consumes the parameter.
+ * @public
+ */
+export function sourceUsesParam(source, param) {
+  if (!source || !param) return false;
+  var token = '$' + param;
+  if (Array.isArray(source.dependsOn) && source.dependsOn.indexOf(param) !== -1) return true;
+  var query = source.query || {};
+  for (var qk in query) {
+    if (Object.prototype.hasOwnProperty.call(query, qk) && query[qk] === token) return true;
+  }
+  // A pushdown filter reads a param through its value, whether the query runs
+  // in a database or in the browser.
+  var clauses = source.pushdown && typeof source.pushdown === 'object' && Array.isArray(source.pushdown.where)
+    ? source.pushdown.where : [];
+  for (var wi = 0; wi < clauses.length; wi++) {
+    if (clauses[wi] && clauses[wi].value === token) return true;
+  }
+  // A data function's `args` template reads params the same way.
+  var args = source.kind === 'function' ? (source.args || {}) : {};
+  for (var ak in args) {
+    if (Object.prototype.hasOwnProperty.call(args, ak) && args[ak] === token) return true;
+  }
+  return false;
+}
+
+/**
  * A copy of a spec with its top-level keys in canonical order (nested key
  * order is kept — it is authored, and some of it is meaningful).
  * @param {object} spec - The spec.

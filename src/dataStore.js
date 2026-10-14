@@ -44,9 +44,17 @@ var sharedCache = new Map();
  * @param {function} [options.now] - Clock returning ms; defaults to Date.now
  *   (injectable for tests).
  * @param {string} [options.baseUrl=''] - Base URL of the cxd_server, used to
- *   resolve `kind:"dataset"` sources via `GET /api/datasets/{id}`.
+ *   resolve `kind:"dataset"` sources via `GET /api/datasets/{id}`, and prefixed
+ *   to root-relative connector URLs ("/api/x") that aren't already under it.
+ * @param {function} [options.prepareConnectors] - Called once (may return a
+ *   Promise) before the first fetch of a `/connectors/api/` URL, e.g. to open
+ *   the bridged connectors session.
  * @param {number} [options.busyRetryMs=250] - First wait before retrying a data
  *   function the runtime refused as busy (429); doubles per retry, capped at 2s.
+ * @param {string} [options.functionsRuntime] - Default runtime URL for
+ *   `kind:"function"` sources that carry no `runtime` of their own. A source's
+ *   own `runtime` still wins; when neither is set the local cxd_server endpoint
+ *   (`<baseUrl>/api/functions/run`) is used.
  * @param {function} [options.EventSource] - EventSource constructor for
  *   `kind:"live"` subscriptions; defaults to the global (injectable for tests).
  *   When neither exists (e.g. server-side), `subscribe` is a no-op.
@@ -60,6 +68,7 @@ export function createDataStore(options) {
   var now = options.now || function () { return Date.now(); };
   var baseUrl = options.baseUrl || '';
   var busyRetryMs = options.busyRetryMs != null ? options.busyRetryMs : 250;
+  var functionsRuntime = options.functionsRuntime || '';
   var EventSourceImpl = options.EventSource ||
     (typeof globalThis !== 'undefined' ? globalThis.EventSource : undefined);
   // The CanvasXpress library, for a source's calculatedFields (its static
@@ -68,6 +77,43 @@ export function createDataStore(options) {
     (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
   var warned = {};   // ref -> true once its calculated-field problem was logged
   var inflight = {}; // cacheKey -> Promise<data>
+  var prepareConnectors = options.prepareConnectors;
+  var connectorsReady = null;
+
+  /**
+   * Resolve a root-relative URL ("/api/x", "/connectors/api/data?...") against
+   * a same-origin SUBPATH `baseUrl` ("/dashboards"), so a stored spec works at
+   * the app root ("") and behind a subpath, from pages at any depth (Builder
+   * at the root, view.html in /examples/). Only a path base is applied: an
+   * absolute-origin base ("https://host", a cross-origin embed) leaves
+   * connector URLs on the page's own origin, as before. Absolute,
+   * protocol-relative and page-relative URLs, and ones already under the base,
+   * are returned unchanged.
+   * @param {string} url - The URL as written in the spec.
+   * @returns {string} The URL to fetch.
+   * @private
+   */
+  function appUrl(url) {
+    if (!baseUrl || baseUrl.charAt(0) !== '/' || typeof url !== 'string' ||
+        url.charAt(0) !== '/' || url.charAt(1) === '/') return url;
+    if (url.indexOf(baseUrl + '/') === 0) return url;
+    return baseUrl + url;
+  }
+
+  /**
+   * Run the host's `prepareConnectors` hook once (e.g. open the connectors
+   * session); later calls share its promise. A failure is retried next time.
+   * @returns {(Promise|null)} The pending preparation, or null with no hook.
+   * @private
+   */
+  function prepareConnectorsOnce() {
+    if (typeof prepareConnectors !== 'function') return null;
+    if (!connectorsReady) {
+      connectorsReady = Promise.resolve().then(prepareConnectors);
+      connectorsReady.then(null, function () { connectorsReady = null; });
+    }
+    return connectorsReady;
+  }
 
   /**
    * Build the cache key for a source. Connector sources key on their URL so
@@ -170,9 +216,14 @@ export function createDataStore(options) {
     if (typeof fetchImpl !== 'function') {
       return Promise.reject(new Error('no fetch available for remote data source'));
     }
+    url = appUrl(url);
     var init = { credentials: 'include' };
     if (headers) init.headers = headers;
-    return fetchImpl(url, init).then(function (res) {
+    // A database source (the bridged connectors app) needs its session first:
+    // opened once, before the first such fetch, so a render never races it.
+    var ready = /\/connectors\/api\//.test(url) ? prepareConnectorsOnce() : null;
+    var go = function () { return fetchImpl(url, init); };
+    return (ready ? ready.then(go, go) : go()).then(function (res) {
       return res.text().then(function (text) {
         var payload = parseJson(text);
         if (!res.ok) {
@@ -366,7 +417,8 @@ export function createDataStore(options) {
       }
       if (sourceSpec.kind === 'function') {
         return shapeInBrowser(resolveFunction(this, ref, sourceSpec, opts, {
-          fetch: fetchImpl, baseUrl: baseUrl, params: opts.params, busyRetryMs: busyRetryMs
+          fetch: fetchImpl, baseUrl: baseUrl, params: opts.params, busyRetryMs: busyRetryMs,
+          functionsRuntime: functionsRuntime
         }), ref, sourceSpec, opts);
       }
       if (sourceSpec.kind !== 'connector' && sourceSpec.kind !== 'dataset') {
@@ -564,7 +616,10 @@ function resolveFunction(store, ref, sourceSpec, opts, env) {
       payload.inputs[name] = { data: datas[k], axis: sourceAxis(refs[k], sources) };
     });
     payload.params = resolveTemplate(sourceSpec.args, env.params);
-    var url = sourceSpec.runtime || (env.baseUrl + '/api/functions/run');
+    // A source's own `runtime` wins; then a server-wide default runtime
+    // (env.functionsRuntime); then the local cxd_server endpoint.
+    var runtimeUrl = sourceSpec.runtime || env.functionsRuntime || '';
+    var url = runtimeUrl || (env.baseUrl + '/api/functions/run');
     // Call fetch unbound: the native window.fetch throws "Illegal invocation"
     // when invoked as a method of another object.
     var doFetch = env.fetch;
@@ -587,7 +642,7 @@ function resolveFunction(store, ref, sourceSpec, opts, env) {
         return res.text().then(function (text) {
           var parsed = parseJson(text);
           if (!res.ok) {
-            throw new DataError(functionErrorMessage(res.status, parsed, !!sourceSpec.runtime), res.status);
+            throw new DataError(functionErrorMessage(res.status, parsed, !!runtimeUrl), res.status);
           }
           if (!parsed || !parsed.data) throw new DataError('data function "' + ref + '" returned no data', res.status);
           return parsed.data;

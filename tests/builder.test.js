@@ -746,3 +746,52 @@ test('rapid commits coalesce into one undo entry (drag/typing bursts)', async fu
   builder.undo();
   assert.equal(Object.keys(builder.getSpec().panels || {}).length, 0, 'burst undone as one step');
 });
+
+test('data-flow card: a param control shows what it sets, the source it fills and the panels it feeds', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var spec = blankSpec('flow', 'Flow');
+  spec.params = { gene: { value: 'TP53', type: 'string' } };
+  spec.data = {
+    genes: { kind: 'connector', url: '/connectors/api/data?source=gtex-genes' },
+    expr: { kind: 'connector', url: '/connectors/api/data?source=gtex-expression', query: { gene: '$gene' } },
+    other: { kind: 'inline', value: { y: { vars: ['v'], smps: ['a'], data: [[1]] } } }
+  };
+  spec.panels = {
+    ctl: { type: 'control', mode: 'param', param: 'gene', title: 'Gene', optionsFrom: { dataRef: 'genes', annotation: 'gene' } },
+    plot: { title: 'Expression', dataRef: 'expr', config: { graphType: 'Boxplot' } },
+    plain: { title: 'Plain', dataRef: 'other', config: { graphType: 'Bar' } }
+  };
+  spec.layout.items = [{ panel: 'ctl', x: 0, y: 0, w: 4, h: 1 }, { panel: 'plot', x: 0, y: 1, w: 6, h: 3 }, { panel: 'plain', x: 6, y: 1, w: 6, h: 3 }];
+  var sqlAsked = [];
+  var builder = createBuilder(container, { spec: spec, CanvasXpress: makeCX([]),
+    describeConnectorSource: function (n) { sqlAsked.push(n); return Promise.resolve({ sql: 'SELECT 1 WHERE g = :gene' }); } });
+  await builder.whenReady();
+  function card() { return container.querySelector('.cxb-flow'); }
+  // The DOM stub's textContent is the node's own text only; gather descendants'.
+  function allText(node) { return (node.textContent || '') + (node.children || []).map(allText).join(' '); }
+
+  builder.selectPanel('ctl');
+  var text = allText(card());
+  assert.notEqual(card().style.display, 'none', 'card shown for a param control');
+  assert.ok(text.indexOf('choices from 🗄 gtex-genes') !== -1, text);
+  assert.ok(text.indexOf('$gene = TP53') !== -1, 'current value (spec default before any pick)');
+  assert.ok(text.indexOf('🗄 gtex-expression') !== -1 && text.indexOf('database query') !== -1, text);
+  assert.ok(text.indexOf('📊 Expression') !== -1, 'the fed panel');
+  assert.equal(text.indexOf('Plain'), -1, 'an unrelated panel is not listed');
+
+  builder.selectPanel('plot');
+  text = allText(card());
+  assert.ok(text.indexOf('🎛 Gene') !== -1 && text.indexOf('$gene') !== -1, 'a fed panel shows the control upstream');
+
+  builder.selectPanel('plain');
+  assert.equal(card().style.display, 'none', 'plain inline data: no card');
+
+  builder.selectPanel('ctl');
+  card().querySelector('.cxb-flow-close').dispatchEvent('click');
+  assert.equal(card().style.display, 'none', 'closed');
+  builder.selectPanel('plot');
+  builder.selectPanel('ctl');
+  assert.notEqual(card().style.display, 'none', 'a close lasts only while that element stays selected');
+});
+

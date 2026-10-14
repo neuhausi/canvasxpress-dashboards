@@ -10,7 +10,7 @@
  * Pure functions (no DOM), so they are unit-tested in node.
  */
 
-import { blankSpec, addPanel, setDataSource } from './builderModel.js';
+import { blankSpec, addPanel, setDataSource, setParam } from './builderModel.js';
 // Transpose is the existing join helper (vars <-> smps, x <-> z): transposeCxData in join.js.
 
 /**
@@ -185,4 +185,222 @@ export function wizardSpec(opts) {
     config: opts.config || { graphType: 'Bar' },
     x: 0, y: 0, w: cols, h: 14
   });
+}
+
+// Graph types the engine draws as Scatter2D (its `ScatterGraphs` list): their
+// xAxis / yAxis name SAMPLES, and their groups (ridgeBy, groupingFactors) are
+// VARIABLE (z) annotations — the opposite of the bar/box family.
+var SCATTER_FAMILY = ['Bin', 'Binplot', 'Bump', 'CDF', 'Contour', 'Density', 'Distribution', 'Hex',
+  'Hexplot', 'Histogram', 'KaplanMeier', 'QQ', 'Quantile', 'Ridgeline', 'Scatter2D',
+  'ScatterBubble2D', 'Scatter3D', 'Spaghetti', 'SPLOM', 'Streamgraph', 'TimeSeries', 'Volcano'];
+
+/**
+ * Orient a chart config to its data. The chart selector names COLUMNS of
+ * {@link tableFromData}; when those columns are variables (rows are samples,
+ * as a CSV or a database query parses), a scatter-family chart needs the
+ * engine's `transposeData` so its axes and groups resolve — otherwise a
+ * Ridgeline has no ridges and a CDF plots a single point.
+ * @param {object} config - A CanvasXpress config (`graphType` …).
+ * @param {object} data - The CanvasXpress data object it will draw.
+ * @returns {object} The config, copied with `transposeData: true` when needed.
+ * @public
+ */
+export function orientConfig(config, data) {
+  var out = JSON.parse(JSON.stringify(config || {}));
+  if (SCATTER_FAMILY.indexOf(out.graphType) !== -1 && out.transposeData == null && varsAreColumns(data)) {
+    out.transposeData = true;
+  }
+  return out;
+}
+
+// ---- "Dashboard from database" wizard -------------------------------------
+// The database explorer pattern the shipped GTEx dashboard uses: a CHOICES
+// query fills a Control, and a DETAIL query with a `:param` re-runs on every
+// pick. Both are the user's own read-only database sources (canvasxpress-
+// connectors); these helpers only build the SQL templates and the spec.
+
+/**
+ * The `:name` bind parameters a SQL statement declares, in first-seen order —
+ * the client-side mirror of the connectors app's `bind_param_names`. Quoted
+ * strings and comments are skipped, and `::type` casts are not parameters.
+ * @param {string} sql - A SELECT statement.
+ * @returns {Array<string>} Distinct parameter names.
+ * @public
+ */
+export function sqlParamNames(sql) {
+  var text = String(sql || '')
+    .replace(/'(?:[^']|'')*'/g, "''")      // string literals
+    .replace(/"(?:[^"]|"")*"/g, '""')      // quoted identifiers
+    .replace(/--[^\n]*/g, ' ')             // line comments
+    .replace(/\/\*[\s\S]*?\*\//g, ' ');    // block comments
+  var re = /(^|[^:\w]):([A-Za-z_]\w*)/g;
+  var seen = {};
+  var out = [];
+  var m;
+  while ((m = re.exec(text))) {
+    if (!seen[m[2]]) { seen[m[2]] = true; out.push(m[2]); }
+  }
+  return out;
+}
+
+/**
+ * A parameter name made from a column name: lower-case letters, digits and
+ * `_`, starting with a letter (`Gene Name` → `gene_name`).
+ * @param {string} column - A column name.
+ * @returns {string} A valid bind-parameter name (`value` when nothing is left).
+ * @public
+ */
+export function paramNameFor(column) {
+  var name = String(column || '').toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^[^a-z]+|_+$/g, '');
+  return name || 'value';
+}
+
+/**
+ * The CHOICES query template: the distinct values of one column. The value is
+ * returned twice — as the row id and as a text column named after the
+ * parameter — because the connectors app turns the first column into sample
+ * ids and the other TEXT columns into the annotation a Control lists.
+ * @param {string} table - Table (or view) name, as the database spells it.
+ * @param {string} column - The column whose values the Control offers.
+ * @param {string} param - The parameter (and annotation) name.
+ * @returns {string} A read-only SELECT.
+ * @public
+ */
+export function choicesSql(table, column, param) {
+  return 'SELECT DISTINCT ' + column + ' AS id, ' + column + ' AS ' + param +
+    ' FROM ' + table + ' WHERE ' + column + ' IS NOT NULL ORDER BY 1';
+}
+
+/**
+ * The DETAIL query template: every row for the chosen value.
+ * @param {string} table - Table (or view) name.
+ * @param {string} column - The column the parameter filters.
+ * @param {string} param - The parameter name (bound as `:param`).
+ * @returns {string} A read-only SELECT with one bind parameter.
+ * @public
+ */
+export function detailSql(table, column, param) {
+  return 'SELECT * FROM ' + table + ' WHERE ' + column + ' = :' + param;
+}
+
+/**
+ * The connector URL of a database source, ROOT-relative so the renderer
+ * resolves it against the app base ("" in dev, "/dashboards" behind a proxy)
+ * from any page depth.
+ * @param {string} name - The database source name.
+ * @returns {string} `/connectors/api/data?source=<name>`.
+ * @public
+ */
+export function connectorSourceUrl(name) {
+  return '/connectors/api/data?source=' + encodeURIComponent(name);
+}
+
+/**
+ * The database explorer dashboard: a param Control whose choices come from the
+ * CHOICES source, over a chart of the DETAIL source re-queried with the
+ * picked value (`query: {<param>: "$<param>"}`).
+ * @param {object} opts - `{id, title, param, value, choicesSource,
+ *   detailSource, choicesAnnotation?, choicesCount?, controlTitle?, chartTitle?,
+ *   config}`; `choicesSource` / `detailSource` are database source names, and
+ *   `choicesAnnotation` is the choices column the Control lists (default: `param`).
+ * @returns {object} A valid dashboard spec.
+ * @public
+ */
+export function databaseExplorerSpec(opts) {
+  var param = opts.param;
+  var spec = blankSpec(opts.id, opts.title);
+  var cols = spec.layout.cols;
+  spec = setParam(spec, param, { value: opts.value == null ? null : String(opts.value), type: 'string' });
+  spec = setDataSource(spec, 'choices', { kind: 'connector', url: connectorSourceUrl(opts.choicesSource), ttl: 600000 });
+  var query = {};
+  query[param] = '$' + param;
+  spec = setDataSource(spec, 'detail', { kind: 'connector', url: connectorSourceUrl(opts.detailSource), query: query, ttl: 0 });
+  spec = addPanel(spec, {
+    id: 'control',
+    type: 'control',
+    mode: 'param',
+    param: param,
+    title: opts.controlTitle || param,
+    // A long list reads better as type-ahead than as a huge dropdown.
+    style: (opts.choicesCount || 0) > 50 ? 'search' : 'dropdown',
+    optionsFrom: { dataRef: 'choices', annotation: opts.choicesAnnotation || param },
+    x: 0, y: 0, w: Math.max(1, Math.floor(cols / 2)), h: 2
+  });
+  var config = JSON.parse(JSON.stringify(opts.config || { graphType: 'Bar' }));
+  config.title = false;   // the panel title names the chart
+  return addPanel(spec, {
+    id: 'chart',
+    title: opts.chartTitle || '',
+    dataRef: 'detail',
+    config: config,
+    x: 0, y: 2, w: cols, h: 14
+  });
+}
+
+// ---- Chart + Configure steps ----------------------------------------------
+
+/**
+ * The chart types the database wizard offers: the ones that draw a measure
+ * split by groups (a query result) well. Pie and Heatmap are left out.
+ * @type {Array<string>}
+ * @public
+ */
+export var WIZARD_CHART_TYPES = ['Boxplot', 'Violin', 'Bar', 'Dotplot', 'Line', 'Area', 'Stacked',
+  'Scatter2D', 'Histogram', 'Density', 'Ridgeline', 'CDF'];
+
+/**
+ * Which Configure fields a chart type takes, and the config key "Group by"
+ * maps to: a scatter plot has X + Y + Color by; every other chart X (the
+ * measure) + Group by + Color by — Ridgeline groups by `ridgeBy`, and
+ * Histogram / Density take no group (the engine ignores one there).
+ * @param {string} graphType - A CanvasXpress graph type.
+ * @returns {{y: boolean, groupKey: (string|null)}} The extra fields.
+ * @public
+ */
+export function chartFieldsFor(graphType) {
+  if (graphType === 'Scatter2D') return { y: true, groupKey: null };
+  if (graphType === 'Ridgeline') return { y: false, groupKey: 'ridgeBy' };
+  if (graphType === 'Histogram' || graphType === 'Density') return { y: false, groupKey: null };
+  return { y: false, groupKey: 'groupingFactors' };
+}
+
+/**
+ * Build the chart config from the Configure step: the picked fields, then the
+ * user's extra config on top (it wins), oriented to the data
+ * ({@link orientConfig}).
+ * @param {string} graphType - A CanvasXpress graph type.
+ * @param {object} fields - `{x?, y?, group?, color?}` column names ('' = none).
+ * @param {object} [extra] - Extra CanvasXpress config, merged last.
+ * @param {object} data - The sample data the chart draws.
+ * @returns {object} A CanvasXpress config.
+ * @public
+ */
+export function buildChartConfig(graphType, fields, extra, data) {
+  var spec = chartFieldsFor(graphType);
+  var f = fields || {};
+  var config = { graphType: graphType };
+  if (f.x) config.xAxis = [f.x];
+  if (spec.y && f.y) config.yAxis = [f.y];
+  if (spec.groupKey && f.group) config[spec.groupKey] = spec.groupKey === 'ridgeBy' ? f.group : [f.group];
+  if (f.color) config.colorBy = f.color;
+  var more = extra || {};
+  for (var k in more) {
+    if (Object.prototype.hasOwnProperty.call(more, k)) config[k] = more[k];
+  }
+  return orientConfig(config, data);
+}
+
+/**
+ * The columns of a CanvasXpress data object, split for the Configure fields:
+ * measures (numeric) and annotations (text) on the column axis.
+ * @param {object} data - CanvasXpress data object.
+ * @returns {{numbers: Array<string>, texts: Array<string>}} Column names.
+ * @public
+ */
+export function chartColumns(data) {
+  var y = (data && data.y) || {};
+  if (varsAreColumns(data)) {
+    return { numbers: (y.vars || []).slice(), texts: Object.keys((data && data.x) || {}) };
+  }
+  return { numbers: (y.smps || []).slice(), texts: Object.keys((data && data.z) || {}) };
 }

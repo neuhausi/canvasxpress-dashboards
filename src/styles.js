@@ -25,6 +25,16 @@ export var dashboardCss = [
   ':where(:root, [data-cx-ui-theme]) { --cxd-border: var(--cx-ui-border); --cxd-panel-bg: var(--cx-ui-surface); --cxd-title: var(--cx-ui-text);',
   '  --cxd-title-bg: var(--cx-ui-surface-sunken); --cxd-muted: var(--cx-ui-text-muted); --cxd-ctrl-bg: var(--cx-ui-surface);',
   '  --cxd-error: var(--cx-ui-danger); --cxd-font: var(--cx-font-sans); }',
+  // Every dropdown in a dashboard, the builder and its dialogs draws the engine's chevron (two
+  // currentColor diagonals: it follows the text colour in light and dark), inset from the right
+  // border instead of on it, with room so the text never runs under it. Scoped to our roots (a
+  // host page keeps its own selects); the engine's own selects (customizer, data filter,
+  // its classed dropdowns) keep their styling.
+  ':is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay) select:not([multiple]):not([size]):not([class*="cX-"]):not([class*="CanvasXpress"]):not(:where([class*="cX-Customizer"], [class*="cX-DataFilter"]) select) {',
+  '  -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 30px; cursor: pointer;',
+  '  background-image: linear-gradient(45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%), linear-gradient(-45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%);',
+  '  background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }',
+  '@media (forced-colors: active) { :is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay) select { -webkit-appearance: auto; appearance: auto; background-image: none; } }',
   // --cxd-ctrl-border is NOT aliased here: it falls back to --cxd-border at the use site, so it
   // follows a dark theme's --cxd-border (a custom property resolves where it is declared).
   '.cxd-dashboard { box-sizing: border-box; width: 100%; }',
@@ -279,6 +289,27 @@ export var dashboardCss = [
   // Toolbar inputs on the roles (dark follows the page's data-cx-ui-theme, not the OS)
   '.cxb-title-input, .cxb-tinput, .cxb-props select { background: var(--cx-ui-surface); color: var(--cx-ui-text); }',
   '.cxb-stage { width: 100%; min-width: 0; }',
+  /* data-flow card: floats over the stage's top-right, never shifts layout */
+  '.cxb { position: relative; }',
+  '.cxb-flow { position: absolute; top: 8px; right: 12px; z-index: calc(var(--cx-z-raised) + 10); width: 300px; max-width: 45%;',
+  '  background: var(--cx-ui-surface-raised); color: var(--cx-ui-text); border: 1px solid var(--cx-ui-border);',
+  '  border-radius: var(--cx-radius-lg); box-shadow: var(--cx-shadow-1); padding: 10px 12px; font-size: 13px; }',
+  '.cxb-flow-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }',
+  '.cxb-flow-title { font-weight: 600; font-size: 12px; letter-spacing: .3px; text-transform: uppercase; color: var(--cx-ui-text-muted); }',
+  '.cxb-flow-close { border: none; background: none; color: var(--cx-ui-text-muted); font-size: 16px; cursor: pointer; padding: 0 2px; }',
+  '.cxb-flow-node { padding: 6px 8px; border: 1px solid var(--cx-ui-border-subtle); border-radius: var(--cx-radius-md); background: var(--cx-ui-surface); }',
+  '.cxb-flow-param { font-family: var(--cx-font-mono, monospace); color: var(--cx-ui-accent-strong); }',
+  '.cxb-flow-arrow { padding: 2px 0 2px 10px; color: var(--cx-ui-text-muted); font-size: 12px; }',
+  '.cxb-flow-sub, .cxb-flow-kind { color: var(--cx-ui-text-muted); font-size: 12px; }',
+  '.cxb-flow-link { display: block; border: none; background: none; padding: 1px 0; color: var(--cx-ui-text); font: inherit; cursor: pointer; text-align: left; }',
+  '.cxb-flow-link:hover { text-decoration: underline; }',
+  '.cxb-flow-current { font-weight: 600; cursor: default; }',
+  '.cxb-flow-current:hover { text-decoration: none; }',
+  '.cxb-flow-sql { margin-left: 6px; border: 1px solid var(--cx-ui-border); background: var(--cx-ui-surface); border-radius: var(--cx-radius-md);',
+  '  font-size: 11px; padding: 0 5px; cursor: pointer; color: var(--cx-ui-accent-strong); }',
+  '.cxb-flow-sqltext { white-space: pre-wrap; font-size: 12px; background: var(--cx-ui-surface); border: 1px solid var(--cx-ui-border-subtle);',
+  '  border-radius: var(--cx-radius-md); padding: 10px; max-height: 50vh; overflow: auto; }',
+  '.cxb-flow-sqltext mark { background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent); border-radius: var(--cx-radius-sm); padding: 0 2px; }',
   /* live editable cells */
   // Cells clip exactly like the viewer (the hover chrome sits inside the cell).
   '.cxb-cell { position: relative; }',
@@ -367,11 +398,7 @@ export var dashboardCss = [
   '  padding: 7px 9px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md); font: inherit;',
   '  background: var(--cxd-panel-bg); color: inherit; }',
   '.cxb-modal-json { font-family: var(--cx-font-mono); font-size:14px; min-height: 130px; resize: vertical; }',
-  /* Dialog dropdowns: our own chevron, inset from the right border (the native
-     arrow sits almost on it). The dialog card is always light. */
-  '.cxb-modal select { -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 32px;',
-  '  background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22%3E%3Cpath d=%22M1 1.5l5 5 5-5%22 fill=%22none%22 stroke=%22%2357606a%22 stroke-width=%221.6%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E");',
-  '  background-repeat: no-repeat; background-position: right 11px center; background-size: 12px 8px; cursor: pointer; }',
+  // (Dialog dropdowns get the shared chevron rule above.)
   '.cxb-save-note { font-size: 13px; color: var(--cxd-muted); margin-top: -6px; }',
   '.cxb-modal-err { color: var(--cxd-error); font-size:14px; min-height: 17px; }',
   // Save / Save-a-copy dialog: name + access (private, everyone, specific people).
@@ -393,6 +420,13 @@ export var dashboardCss = [
      gutter + a highlight.js-style colorized layer under a transparent-text
      textarea that owns editing and scrolling. */
   '.cxb-modal-wide { max-width: 780px; }',
+  // "+ Panel": fields left, live preview right (stacked on narrow screens).
+  '.cxb-modal-xl { max-width: 1120px; }',
+  '.cxb-panel-cols { display: flex; gap: 18px; align-items: flex-start; }',
+  '.cxb-panel-fields { flex: 0 0 300px; min-width: 0; }',
+  '.cxb-panel-right { flex: 1 1 auto; min-width: 0; }',
+  '.cxb-panel-preview { min-height: 400px; }',
+  '@media (max-width: 800px) { .cxb-panel-cols { flex-direction: column; } .cxb-panel-fields { flex-basis: auto; width: 100%; } }',
   '.cxb-jsoned { display: flex; height: 55vh; border: 1px solid var(--cxd-border);',
   '  border-radius: var(--cx-radius-md); overflow: hidden; background: var(--cxd-panel-bg); }',
   '.cxb-jsoned, .cxb-jsoned-gutter, .cxb-jsoned-hl, .cxb-jsoned-hl code, .cxb-jsoned-ta {',

@@ -109,6 +109,25 @@
     var base = location.pathname.replace(/\/(examples\/)?[^/]*$/, '');
     var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: base });
 
+    // Database (connectors) sources and live streams need the bridged connectors
+    // session: fetch this user's derived credential, then log into /connectors.
+    // Opened lazily — only when the dashboard actually has such a source.
+    var connectorsSession = null;
+    function ensureConnectorsSession() {
+      if (connectorsSession) return connectorsSession;
+      connectorsSession = fetch(base + '/api/connectors/credentials', { credentials: 'include' })
+        .then(function (r) { if (!r.ok) throw new Error('bridge: HTTP ' + r.status); return r.json(); })
+        .then(function (cred) {
+          return fetch(base + '/connectors/auth/login', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cred)
+          });
+        })
+        .then(function (r) { if (!r.ok) throw new Error('login: HTTP ' + r.status); });
+      connectorsSession.catch(function () { connectorsSession = null; });
+      return connectorsSession;
+    }
+
     function fail(msg) {
       var m = document.getElementById('message');
       m.style.display = '';
@@ -174,7 +193,7 @@
       client.load(id, owner ? { owner: owner } : undefined).then(function (spec) {
         document.title = (spec.title || spec.id) + ' · CanvasXpress Dashboards';
         document.getElementById('message').style.display = 'none';
-        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard', { baseUrl: base })
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard', { baseUrl: base, prepareLive: ensureConnectorsSession })
           .then(function (handle) {
             // The page chrome (toolbar) follows the dashboard's light/dark theme, not only the OS
             document.documentElement.setAttribute('data-cx-ui-theme',

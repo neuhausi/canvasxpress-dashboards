@@ -12,7 +12,7 @@
  */
 
 import { validateSpec } from './validateSpec.js';
-import { migrateSpec } from './spec.js';
+import { migrateSpec, sourceUsesParam } from './spec.js';
 import { injectStyles } from './styles.js';
 import { createDataStore, isEmptyData } from './dataStore.js';
 import { gridTemplate, cellArea, stackedTemplate } from './gridLayout.js';
@@ -96,7 +96,10 @@ export function renderDashboard(spec, target, options) {
   // different origin than the page (else same-origin `/api/datasets/{id}`).
   var store = createDataStore({
     fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl,
-    busyRetryMs: options.busyRetryMs, EventSource: options.EventSource, CanvasXpress: CX
+    busyRetryMs: options.busyRetryMs, functionsRuntime: options.functionsRuntime,
+    EventSource: options.EventSource, CanvasXpress: CX,
+    // Database (connectors) sources need the same session live streams do.
+    prepareConnectors: options.prepareConnectors || options.prepareLive
   });
   // Auto-resize each graph to its cell (via setDimensions) when the container
   // reflows. The builder disables this and re-renders panels itself on resize,
@@ -330,6 +333,13 @@ export function renderDashboard(spec, target, options) {
     var varRows = null;
     if (data) {
       var xPreds = [], zPreds = [];
+      // A source shaped with pushdown.groupBy carries its group key as the ROW ID
+      // (the aggregate emits one row per group, named by the key — no annotation
+      // survives), so a filter on that key must match the row ids: "Revenue by
+      // product" grouped on Product has smps = the product names.
+      var targetSource = sources[targetRef] || {};
+      var groupKeys = (targetSource.pushdown && Array.isArray(targetSource.pushdown.groupBy)) ? targetSource.pushdown.groupBy : [];
+      var rowAxis = sourceAxis(targetRef, sources);
       filterState.forEach(function (p) {
         if (p.dataRef === targetRef) return;
         var clone = {};
@@ -337,6 +347,10 @@ export function renderDashboard(spec, target, options) {
         clone.dataRef = targetRef;
         if (data.x && Object.prototype.hasOwnProperty.call(data.x, p.field)) { xPreds.push(clone); }
         else if (data.z && Object.prototype.hasOwnProperty.call(data.z, p.field)) { zPreds.push(clone); }
+        else if (groupKeys.indexOf(p.field) !== -1) {
+          clone.field = rowAxis;   // the axis name is the id column (cell() returns table.ids)
+          if (rowAxis === 'smps') xPreds.push(clone); else zPreds.push(clone);
+        }
       });
       if (xPreds.length) {
         var xRows = rowsPassing(normalizeState(xPreds), targetRef, data, 'smps');
@@ -933,27 +947,7 @@ export function renderDashboard(spec, target, options) {
     var affected = [];
     for (var ref in sources) {
       if (!Object.prototype.hasOwnProperty.call(sources, ref)) continue;
-      var source = sources[ref];
-      if (!source) continue;
-      var uses = false;
-      if (Array.isArray(source.dependsOn) && source.dependsOn.indexOf(param) !== -1) uses = true;
-      var query = source.query || {};
-      for (var qk in query) {
-        if (query[qk] === '$' + param) { uses = true; break; }
-      }
-      // A pushdown filter reads a param through its value ("$name"), whether
-      // the query runs in a database or in the browser.
-      var clauses = source.pushdown && typeof source.pushdown === 'object' && Array.isArray(source.pushdown.where)
-        ? source.pushdown.where : [];
-      for (var wi = 0; wi < clauses.length; wi++) {
-        if (clauses[wi] && clauses[wi].value === '$' + param) { uses = true; break; }
-      }
-      // A data function's `args` template reads params the same way.
-      var args = source.kind === 'function' ? (source.args || {}) : {};
-      for (var ak in args) {
-        if (args[ak] === '$' + param) { uses = true; break; }
-      }
-      if (uses) affected.push(ref);
+      if (sourceUsesParam(sources[ref], param)) affected.push(ref);
     }
     return affected.concat(dependentSources(affected));
   }
@@ -969,7 +963,12 @@ export function renderDashboard(spec, target, options) {
    */
   function applyParamChange(param, value) {
     paramState[param] = value;
-    return refetchRefs(refsForParam(param));
+    var done = refetchRefs(refsForParam(param));
+    if (typeof options.onParamChange === 'function') {
+      // `done` resolves once the affected panels hold the new data.
+      try { options.onParamChange(param, value, done); } catch (e) { /* host hook must not break the dashboard */ }
+    }
+    return done;
   }
 
   /**

@@ -13,14 +13,17 @@
  */
 
 import { injectStyles } from './styles.js';
-import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames, sourceLineage, showCodeDialog } from './renderDashboard.js';
+import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames, annotationValues, sourceLineage, showCodeDialog } from './renderDashboard.js';
+import { sqlParamNames, WIZARD_CHART_TYPES, chartFieldsFor, chartColumns, buildChartConfig } from './wizard.js';
+import { sourceUsesParam } from './spec.js';
 import { validateSpec } from './validateSpec.js';
 import { migrateSpec, DASHBOARD_SCHEMA_VERSION } from './spec.js';
 import { gridTemplate, cellArea } from './gridLayout.js';
 import { addPanel, removePanel, movePanel, resizePanel, resolveCollisions, resolveDrop, updatePanel, setDataSource, setParam, setSourceQuery, blankSpec, DEFAULT_COLS,
   addRelationship, removeRelationship, setMarkingMode, buildJoinSource, describeLink, MARKING_MODES,
-  setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown }
+  setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, addQueryControl }
   from './builderModel.js';
+import { createDataStore } from './dataStore.js';
 import { tableFields, sourceAxis, JOIN_TYPES } from './join.js';
 import { runPushdown, PUSHDOWN_FUNCTIONS } from './pushdown.js';
 
@@ -254,6 +257,25 @@ export function createBuilder(target, options) {
   var pendingBaselines = []; // baseline snapshots waiting for getConfig() to attach
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
   var availableConnectors = []; // connector sources ({name, url}) from options.listConnectorSources
+  var ownStore = null;          // the dialogs' data store before the first render (pickStore)
+
+  /**
+   * Whether two connector URLs name the same source. The host lists sources
+   * under its API base ("/dashboards/connectors/..."), while a stored spec may
+   * keep the root-relative form ("/connectors/...") the renderer resolves
+   * against that same base — so compare both with the base applied.
+   * @param {string} a - One URL.
+   * @param {string} b - The other.
+   * @returns {boolean} True when both resolve to the same URL.
+   * @private
+   */
+  function sameConnectorUrl(a, b) {
+    function resolve(u) {
+      if (!baseUrl || baseUrl.charAt(0) !== '/' || typeof u !== 'string' || u.charAt(0) !== '/' || u.charAt(1) === '/') return u;
+      return u.indexOf(baseUrl + '/') === 0 ? u : baseUrl + u;
+    }
+    return resolve(a) === resolve(b);
+  }
   var availableLiveSources = []; // live streams ({name, title, url, variables}) from options.listLiveSources
   var liveRefs = {};        // data-source names the current liveHandle was built with
   var savedTextRange = null; // last selection inside a text editor (for format buttons)
@@ -349,6 +371,13 @@ export function createBuilder(target, options) {
   var stage = el('div', 'cxb-stage');
   root.appendChild(stage);
 
+  // Data-flow card: floats over the stage's top-right (outside the stage, which
+  // is rebuilt on every render; floating so selection never shifts the layout).
+  var flowEl = el('div', 'cxb-flow cX-UI-Controls');
+  flowEl.style.display = 'none';
+  root.appendChild(flowEl);
+  var flowDismissedFor = null;   // the selection whose card the user closed
+
   var msg = el('div', 'cxb-msg');
   root.appendChild(msg);
   // Clicking empty space (not a panel) stops the edit state — deselects the
@@ -399,6 +428,7 @@ export function createBuilder(target, options) {
       // the Data dropdown alongside stored datasets.
       Promise.resolve(options.listConnectorSources()).then(function (list) {
         availableConnectors = list || [];
+        updateAddPanelState();
         if (selectedId) renderProps();
       }, function () { /* leave availableConnectors as-is on failure */ });
     }
@@ -418,12 +448,33 @@ export function createBuilder(target, options) {
   }
 
   /**
-   * Add a panel bound to the first data source, then re-render live.
-   * @returns {void}
+   * "+ Panel": pick a source (the dashboard's, or one of the user's database
+   * sources, which is then added), a chart type and its fields, with a live
+   * preview; the panel is added full width and selected.
+   * @param {object} [prefill] - Initial dialog choices (see `openPanelDialog` on the handle).
+   * @returns {Promise<?{id: string, dataRef: string}>} The new panel, or null when cancelled.
    */
-  function doAddPanel() {
-    addPanelBound(Object.keys(spec.data || {})[0]);
+  function doAddPanel(prefill) {
+    var doc = container.ownerDocument || document;
+    return openPanelDialog(doc, { sources: controlSources(), dataOf: pickData, CanvasXpress: CX, prefill: prefill })
+      .then(function (result) {
+        if (!result) return null;
+        var added = ensurePickSource(result.pick);
+        var newSource = added.spec !== spec;
+        var id = uniquePanelId(added.spec);
+        var cfg = Object.assign({}, result.config, { title: false });
+        commit(addPanel(added.spec, { id: id, title: result.title || added.ref, dataRef: added.ref, w: 12, h: 12, config: cfg }), false);
+        selectedId = id;
+        if (newSource || !(liveHandle && liveHandle.addPanel && gridEl)) {
+          syncLiveConfigs();
+          rebuild();
+        } else {
+          lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
+        }
+        return { id: id, dataRef: added.ref };
+      });
   }
+
 
   /**
    * Add a Bar panel bound to a source and select it.
@@ -500,13 +551,64 @@ export function createBuilder(target, options) {
   }
 
   /**
-   * Add an annotation-filter control and select it. The control binds ONE
-   * annotation of one dataset; its properties (data / scope / annotation /
-   * style) are edited in the toolbar props group. Like text elements it floats
-   * free on the grid and may overlap any panel.
-   * @returns {void}
+   * "+ Control": ask what the control does — filter this page (the plain
+   * annotation control, set up in the properties bar), or QUERY a source: list a
+   * column's values and re-run another source with the picked one. A database
+   * source the dashboard does not use yet is added to it.
+   * @param {object} [prefill] - Initial dialog choices (see `openControlDialog` on the handle).
+   * @returns {Promise<?object>} What was added, or null when cancelled.
    */
-  function doAddControl() {
+  function doAddControl(prefill) {
+    var doc = container.ownerDocument || document;
+    return openControlDialog(doc, { sources: controlSources(), dataOf: pickData, sqlOf: pickSql, prefill: prefill })
+      .then(function (result) {
+        if (!result) return null;
+        if (result.mode === 'filter') { addFilterControl(); return result; }
+        try {
+          var next = spec;
+          var choicesRef = ensurePickSource(result.choices);
+          next = choicesRef.spec;
+          var targetRef = result.target.key === result.choices.key ? { ref: choicesRef.ref, spec: next }
+            : ensurePickSource(result.target, next);
+          next = targetRef.spec;
+          var id = uniquePanelId(next);
+          next = addQueryControl(next, { id: id, param: result.param, choicesRef: choicesRef.ref, annotation: result.annotation,
+            targetRef: targetRef.ref, field: result.field, value: result.value, title: result.title, style: result.style });
+          syncLiveConfigs();
+          commit(next, false);
+          selectedId = id;
+          rebuild();   // a new parameter + binding re-resolve the target's panels
+          setMsg('Control “' + result.title + '” re-runs ' + targetRef.ref + ' with $' + result.param + '.');
+          return { mode: 'param', id: id, choicesRef: choicesRef.ref, targetRef: targetRef.ref, param: result.param };
+        } catch (e) {
+          showError(e);
+          return null;
+        }
+      });
+  }
+
+  /**
+   * The dashboard source for a pick: its own ref, or a new connector source for
+   * a database source the dashboard does not use yet.
+   * @param {object} pick - From {@link controlSources}.
+   * @param {object} [aSpec] - The spec to add to (default: the current one).
+   * @returns {{ref: string, spec: object}} The ref and the (possibly new) spec.
+   * @private
+   */
+  function ensurePickSource(pick, aSpec) {
+    var base = aSpec || spec;
+    if (pick.ref) return { ref: pick.ref, spec: base };
+    var ref = uniqueSourceNameIn(base, pick.name);
+    return { ref: ref, spec: setDataSource(base, ref, { kind: 'connector', url: pick.url }) };
+  }
+
+  /**
+   * Add a plain annotation-filter control (filters the page) and select it; its
+   * source / column / style are edited in the properties bar.
+   * @returns {void}
+   * @private
+   */
+  function addFilterControl() {
     var id = uniquePanelId(spec);
     var firstRef = Object.keys(spec.data || {})[0];
     commit(addPanel(spec, {
@@ -518,6 +620,104 @@ export function createBuilder(target, options) {
       lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
     } else {
       rebuild();
+    }
+  }
+
+  /**
+   * The sources a new control / panel can use: the dashboard's own (not live
+   * streams), then the user's database sources it does not use yet (🗄).
+   * @returns {Array<object>} `{key, label, ref?, name?, url?}` picks.
+   * @private
+   */
+  function controlSources() {
+    var out = [];
+    var used = {};
+    Object.keys(spec.data || {}).forEach(function (ref) {
+      var src = spec.data[ref];
+      if (!src || src.kind === 'live') return;
+      if (src.kind === 'connector') used[connectorSourceName(src.url)] = true;
+      var queried = !!src.query && Object.keys(src.query).some(function (f) { return /^\$/.test(String(src.query[f])); });
+      out.push({ key: 'ref:' + ref, label: ref, ref: ref, url: src.kind === 'connector' ? src.url : null, queried: queried });
+    });
+    (availableConnectors || []).forEach(function (c) {
+      if (used[c.name]) return;
+      out.push({ key: 'db:' + c.name, label: '🗄 ' + c.name, name: c.name, url: c.url });
+    });
+    return out;
+  }
+
+  /**
+   * A pick's data: a dashboard source as the panels see it, or a database source
+   * the dashboard does not use yet, read once through the same store.
+   * @param {object} pick - From {@link controlSources}.
+   * @returns {Promise<?object>} The data object, or null.
+   * @private
+   */
+  function pickData(pick) {
+    if (!pick) return Promise.resolve(null);
+    var source = pick.ref ? (spec.data || {})[pick.ref] : { kind: 'connector', url: pick.url };
+    if (!source) return Promise.resolve(null);
+    // The live render's store when there is one (it holds the current
+    // parameter values); before the first panel, a store of our own.
+    var store = liveHandle && liveHandle.store ? liveHandle.store : pickStore();
+    var opts = { sources: spec.data };
+    if (spec.params) opts.params = paramValues();
+    return store.resolve(pick.ref || 'db:' + pick.name, source, opts)
+      .then(function (data) { return data || null; }, function () { return null; });
+  }
+
+  /**
+   * A data store for the dialogs while nothing is rendered yet (same base URL
+   * and connectors session as the renderer's).
+   * @returns {object} The store.
+   * @private
+   */
+  function pickStore() {
+    if (!ownStore) {
+      ownStore = createDataStore({ baseUrl: baseUrl, CanvasXpress: CX,
+        functionsRuntime: options.functionsRuntime,
+        prepareConnectors: options.prepareConnectors || options.prepareLive });
+    }
+    return ownStore;
+  }
+
+  /**
+   * The dashboard's current parameter values (`{name: value}`).
+   * @returns {object} Values.
+   * @private
+   */
+  function paramValues() {
+    var out = {};
+    Object.keys(spec.params || {}).forEach(function (name) { out[name] = spec.params[name] && spec.params[name].value; });
+    return out;
+  }
+
+  /**
+   * A pick's SQL when it is one of the user's database sources (null otherwise).
+   * @param {object} pick - From {@link controlSources}.
+   * @returns {Promise<?string>} The SQL, or null.
+   * @private
+   */
+  function pickSql(pick) {
+    var name = pick && (pick.name || connectorSourceName(pick.url));
+    if (!name || typeof options.describeConnectorSource !== 'function') return Promise.resolve(null);
+    return Promise.resolve(options.describeConnectorSource(name)).then(function (src) {
+      return src && typeof src.sql === 'string' ? src.sql : null;
+    }, function () { return null; });
+  }
+
+  /**
+   * A source name not used in `aSpec` (base, base-2, …).
+   * @param {object} aSpec - A spec.
+   * @param {string} base - Preferred name.
+   * @returns {string} A free name.
+   * @private
+   */
+  function uniqueSourceNameIn(aSpec, base) {
+    var existing = aSpec.data || {};
+    if (!existing[base]) return base;
+    for (var n = 2; ; n++) {
+      if (!existing[base + '-' + n]) return base + '-' + n;
     }
   }
 
@@ -1038,7 +1238,8 @@ export function createBuilder(target, options) {
     // WYSIWYG: the builder renders with EXACTLY the options the viewer pages
     // use (no editing-only canvasInset) so what you build is what a client
     // sees. Only a spec-level canvasInset (Settings) applies, as everywhere.
-    var opts = { CanvasXpress: CX, validate: false, baseUrl: baseUrl, observeResize: false };
+    var opts = { CanvasXpress: CX, validate: false, baseUrl: baseUrl, observeResize: false,
+      functionsRuntime: options.functionsRuntime };
     // Live (streaming) sources: the host's session hook and, for tests / non-browser
     // hosts, the EventSource and frame scheduler — passed through unchanged.
     ['prepareLive', 'EventSource', 'requestAnimationFrame'].forEach(function (key) {
@@ -1046,6 +1247,10 @@ export function createBuilder(target, options) {
     });
     opts.onPanelRendered = decorate;
     opts.onControlRendered = decorateControl;
+    // Keep the data-flow card's "$param = value" current as controls change.
+    opts.onParamChange = function (param, value, done) {
+      renderFlow();
+    };
     // A filter scheme saved in a Filters panel becomes part of the spec.
     opts.onFilterSchemesChange = function (schemes) {
       var next = rawSpec();
@@ -1168,7 +1373,14 @@ export function createBuilder(target, options) {
         if (inst && typeof inst.showCustomizer === 'function') inst.showCustomizer(ev);
       });
       on(gear, 'pointerdown', stop);
-      append(tools, [gear]);
+      // Flip the panel between its chart and the data it draws (in place).
+      var dataBtn = iconBtn('▦', 'Switch between chart and data table', function (ev) {
+        stop(ev);
+        toggleDataView(info.panelId, ev);
+      });
+      dataBtn.classList.add('cxb-tool-data');
+      on(dataBtn, 'pointerdown', stop);
+      append(tools, [dataBtn, gear]);
       var codePanel = spec.panels[info.panelId] || {};
       if (typeof codePanel.dataRef === 'string' &&
           sourceLineage(spec.data || {}, codePanel.dataRef).some(function (ref) { return spec.data[ref].kind === 'function'; })) {
@@ -1579,6 +1791,7 @@ export function createBuilder(target, options) {
    * @returns {void}
    */
   function renderProps() {
+    renderFlow();
     if (!propsGroup) return;
     propsGroup.innerHTML = '';
     if (!selectedId || !spec.panels[selectedId]) return;
@@ -1671,8 +1884,281 @@ export function createBuilder(target, options) {
       crossFilter = [clickLabel, clickField];
     }
 
+    // Flip the panel between its chart and the data it draws (same as its ▦ tool).
+    var previewBtn = button(isTableView(selectedId) ? '◧ Chart' : '▦ Table', function (ev) { toggleDataView(selectedId, ev); });
+    previewBtn.setAttribute('title', 'Switch this chart between its canvas and its data table');
+
     // No Delete here — the panel frame already carries a × delete control.
-    append(propsGroup, [titleLabel, titleField, dataLabel, dsField].concat(liveFields, crossFilter, [titleToggle]));
+    append(propsGroup, [titleLabel, titleField, dataLabel, dsField, previewBtn].concat(liveFields, crossFilter, [titleToggle]));
+  }
+
+  /**
+   * How a source is described in the data-flow card: an icon, a label, and —
+   * for a connectors database source ("…/connectors/api/data?source=NAME") —
+   * its database source name (so the card can offer its SQL).
+   * @param {string} ref - The source ref.
+   * @returns {{icon: string, label: string, kind: string, dbName: (string|null)}} The description.
+   * @private
+   */
+  function describeSource(ref) {
+    var src = (spec.data || {})[ref] || {};
+    var m = src.kind === 'connector' && typeof src.url === 'string'
+      ? /\/connectors\/api\/data\?(?:.*&)?source=([^&]+)/.exec(src.url) : null;
+    if (m) return { icon: '🗄', label: decodeURIComponent(m[1]), kind: 'database query', dbName: decodeURIComponent(m[1]) };
+    if (src.kind === 'connector') return { icon: '🌐', label: ref, kind: 'web service ' + String(src.url || '').split('?')[0], dbName: null };
+    if (src.kind === 'dataset') return { icon: '📄', label: src.id || ref, kind: 'stored dataset', dbName: null };
+    if (src.kind === 'join') return { icon: '⋈', label: ref, kind: 'join of ' + src.left + ' + ' + src.right, dbName: null };
+    if (src.kind === 'function') return { icon: 'ƒ', label: ref, kind: (src.language || '') + ' function', dbName: null };
+    if (src.kind === 'live') return { icon: '📡', label: ref, kind: 'live stream', dbName: null };
+    return { icon: '▦', label: ref, kind: 'inline data', dbName: null };
+  }
+
+  /**
+   * The current value of a dashboard parameter: the live one (what a control
+   * last set) when the dashboard is rendered, else the spec default.
+   * @param {string} param - Parameter name.
+   * @returns {*} The value.
+   * @private
+   */
+  function currentParam(param) {
+    var live = liveHandle && typeof liveHandle.getParams === 'function' ? liveHandle.getParams() : {};
+    if (Object.prototype.hasOwnProperty.call(live, param)) return live[param];
+    var def = (spec.params || {})[param];
+    return def && typeof def === 'object' ? def.value : def;
+  }
+
+  /**
+   * The wiring around a selected element, as chains of steps:
+   * control → $param → source(s) → panel(s). For a param control: what it sets
+   * and everything that reads it. For a graph panel: which controls feed its
+   * source, or just its source when nothing does. Null when there is nothing
+   * worth showing (plain inline data, text, images).
+   * @param {string} panelId - The selected element.
+   * @returns {(object|null)} `{steps: [...]}` for the card, or null.
+   * @private
+   */
+  function flowFor(panelId) {
+    var panels = spec.panels || {};
+    var panel = panels[panelId];
+    if (!panel) return null;
+    var steps = [];
+    function panelsOn(refs) {
+      return Object.keys(panels).filter(function (id) {
+        var p = panels[id];
+        return p && p.type !== 'control' && p.type !== 'text' && p.type !== 'image' && refs.indexOf(p.dataRef) !== -1;
+      });
+    }
+    function paramControls(param) {
+      return Object.keys(panels).filter(function (id) {
+        return panels[id] && panels[id].type === 'control' && panels[id].param === param;
+      });
+    }
+    function readers(param) {
+      return Object.keys(spec.data || {}).filter(function (ref) { return sourceUsesParam(spec.data[ref], param); });
+    }
+    if (panel.type === 'control') {
+      if (panel.mode === 'param' && panel.param) {
+        var refs = readers(panel.param);
+        steps.push({ kind: 'control', ids: [panelId], choices: panel.optionsFrom && panel.optionsFrom.dataRef });
+        steps.push({ kind: 'param', param: panel.param, verb: 'sets' });
+        steps.push({ kind: 'sources', refs: refs, param: panel.param, verb: 'fills' });
+        steps.push({ kind: 'panels', ids: panelsOn(refs), verb: 'feeds' });
+        return { steps: steps };
+      }
+      if (panel.annotation) {
+        steps.push({ kind: 'control', ids: [panelId] });
+        steps.push({ kind: 'note', text: 'filters every panel whose data has the “' + panel.annotation + '” annotation', verb: 'then' });
+        return { steps: steps };
+      }
+      return null;
+    }
+    if (panel.type === 'text' || panel.type === 'image' || !panel.dataRef) return null;
+    var src = (spec.data || {})[panel.dataRef];
+    var params = Object.keys(spec.params || {}).filter(function (p) { return sourceUsesParam(src, p); });
+    var ctls = [];
+    params.forEach(function (p) { paramControls(p).forEach(function (c) { if (ctls.indexOf(c) === -1) ctls.push(c); }); });
+    var info = describeSource(panel.dataRef);
+    if (!params.length && !info.dbName && (!src || src.kind === 'inline')) return null;
+    if (ctls.length) steps.push({ kind: 'control', ids: ctls });
+    params.forEach(function (p) { steps.push({ kind: 'param', param: p, verb: ctls.length ? 'sets' : 'uses' }); });
+    steps.push({ kind: 'sources', refs: [panel.dataRef], param: params[0], verb: params.length ? 'fills' : '' });
+    steps.push({ kind: 'panels', ids: [panelId], verb: 'feeds', current: panelId });
+    return { steps: steps };
+  }
+
+  /**
+   * Draw (or hide) the floating data-flow card for the current selection.
+   * Every panel/control name is a link that selects it; a database source
+   * offers "SQL" (via the host's describeConnectorSource) with its parameters
+   * highlighted. Closing hides it until the selection changes.
+   * @returns {void}
+   * @private
+   */
+  function renderFlow() {
+    if (!flowEl) return;
+    // A close lasts only while that element stays selected.
+    if (flowDismissedFor !== null && flowDismissedFor !== selectedId) flowDismissedFor = null;
+    var flow = selectedId ? flowFor(selectedId) : null;
+    if (!flow || flowDismissedFor === selectedId) {
+      flowEl.style.display = 'none';
+      flowEl.innerHTML = '';
+      return;
+    }
+    flowEl.innerHTML = '';
+    var head = el('div', 'cxb-flow-head');
+    var title = el('span', 'cxb-flow-title');
+    title.textContent = 'Data flow';
+    var closeBtn = el('button', 'cxb-flow-close');
+    closeBtn.type = 'button';
+    closeBtn.textContent = '×';
+    closeBtn.setAttribute('aria-label', 'Close data flow');
+    on(closeBtn, 'click', function () { flowDismissedFor = selectedId; renderFlow(); });
+    append(head, [title, closeBtn]);
+    flowEl.appendChild(head);
+    var panels = spec.panels || {};
+    function panelLink(id, current) {
+      var p = panels[id] || {};
+      var a = el('button', 'cxb-flow-link' + (current ? ' cxb-flow-current' : ''));
+      a.type = 'button';
+      a.textContent = (p.type === 'control' ? '🎛 ' : '📊 ') + (p.title || id);
+      a.setAttribute('title', current ? 'This panel' : 'Select this ' + (p.type === 'control' ? 'control' : 'panel'));
+      on(a, 'click', function () { if (id !== selectedId) selectPanel(id); });
+      return a;
+    }
+    flow.steps.forEach(function (step, i) {
+      if (i > 0 && step.verb) {
+        var arrow = el('div', 'cxb-flow-arrow');
+        arrow.textContent = '↓ ' + step.verb;
+        flowEl.appendChild(arrow);
+      }
+      var node = el('div', 'cxb-flow-node');
+      if (step.kind === 'control' || step.kind === 'panels') {
+        if (!step.ids.length) {
+          node.textContent = step.kind === 'panels' ? '(no panel uses this source yet)' : '';
+        }
+        step.ids.forEach(function (id) { node.appendChild(panelLink(id, id === step.current)); });
+        if (step.kind === 'control' && step.choices) {
+          var c = describeSource(step.choices);
+          var sub = el('div', 'cxb-flow-sub');
+          sub.textContent = 'choices from ' + c.icon + ' ' + c.label;
+          if (c.dbName) sub.appendChild(sqlLink(c.dbName, null));
+          node.appendChild(sub);
+        }
+      } else if (step.kind === 'param') {
+        var v = currentParam(step.param);
+        node.className += ' cxb-flow-param';
+        node.textContent = '$' + step.param + ' = ' + (v == null || v === '' ? '(any)' : String(v));
+      } else if (step.kind === 'sources') {
+        if (!step.refs.length) node.textContent = '(no data source reads $' + step.param + ' yet)';
+        step.refs.forEach(function (ref) {
+          var d = describeSource(ref);
+          var line = el('div');
+          var name = el('strong');
+          name.textContent = d.icon + ' ' + d.label;
+          var kind = el('span', 'cxb-flow-kind');
+          kind.textContent = '  ' + d.kind;
+          append(line, [name, kind]);
+          if (d.dbName) line.appendChild(sqlLink(d.dbName, step.param));
+          node.appendChild(line);
+        });
+      } else if (step.kind === 'note') {
+        node.textContent = step.text;
+      }
+      flowEl.appendChild(node);
+    });
+    flowEl.style.display = '';
+  }
+
+  /**
+   * A "SQL" link for a database source: fetches its query from the host and
+   * shows it read-only, with `:param` bind parameters highlighted.
+   * @param {string} name - The database source name.
+   * @param {(string|null)} param - The parameter to emphasize, if any.
+   * @returns {HTMLElement} The link.
+   * @private
+   */
+  function sqlLink(name, param) {
+    var a = el('button', 'cxb-flow-sql');
+    a.type = 'button';
+    a.textContent = 'SQL';
+    a.setAttribute('title', 'Show the database query');
+    if (typeof options.describeConnectorSource !== 'function') { a.style.display = 'none'; return a; }
+    on(a, 'click', function () { showSourceSql(name, param); });
+    return a;
+  }
+
+  /**
+   * Modal with a database source's SQL, `:name` bind parameters highlighted
+   * (they are filled from the dashboard parameter of the same name).
+   * @param {string} name - Database source name.
+   * @param {(string|null)} param - Parameter to mention in the note.
+   * @returns {void}
+   * @private
+   */
+  function showSourceSql(name, param) {
+    var overlay = modalOverlay();
+    var modal = el('div', 'cxb-modal cxb-modal-wide');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = '🗄 ' + name + ' · database query';
+    var note = el('div', 'cxb-save-note');
+    note.textContent = 'Loading…';
+    var pre = el('pre', 'cxb-flow-sqltext');
+    var footer = el('div', 'cxb-modal-footer');
+    function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+    append(footer, [button('Close', close)]);
+    append(modal, [heading, note, pre, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(); });
+    (document.body || document.documentElement).appendChild(overlay);
+    Promise.resolve(options.describeConnectorSource(name)).then(function (info) {
+      var sql = info && info.sql ? String(info.sql) : '';
+      if (!sql) { note.textContent = 'This source has no SQL to show (or you cannot view it).'; return; }
+      var binds = [];
+      sql.split(/(:[A-Za-z_]\w*)/).forEach(function (part) {
+        if (/^:[A-Za-z_]\w*$/.test(part) && part !== '::') {
+          var mk = el('mark');
+          mk.textContent = part;
+          pre.appendChild(mk);
+          if (binds.indexOf(part.slice(1)) === -1) binds.push(part.slice(1));
+        } else {
+          pre.appendChild(document.createTextNode(part));
+        }
+      });
+      note.textContent = binds.length
+        ? 'Highlighted: ' + binds.map(function (b) { return ':' + b; }).join(', ') +
+          ' — filled from the dashboard parameter' + (binds.length > 1 ? 's' : '') + ' of the same name' +
+          (param ? ' (here $' + param + ', set by the control).' : '.')
+        : 'This query takes no parameters.';
+    }, function (err) {
+      note.textContent = 'Could not load the query: ' + (err && err.message ? err.message : err);
+    });
+  }
+
+  /**
+   * Whether a panel's CanvasXpress instance is showing its own data table.
+   * @param {string} panelId - The panel.
+   * @returns {boolean} True in the table view.
+   * @private
+   */
+  function isTableView(panelId) {
+    var inst = instByPanel[panelId];
+    return !!(inst && inst.view && inst.view !== 'canvas');
+  }
+
+  /**
+   * Flip a panel's CanvasXpress instance between its canvas and its OWN data
+   * table — the engine's view switch (changeView, what its toolbar "View table"
+   * button does), so the table is the chart's real data, not a copy.
+   * @param {string} panelId - The panel.
+   * @param {Event} [ev] - The triggering event (passed to the engine).
+   * @returns {void}
+   * @private
+   */
+  function toggleDataView(panelId, ev) {
+    var inst = instByPanel[panelId];
+    if (!inst || typeof inst.changeView !== 'function') return;
+    inst.changeView(ev || null, isTableView(panelId) ? 'canvas' : 'table');
+    if (panelId === selectedId) renderProps();
   }
 
 
@@ -2214,7 +2700,7 @@ export function createBuilder(target, options) {
       }
     } else if (curSrc && curSrc.kind === 'connector') {
       var ci = -1;
-      availableConnectors.forEach(function (c, i) { if (ci < 0 && c.url === curSrc.url) ci = i; });
+      availableConnectors.forEach(function (c, i) { if (ci < 0 && sameConnectorUrl(c.url, curSrc.url)) ci = i; });
       current = ci >= 0 ? CONN_OPT + ci : panel.dataRef;
       if (ci >= 0) {
         // Remove the duplicate plain-ref option (the connector row covers it).
@@ -2326,7 +2812,7 @@ export function createBuilder(target, options) {
     var name = null;
     Object.keys(existing).forEach(function (ref) {
       var srcx = existing[ref];
-      if (!name && srcx && srcx.kind === 'connector' && srcx.url === connector.url) name = ref;
+      if (!name && srcx && srcx.kind === 'connector' && sameConnectorUrl(srcx.url, connector.url)) name = ref;
     });
     var next = spec;
     if (!name) {
@@ -2987,18 +3473,22 @@ export function createBuilder(target, options) {
           : 'Select a dataset first (a function reads the dashboard\'s data)';
     }
     if (addPanelBtn && limitDatasetsToSpec) {
-      addPanelBtn.disabled = !hasData;
-      addPanelBtn.title = hasData ? '' : 'Select a dataset first';
+      // The dialog can also start from one of the user's database sources.
+      var canPanel = hasData || !!(availableConnectors && availableConnectors.length);
+      addPanelBtn.disabled = !canPanel;
+      addPanelBtn.title = canPanel ? '' : 'Select a dataset first';
     }
     if (addControlBtn) {
       var hasGraphPanel = Object.keys(spec.panels || {}).some(function (id) {
         return !spec.panels[id].type;   // graph panels carry no type marker
       });
-      addControlBtn.disabled = !(hasData && hasGraphPanel);
+      var canFilter = hasData && hasGraphPanel;
+      // A query control can also start from the user's database sources (it adds them).
+      addControlBtn.disabled = !(canFilter || (availableConnectors && availableConnectors.length));
       addControlBtn.title = addControlBtn.disabled ? 'Add a panel with data first' : '';
       if (addFiltersBtn) {
-        addFiltersBtn.disabled = addControlBtn.disabled;
-        addFiltersBtn.title = addControlBtn.title;
+        addFiltersBtn.disabled = !canFilter;
+        addFiltersBtn.title = canFilter ? '' : 'Add a panel with data first';
       }
     }
   }
@@ -3100,6 +3590,22 @@ export function createBuilder(target, options) {
      * @returns {void}
      */
     selectPanel: selectPanel,
+    /**
+     * Open the "+ Control" dialog (as the toolbar button does), optionally
+     * prefilled: `{mode, choices, annotation, target, param}` (choices / target
+     * are pick keys: `ref:<source>` or `db:<database source>`).
+     * @param {object} [prefill] - Initial choices.
+     * @returns {Promise<?object>} What was added, or null when cancelled.
+     */
+    openControlDialog: function (prefill) { return doAddControl(prefill); },
+    /**
+     * Open the "+ Panel" dialog (as the toolbar button does), optionally
+     * prefilled: `{source, graphType, fields: {x, y, group, color}, extra, title}`
+     * (source is a pick key: `ref:<source>` or `db:<database source>`).
+     * @param {object} [prefill] - Initial choices.
+     * @returns {Promise<?object>} The new panel, or null when cancelled.
+     */
+    openPanelDialog: function (prefill) { return doAddPanel(prefill); },
     container: container,
     /**
      * Tear down the builder and any live render.
@@ -4706,6 +5212,393 @@ function openShapeDialog(doc, spec, dataOf) {
      * @returns {void}
      */
     function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
+ * The database source name a connector URL reads (`…/api/data?source=<name>`),
+ * or '' when it is not a database source.
+ * @param {string} url - A connector URL.
+ * @returns {string} The source name.
+ * @private
+ */
+function connectorSourceName(url) {
+  var m = /[?&]source=([^&#]+)/.exec(String(url || ''));
+  if (!m) return '';
+  try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch (e) { return m[1]; }
+}
+
+/**
+ * The "+ Control" dialog: a page filter (the plain control, set up in the
+ * properties bar) or a control that QUERIES a source — its values come from a
+ * column of one source, and picking one sets a parameter that another source's
+ * query reads (a database source's `:param`, read from its SQL). The caller
+ * wires it with {@link addQueryControl}.
+ * @param {Document} doc - The owning document.
+ * @param {object} ctx - `{sources: [{key, label, ref?, url?}], dataOf(pick),
+ *   sqlOf(pick), prefill?: {mode, choices, annotation, target, param}}`.
+ * @returns {Promise<?object>} `{mode:'filter'}`, `{mode:'param', choices, target,
+ *   annotation, param, field, value, title, style}` (choices / target are
+ *   picks), or null when cancelled.
+ * @private
+ */
+function openControlDialog(doc, ctx) {
+  var sources = ctx.sources || [];
+  var pre = ctx.prefill || {};
+  var byKey = {};
+  sources.forEach(function (s) { byKey[s.key] = s; });
+  var keys = sources.map(function (s) { return s.key; });
+  var choiceData = null;       // the choices source's data
+  var choiceToken = 0;
+  var targetToken = 0;
+  return new Promise(function (resolve) {
+    var overlay = modalOverlay();
+    var modal = el('div', 'cxb-modal cxb-modal-wide');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Add a control';
+    var modeSel = selectField(['param', 'filter'], pre.mode === 'filter' ? 'filter' : 'param', function () { draw(); });
+    labelOptions(modeSel, { param: 'Query a source — picking a value re-runs it', filter: 'Filter this page — by one column' });
+    var filterNote = el('p', 'cxb-links-intro');
+    filterNote.textContent = 'Adds a control that filters the panels on this page by one column of a source, in the browser. ' +
+      'Pick its source and column in the properties bar.';
+
+    var choicesSel = selectField(keys, pre.choices && byKey[pre.choices] ? pre.choices : keys[0] || '', function () { loadChoices(); });
+    labelOptions(choicesSel, sources.reduce(function (m, s) { m[s.key] = s.label; return m; }, {}));
+    var columnSel = el('select');
+    on(columnSel, 'change', function () { syncValues(); });
+    var valuesNote = el('div', 'cxb-links-none');
+    var targetSel = selectField(keys, pre.target && byKey[pre.target] ? pre.target : (keys[1] || keys[0] || ''), function () { loadTarget(); });
+    labelOptions(targetSel, sources.reduce(function (m, s) { m[s.key] = s.label; return m; }, {}));
+    var paramSel = el('select');
+    var paramInput = el('input');
+    paramInput.type = 'text';
+    paramInput.setAttribute('placeholder', 'parameter, e.g. region');
+    var fieldInput = el('input');
+    fieldInput.type = 'text';
+    fieldInput.setAttribute('placeholder', 'query field it fills (default: the parameter)');
+    var sqlView = el('pre', 'cxb-flow-sqltext');
+    var titleInput = el('input');
+    titleInput.type = 'text';
+    titleInput.setAttribute('placeholder', 'Control title (default: the column)');
+    // The value the dashboard opens with (the re-run source needs one to have rows).
+    var startInput = el('input');
+    startInput.type = 'text';
+    startInput.setAttribute('placeholder', 'type to search the values');
+    var startList = el('datalist');
+    startList.id = 'cxb-ctl-values-' + Date.now();
+    startInput.setAttribute('list', startList.id);
+    on(startInput, 'input', function () { startInput.setAttribute('data-touched', '1'); syncSummary(); });
+    var styleSel = selectField(['auto', 'dropdown', 'radio', 'buttons', 'search'], 'auto', function () {});
+    labelOptions(styleSel, { auto: 'Automatic (dropdown, or type-ahead search past 50 values)' });
+    var summary = el('p', 'cxb-links-intro');
+    var errEl = el('div', 'cxb-modal-err');
+    var paramWrap = el('div');
+    var queryWrap = el('div');
+    append(queryWrap, [field('Values from', choicesSel), field('Column', columnSel), valuesNote,
+      field('Re-runs', targetSel), paramWrap, field('Starting value', startInput), startList,
+      field('Title', titleInput), field('Style', styleSel), summary]);
+
+    /** Distinct values of the picked column. @returns {string[]} Values. */
+    function values() {
+      if (!choiceData || !columnSel.value) return [];
+      var v = annotationValues(choiceData, 'x', columnSel.value);
+      return v.length ? v : annotationValues(choiceData, 'z', columnSel.value);
+    }
+    function syncValues() {
+      var v = values();
+      valuesNote.textContent = !choiceData ? 'Loading…' : !columnSel.value ? 'This source has no text column to list.'
+        : v.length + ' value' + (v.length === 1 ? '' : 's') + ': ' + v.slice(0, 10).join(', ') + (v.length > 10 ? ', …' : '');
+      if (!paramInput.value.trim() && !paramSel.options.length) paramInput.value = paramNameFrom(columnSel.value);
+      startList.innerHTML = '';
+      v.slice(0, 2000).forEach(function (value) {
+        var o = document.createElement('option');
+        o.value = value;
+        startList.appendChild(o);
+      });
+      if (!startInput.getAttribute('data-touched')) startInput.value = v.length ? v[0] : '';
+      syncSummary();
+    }
+    function loadChoices() {
+      var mine = ++choiceToken;
+      choiceData = null;
+      columnSel.innerHTML = '';
+      syncValues();
+      Promise.resolve(ctx.dataOf(byKey[choicesSel.value])).then(function (data) {
+        if (mine !== choiceToken) return;
+        choiceData = data;
+        var names = data ? annotationNames(data, 'x') : [];
+        if (!names.length && data) names = annotationNames(data, 'z');
+        names.forEach(function (n) {
+          var o = document.createElement('option');
+          o.value = n; o.textContent = n;
+          columnSel.appendChild(o);
+        });
+        if (pre.annotation && names.indexOf(pre.annotation) !== -1) columnSel.value = pre.annotation;
+        syncValues();
+      });
+    }
+    function loadTarget() {
+      var mine = ++targetToken;
+      paramWrap.innerHTML = '';
+      sqlView.textContent = '';
+      Promise.resolve(ctx.sqlOf(byKey[targetSel.value])).then(function (sql) {
+        if (mine !== targetToken) return;
+        var params = sql ? sqlParamNames(sql) : [];
+        if (params.length) {
+          // A database source: its SQL names the parameters it takes.
+          paramSel.innerHTML = '';
+          params.forEach(function (p) {
+            var o = document.createElement('option');
+            o.value = p; o.textContent = ':' + p;
+            paramSel.appendChild(o);
+          });
+          if (pre.param && params.indexOf(pre.param) !== -1) paramSel.value = pre.param;
+          sqlView.innerHTML = String(sql).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/(^|[^:\w]):([A-Za-z_]\w*)/g, '$1<mark>:$2</mark>');
+          append(paramWrap, [field('Parameter', paramSel), field('Its SQL', sqlView)]);
+          on(paramSel, 'change', syncSummary);
+        } else {
+          paramSel.innerHTML = '';
+          if (pre.param && !paramInput.value) paramInput.value = pre.param;
+          var hint = el('div', 'cxb-links-none');
+          hint.textContent = sql === null || sql === undefined
+            ? 'Not a database source: name the parameter and the query field it fills.'
+            : 'Its SQL has no :parameter — add one (e.g. WHERE column = :value) in Data → Database sources.';
+          append(paramWrap, [field('Parameter', paramInput), field('Query field', fieldInput), hint]);
+          on(paramInput, 'input', syncSummary);
+        }
+        syncSummary();
+      });
+    }
+    function currentParam() { return paramSel.options.length ? paramSel.value : paramInput.value.trim(); }
+    function syncSummary() {
+      var p = currentParam();
+      var c = byKey[choicesSel.value], t = byKey[targetSel.value];
+      summary.textContent = columnSel.value && p && c && t
+        ? 'Lists the values of “' + columnSel.value + '” from ' + c.label + '; picking one sets $' + p +
+          ' and re-runs ' + t.label + ', so every panel on it refreshes' +
+          (startInput.value.trim() ? ' (it opens on “' + startInput.value.trim() + '”).' : '.') : '';
+    }
+    function draw() {
+      var query = modeSel.value === 'param';
+      queryWrap.style.display = query ? '' : 'none';
+      filterNote.style.display = query ? 'none' : '';
+    }
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var addBtn = button('Add control', function () {
+      errEl.textContent = '';
+      if (modeSel.value === 'filter') { close({ mode: 'filter' }); return; }
+      var p = currentParam();
+      if (!columnSel.value) { errEl.textContent = 'Pick the column whose values the control lists.'; return; }
+      if (!/^[A-Za-z_]\w*$/.test(p)) { errEl.textContent = 'Name the parameter (letters, digits and _).'; return; }
+      var v = values();
+      var style = styleSel.value === 'auto' ? (v.length > 50 ? 'search' : 'dropdown') : styleSel.value;
+      close({ mode: 'param', choices: byKey[choicesSel.value], target: byKey[targetSel.value],
+        annotation: columnSel.value, param: p, field: paramSel.options.length ? p : (fieldInput.value.trim() || p),
+        value: startInput.value.trim() || (v.length ? v[0] : null), title: titleInput.value.trim() || columnSel.value, style: style });
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, addBtn]);
+    append(modal, [heading, field('Kind', modeSel), filterNote, queryWrap, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    if (!keys.length) {
+      modeSel.value = 'filter';
+      modeSel.disabled = true;
+      filterNote.textContent = 'Add a data source first (Data dropdown on a panel, or + Data).';
+    }
+    draw();
+    if (keys.length) { loadChoices(); loadTarget(); }
+
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
+ * A parameter name from a column name (`Gene Name` → `gene_name`).
+ * @param {string} column - Column name.
+ * @returns {string} A bind-parameter name.
+ * @private
+ */
+function paramNameFrom(column) {
+  var name = String(column || '').toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^[^a-z]+|_+$/g, '');
+  return name || 'value';
+}
+
+/**
+ * The "+ Panel" dialog: pick a data source and a chart type, then its fields —
+ * X + Y + Color by for a scatter plot, X (the measure) + Group by + Color by
+ * for the others — plus any extra CanvasXpress config (JSON, applied last),
+ * with a live preview on the source's data. ⚙ keeps editing it afterwards.
+ * @param {Document} doc - The owning document.
+ * @param {object} ctx - `{sources: picks, dataOf(pick), CanvasXpress,
+ *   prefill?: {source, graphType, fields, extra, title}}`.
+ * @returns {Promise<?{pick: object, config: object, title: string}>} The panel
+ *   to add, or null when cancelled.
+ * @private
+ */
+function openPanelDialog(doc, ctx) {
+  var sources = ctx.sources || [];
+  var pre = ctx.prefill || {};
+  var byKey = {};
+  sources.forEach(function (s) { byKey[s.key] = s; });
+  var keys = sources.map(function (s) { return s.key; });
+  var data = null;
+  var token = 0;
+  var instance = null;
+  var fields = pre.fields || {};
+  return new Promise(function (resolve) {
+    var overlay = modalOverlay();
+    var modal = el('div', 'cxb-modal cxb-modal-wide cxb-modal-xl');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Add a panel';
+    // Default: the source a query control re-runs (its rows are what the
+    // dashboard is about), else the first.
+    var queried = sources.filter(function (s) { return s.queried; })[0];
+    var first = pre.source && byKey[pre.source] ? pre.source : (queried ? queried.key : keys[0] || '');
+    var sourceSel = selectField(keys, first, function () { fields = {}; load(); });
+    labelOptions(sourceSel, sources.reduce(function (m, s) { m[s.key] = s.label; return m; }, {}));
+    var typeSel = selectField(WIZARD_CHART_TYPES, WIZARD_CHART_TYPES.indexOf(pre.graphType) !== -1 ? pre.graphType : 'Boxplot',
+      function () { drawFields(); refresh(); });
+    labelOptions(typeSel, { Scatter2D: 'Scatter plot' });
+    var titleInput = el('input');
+    titleInput.type = 'text';
+    titleInput.value = pre.title || '';
+    titleInput.setAttribute('placeholder', 'Panel title');
+    var fieldsBox = el('div');
+    var extra = el('textarea', 'cxb-modal-json');
+    extra.value = pre.extra || '';
+    extra.setAttribute('placeholder', '{ "theme": "GGPlot", "showLegend": false }');
+    extra.style.minHeight = '90px';
+    var extraHelp = el('div', 'cxb-links-none');
+    extraHelp.textContent = 'Any CanvasXpress option, applied over the fields. Keep editing with ⚙ after adding.';
+    var errEl = el('div', 'cxb-modal-err');
+    var left = el('div', 'cxb-panel-fields');
+    append(left, [field('Data source', sourceSel), field('Chart type', typeSel), fieldsBox,
+      field('Extra config (JSON)', extra), extraHelp, field('Title', titleInput)]);
+    var previewHost = el('div', 'cxb-panel-preview');
+    var status = el('div', 'cxb-links-none');
+    var right = el('div', 'cxb-panel-right');
+    append(right, [previewHost, status]);
+    var cols = el('div', 'cxb-panel-cols');
+    append(cols, [left, right]);
+
+    var selects = {};
+    /** One column dropdown. */
+    function columnSelect(name, list, allowNone) {
+      var opts = (allowNone ? [''] : []).concat(list);
+      var value = fields[name] != null && opts.indexOf(fields[name]) !== -1 ? fields[name] : (allowNone ? '' : opts[0] || '');
+      var sel = selectField(opts, value, function () { fields[name] = sel.value; refresh(); });
+      fields[name] = value;
+      selects[name] = sel;
+      return sel;
+    }
+    function drawFields() {
+      fieldsBox.innerHTML = '';
+      selects = {};
+      var columns = data ? chartColumns(data) : { numbers: [], texts: [] };
+      var which = chartFieldsFor(typeSel.value);
+      if (!data) { fieldsBox.appendChild(el('div', 'cxb-links-none')).textContent = 'Loading the data…'; return; }
+      fieldsBox.appendChild(field(which.y ? 'X axis' : 'X axis (measure)', columnSelect('x', columns.numbers, false)));
+      if (which.y) {
+        if (fields.y == null && columns.numbers[1]) fields.y = columns.numbers[1];
+        fieldsBox.appendChild(field('Y axis', columnSelect('y', columns.numbers, false)));
+      }
+      if (!columns.numbers.length) {
+        fieldsBox.appendChild(el('div', 'cxb-links-none')).textContent =
+          'This source has no number column to chart: pick another source.';
+        return;
+      }
+      // Default groups: a text column with a manageable number of values (≤ 100).
+      var groupable = columns.texts.filter(function (t) {
+        return annotationValues(data, 'x', t).length + annotationValues(data, 'z', t).length <= 100;
+      });
+      if (fields.group == null) fields.group = groupable[0] || '';
+      if (which.groupKey) fieldsBox.appendChild(field('Group by', columnSelect('group', columns.texts, true)));
+      if (fields.color == null) fields.color = fields.group || '';
+      fieldsBox.appendChild(field('Color by', columnSelect('color', columns.texts.concat(columns.numbers), true)));
+    }
+    /** The config the form describes, or null (an error is shown). */
+    function config() {
+      errEl.textContent = '';
+      var more = {};
+      var text = extra.value.trim();
+      if (text) {
+        try { more = JSON.parse(text); } catch (e) { errEl.textContent = 'Extra config is not valid JSON: ' + e.message; return null; }
+        if (!more || typeof more !== 'object' || Array.isArray(more)) { errEl.textContent = 'Extra config must be a JSON object: { … }'; return null; }
+      }
+      return buildChartConfig(typeSel.value, fields, more, data);
+    }
+    function refresh() {
+      if (instance) { try { instance.destroy(); } catch (e) { /* gone */ } instance = null; }
+      previewHost.innerHTML = '';
+      if (!data || !chartColumns(data).numbers.length) return;
+      var c = config();
+      if (!c) return;
+      var CXlib = ctx.CanvasXpress;
+      if (typeof CXlib !== 'function') { status.textContent = 'Preview needs CanvasXpress on the page.'; return; }
+      var canvas = el('canvas');
+      canvas.id = 'cxb-panel-preview-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
+      canvas.setAttribute('width', Math.max(320, previewHost.clientWidth || 560));
+      canvas.setAttribute('height', 400);
+      previewHost.appendChild(canvas);
+      try {
+        instance = new CXlib(canvas.id, data, Object.assign(JSON.parse(JSON.stringify(c)), { resizable: false }), {});
+      } catch (e) { previewHost.textContent = 'Preview unavailable: ' + (e && e.message || e); }
+    }
+    function load() {
+      var mine = ++token;
+      data = null;
+      status.textContent = '';
+      drawFields();
+      refresh();
+      var pick = byKey[sourceSel.value];
+      if (!titleInput.value.trim() || titleInput.getAttribute('data-auto')) {
+        titleInput.value = pick ? pick.label.replace(/^🗄 /, '') : '';
+        titleInput.setAttribute('data-auto', '1');
+      }
+      Promise.resolve(ctx.dataOf(pick)).then(function (d) {
+        if (mine !== token) return;
+        data = d;
+        var rows = d && d.y ? Math.max((d.y.smps || []).length, (d.y.vars || []).length) : 0;
+        status.textContent = d ? 'Preview on ' + rows + ' rows of ' + (pick ? pick.label : '') + '.' : 'This source returned no data.';
+        drawFields();
+        refresh();
+      });
+    }
+    on(titleInput, 'input', function () { titleInput.removeAttribute('data-auto'); });
+    var extraTimer = null;
+    on(extra, 'input', function () { clearTimeout(extraTimer); extraTimer = setTimeout(refresh, 400); });
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var addBtn = button('Add panel', function () {
+      if (!data || !chartColumns(data).numbers.length) { errEl.textContent = 'Pick a source with a number column (or wait for its data).'; return; }
+      var c = config();
+      if (!c) return;
+      close({ pick: byKey[sourceSel.value], config: c, title: titleInput.value.trim() });
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, addBtn]);
+    append(modal, [heading, cols, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    if (!keys.length) {
+      status.textContent = 'Add a data source first (Data → + Database, or + Data).';
+      addBtn.disabled = true;
+    } else {
+      load();
+    }
+
+    function close(result) {
+      if (instance) { try { instance.destroy(); } catch (e) { /* gone */ } instance = null; }
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
       resolve(result || null);
     }

@@ -11,7 +11,7 @@
  */
 
 /** @type {string} */
-var uiTokenCss = ":where(:root) { --cx-color-white: #ffffff; --cx-color-black: #000000; --cx-color-gray-25: #f7f8fa; --cx-color-gray-50: #f2f4f7; --cx-color-gray-100: #e6e8ec; --cx-color-gray-200: #d0d4da; --cx-color-gray-300: #b9c0cb; --cx-color-gray-400: #8a9099; --cx-color-gray-500: #6b7280; --cx-color-gray-600: #57606a; --cx-color-gray-700: #3a414c; --cx-color-gray-800: #2a2f36; --cx-color-gray-850: #23262d; --cx-color-gray-900: #1b1e24; --cx-color-gray-950: #0e1013; --cx-color-indigo-100: #dce2ff; --cx-color-indigo-300: #8a99ff; --cx-color-indigo-400: #7b8cff; --cx-color-indigo-500: #5369ff; --cx-color-indigo-600: #3d58ff; --cx-color-indigo-700: #2f44d6; --cx-color-indigo-a10: rgba(83, 105, 255, 0.1); --cx-color-indigo-a20: rgba(83, 105, 255, 0.2); --cx-color-indigo-dark-a20: rgba(123, 140, 255, 0.2); --cx-color-blue-300: #8cc4f2; --cx-color-blue-400: #4c9fe0; --cx-color-blue-500: #087ad1; --cx-color-blue-700: #065fa3; --cx-color-blue-a15: rgba(8, 122, 209, 0.15); --cx-color-red-50: #fce8e6; --cx-color-red-400: #f07167; --cx-color-red-600: #c0392b; --cx-color-green-50: #e6f4ea; --cx-color-green-400: #4caf50; --cx-color-green-700: #2e7d32; --cx-color-amber-50: #fff7e0; --cx-color-amber-300: #fcd34d; --cx-color-amber-500: #b26a00; --cx-color-amber-800: #92400e; --cx-color-black-a35: rgba(0, 0, 0, 0.35); --cx-color-black-a55: rgba(0, 0, 0, 0.55); --cx-radius-none: 0; --cx-radius-sm: 4px; --cx-radius-md: 6px; --cx-radius-lg: 10px; --cx-radius-pill: 999px; --cx-radius-round: 50%; --cx-space-0: 0; --cx-space-1: 2px; --cx-space-2: 4px; --cx-space-3: 6px; --cx-space-4: 8px; --cx-space-5: 10px; --cx-space-6: 12px; --cx-space-7: 16px; --cx-space-8: 20px; --cx-space-9: 24px; --cx-space-10: 32px; --cx-font-sans: system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", \"Liberation Sans\", Arial, sans-serif; --cx-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, \"Liberation Mono\", monospace; --cx-font-size-xs: 11px; --cx-font-size-sm: 12px; --cx-font-size-md: 13px; --cx-font-size-lg: 14px; --cx-font-size-xl: 16px; --cx-font-size-2xl: 20px; --cx-font-weight-regular: 400; --cx-font-weight-medium: 500; --cx-font-weight-bold: 700; --cx-line-height-tight: 1.2; --cx-line-height-base: 1.45; --cx-line-height-loose: 1.6; --cx-shadow-1: 0 2px 8px rgba(0, 0, 0, 0.12); --cx-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.18); --cx-shadow-3: 0 4px 20px rgba(0, 0, 0, 0.3); --cx-duration-fast: 0.15s; --cx-duration-base: 0.3s; --cx-duration-slow: 0.5s; --cx-z-behind: -1; --cx-z-base: 1; --cx-z-raised: 10; --cx-z-toolbar: 1000; --cx-z-toolbar-edge: 1001; --cx-z-resizer: 2000; --cx-z-fullscreen: 9999; --cx-z-panel: 10000; --cx-z-panel-active: 10001; --cx-z-popover: 10002; --cx-z-popover-high: 10006; --cx-z-modal: 100000; --cx-z-modal-popover: 100001; --cx-z-tooltip: 1000000; --cx-ui-surface: var(--cx-color-white); --cx-ui-surface-alt: var(--cx-color-gray-25); --cx-ui-surface-sunken: var(--cx-color-gray-50); --cx-ui-surface-raised: var(--cx-color-white); --cx-ui-chrome: var(--cx-color-white); --cx-ui-chrome-border: var(--cx-color-gray-100); --cx-ui-on-chrome: var(--cx-color-gray-900); --cx-ui-chrome-strong: var(--cx-color-white); --cx-ui-on-chrome-strong: var(--cx-color-gray-900); --cx-ui-text: var(--cx-color-gray-900); --cx-ui-text-muted: var(--cx-color-gray-600); --cx-ui-text-subtle: var(--cx-color-gray-400); --cx-ui-border: var(--cx-color-gray-200); --cx-ui-border-subtle: var(--cx-color-gray-100); --cx-ui-divider: var(--cx-color-gray-100); --cx-ui-border-accent: var(--cx-color-indigo-500); --cx-ui-accent: var(--cx-color-indigo-500); --cx-ui-accent-strong: var(--cx-color-indigo-600); --cx-ui-accent-hover: var(--cx-color-indigo-700); --cx-ui-accent-tint: var(--cx-color-indigo-a20); --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10); --cx-ui-on-accent: var(--cx-color-white); --cx-ui-focus: var(--cx-color-indigo-600); --cx-ui-info: var(--cx-color-blue-500); --cx-ui-info-strong: var(--cx-color-blue-700); --cx-ui-info-tint: var(--cx-color-blue-a15); --cx-ui-danger: var(--cx-color-red-600); --cx-ui-danger-tint: var(--cx-color-red-50); --cx-ui-success: var(--cx-color-green-700); --cx-ui-success-tint: var(--cx-color-green-50); --cx-ui-warning: var(--cx-color-amber-500); --cx-ui-warning-strong: var(--cx-color-amber-800); --cx-ui-warning-tint: var(--cx-color-amber-50); --cx-ui-backdrop: var(--cx-color-black-a35); --cx-ui-scrollbar-track: var(--cx-color-white); --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50); --cx-ui-scrollbar-thumb: var(--cx-color-gray-200); --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400); --cx-ui-control-on: var(--cx-color-indigo-500); --cx-ui-active-cell: var(--cx-color-indigo-100); --cx-ui-code-key: rgb(215, 48, 39); --cx-ui-code-value: rgb(69, 117, 180); --cx-ui-code-string: rgb(168, 82, 2); --cx-ui-code-boolean: rgb(102, 102, 0); --cx-ui-code-comment: rgb(58, 115, 0); }\n:root {\n  --cx-ui-dark-ref-surface: var(--cx-color-gray-900);\n  --cx-ui-dark-ref-accent: var(--cx-color-indigo-400);\n  --cx-ui-dark-ref-accent-strong: var(--cx-color-indigo-300);\n  --cx-ui-dark-ref-accent-tint: var(--cx-color-indigo-dark-a20);\n}\n:where([data-cx-ui-theme=\"light\"]) {\n  color-scheme: light;\n  --cx-ui-surface: var(--cx-color-white);\n  --cx-ui-surface-alt: var(--cx-color-gray-25);\n  --cx-ui-surface-sunken: var(--cx-color-gray-50);\n  --cx-ui-surface-raised: var(--cx-color-white);\n  --cx-ui-chrome: var(--cx-color-white);\n  --cx-ui-chrome-border: var(--cx-color-gray-100);\n  --cx-ui-on-chrome: var(--cx-color-gray-900);\n  --cx-ui-chrome-strong: var(--cx-color-white);\n  --cx-ui-on-chrome-strong: var(--cx-color-gray-900);\n  --cx-ui-text: var(--cx-color-gray-900);\n  --cx-ui-text-muted: var(--cx-color-gray-600);\n  --cx-ui-text-subtle: var(--cx-color-gray-400);\n  --cx-ui-border: var(--cx-color-gray-200);\n  --cx-ui-border-subtle: var(--cx-color-gray-100);\n  --cx-ui-divider: var(--cx-color-gray-100);\n  --cx-ui-border-accent: var(--cx-color-indigo-500);\n  --cx-ui-accent: var(--cx-color-indigo-500);\n  --cx-ui-accent-strong: var(--cx-color-indigo-600);\n  --cx-ui-accent-hover: var(--cx-color-indigo-700);\n  --cx-ui-accent-tint: var(--cx-color-indigo-a20);\n  --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10);\n  --cx-ui-on-accent: var(--cx-color-white);\n  --cx-ui-focus: var(--cx-color-indigo-600);\n  --cx-ui-info: var(--cx-color-blue-500);\n  --cx-ui-info-strong: var(--cx-color-blue-700);\n  --cx-ui-info-tint: var(--cx-color-blue-a15);\n  --cx-ui-danger: var(--cx-color-red-600);\n  --cx-ui-danger-tint: var(--cx-color-red-50);\n  --cx-ui-success: var(--cx-color-green-700);\n  --cx-ui-success-tint: var(--cx-color-green-50);\n  --cx-ui-warning: var(--cx-color-amber-500);\n  --cx-ui-warning-strong: var(--cx-color-amber-800);\n  --cx-ui-warning-tint: var(--cx-color-amber-50);\n  --cx-ui-backdrop: var(--cx-color-black-a35);\n  --cx-ui-scrollbar-track: var(--cx-color-white);\n  --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50);\n  --cx-ui-scrollbar-thumb: var(--cx-color-gray-200);\n  --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400);\n  --cx-ui-control-on: var(--cx-color-indigo-500);\n  --cx-ui-active-cell: var(--cx-color-indigo-100);\n  --cx-ui-code-key: rgb(215, 48, 39);\n  --cx-ui-code-value: rgb(69, 117, 180);\n  --cx-ui-code-string: rgb(168, 82, 2);\n  --cx-ui-code-boolean: rgb(102, 102, 0);\n  --cx-ui-code-comment: rgb(58, 115, 0);\n}\n@media (prefers-color-scheme: light) {\n  :where([data-cx-ui-theme=\"auto\"]) {\n    color-scheme: light;\n    --cx-ui-surface: var(--cx-color-white);\n    --cx-ui-surface-alt: var(--cx-color-gray-25);\n    --cx-ui-surface-sunken: var(--cx-color-gray-50);\n    --cx-ui-surface-raised: var(--cx-color-white);\n    --cx-ui-chrome: var(--cx-color-white);\n    --cx-ui-chrome-border: var(--cx-color-gray-100);\n    --cx-ui-on-chrome: var(--cx-color-gray-900);\n    --cx-ui-chrome-strong: var(--cx-color-white);\n    --cx-ui-on-chrome-strong: var(--cx-color-gray-900);\n    --cx-ui-text: var(--cx-color-gray-900);\n    --cx-ui-text-muted: var(--cx-color-gray-600);\n    --cx-ui-text-subtle: var(--cx-color-gray-400);\n    --cx-ui-border: var(--cx-color-gray-200);\n    --cx-ui-border-subtle: var(--cx-color-gray-100);\n    --cx-ui-divider: var(--cx-color-gray-100);\n    --cx-ui-border-accent: var(--cx-color-indigo-500);\n    --cx-ui-accent: var(--cx-color-indigo-500);\n    --cx-ui-accent-strong: var(--cx-color-indigo-600);\n    --cx-ui-accent-hover: var(--cx-color-indigo-700);\n    --cx-ui-accent-tint: var(--cx-color-indigo-a20);\n    --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10);\n    --cx-ui-on-accent: var(--cx-color-white);\n    --cx-ui-focus: var(--cx-color-indigo-600);\n    --cx-ui-info: var(--cx-color-blue-500);\n    --cx-ui-info-strong: var(--cx-color-blue-700);\n    --cx-ui-info-tint: var(--cx-color-blue-a15);\n    --cx-ui-danger: var(--cx-color-red-600);\n    --cx-ui-danger-tint: var(--cx-color-red-50);\n    --cx-ui-success: var(--cx-color-green-700);\n    --cx-ui-success-tint: var(--cx-color-green-50);\n    --cx-ui-warning: var(--cx-color-amber-500);\n    --cx-ui-warning-strong: var(--cx-color-amber-800);\n    --cx-ui-warning-tint: var(--cx-color-amber-50);\n    --cx-ui-backdrop: var(--cx-color-black-a35);\n    --cx-ui-scrollbar-track: var(--cx-color-white);\n    --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50);\n    --cx-ui-scrollbar-thumb: var(--cx-color-gray-200);\n    --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400);\n    --cx-ui-control-on: var(--cx-color-indigo-500);\n    --cx-ui-active-cell: var(--cx-color-indigo-100);\n    --cx-ui-code-key: rgb(215, 48, 39);\n    --cx-ui-code-value: rgb(69, 117, 180);\n    --cx-ui-code-string: rgb(168, 82, 2);\n    --cx-ui-code-boolean: rgb(102, 102, 0);\n    --cx-ui-code-comment: rgb(58, 115, 0);\n  }\n}\n:where([data-cx-ui-theme=\"dark\"],\n  [data-cx-ui-theme=\"dark\"] [data-cx-ui-scope]:not([data-cx-ui-theme=\"light\"]):not([data-cx-ui-theme=\"auto\"])) {\n  color-scheme: dark;\n  --cx-ui-surface: var(--cx-color-gray-900) !important;\n  --cx-ui-surface-alt: var(--cx-color-gray-850) !important;\n  --cx-ui-surface-sunken: var(--cx-color-gray-950) !important;\n  --cx-ui-surface-raised: var(--cx-color-gray-850) !important;\n  --cx-ui-chrome: var(--cx-color-gray-850) !important;\n  --cx-ui-chrome-border: var(--cx-color-gray-800) !important;\n  --cx-ui-on-chrome: var(--cx-color-gray-100) !important;\n  --cx-ui-chrome-strong: var(--cx-color-gray-850) !important;\n  --cx-ui-on-chrome-strong: var(--cx-color-gray-100) !important;\n  --cx-ui-text: var(--cx-color-gray-100) !important;\n  --cx-ui-text-muted: var(--cx-color-gray-400) !important;\n  --cx-ui-text-subtle: var(--cx-color-gray-500) !important;\n  --cx-ui-border: var(--cx-color-gray-700) !important;\n  --cx-ui-border-subtle: var(--cx-color-gray-800) !important;\n  --cx-ui-divider: var(--cx-color-gray-800) !important;\n  --cx-ui-border-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n  --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent-tint: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n  --cx-ui-accent-tint-subtle: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n  --cx-ui-on-accent: var(--cx-color-gray-950) !important;\n  --cx-ui-focus: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n  --cx-ui-info: var(--cx-color-blue-400) !important;\n  --cx-ui-info-strong: var(--cx-color-blue-300) !important;\n  --cx-ui-info-tint: var(--cx-color-blue-a15) !important;\n  --cx-ui-danger: var(--cx-color-red-400) !important;\n  --cx-ui-danger-tint: rgba(240, 113, 103, 0.15) !important;\n  --cx-ui-success: var(--cx-color-green-400) !important;\n  --cx-ui-success-tint: rgba(76, 175, 80, 0.15) !important;\n  --cx-ui-warning: var(--cx-color-amber-300) !important;\n  --cx-ui-warning-strong: var(--cx-color-amber-300) !important;\n  --cx-ui-warning-tint: rgba(252, 211, 77, 0.12) !important;\n  --cx-ui-backdrop: var(--cx-color-black-a55) !important;\n  --cx-ui-scrollbar-track: var(--cx-color-gray-900) !important;\n  --cx-ui-scrollbar-track-alt: var(--cx-color-gray-850) !important;\n  --cx-ui-scrollbar-thumb: var(--cx-color-gray-700) !important;\n  --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-500) !important;\n  --cx-ui-control-on: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-active-cell: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-code-key: #ff7b72 !important;\n  --cx-ui-code-value: #79c0ff !important;\n  --cx-ui-code-string: #ffa657 !important;\n  --cx-ui-code-boolean: #e3d26f !important;\n  --cx-ui-code-comment: #7ee787 !important;\n}\n@media (prefers-color-scheme: dark) {\n  :where([data-cx-ui-theme=\"auto\"],\n    [data-cx-ui-theme=\"auto\"] [data-cx-ui-scope]:not([data-cx-ui-theme=\"light\"]):not([data-cx-ui-theme=\"dark\"])) {\n    color-scheme: dark;\n    --cx-ui-surface: var(--cx-color-gray-900) !important;\n    --cx-ui-surface-alt: var(--cx-color-gray-850) !important;\n    --cx-ui-surface-sunken: var(--cx-color-gray-950) !important;\n    --cx-ui-surface-raised: var(--cx-color-gray-850) !important;\n    --cx-ui-chrome: var(--cx-color-gray-850) !important;\n    --cx-ui-chrome-border: var(--cx-color-gray-800) !important;\n    --cx-ui-on-chrome: var(--cx-color-gray-100) !important;\n    --cx-ui-chrome-strong: var(--cx-color-gray-850) !important;\n    --cx-ui-on-chrome-strong: var(--cx-color-gray-100) !important;\n    --cx-ui-text: var(--cx-color-gray-100) !important;\n    --cx-ui-text-muted: var(--cx-color-gray-400) !important;\n    --cx-ui-text-subtle: var(--cx-color-gray-500) !important;\n    --cx-ui-border: var(--cx-color-gray-700) !important;\n    --cx-ui-border-subtle: var(--cx-color-gray-800) !important;\n    --cx-ui-divider: var(--cx-color-gray-800) !important;\n    --cx-ui-border-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n    --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent-tint: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n    --cx-ui-accent-tint-subtle: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n    --cx-ui-on-accent: var(--cx-color-gray-950) !important;\n    --cx-ui-focus: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n    --cx-ui-info: var(--cx-color-blue-400) !important;\n    --cx-ui-info-strong: var(--cx-color-blue-300) !important;\n    --cx-ui-info-tint: var(--cx-color-blue-a15) !important;\n    --cx-ui-danger: var(--cx-color-red-400) !important;\n    --cx-ui-danger-tint: rgba(240, 113, 103, 0.15) !important;\n    --cx-ui-success: var(--cx-color-green-400) !important;\n    --cx-ui-success-tint: rgba(76, 175, 80, 0.15) !important;\n    --cx-ui-warning: var(--cx-color-amber-300) !important;\n    --cx-ui-warning-strong: var(--cx-color-amber-300) !important;\n    --cx-ui-warning-tint: rgba(252, 211, 77, 0.12) !important;\n    --cx-ui-backdrop: var(--cx-color-black-a55) !important;\n    --cx-ui-scrollbar-track: var(--cx-color-gray-900) !important;\n    --cx-ui-scrollbar-track-alt: var(--cx-color-gray-850) !important;\n    --cx-ui-scrollbar-thumb: var(--cx-color-gray-700) !important;\n    --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-500) !important;\n    --cx-ui-control-on: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-active-cell: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-code-key: #ff7b72 !important;\n    --cx-ui-code-value: #79c0ff !important;\n    --cx-ui-code-string: #ffa657 !important;\n    --cx-ui-code-boolean: #e3d26f !important;\n    --cx-ui-code-comment: #7ee787 !important;\n  }\n}";
+var uiTokenCss = ":where(:root) { --cx-color-white: #ffffff; --cx-color-black: #000000; --cx-color-gray-25: #f7f8fa; --cx-color-gray-50: #f2f4f7; --cx-color-gray-100: #e6e8ec; --cx-color-gray-200: #d0d4da; --cx-color-gray-300: #b9c0cb; --cx-color-gray-400: #8a9099; --cx-color-gray-500: #6b7280; --cx-color-gray-600: #57606a; --cx-color-gray-700: #3a414c; --cx-color-gray-800: #2a2f36; --cx-color-gray-850: #23262d; --cx-color-gray-900: #1b1e24; --cx-color-gray-950: #0e1013; --cx-color-indigo-100: #dce2ff; --cx-color-indigo-300: #8a99ff; --cx-color-indigo-400: #7b8cff; --cx-color-indigo-500: #5369ff; --cx-color-indigo-600: #3d58ff; --cx-color-indigo-700: #2f44d6; --cx-color-indigo-a10: rgba(83, 105, 255, 0.1); --cx-color-indigo-a20: rgba(83, 105, 255, 0.2); --cx-color-indigo-dark-a20: rgba(123, 140, 255, 0.2); --cx-color-blue-300: #8cc4f2; --cx-color-blue-400: #4c9fe0; --cx-color-blue-500: #087ad1; --cx-color-blue-700: #065fa3; --cx-color-blue-a15: rgba(8, 122, 209, 0.15); --cx-color-red-50: #fce8e6; --cx-color-red-400: #f07167; --cx-color-red-600: #c0392b; --cx-color-green-50: #e6f4ea; --cx-color-green-400: #4caf50; --cx-color-green-700: #2e7d32; --cx-color-amber-50: #fff7e0; --cx-color-amber-300: #fcd34d; --cx-color-amber-500: #b26a00; --cx-color-amber-800: #92400e; --cx-color-black-a35: rgba(0, 0, 0, 0.35); --cx-color-black-a55: rgba(0, 0, 0, 0.55); --cx-radius-none: 0; --cx-radius-sm: 4px; --cx-radius-md: 6px; --cx-radius-lg: 10px; --cx-radius-pill: 999px; --cx-radius-round: 50%; --cx-space-0: 0; --cx-space-1: 2px; --cx-space-2: 4px; --cx-space-3: 6px; --cx-space-4: 8px; --cx-space-5: 10px; --cx-space-6: 12px; --cx-space-7: 16px; --cx-space-8: 20px; --cx-space-9: 24px; --cx-space-10: 32px; --cx-font-sans: system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", \"Liberation Sans\", Arial, sans-serif; --cx-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, \"Liberation Mono\", monospace; --cx-font-size-xs: 11px; --cx-font-size-sm: 12px; --cx-font-size-md: 13px; --cx-font-size-lg: 14px; --cx-font-size-xl: 16px; --cx-font-size-2xl: 20px; --cx-font-weight-regular: 400; --cx-font-weight-medium: 500; --cx-font-weight-bold: 700; --cx-line-height-tight: 1.2; --cx-line-height-base: 1.45; --cx-line-height-loose: 1.6; --cx-shadow-1: 0 2px 8px rgba(0, 0, 0, 0.12); --cx-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.18); --cx-shadow-3: 0 4px 20px rgba(0, 0, 0, 0.3); --cx-duration-fast: 0.15s; --cx-duration-base: 0.3s; --cx-duration-slow: 0.5s; --cx-z-behind: -1; --cx-z-base: 1; --cx-z-raised: 10; --cx-z-toolbar: 1000; --cx-z-toolbar-edge: 1001; --cx-z-footer-link: 1002; --cx-z-resizer: 2000; --cx-z-fullscreen: 9999; --cx-z-panel: 10000; --cx-z-panel-active: 10001; --cx-z-popover: 10002; --cx-z-popover-high: 10006; --cx-z-modal: 100000; --cx-z-modal-popover: 100001; --cx-z-tooltip: 1000000; --cx-ui-surface: var(--cx-color-white); --cx-ui-surface-alt: var(--cx-color-gray-25); --cx-ui-surface-sunken: var(--cx-color-gray-50); --cx-ui-surface-raised: var(--cx-color-white); --cx-ui-chrome: var(--cx-color-white); --cx-ui-chrome-border: var(--cx-color-gray-100); --cx-ui-on-chrome: var(--cx-color-gray-900); --cx-ui-chrome-strong: var(--cx-color-white); --cx-ui-on-chrome-strong: var(--cx-color-gray-900); --cx-ui-text: var(--cx-color-gray-900); --cx-ui-text-muted: var(--cx-color-gray-600); --cx-ui-text-subtle: var(--cx-color-gray-400); --cx-ui-border: var(--cx-color-gray-200); --cx-ui-border-subtle: var(--cx-color-gray-100); --cx-ui-divider: var(--cx-color-gray-100); --cx-ui-border-accent: var(--cx-color-indigo-500); --cx-ui-accent: var(--cx-color-indigo-500); --cx-ui-accent-strong: var(--cx-color-indigo-600); --cx-ui-accent-hover: var(--cx-color-indigo-700); --cx-ui-accent-tint: var(--cx-color-indigo-a20); --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10); --cx-ui-on-accent: var(--cx-color-white); --cx-ui-focus: var(--cx-color-indigo-600); --cx-ui-info: var(--cx-color-blue-500); --cx-ui-info-strong: var(--cx-color-blue-700); --cx-ui-info-tint: var(--cx-color-blue-a15); --cx-ui-danger: var(--cx-color-red-600); --cx-ui-danger-tint: var(--cx-color-red-50); --cx-ui-success: var(--cx-color-green-700); --cx-ui-success-tint: var(--cx-color-green-50); --cx-ui-warning: var(--cx-color-amber-500); --cx-ui-warning-strong: var(--cx-color-amber-800); --cx-ui-warning-tint: var(--cx-color-amber-50); --cx-ui-backdrop: var(--cx-color-black-a35); --cx-ui-scrollbar-track: var(--cx-color-white); --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50); --cx-ui-scrollbar-thumb: var(--cx-color-gray-200); --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400); --cx-ui-control-on: var(--cx-color-indigo-500); --cx-ui-active-cell: var(--cx-color-indigo-100); --cx-ui-code-key: rgb(215, 48, 39); --cx-ui-code-value: rgb(69, 117, 180); --cx-ui-code-string: rgb(168, 82, 2); --cx-ui-code-boolean: rgb(102, 102, 0); --cx-ui-code-comment: rgb(58, 115, 0); }\n:root {\n  --cx-ui-dark-ref-surface: var(--cx-color-gray-900);\n  --cx-ui-dark-ref-accent: var(--cx-color-indigo-400);\n  --cx-ui-dark-ref-accent-strong: var(--cx-color-indigo-300);\n  --cx-ui-dark-ref-accent-tint: var(--cx-color-indigo-dark-a20);\n}\n:where([data-cx-ui-theme=\"light\"]) {\n  color-scheme: light;\n  --cx-ui-surface: var(--cx-color-white);\n  --cx-ui-surface-alt: var(--cx-color-gray-25);\n  --cx-ui-surface-sunken: var(--cx-color-gray-50);\n  --cx-ui-surface-raised: var(--cx-color-white);\n  --cx-ui-chrome: var(--cx-color-white);\n  --cx-ui-chrome-border: var(--cx-color-gray-100);\n  --cx-ui-on-chrome: var(--cx-color-gray-900);\n  --cx-ui-chrome-strong: var(--cx-color-white);\n  --cx-ui-on-chrome-strong: var(--cx-color-gray-900);\n  --cx-ui-text: var(--cx-color-gray-900);\n  --cx-ui-text-muted: var(--cx-color-gray-600);\n  --cx-ui-text-subtle: var(--cx-color-gray-400);\n  --cx-ui-border: var(--cx-color-gray-200);\n  --cx-ui-border-subtle: var(--cx-color-gray-100);\n  --cx-ui-divider: var(--cx-color-gray-100);\n  --cx-ui-border-accent: var(--cx-color-indigo-500);\n  --cx-ui-accent: var(--cx-color-indigo-500);\n  --cx-ui-accent-strong: var(--cx-color-indigo-600);\n  --cx-ui-accent-hover: var(--cx-color-indigo-700);\n  --cx-ui-accent-tint: var(--cx-color-indigo-a20);\n  --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10);\n  --cx-ui-on-accent: var(--cx-color-white);\n  --cx-ui-focus: var(--cx-color-indigo-600);\n  --cx-ui-info: var(--cx-color-blue-500);\n  --cx-ui-info-strong: var(--cx-color-blue-700);\n  --cx-ui-info-tint: var(--cx-color-blue-a15);\n  --cx-ui-danger: var(--cx-color-red-600);\n  --cx-ui-danger-tint: var(--cx-color-red-50);\n  --cx-ui-success: var(--cx-color-green-700);\n  --cx-ui-success-tint: var(--cx-color-green-50);\n  --cx-ui-warning: var(--cx-color-amber-500);\n  --cx-ui-warning-strong: var(--cx-color-amber-800);\n  --cx-ui-warning-tint: var(--cx-color-amber-50);\n  --cx-ui-backdrop: var(--cx-color-black-a35);\n  --cx-ui-scrollbar-track: var(--cx-color-white);\n  --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50);\n  --cx-ui-scrollbar-thumb: var(--cx-color-gray-200);\n  --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400);\n  --cx-ui-control-on: var(--cx-color-indigo-500);\n  --cx-ui-active-cell: var(--cx-color-indigo-100);\n  --cx-ui-code-key: rgb(215, 48, 39);\n  --cx-ui-code-value: rgb(69, 117, 180);\n  --cx-ui-code-string: rgb(168, 82, 2);\n  --cx-ui-code-boolean: rgb(102, 102, 0);\n  --cx-ui-code-comment: rgb(58, 115, 0);\n}\n@media (prefers-color-scheme: light) {\n  :where([data-cx-ui-theme=\"auto\"]) {\n    color-scheme: light;\n    --cx-ui-surface: var(--cx-color-white);\n    --cx-ui-surface-alt: var(--cx-color-gray-25);\n    --cx-ui-surface-sunken: var(--cx-color-gray-50);\n    --cx-ui-surface-raised: var(--cx-color-white);\n    --cx-ui-chrome: var(--cx-color-white);\n    --cx-ui-chrome-border: var(--cx-color-gray-100);\n    --cx-ui-on-chrome: var(--cx-color-gray-900);\n    --cx-ui-chrome-strong: var(--cx-color-white);\n    --cx-ui-on-chrome-strong: var(--cx-color-gray-900);\n    --cx-ui-text: var(--cx-color-gray-900);\n    --cx-ui-text-muted: var(--cx-color-gray-600);\n    --cx-ui-text-subtle: var(--cx-color-gray-400);\n    --cx-ui-border: var(--cx-color-gray-200);\n    --cx-ui-border-subtle: var(--cx-color-gray-100);\n    --cx-ui-divider: var(--cx-color-gray-100);\n    --cx-ui-border-accent: var(--cx-color-indigo-500);\n    --cx-ui-accent: var(--cx-color-indigo-500);\n    --cx-ui-accent-strong: var(--cx-color-indigo-600);\n    --cx-ui-accent-hover: var(--cx-color-indigo-700);\n    --cx-ui-accent-tint: var(--cx-color-indigo-a20);\n    --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10);\n    --cx-ui-on-accent: var(--cx-color-white);\n    --cx-ui-focus: var(--cx-color-indigo-600);\n    --cx-ui-info: var(--cx-color-blue-500);\n    --cx-ui-info-strong: var(--cx-color-blue-700);\n    --cx-ui-info-tint: var(--cx-color-blue-a15);\n    --cx-ui-danger: var(--cx-color-red-600);\n    --cx-ui-danger-tint: var(--cx-color-red-50);\n    --cx-ui-success: var(--cx-color-green-700);\n    --cx-ui-success-tint: var(--cx-color-green-50);\n    --cx-ui-warning: var(--cx-color-amber-500);\n    --cx-ui-warning-strong: var(--cx-color-amber-800);\n    --cx-ui-warning-tint: var(--cx-color-amber-50);\n    --cx-ui-backdrop: var(--cx-color-black-a35);\n    --cx-ui-scrollbar-track: var(--cx-color-white);\n    --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50);\n    --cx-ui-scrollbar-thumb: var(--cx-color-gray-200);\n    --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400);\n    --cx-ui-control-on: var(--cx-color-indigo-500);\n    --cx-ui-active-cell: var(--cx-color-indigo-100);\n    --cx-ui-code-key: rgb(215, 48, 39);\n    --cx-ui-code-value: rgb(69, 117, 180);\n    --cx-ui-code-string: rgb(168, 82, 2);\n    --cx-ui-code-boolean: rgb(102, 102, 0);\n    --cx-ui-code-comment: rgb(58, 115, 0);\n  }\n}\n:where([data-cx-ui-theme=\"dark\"],\n  [data-cx-ui-theme=\"dark\"] [data-cx-ui-scope]:not([data-cx-ui-theme=\"light\"]):not([data-cx-ui-theme=\"auto\"])) {\n  color-scheme: dark;\n  --cx-ui-surface: var(--cx-color-gray-900) !important;\n  --cx-ui-surface-alt: var(--cx-color-gray-850) !important;\n  --cx-ui-surface-sunken: var(--cx-color-gray-950) !important;\n  --cx-ui-surface-raised: var(--cx-color-gray-850) !important;\n  --cx-ui-chrome: var(--cx-color-gray-850) !important;\n  --cx-ui-chrome-border: var(--cx-color-gray-800) !important;\n  --cx-ui-on-chrome: var(--cx-color-gray-100) !important;\n  --cx-ui-chrome-strong: var(--cx-color-gray-850) !important;\n  --cx-ui-on-chrome-strong: var(--cx-color-gray-100) !important;\n  --cx-ui-text: var(--cx-color-gray-100) !important;\n  --cx-ui-text-muted: var(--cx-color-gray-400) !important;\n  --cx-ui-text-subtle: var(--cx-color-gray-500) !important;\n  --cx-ui-border: var(--cx-color-gray-700) !important;\n  --cx-ui-border-subtle: var(--cx-color-gray-800) !important;\n  --cx-ui-divider: var(--cx-color-gray-800) !important;\n  --cx-ui-border-accent: var(--cx-ui-dark-border-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n  --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent-tint: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n  --cx-ui-accent-tint-subtle: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n  --cx-ui-on-accent: var(--cx-color-gray-950) !important;\n  --cx-ui-focus: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n  --cx-ui-info: var(--cx-color-blue-400) !important;\n  --cx-ui-info-strong: var(--cx-color-blue-300) !important;\n  --cx-ui-info-tint: var(--cx-color-blue-a15) !important;\n  --cx-ui-danger: var(--cx-color-red-400) !important;\n  --cx-ui-danger-tint: rgba(240, 113, 103, 0.15) !important;\n  --cx-ui-success: var(--cx-color-green-400) !important;\n  --cx-ui-success-tint: rgba(76, 175, 80, 0.15) !important;\n  --cx-ui-warning: var(--cx-color-amber-300) !important;\n  --cx-ui-warning-strong: var(--cx-color-amber-300) !important;\n  --cx-ui-warning-tint: rgba(252, 211, 77, 0.12) !important;\n  --cx-ui-backdrop: var(--cx-color-black-a55) !important;\n  --cx-ui-scrollbar-track: var(--cx-color-gray-900) !important;\n  --cx-ui-scrollbar-track-alt: var(--cx-color-gray-850) !important;\n  --cx-ui-scrollbar-thumb: var(--cx-color-gray-700) !important;\n  --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-500) !important;\n  --cx-ui-control-on: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-active-cell: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-code-key: #ff7b72 !important;\n  --cx-ui-code-value: #79c0ff !important;\n  --cx-ui-code-string: #ffa657 !important;\n  --cx-ui-code-boolean: #e3d26f !important;\n  --cx-ui-code-comment: #7ee787 !important;\n}\n@media (prefers-color-scheme: dark) {\n  :where([data-cx-ui-theme=\"auto\"],\n    [data-cx-ui-theme=\"auto\"] [data-cx-ui-scope]:not([data-cx-ui-theme=\"light\"]):not([data-cx-ui-theme=\"dark\"])) {\n    color-scheme: dark;\n    --cx-ui-surface: var(--cx-color-gray-900) !important;\n    --cx-ui-surface-alt: var(--cx-color-gray-850) !important;\n    --cx-ui-surface-sunken: var(--cx-color-gray-950) !important;\n    --cx-ui-surface-raised: var(--cx-color-gray-850) !important;\n    --cx-ui-chrome: var(--cx-color-gray-850) !important;\n    --cx-ui-chrome-border: var(--cx-color-gray-800) !important;\n    --cx-ui-on-chrome: var(--cx-color-gray-100) !important;\n    --cx-ui-chrome-strong: var(--cx-color-gray-850) !important;\n    --cx-ui-on-chrome-strong: var(--cx-color-gray-100) !important;\n    --cx-ui-text: var(--cx-color-gray-100) !important;\n    --cx-ui-text-muted: var(--cx-color-gray-400) !important;\n    --cx-ui-text-subtle: var(--cx-color-gray-500) !important;\n    --cx-ui-border: var(--cx-color-gray-700) !important;\n    --cx-ui-border-subtle: var(--cx-color-gray-800) !important;\n    --cx-ui-divider: var(--cx-color-gray-800) !important;\n    --cx-ui-border-accent: var(--cx-ui-dark-border-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n    --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent-tint: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n    --cx-ui-accent-tint-subtle: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n    --cx-ui-on-accent: var(--cx-color-gray-950) !important;\n    --cx-ui-focus: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n    --cx-ui-info: var(--cx-color-blue-400) !important;\n    --cx-ui-info-strong: var(--cx-color-blue-300) !important;\n    --cx-ui-info-tint: var(--cx-color-blue-a15) !important;\n    --cx-ui-danger: var(--cx-color-red-400) !important;\n    --cx-ui-danger-tint: rgba(240, 113, 103, 0.15) !important;\n    --cx-ui-success: var(--cx-color-green-400) !important;\n    --cx-ui-success-tint: rgba(76, 175, 80, 0.15) !important;\n    --cx-ui-warning: var(--cx-color-amber-300) !important;\n    --cx-ui-warning-strong: var(--cx-color-amber-300) !important;\n    --cx-ui-warning-tint: rgba(252, 211, 77, 0.12) !important;\n    --cx-ui-backdrop: var(--cx-color-black-a55) !important;\n    --cx-ui-scrollbar-track: var(--cx-color-gray-900) !important;\n    --cx-ui-scrollbar-track-alt: var(--cx-color-gray-850) !important;\n    --cx-ui-scrollbar-thumb: var(--cx-color-gray-700) !important;\n    --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-500) !important;\n    --cx-ui-control-on: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-active-cell: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-code-key: #ff7b72 !important;\n    --cx-ui-code-value: #79c0ff !important;\n    --cx-ui-code-string: #ffa657 !important;\n    --cx-ui-code-boolean: #e3d26f !important;\n    --cx-ui-code-comment: #7ee787 !important;\n  }\n}";
 
 /* ==== src/styles.js ==== */
 /**
@@ -39,6 +39,16 @@ var dashboardCss = [
   ':where(:root, [data-cx-ui-theme]) { --cxd-border: var(--cx-ui-border); --cxd-panel-bg: var(--cx-ui-surface); --cxd-title: var(--cx-ui-text);',
   '  --cxd-title-bg: var(--cx-ui-surface-sunken); --cxd-muted: var(--cx-ui-text-muted); --cxd-ctrl-bg: var(--cx-ui-surface);',
   '  --cxd-error: var(--cx-ui-danger); --cxd-font: var(--cx-font-sans); }',
+  // Every dropdown in a dashboard, the builder and its dialogs draws the engine's chevron (two
+  // currentColor diagonals: it follows the text colour in light and dark), inset from the right
+  // border instead of on it, with room so the text never runs under it. Scoped to our roots (a
+  // host page keeps its own selects); the engine's own selects (customizer, data filter,
+  // its classed dropdowns) keep their styling.
+  ':is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay) select:not([multiple]):not([size]):not([class*="cX-"]):not([class*="CanvasXpress"]):not(:where([class*="cX-Customizer"], [class*="cX-DataFilter"]) select) {',
+  '  -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 30px; cursor: pointer;',
+  '  background-image: linear-gradient(45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%), linear-gradient(-45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%);',
+  '  background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }',
+  '@media (forced-colors: active) { :is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay) select { -webkit-appearance: auto; appearance: auto; background-image: none; } }',
   // --cxd-ctrl-border is NOT aliased here: it falls back to --cxd-border at the use site, so it
   // follows a dark theme's --cxd-border (a custom property resolves where it is declared).
   '.cxd-dashboard { box-sizing: border-box; width: 100%; }',
@@ -293,6 +303,27 @@ var dashboardCss = [
   // Toolbar inputs on the roles (dark follows the page's data-cx-ui-theme, not the OS)
   '.cxb-title-input, .cxb-tinput, .cxb-props select { background: var(--cx-ui-surface); color: var(--cx-ui-text); }',
   '.cxb-stage { width: 100%; min-width: 0; }',
+  /* data-flow card: floats over the stage's top-right, never shifts layout */
+  '.cxb { position: relative; }',
+  '.cxb-flow { position: absolute; top: 8px; right: 12px; z-index: calc(var(--cx-z-raised) + 10); width: 300px; max-width: 45%;',
+  '  background: var(--cx-ui-surface-raised); color: var(--cx-ui-text); border: 1px solid var(--cx-ui-border);',
+  '  border-radius: var(--cx-radius-lg); box-shadow: var(--cx-shadow-1); padding: 10px 12px; font-size: 13px; }',
+  '.cxb-flow-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }',
+  '.cxb-flow-title { font-weight: 600; font-size: 12px; letter-spacing: .3px; text-transform: uppercase; color: var(--cx-ui-text-muted); }',
+  '.cxb-flow-close { border: none; background: none; color: var(--cx-ui-text-muted); font-size: 16px; cursor: pointer; padding: 0 2px; }',
+  '.cxb-flow-node { padding: 6px 8px; border: 1px solid var(--cx-ui-border-subtle); border-radius: var(--cx-radius-md); background: var(--cx-ui-surface); }',
+  '.cxb-flow-param { font-family: var(--cx-font-mono, monospace); color: var(--cx-ui-accent-strong); }',
+  '.cxb-flow-arrow { padding: 2px 0 2px 10px; color: var(--cx-ui-text-muted); font-size: 12px; }',
+  '.cxb-flow-sub, .cxb-flow-kind { color: var(--cx-ui-text-muted); font-size: 12px; }',
+  '.cxb-flow-link { display: block; border: none; background: none; padding: 1px 0; color: var(--cx-ui-text); font: inherit; cursor: pointer; text-align: left; }',
+  '.cxb-flow-link:hover { text-decoration: underline; }',
+  '.cxb-flow-current { font-weight: 600; cursor: default; }',
+  '.cxb-flow-current:hover { text-decoration: none; }',
+  '.cxb-flow-sql { margin-left: 6px; border: 1px solid var(--cx-ui-border); background: var(--cx-ui-surface); border-radius: var(--cx-radius-md);',
+  '  font-size: 11px; padding: 0 5px; cursor: pointer; color: var(--cx-ui-accent-strong); }',
+  '.cxb-flow-sqltext { white-space: pre-wrap; font-size: 12px; background: var(--cx-ui-surface); border: 1px solid var(--cx-ui-border-subtle);',
+  '  border-radius: var(--cx-radius-md); padding: 10px; max-height: 50vh; overflow: auto; }',
+  '.cxb-flow-sqltext mark { background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent); border-radius: var(--cx-radius-sm); padding: 0 2px; }',
   /* live editable cells */
   // Cells clip exactly like the viewer (the hover chrome sits inside the cell).
   '.cxb-cell { position: relative; }',
@@ -381,11 +412,7 @@ var dashboardCss = [
   '  padding: 7px 9px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md); font: inherit;',
   '  background: var(--cxd-panel-bg); color: inherit; }',
   '.cxb-modal-json { font-family: var(--cx-font-mono); font-size:14px; min-height: 130px; resize: vertical; }',
-  /* Dialog dropdowns: our own chevron, inset from the right border (the native
-     arrow sits almost on it). The dialog card is always light. */
-  '.cxb-modal select { -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 32px;',
-  '  background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22%3E%3Cpath d=%22M1 1.5l5 5 5-5%22 fill=%22none%22 stroke=%22%2357606a%22 stroke-width=%221.6%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E");',
-  '  background-repeat: no-repeat; background-position: right 11px center; background-size: 12px 8px; cursor: pointer; }',
+  // (Dialog dropdowns get the shared chevron rule above.)
   '.cxb-save-note { font-size: 13px; color: var(--cxd-muted); margin-top: -6px; }',
   '.cxb-modal-err { color: var(--cxd-error); font-size:14px; min-height: 17px; }',
   // Save / Save-a-copy dialog: name + access (private, everyone, specific people).
@@ -407,6 +434,13 @@ var dashboardCss = [
      gutter + a highlight.js-style colorized layer under a transparent-text
      textarea that owns editing and scrolling. */
   '.cxb-modal-wide { max-width: 780px; }',
+  // "+ Panel": fields left, live preview right (stacked on narrow screens).
+  '.cxb-modal-xl { max-width: 1120px; }',
+  '.cxb-panel-cols { display: flex; gap: 18px; align-items: flex-start; }',
+  '.cxb-panel-fields { flex: 0 0 300px; min-width: 0; }',
+  '.cxb-panel-right { flex: 1 1 auto; min-width: 0; }',
+  '.cxb-panel-preview { min-height: 400px; }',
+  '@media (max-width: 800px) { .cxb-panel-cols { flex-direction: column; } .cxb-panel-fields { flex-basis: auto; width: 100%; } }',
   '.cxb-jsoned { display: flex; height: 55vh; border: 1px solid var(--cxd-border);',
   '  border-radius: var(--cx-radius-md); overflow: hidden; background: var(--cxd-panel-bg); }',
   '.cxb-jsoned, .cxb-jsoned-gutter, .cxb-jsoned-hl, .cxb-jsoned-hl code, .cxb-jsoned-ta {',
@@ -634,6 +668,40 @@ function migrateSpec(spec) {
   }
   out.schemaVersion = DASHBOARD_SCHEMA_VERSION;
   return { spec: out, from: compat.version, to: DASHBOARD_SCHEMA_VERSION, applied: applied, warnings: warnings };
+}
+
+/**
+ * Whether a data source reads dashboard parameter `param` — through its
+ * `query` template ("$name"), a pushdown `where` value, a data function's
+ * `args`, or an explicit `dependsOn` list. The single definition of "this
+ * parameter feeds this source": the renderer re-queries such sources when the
+ * parameter changes, and the Builder's data-flow card draws the same wiring.
+ * @param {object} source - A spec data source.
+ * @param {string} param - The parameter name.
+ * @returns {boolean} True when the source consumes the parameter.
+ * @public
+ */
+function sourceUsesParam(source, param) {
+  if (!source || !param) return false;
+  var token = '$' + param;
+  if (Array.isArray(source.dependsOn) && source.dependsOn.indexOf(param) !== -1) return true;
+  var query = source.query || {};
+  for (var qk in query) {
+    if (Object.prototype.hasOwnProperty.call(query, qk) && query[qk] === token) return true;
+  }
+  // A pushdown filter reads a param through its value, whether the query runs
+  // in a database or in the browser.
+  var clauses = source.pushdown && typeof source.pushdown === 'object' && Array.isArray(source.pushdown.where)
+    ? source.pushdown.where : [];
+  for (var wi = 0; wi < clauses.length; wi++) {
+    if (clauses[wi] && clauses[wi].value === token) return true;
+  }
+  // A data function's `args` template reads params the same way.
+  var args = source.kind === 'function' ? (source.args || {}) : {};
+  for (var ak in args) {
+    if (Object.prototype.hasOwnProperty.call(args, ak) && args[ak] === token) return true;
+  }
+  return false;
 }
 
 /**
@@ -2259,7 +2327,11 @@ var sharedCache = new Map();
  * @param {function} [options.now] - Clock returning ms; defaults to Date.now
  *   (injectable for tests).
  * @param {string} [options.baseUrl=''] - Base URL of the cxd_server, used to
- *   resolve `kind:"dataset"` sources via `GET /api/datasets/{id}`.
+ *   resolve `kind:"dataset"` sources via `GET /api/datasets/{id}`, and prefixed
+ *   to root-relative connector URLs ("/api/x") that aren't already under it.
+ * @param {function} [options.prepareConnectors] - Called once (may return a
+ *   Promise) before the first fetch of a `/connectors/api/` URL, e.g. to open
+ *   the bridged connectors session.
  * @param {number} [options.busyRetryMs=250] - First wait before retrying a data
  *   function the runtime refused as busy (429); doubles per retry, capped at 2s.
  * @param {function} [options.EventSource] - EventSource constructor for
@@ -2283,6 +2355,43 @@ function createDataStore(options) {
     (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
   var warned = {};   // ref -> true once its calculated-field problem was logged
   var inflight = {}; // cacheKey -> Promise<data>
+  var prepareConnectors = options.prepareConnectors;
+  var connectorsReady = null;
+
+  /**
+   * Resolve a root-relative URL ("/api/x", "/connectors/api/data?...") against
+   * a same-origin SUBPATH `baseUrl` ("/dashboards"), so a stored spec works at
+   * the app root ("") and behind a subpath, from pages at any depth (Builder
+   * at the root, view.html in /examples/). Only a path base is applied: an
+   * absolute-origin base ("https://host", a cross-origin embed) leaves
+   * connector URLs on the page's own origin, as before. Absolute,
+   * protocol-relative and page-relative URLs, and ones already under the base,
+   * are returned unchanged.
+   * @param {string} url - The URL as written in the spec.
+   * @returns {string} The URL to fetch.
+   * @private
+   */
+  function appUrl(url) {
+    if (!baseUrl || baseUrl.charAt(0) !== '/' || typeof url !== 'string' ||
+        url.charAt(0) !== '/' || url.charAt(1) === '/') return url;
+    if (url.indexOf(baseUrl + '/') === 0) return url;
+    return baseUrl + url;
+  }
+
+  /**
+   * Run the host's `prepareConnectors` hook once (e.g. open the connectors
+   * session); later calls share its promise. A failure is retried next time.
+   * @returns {(Promise|null)} The pending preparation, or null with no hook.
+   * @private
+   */
+  function prepareConnectorsOnce() {
+    if (typeof prepareConnectors !== 'function') return null;
+    if (!connectorsReady) {
+      connectorsReady = Promise.resolve().then(prepareConnectors);
+      connectorsReady.then(null, function () { connectorsReady = null; });
+    }
+    return connectorsReady;
+  }
 
   /**
    * Build the cache key for a source. Connector sources key on their URL so
@@ -2385,9 +2494,14 @@ function createDataStore(options) {
     if (typeof fetchImpl !== 'function') {
       return Promise.reject(new Error('no fetch available for remote data source'));
     }
+    url = appUrl(url);
     var init = { credentials: 'include' };
     if (headers) init.headers = headers;
-    return fetchImpl(url, init).then(function (res) {
+    // A database source (the bridged connectors app) needs its session first:
+    // opened once, before the first such fetch, so a render never races it.
+    var ready = /\/connectors\/api\//.test(url) ? prepareConnectorsOnce() : null;
+    var go = function () { return fetchImpl(url, init); };
+    return (ready ? ready.then(go, go) : go()).then(function (res) {
       return res.text().then(function (text) {
         var payload = parseJson(text);
         if (!res.ok) {
@@ -4260,7 +4374,9 @@ function renderDashboard(spec, target, options) {
   // different origin than the page (else same-origin `/api/datasets/{id}`).
   var store = createDataStore({
     fetch: doFetch, cache: options.cache, ttl: options.ttl, baseUrl: options.baseUrl,
-    busyRetryMs: options.busyRetryMs, EventSource: options.EventSource, CanvasXpress: CX
+    busyRetryMs: options.busyRetryMs, EventSource: options.EventSource, CanvasXpress: CX,
+    // Database (connectors) sources need the same session live streams do.
+    prepareConnectors: options.prepareConnectors || options.prepareLive
   });
   // Auto-resize each graph to its cell (via setDimensions) when the container
   // reflows. The builder disables this and re-renders panels itself on resize,
@@ -4494,6 +4610,13 @@ function renderDashboard(spec, target, options) {
     var varRows = null;
     if (data) {
       var xPreds = [], zPreds = [];
+      // A source shaped with pushdown.groupBy carries its group key as the ROW ID
+      // (the aggregate emits one row per group, named by the key — no annotation
+      // survives), so a filter on that key must match the row ids: "Revenue by
+      // product" grouped on Product has smps = the product names.
+      var targetSource = sources[targetRef] || {};
+      var groupKeys = (targetSource.pushdown && Array.isArray(targetSource.pushdown.groupBy)) ? targetSource.pushdown.groupBy : [];
+      var rowAxis = sourceAxis(targetRef, sources);
       filterState.forEach(function (p) {
         if (p.dataRef === targetRef) return;
         var clone = {};
@@ -4501,6 +4624,10 @@ function renderDashboard(spec, target, options) {
         clone.dataRef = targetRef;
         if (data.x && Object.prototype.hasOwnProperty.call(data.x, p.field)) { xPreds.push(clone); }
         else if (data.z && Object.prototype.hasOwnProperty.call(data.z, p.field)) { zPreds.push(clone); }
+        else if (groupKeys.indexOf(p.field) !== -1) {
+          clone.field = rowAxis;   // the axis name is the id column (cell() returns table.ids)
+          if (rowAxis === 'smps') xPreds.push(clone); else zPreds.push(clone);
+        }
       });
       if (xPreds.length) {
         var xRows = rowsPassing(normalizeState(xPreds), targetRef, data, 'smps');
@@ -5097,27 +5224,7 @@ function renderDashboard(spec, target, options) {
     var affected = [];
     for (var ref in sources) {
       if (!Object.prototype.hasOwnProperty.call(sources, ref)) continue;
-      var source = sources[ref];
-      if (!source) continue;
-      var uses = false;
-      if (Array.isArray(source.dependsOn) && source.dependsOn.indexOf(param) !== -1) uses = true;
-      var query = source.query || {};
-      for (var qk in query) {
-        if (query[qk] === '$' + param) { uses = true; break; }
-      }
-      // A pushdown filter reads a param through its value ("$name"), whether
-      // the query runs in a database or in the browser.
-      var clauses = source.pushdown && typeof source.pushdown === 'object' && Array.isArray(source.pushdown.where)
-        ? source.pushdown.where : [];
-      for (var wi = 0; wi < clauses.length; wi++) {
-        if (clauses[wi] && clauses[wi].value === '$' + param) { uses = true; break; }
-      }
-      // A data function's `args` template reads params the same way.
-      var args = source.kind === 'function' ? (source.args || {}) : {};
-      for (var ak in args) {
-        if (args[ak] === '$' + param) { uses = true; break; }
-      }
-      if (uses) affected.push(ref);
+      if (sourceUsesParam(sources[ref], param)) affected.push(ref);
     }
     return affected.concat(dependentSources(affected));
   }
@@ -5133,7 +5240,12 @@ function renderDashboard(spec, target, options) {
    */
   function applyParamChange(param, value) {
     paramState[param] = value;
-    return refetchRefs(refsForParam(param));
+    var done = refetchRefs(refsForParam(param));
+    if (typeof options.onParamChange === 'function') {
+      // `done` resolves once the affected panels hold the new data.
+      try { options.onParamChange(param, value, done); } catch (e) { /* host hook must not break the dashboard */ }
+    }
+    return done;
   }
 
   /**
@@ -9695,6 +9807,41 @@ function clampInt(value, min, max, fallback) {
   return Math.max(min, Math.min(max, n));
 }
 
+/**
+ * Add a control that QUERIES a source: its choices are the distinct values of
+ * one column of `choicesRef`, and picking one sets `$param`, which `targetRef`'s
+ * query reads (`query[field] = "$param"`), so that source re-runs and every
+ * panel on it refreshes. One step instead of the Param / Choices / Query
+ * fields by hand. An earlier binding of the same parameter on the target is
+ * replaced; the parameter starts at `value` (a real choice, so the target has
+ * rows on first render).
+ * @param {object} spec - The current spec (both refs must exist).
+ * @param {object} opts - `{id, param, choicesRef, annotation, targetRef,
+ *   field?, value?, title?, style?, x?, y?, w?, h?}`; `field` defaults to the
+ *   parameter name (a SQL source's `:param`).
+ * @returns {object} A new spec with the parameter, the binding and the control.
+ * @throws {Error} When a ref is missing or the parameter name is invalid.
+ * @public
+ */
+function addQueryControl(spec, opts) {
+  var o = opts || {};
+  if (!spec.data || !spec.data[o.choicesRef]) throw new Error('No data source "' + o.choicesRef + '" for the choices');
+  if (!spec.data[o.targetRef]) throw new Error('No data source "' + o.targetRef + '" to query');
+  if (!/^[A-Za-z_]\w*$/.test(o.param || '')) throw new Error('A parameter name is letters, digits and _');
+  var next = setParam(spec, o.param, { value: o.value == null || o.value === '' ? null : String(o.value), type: 'string' });
+  next = setSourceQuery(next, o.targetRef, o.field || o.param, '$' + o.param);
+  return addPanel(next, {
+    id: o.id,
+    type: 'control',
+    mode: 'param',
+    param: o.param,
+    title: o.title || o.annotation || o.param,
+    style: o.style || 'dropdown',
+    optionsFrom: { dataRef: o.choicesRef, annotation: o.annotation },
+    x: o.x, y: o.y, w: o.w || 4, h: o.h || 2
+  });
+}
+
 /* ==== src/wizard.js ==== */
 /**
  * Data-first wizard helpers: Upload → Check → Visualize → Publish.
@@ -9884,6 +10031,224 @@ function wizardSpec(opts) {
   });
 }
 
+// Graph types the engine draws as Scatter2D (its `ScatterGraphs` list): their
+// xAxis / yAxis name SAMPLES, and their groups (ridgeBy, groupingFactors) are
+// VARIABLE (z) annotations — the opposite of the bar/box family.
+var SCATTER_FAMILY = ['Bin', 'Binplot', 'Bump', 'CDF', 'Contour', 'Density', 'Distribution', 'Hex',
+  'Hexplot', 'Histogram', 'KaplanMeier', 'QQ', 'Quantile', 'Ridgeline', 'Scatter2D',
+  'ScatterBubble2D', 'Scatter3D', 'Spaghetti', 'SPLOM', 'Streamgraph', 'TimeSeries', 'Volcano'];
+
+/**
+ * Orient a chart config to its data. The chart selector names COLUMNS of
+ * {@link tableFromData}; when those columns are variables (rows are samples,
+ * as a CSV or a database query parses), a scatter-family chart needs the
+ * engine's `transposeData` so its axes and groups resolve — otherwise a
+ * Ridgeline has no ridges and a CDF plots a single point.
+ * @param {object} config - A CanvasXpress config (`graphType` …).
+ * @param {object} data - The CanvasXpress data object it will draw.
+ * @returns {object} The config, copied with `transposeData: true` when needed.
+ * @public
+ */
+function orientConfig(config, data) {
+  var out = JSON.parse(JSON.stringify(config || {}));
+  if (SCATTER_FAMILY.indexOf(out.graphType) !== -1 && out.transposeData == null && varsAreColumns(data)) {
+    out.transposeData = true;
+  }
+  return out;
+}
+
+// ---- "Dashboard from database" wizard -------------------------------------
+// The database explorer pattern the shipped GTEx dashboard uses: a CHOICES
+// query fills a Control, and a DETAIL query with a `:param` re-runs on every
+// pick. Both are the user's own read-only database sources (canvasxpress-
+// connectors); these helpers only build the SQL templates and the spec.
+
+/**
+ * The `:name` bind parameters a SQL statement declares, in first-seen order —
+ * the client-side mirror of the connectors app's `bind_param_names`. Quoted
+ * strings and comments are skipped, and `::type` casts are not parameters.
+ * @param {string} sql - A SELECT statement.
+ * @returns {Array<string>} Distinct parameter names.
+ * @public
+ */
+function sqlParamNames(sql) {
+  var text = String(sql || '')
+    .replace(/'(?:[^']|'')*'/g, "''")      // string literals
+    .replace(/"(?:[^"]|"")*"/g, '""')      // quoted identifiers
+    .replace(/--[^\n]*/g, ' ')             // line comments
+    .replace(/\/\*[\s\S]*?\*\//g, ' ');    // block comments
+  var re = /(^|[^:\w]):([A-Za-z_]\w*)/g;
+  var seen = {};
+  var out = [];
+  var m;
+  while ((m = re.exec(text))) {
+    if (!seen[m[2]]) { seen[m[2]] = true; out.push(m[2]); }
+  }
+  return out;
+}
+
+/**
+ * A parameter name made from a column name: lower-case letters, digits and
+ * `_`, starting with a letter (`Gene Name` → `gene_name`).
+ * @param {string} column - A column name.
+ * @returns {string} A valid bind-parameter name (`value` when nothing is left).
+ * @public
+ */
+function paramNameFor(column) {
+  var name = String(column || '').toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^[^a-z]+|_+$/g, '');
+  return name || 'value';
+}
+
+/**
+ * The CHOICES query template: the distinct values of one column. The value is
+ * returned twice — as the row id and as a text column named after the
+ * parameter — because the connectors app turns the first column into sample
+ * ids and the other TEXT columns into the annotation a Control lists.
+ * @param {string} table - Table (or view) name, as the database spells it.
+ * @param {string} column - The column whose values the Control offers.
+ * @param {string} param - The parameter (and annotation) name.
+ * @returns {string} A read-only SELECT.
+ * @public
+ */
+function choicesSql(table, column, param) {
+  return 'SELECT DISTINCT ' + column + ' AS id, ' + column + ' AS ' + param +
+    ' FROM ' + table + ' WHERE ' + column + ' IS NOT NULL ORDER BY 1';
+}
+
+/**
+ * The DETAIL query template: every row for the chosen value.
+ * @param {string} table - Table (or view) name.
+ * @param {string} column - The column the parameter filters.
+ * @param {string} param - The parameter name (bound as `:param`).
+ * @returns {string} A read-only SELECT with one bind parameter.
+ * @public
+ */
+function detailSql(table, column, param) {
+  return 'SELECT * FROM ' + table + ' WHERE ' + column + ' = :' + param;
+}
+
+/**
+ * The connector URL of a database source, ROOT-relative so the renderer
+ * resolves it against the app base ("" in dev, "/dashboards" behind a proxy)
+ * from any page depth.
+ * @param {string} name - The database source name.
+ * @returns {string} `/connectors/api/data?source=<name>`.
+ * @public
+ */
+function connectorSourceUrl(name) {
+  return '/connectors/api/data?source=' + encodeURIComponent(name);
+}
+
+/**
+ * The database explorer dashboard: a param Control whose choices come from the
+ * CHOICES source, over a chart of the DETAIL source re-queried with the
+ * picked value (`query: {<param>: "$<param>"}`).
+ * @param {object} opts - `{id, title, param, value, choicesSource,
+ *   detailSource, choicesAnnotation?, choicesCount?, controlTitle?, chartTitle?,
+ *   config}`; `choicesSource` / `detailSource` are database source names, and
+ *   `choicesAnnotation` is the choices column the Control lists (default: `param`).
+ * @returns {object} A valid dashboard spec.
+ * @public
+ */
+function databaseExplorerSpec(opts) {
+  var param = opts.param;
+  var spec = blankSpec(opts.id, opts.title);
+  var cols = spec.layout.cols;
+  spec = setParam(spec, param, { value: opts.value == null ? null : String(opts.value), type: 'string' });
+  spec = setDataSource(spec, 'choices', { kind: 'connector', url: connectorSourceUrl(opts.choicesSource), ttl: 600000 });
+  var query = {};
+  query[param] = '$' + param;
+  spec = setDataSource(spec, 'detail', { kind: 'connector', url: connectorSourceUrl(opts.detailSource), query: query, ttl: 0 });
+  spec = addPanel(spec, {
+    id: 'control',
+    type: 'control',
+    mode: 'param',
+    param: param,
+    title: opts.controlTitle || param,
+    // A long list reads better as type-ahead than as a huge dropdown.
+    style: (opts.choicesCount || 0) > 50 ? 'search' : 'dropdown',
+    optionsFrom: { dataRef: 'choices', annotation: opts.choicesAnnotation || param },
+    x: 0, y: 0, w: Math.max(1, Math.floor(cols / 2)), h: 2
+  });
+  var config = JSON.parse(JSON.stringify(opts.config || { graphType: 'Bar' }));
+  config.title = false;   // the panel title names the chart
+  return addPanel(spec, {
+    id: 'chart',
+    title: opts.chartTitle || '',
+    dataRef: 'detail',
+    config: config,
+    x: 0, y: 2, w: cols, h: 14
+  });
+}
+
+// ---- Chart + Configure steps ----------------------------------------------
+
+/**
+ * The chart types the database wizard offers: the ones that draw a measure
+ * split by groups (a query result) well. Pie and Heatmap are left out.
+ * @type {Array<string>}
+ * @public
+ */
+var WIZARD_CHART_TYPES = ['Boxplot', 'Violin', 'Bar', 'Dotplot', 'Line', 'Area', 'Stacked',
+  'Scatter2D', 'Histogram', 'Density', 'Ridgeline', 'CDF'];
+
+/**
+ * Which Configure fields a chart type takes, and the config key "Group by"
+ * maps to: a scatter plot has X + Y + Color by; every other chart X (the
+ * measure) + Group by + Color by — Ridgeline groups by `ridgeBy`, and
+ * Histogram / Density take no group (the engine ignores one there).
+ * @param {string} graphType - A CanvasXpress graph type.
+ * @returns {{y: boolean, groupKey: (string|null)}} The extra fields.
+ * @public
+ */
+function chartFieldsFor(graphType) {
+  if (graphType === 'Scatter2D') return { y: true, groupKey: null };
+  if (graphType === 'Ridgeline') return { y: false, groupKey: 'ridgeBy' };
+  if (graphType === 'Histogram' || graphType === 'Density') return { y: false, groupKey: null };
+  return { y: false, groupKey: 'groupingFactors' };
+}
+
+/**
+ * Build the chart config from the Configure step: the picked fields, then the
+ * user's extra config on top (it wins), oriented to the data
+ * ({@link orientConfig}).
+ * @param {string} graphType - A CanvasXpress graph type.
+ * @param {object} fields - `{x?, y?, group?, color?}` column names ('' = none).
+ * @param {object} [extra] - Extra CanvasXpress config, merged last.
+ * @param {object} data - The sample data the chart draws.
+ * @returns {object} A CanvasXpress config.
+ * @public
+ */
+function buildChartConfig(graphType, fields, extra, data) {
+  var spec = chartFieldsFor(graphType);
+  var f = fields || {};
+  var config = { graphType: graphType };
+  if (f.x) config.xAxis = [f.x];
+  if (spec.y && f.y) config.yAxis = [f.y];
+  if (spec.groupKey && f.group) config[spec.groupKey] = spec.groupKey === 'ridgeBy' ? f.group : [f.group];
+  if (f.color) config.colorBy = f.color;
+  var more = extra || {};
+  for (var k in more) {
+    if (Object.prototype.hasOwnProperty.call(more, k)) config[k] = more[k];
+  }
+  return orientConfig(config, data);
+}
+
+/**
+ * The columns of a CanvasXpress data object, split for the Configure fields:
+ * measures (numeric) and annotations (text) on the column axis.
+ * @param {object} data - CanvasXpress data object.
+ * @returns {{numbers: Array<string>, texts: Array<string>}} Column names.
+ * @public
+ */
+function chartColumns(data) {
+  var y = (data && data.y) || {};
+  if (varsAreColumns(data)) {
+    return { numbers: (y.vars || []).slice(), texts: Object.keys((data && data.x) || {}) };
+  }
+  return { numbers: (y.smps || []).slice(), texts: Object.keys((data && data.z) || {}) };
+}
+
 /* ==== src/builder.js ==== */
 /**
  * No-code dashboard builder (Phase 4). The builder handles the things that are
@@ -9898,6 +10263,9 @@ function wizardSpec(opts) {
  *
  * @module builder
  */
+
+
+
 
 
 
@@ -10136,6 +10504,25 @@ function createBuilder(target, options) {
   var pendingBaselines = []; // baseline snapshots waiting for getConfig() to attach
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
   var availableConnectors = []; // connector sources ({name, url}) from options.listConnectorSources
+  var ownStore = null;          // the dialogs' data store before the first render (pickStore)
+
+  /**
+   * Whether two connector URLs name the same source. The host lists sources
+   * under its API base ("/dashboards/connectors/..."), while a stored spec may
+   * keep the root-relative form ("/connectors/...") the renderer resolves
+   * against that same base — so compare both with the base applied.
+   * @param {string} a - One URL.
+   * @param {string} b - The other.
+   * @returns {boolean} True when both resolve to the same URL.
+   * @private
+   */
+  function sameConnectorUrl(a, b) {
+    function resolve(u) {
+      if (!baseUrl || baseUrl.charAt(0) !== '/' || typeof u !== 'string' || u.charAt(0) !== '/' || u.charAt(1) === '/') return u;
+      return u.indexOf(baseUrl + '/') === 0 ? u : baseUrl + u;
+    }
+    return resolve(a) === resolve(b);
+  }
   var availableLiveSources = []; // live streams ({name, title, url, variables}) from options.listLiveSources
   var liveRefs = {};        // data-source names the current liveHandle was built with
   var savedTextRange = null; // last selection inside a text editor (for format buttons)
@@ -10231,6 +10618,13 @@ function createBuilder(target, options) {
   var stage = el('div', 'cxb-stage');
   root.appendChild(stage);
 
+  // Data-flow card: floats over the stage's top-right (outside the stage, which
+  // is rebuilt on every render; floating so selection never shifts the layout).
+  var flowEl = el('div', 'cxb-flow cX-UI-Controls');
+  flowEl.style.display = 'none';
+  root.appendChild(flowEl);
+  var flowDismissedFor = null;   // the selection whose card the user closed
+
   var msg = el('div', 'cxb-msg');
   root.appendChild(msg);
   // Clicking empty space (not a panel) stops the edit state — deselects the
@@ -10281,6 +10675,7 @@ function createBuilder(target, options) {
       // the Data dropdown alongside stored datasets.
       Promise.resolve(options.listConnectorSources()).then(function (list) {
         availableConnectors = list || [];
+        updateAddPanelState();
         if (selectedId) renderProps();
       }, function () { /* leave availableConnectors as-is on failure */ });
     }
@@ -10300,12 +10695,33 @@ function createBuilder(target, options) {
   }
 
   /**
-   * Add a panel bound to the first data source, then re-render live.
-   * @returns {void}
+   * "+ Panel": pick a source (the dashboard's, or one of the user's database
+   * sources, which is then added), a chart type and its fields, with a live
+   * preview; the panel is added full width and selected.
+   * @param {object} [prefill] - Initial dialog choices (see `openPanelDialog` on the handle).
+   * @returns {Promise<?{id: string, dataRef: string}>} The new panel, or null when cancelled.
    */
-  function doAddPanel() {
-    addPanelBound(Object.keys(spec.data || {})[0]);
+  function doAddPanel(prefill) {
+    var doc = container.ownerDocument || document;
+    return openPanelDialog(doc, { sources: controlSources(), dataOf: pickData, CanvasXpress: CX, prefill: prefill })
+      .then(function (result) {
+        if (!result) return null;
+        var added = ensurePickSource(result.pick);
+        var newSource = added.spec !== spec;
+        var id = uniquePanelId(added.spec);
+        var cfg = Object.assign({}, result.config, { title: false });
+        commit(addPanel(added.spec, { id: id, title: result.title || added.ref, dataRef: added.ref, w: 12, h: 12, config: cfg }), false);
+        selectedId = id;
+        if (newSource || !(liveHandle && liveHandle.addPanel && gridEl)) {
+          syncLiveConfigs();
+          rebuild();
+        } else {
+          lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
+        }
+        return { id: id, dataRef: added.ref };
+      });
   }
+
 
   /**
    * Add a Bar panel bound to a source and select it.
@@ -10382,13 +10798,64 @@ function createBuilder(target, options) {
   }
 
   /**
-   * Add an annotation-filter control and select it. The control binds ONE
-   * annotation of one dataset; its properties (data / scope / annotation /
-   * style) are edited in the toolbar props group. Like text elements it floats
-   * free on the grid and may overlap any panel.
-   * @returns {void}
+   * "+ Control": ask what the control does — filter this page (the plain
+   * annotation control, set up in the properties bar), or QUERY a source: list a
+   * column's values and re-run another source with the picked one. A database
+   * source the dashboard does not use yet is added to it.
+   * @param {object} [prefill] - Initial dialog choices (see `openControlDialog` on the handle).
+   * @returns {Promise<?object>} What was added, or null when cancelled.
    */
-  function doAddControl() {
+  function doAddControl(prefill) {
+    var doc = container.ownerDocument || document;
+    return openControlDialog(doc, { sources: controlSources(), dataOf: pickData, sqlOf: pickSql, prefill: prefill })
+      .then(function (result) {
+        if (!result) return null;
+        if (result.mode === 'filter') { addFilterControl(); return result; }
+        try {
+          var next = spec;
+          var choicesRef = ensurePickSource(result.choices);
+          next = choicesRef.spec;
+          var targetRef = result.target.key === result.choices.key ? { ref: choicesRef.ref, spec: next }
+            : ensurePickSource(result.target, next);
+          next = targetRef.spec;
+          var id = uniquePanelId(next);
+          next = addQueryControl(next, { id: id, param: result.param, choicesRef: choicesRef.ref, annotation: result.annotation,
+            targetRef: targetRef.ref, field: result.field, value: result.value, title: result.title, style: result.style });
+          syncLiveConfigs();
+          commit(next, false);
+          selectedId = id;
+          rebuild();   // a new parameter + binding re-resolve the target's panels
+          setMsg('Control “' + result.title + '” re-runs ' + targetRef.ref + ' with $' + result.param + '.');
+          return { mode: 'param', id: id, choicesRef: choicesRef.ref, targetRef: targetRef.ref, param: result.param };
+        } catch (e) {
+          showError(e);
+          return null;
+        }
+      });
+  }
+
+  /**
+   * The dashboard source for a pick: its own ref, or a new connector source for
+   * a database source the dashboard does not use yet.
+   * @param {object} pick - From {@link controlSources}.
+   * @param {object} [aSpec] - The spec to add to (default: the current one).
+   * @returns {{ref: string, spec: object}} The ref and the (possibly new) spec.
+   * @private
+   */
+  function ensurePickSource(pick, aSpec) {
+    var base = aSpec || spec;
+    if (pick.ref) return { ref: pick.ref, spec: base };
+    var ref = uniqueSourceNameIn(base, pick.name);
+    return { ref: ref, spec: setDataSource(base, ref, { kind: 'connector', url: pick.url }) };
+  }
+
+  /**
+   * Add a plain annotation-filter control (filters the page) and select it; its
+   * source / column / style are edited in the properties bar.
+   * @returns {void}
+   * @private
+   */
+  function addFilterControl() {
     var id = uniquePanelId(spec);
     var firstRef = Object.keys(spec.data || {})[0];
     commit(addPanel(spec, {
@@ -10400,6 +10867,103 @@ function createBuilder(target, options) {
       lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
     } else {
       rebuild();
+    }
+  }
+
+  /**
+   * The sources a new control / panel can use: the dashboard's own (not live
+   * streams), then the user's database sources it does not use yet (🗄).
+   * @returns {Array<object>} `{key, label, ref?, name?, url?}` picks.
+   * @private
+   */
+  function controlSources() {
+    var out = [];
+    var used = {};
+    Object.keys(spec.data || {}).forEach(function (ref) {
+      var src = spec.data[ref];
+      if (!src || src.kind === 'live') return;
+      if (src.kind === 'connector') used[connectorSourceName(src.url)] = true;
+      var queried = !!src.query && Object.keys(src.query).some(function (f) { return /^\$/.test(String(src.query[f])); });
+      out.push({ key: 'ref:' + ref, label: ref, ref: ref, url: src.kind === 'connector' ? src.url : null, queried: queried });
+    });
+    (availableConnectors || []).forEach(function (c) {
+      if (used[c.name]) return;
+      out.push({ key: 'db:' + c.name, label: '🗄 ' + c.name, name: c.name, url: c.url });
+    });
+    return out;
+  }
+
+  /**
+   * A pick's data: a dashboard source as the panels see it, or a database source
+   * the dashboard does not use yet, read once through the same store.
+   * @param {object} pick - From {@link controlSources}.
+   * @returns {Promise<?object>} The data object, or null.
+   * @private
+   */
+  function pickData(pick) {
+    if (!pick) return Promise.resolve(null);
+    var source = pick.ref ? (spec.data || {})[pick.ref] : { kind: 'connector', url: pick.url };
+    if (!source) return Promise.resolve(null);
+    // The live render's store when there is one (it holds the current
+    // parameter values); before the first panel, a store of our own.
+    var store = liveHandle && liveHandle.store ? liveHandle.store : pickStore();
+    var opts = { sources: spec.data };
+    if (spec.params) opts.params = paramValues();
+    return store.resolve(pick.ref || 'db:' + pick.name, source, opts)
+      .then(function (data) { return data || null; }, function () { return null; });
+  }
+
+  /**
+   * A data store for the dialogs while nothing is rendered yet (same base URL
+   * and connectors session as the renderer's).
+   * @returns {object} The store.
+   * @private
+   */
+  function pickStore() {
+    if (!ownStore) {
+      ownStore = createDataStore({ baseUrl: baseUrl, CanvasXpress: CX,
+        prepareConnectors: options.prepareConnectors || options.prepareLive });
+    }
+    return ownStore;
+  }
+
+  /**
+   * The dashboard's current parameter values (`{name: value}`).
+   * @returns {object} Values.
+   * @private
+   */
+  function paramValues() {
+    var out = {};
+    Object.keys(spec.params || {}).forEach(function (name) { out[name] = spec.params[name] && spec.params[name].value; });
+    return out;
+  }
+
+  /**
+   * A pick's SQL when it is one of the user's database sources (null otherwise).
+   * @param {object} pick - From {@link controlSources}.
+   * @returns {Promise<?string>} The SQL, or null.
+   * @private
+   */
+  function pickSql(pick) {
+    var name = pick && (pick.name || connectorSourceName(pick.url));
+    if (!name || typeof options.describeConnectorSource !== 'function') return Promise.resolve(null);
+    return Promise.resolve(options.describeConnectorSource(name)).then(function (src) {
+      return src && typeof src.sql === 'string' ? src.sql : null;
+    }, function () { return null; });
+  }
+
+  /**
+   * A source name not used in `aSpec` (base, base-2, …).
+   * @param {object} aSpec - A spec.
+   * @param {string} base - Preferred name.
+   * @returns {string} A free name.
+   * @private
+   */
+  function uniqueSourceNameIn(aSpec, base) {
+    var existing = aSpec.data || {};
+    if (!existing[base]) return base;
+    for (var n = 2; ; n++) {
+      if (!existing[base + '-' + n]) return base + '-' + n;
     }
   }
 
@@ -10928,6 +11492,10 @@ function createBuilder(target, options) {
     });
     opts.onPanelRendered = decorate;
     opts.onControlRendered = decorateControl;
+    // Keep the data-flow card's "$param = value" current as controls change.
+    opts.onParamChange = function (param, value, done) {
+      renderFlow();
+    };
     // A filter scheme saved in a Filters panel becomes part of the spec.
     opts.onFilterSchemesChange = function (schemes) {
       var next = rawSpec();
@@ -11050,7 +11618,14 @@ function createBuilder(target, options) {
         if (inst && typeof inst.showCustomizer === 'function') inst.showCustomizer(ev);
       });
       on(gear, 'pointerdown', stop);
-      append(tools, [gear]);
+      // Flip the panel between its chart and the data it draws (in place).
+      var dataBtn = iconBtn('▦', 'Switch between chart and data table', function (ev) {
+        stop(ev);
+        toggleDataView(info.panelId, ev);
+      });
+      dataBtn.classList.add('cxb-tool-data');
+      on(dataBtn, 'pointerdown', stop);
+      append(tools, [dataBtn, gear]);
       var codePanel = spec.panels[info.panelId] || {};
       if (typeof codePanel.dataRef === 'string' &&
           sourceLineage(spec.data || {}, codePanel.dataRef).some(function (ref) { return spec.data[ref].kind === 'function'; })) {
@@ -11461,6 +12036,7 @@ function createBuilder(target, options) {
    * @returns {void}
    */
   function renderProps() {
+    renderFlow();
     if (!propsGroup) return;
     propsGroup.innerHTML = '';
     if (!selectedId || !spec.panels[selectedId]) return;
@@ -11553,8 +12129,281 @@ function createBuilder(target, options) {
       crossFilter = [clickLabel, clickField];
     }
 
+    // Flip the panel between its chart and the data it draws (same as its ▦ tool).
+    var previewBtn = button(isTableView(selectedId) ? '◧ Chart' : '▦ Table', function (ev) { toggleDataView(selectedId, ev); });
+    previewBtn.setAttribute('title', 'Switch this chart between its canvas and its data table');
+
     // No Delete here — the panel frame already carries a × delete control.
-    append(propsGroup, [titleLabel, titleField, dataLabel, dsField].concat(liveFields, crossFilter, [titleToggle]));
+    append(propsGroup, [titleLabel, titleField, dataLabel, dsField, previewBtn].concat(liveFields, crossFilter, [titleToggle]));
+  }
+
+  /**
+   * How a source is described in the data-flow card: an icon, a label, and —
+   * for a connectors database source ("…/connectors/api/data?source=NAME") —
+   * its database source name (so the card can offer its SQL).
+   * @param {string} ref - The source ref.
+   * @returns {{icon: string, label: string, kind: string, dbName: (string|null)}} The description.
+   * @private
+   */
+  function describeSource(ref) {
+    var src = (spec.data || {})[ref] || {};
+    var m = src.kind === 'connector' && typeof src.url === 'string'
+      ? /\/connectors\/api\/data\?(?:.*&)?source=([^&]+)/.exec(src.url) : null;
+    if (m) return { icon: '🗄', label: decodeURIComponent(m[1]), kind: 'database query', dbName: decodeURIComponent(m[1]) };
+    if (src.kind === 'connector') return { icon: '🌐', label: ref, kind: 'web service ' + String(src.url || '').split('?')[0], dbName: null };
+    if (src.kind === 'dataset') return { icon: '📄', label: src.id || ref, kind: 'stored dataset', dbName: null };
+    if (src.kind === 'join') return { icon: '⋈', label: ref, kind: 'join of ' + src.left + ' + ' + src.right, dbName: null };
+    if (src.kind === 'function') return { icon: 'ƒ', label: ref, kind: (src.language || '') + ' function', dbName: null };
+    if (src.kind === 'live') return { icon: '📡', label: ref, kind: 'live stream', dbName: null };
+    return { icon: '▦', label: ref, kind: 'inline data', dbName: null };
+  }
+
+  /**
+   * The current value of a dashboard parameter: the live one (what a control
+   * last set) when the dashboard is rendered, else the spec default.
+   * @param {string} param - Parameter name.
+   * @returns {*} The value.
+   * @private
+   */
+  function currentParam(param) {
+    var live = liveHandle && typeof liveHandle.getParams === 'function' ? liveHandle.getParams() : {};
+    if (Object.prototype.hasOwnProperty.call(live, param)) return live[param];
+    var def = (spec.params || {})[param];
+    return def && typeof def === 'object' ? def.value : def;
+  }
+
+  /**
+   * The wiring around a selected element, as chains of steps:
+   * control → $param → source(s) → panel(s). For a param control: what it sets
+   * and everything that reads it. For a graph panel: which controls feed its
+   * source, or just its source when nothing does. Null when there is nothing
+   * worth showing (plain inline data, text, images).
+   * @param {string} panelId - The selected element.
+   * @returns {(object|null)} `{steps: [...]}` for the card, or null.
+   * @private
+   */
+  function flowFor(panelId) {
+    var panels = spec.panels || {};
+    var panel = panels[panelId];
+    if (!panel) return null;
+    var steps = [];
+    function panelsOn(refs) {
+      return Object.keys(panels).filter(function (id) {
+        var p = panels[id];
+        return p && p.type !== 'control' && p.type !== 'text' && p.type !== 'image' && refs.indexOf(p.dataRef) !== -1;
+      });
+    }
+    function paramControls(param) {
+      return Object.keys(panels).filter(function (id) {
+        return panels[id] && panels[id].type === 'control' && panels[id].param === param;
+      });
+    }
+    function readers(param) {
+      return Object.keys(spec.data || {}).filter(function (ref) { return sourceUsesParam(spec.data[ref], param); });
+    }
+    if (panel.type === 'control') {
+      if (panel.mode === 'param' && panel.param) {
+        var refs = readers(panel.param);
+        steps.push({ kind: 'control', ids: [panelId], choices: panel.optionsFrom && panel.optionsFrom.dataRef });
+        steps.push({ kind: 'param', param: panel.param, verb: 'sets' });
+        steps.push({ kind: 'sources', refs: refs, param: panel.param, verb: 'fills' });
+        steps.push({ kind: 'panels', ids: panelsOn(refs), verb: 'feeds' });
+        return { steps: steps };
+      }
+      if (panel.annotation) {
+        steps.push({ kind: 'control', ids: [panelId] });
+        steps.push({ kind: 'note', text: 'filters every panel whose data has the “' + panel.annotation + '” annotation', verb: 'then' });
+        return { steps: steps };
+      }
+      return null;
+    }
+    if (panel.type === 'text' || panel.type === 'image' || !panel.dataRef) return null;
+    var src = (spec.data || {})[panel.dataRef];
+    var params = Object.keys(spec.params || {}).filter(function (p) { return sourceUsesParam(src, p); });
+    var ctls = [];
+    params.forEach(function (p) { paramControls(p).forEach(function (c) { if (ctls.indexOf(c) === -1) ctls.push(c); }); });
+    var info = describeSource(panel.dataRef);
+    if (!params.length && !info.dbName && (!src || src.kind === 'inline')) return null;
+    if (ctls.length) steps.push({ kind: 'control', ids: ctls });
+    params.forEach(function (p) { steps.push({ kind: 'param', param: p, verb: ctls.length ? 'sets' : 'uses' }); });
+    steps.push({ kind: 'sources', refs: [panel.dataRef], param: params[0], verb: params.length ? 'fills' : '' });
+    steps.push({ kind: 'panels', ids: [panelId], verb: 'feeds', current: panelId });
+    return { steps: steps };
+  }
+
+  /**
+   * Draw (or hide) the floating data-flow card for the current selection.
+   * Every panel/control name is a link that selects it; a database source
+   * offers "SQL" (via the host's describeConnectorSource) with its parameters
+   * highlighted. Closing hides it until the selection changes.
+   * @returns {void}
+   * @private
+   */
+  function renderFlow() {
+    if (!flowEl) return;
+    // A close lasts only while that element stays selected.
+    if (flowDismissedFor !== null && flowDismissedFor !== selectedId) flowDismissedFor = null;
+    var flow = selectedId ? flowFor(selectedId) : null;
+    if (!flow || flowDismissedFor === selectedId) {
+      flowEl.style.display = 'none';
+      flowEl.innerHTML = '';
+      return;
+    }
+    flowEl.innerHTML = '';
+    var head = el('div', 'cxb-flow-head');
+    var title = el('span', 'cxb-flow-title');
+    title.textContent = 'Data flow';
+    var closeBtn = el('button', 'cxb-flow-close');
+    closeBtn.type = 'button';
+    closeBtn.textContent = '×';
+    closeBtn.setAttribute('aria-label', 'Close data flow');
+    on(closeBtn, 'click', function () { flowDismissedFor = selectedId; renderFlow(); });
+    append(head, [title, closeBtn]);
+    flowEl.appendChild(head);
+    var panels = spec.panels || {};
+    function panelLink(id, current) {
+      var p = panels[id] || {};
+      var a = el('button', 'cxb-flow-link' + (current ? ' cxb-flow-current' : ''));
+      a.type = 'button';
+      a.textContent = (p.type === 'control' ? '🎛 ' : '📊 ') + (p.title || id);
+      a.setAttribute('title', current ? 'This panel' : 'Select this ' + (p.type === 'control' ? 'control' : 'panel'));
+      on(a, 'click', function () { if (id !== selectedId) selectPanel(id); });
+      return a;
+    }
+    flow.steps.forEach(function (step, i) {
+      if (i > 0 && step.verb) {
+        var arrow = el('div', 'cxb-flow-arrow');
+        arrow.textContent = '↓ ' + step.verb;
+        flowEl.appendChild(arrow);
+      }
+      var node = el('div', 'cxb-flow-node');
+      if (step.kind === 'control' || step.kind === 'panels') {
+        if (!step.ids.length) {
+          node.textContent = step.kind === 'panels' ? '(no panel uses this source yet)' : '';
+        }
+        step.ids.forEach(function (id) { node.appendChild(panelLink(id, id === step.current)); });
+        if (step.kind === 'control' && step.choices) {
+          var c = describeSource(step.choices);
+          var sub = el('div', 'cxb-flow-sub');
+          sub.textContent = 'choices from ' + c.icon + ' ' + c.label;
+          if (c.dbName) sub.appendChild(sqlLink(c.dbName, null));
+          node.appendChild(sub);
+        }
+      } else if (step.kind === 'param') {
+        var v = currentParam(step.param);
+        node.className += ' cxb-flow-param';
+        node.textContent = '$' + step.param + ' = ' + (v == null || v === '' ? '(any)' : String(v));
+      } else if (step.kind === 'sources') {
+        if (!step.refs.length) node.textContent = '(no data source reads $' + step.param + ' yet)';
+        step.refs.forEach(function (ref) {
+          var d = describeSource(ref);
+          var line = el('div');
+          var name = el('strong');
+          name.textContent = d.icon + ' ' + d.label;
+          var kind = el('span', 'cxb-flow-kind');
+          kind.textContent = '  ' + d.kind;
+          append(line, [name, kind]);
+          if (d.dbName) line.appendChild(sqlLink(d.dbName, step.param));
+          node.appendChild(line);
+        });
+      } else if (step.kind === 'note') {
+        node.textContent = step.text;
+      }
+      flowEl.appendChild(node);
+    });
+    flowEl.style.display = '';
+  }
+
+  /**
+   * A "SQL" link for a database source: fetches its query from the host and
+   * shows it read-only, with `:param` bind parameters highlighted.
+   * @param {string} name - The database source name.
+   * @param {(string|null)} param - The parameter to emphasize, if any.
+   * @returns {HTMLElement} The link.
+   * @private
+   */
+  function sqlLink(name, param) {
+    var a = el('button', 'cxb-flow-sql');
+    a.type = 'button';
+    a.textContent = 'SQL';
+    a.setAttribute('title', 'Show the database query');
+    if (typeof options.describeConnectorSource !== 'function') { a.style.display = 'none'; return a; }
+    on(a, 'click', function () { showSourceSql(name, param); });
+    return a;
+  }
+
+  /**
+   * Modal with a database source's SQL, `:name` bind parameters highlighted
+   * (they are filled from the dashboard parameter of the same name).
+   * @param {string} name - Database source name.
+   * @param {(string|null)} param - Parameter to mention in the note.
+   * @returns {void}
+   * @private
+   */
+  function showSourceSql(name, param) {
+    var overlay = modalOverlay();
+    var modal = el('div', 'cxb-modal cxb-modal-wide');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = '🗄 ' + name + ' · database query';
+    var note = el('div', 'cxb-save-note');
+    note.textContent = 'Loading…';
+    var pre = el('pre', 'cxb-flow-sqltext');
+    var footer = el('div', 'cxb-modal-footer');
+    function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+    append(footer, [button('Close', close)]);
+    append(modal, [heading, note, pre, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(); });
+    (document.body || document.documentElement).appendChild(overlay);
+    Promise.resolve(options.describeConnectorSource(name)).then(function (info) {
+      var sql = info && info.sql ? String(info.sql) : '';
+      if (!sql) { note.textContent = 'This source has no SQL to show (or you cannot view it).'; return; }
+      var binds = [];
+      sql.split(/(:[A-Za-z_]\w*)/).forEach(function (part) {
+        if (/^:[A-Za-z_]\w*$/.test(part) && part !== '::') {
+          var mk = el('mark');
+          mk.textContent = part;
+          pre.appendChild(mk);
+          if (binds.indexOf(part.slice(1)) === -1) binds.push(part.slice(1));
+        } else {
+          pre.appendChild(document.createTextNode(part));
+        }
+      });
+      note.textContent = binds.length
+        ? 'Highlighted: ' + binds.map(function (b) { return ':' + b; }).join(', ') +
+          ' — filled from the dashboard parameter' + (binds.length > 1 ? 's' : '') + ' of the same name' +
+          (param ? ' (here $' + param + ', set by the control).' : '.')
+        : 'This query takes no parameters.';
+    }, function (err) {
+      note.textContent = 'Could not load the query: ' + (err && err.message ? err.message : err);
+    });
+  }
+
+  /**
+   * Whether a panel's CanvasXpress instance is showing its own data table.
+   * @param {string} panelId - The panel.
+   * @returns {boolean} True in the table view.
+   * @private
+   */
+  function isTableView(panelId) {
+    var inst = instByPanel[panelId];
+    return !!(inst && inst.view && inst.view !== 'canvas');
+  }
+
+  /**
+   * Flip a panel's CanvasXpress instance between its canvas and its OWN data
+   * table — the engine's view switch (changeView, what its toolbar "View table"
+   * button does), so the table is the chart's real data, not a copy.
+   * @param {string} panelId - The panel.
+   * @param {Event} [ev] - The triggering event (passed to the engine).
+   * @returns {void}
+   * @private
+   */
+  function toggleDataView(panelId, ev) {
+    var inst = instByPanel[panelId];
+    if (!inst || typeof inst.changeView !== 'function') return;
+    inst.changeView(ev || null, isTableView(panelId) ? 'canvas' : 'table');
+    if (panelId === selectedId) renderProps();
   }
 
 
@@ -12096,7 +12945,7 @@ function createBuilder(target, options) {
       }
     } else if (curSrc && curSrc.kind === 'connector') {
       var ci = -1;
-      availableConnectors.forEach(function (c, i) { if (ci < 0 && c.url === curSrc.url) ci = i; });
+      availableConnectors.forEach(function (c, i) { if (ci < 0 && sameConnectorUrl(c.url, curSrc.url)) ci = i; });
       current = ci >= 0 ? CONN_OPT + ci : panel.dataRef;
       if (ci >= 0) {
         // Remove the duplicate plain-ref option (the connector row covers it).
@@ -12208,7 +13057,7 @@ function createBuilder(target, options) {
     var name = null;
     Object.keys(existing).forEach(function (ref) {
       var srcx = existing[ref];
-      if (!name && srcx && srcx.kind === 'connector' && srcx.url === connector.url) name = ref;
+      if (!name && srcx && srcx.kind === 'connector' && sameConnectorUrl(srcx.url, connector.url)) name = ref;
     });
     var next = spec;
     if (!name) {
@@ -12869,18 +13718,22 @@ function createBuilder(target, options) {
           : 'Select a dataset first (a function reads the dashboard\'s data)';
     }
     if (addPanelBtn && limitDatasetsToSpec) {
-      addPanelBtn.disabled = !hasData;
-      addPanelBtn.title = hasData ? '' : 'Select a dataset first';
+      // The dialog can also start from one of the user's database sources.
+      var canPanel = hasData || !!(availableConnectors && availableConnectors.length);
+      addPanelBtn.disabled = !canPanel;
+      addPanelBtn.title = canPanel ? '' : 'Select a dataset first';
     }
     if (addControlBtn) {
       var hasGraphPanel = Object.keys(spec.panels || {}).some(function (id) {
         return !spec.panels[id].type;   // graph panels carry no type marker
       });
-      addControlBtn.disabled = !(hasData && hasGraphPanel);
+      var canFilter = hasData && hasGraphPanel;
+      // A query control can also start from the user's database sources (it adds them).
+      addControlBtn.disabled = !(canFilter || (availableConnectors && availableConnectors.length));
       addControlBtn.title = addControlBtn.disabled ? 'Add a panel with data first' : '';
       if (addFiltersBtn) {
-        addFiltersBtn.disabled = addControlBtn.disabled;
-        addFiltersBtn.title = addControlBtn.title;
+        addFiltersBtn.disabled = !canFilter;
+        addFiltersBtn.title = canFilter ? '' : 'Add a panel with data first';
       }
     }
   }
@@ -12982,6 +13835,22 @@ function createBuilder(target, options) {
      * @returns {void}
      */
     selectPanel: selectPanel,
+    /**
+     * Open the "+ Control" dialog (as the toolbar button does), optionally
+     * prefilled: `{mode, choices, annotation, target, param}` (choices / target
+     * are pick keys: `ref:<source>` or `db:<database source>`).
+     * @param {object} [prefill] - Initial choices.
+     * @returns {Promise<?object>} What was added, or null when cancelled.
+     */
+    openControlDialog: function (prefill) { return doAddControl(prefill); },
+    /**
+     * Open the "+ Panel" dialog (as the toolbar button does), optionally
+     * prefilled: `{source, graphType, fields: {x, y, group, color}, extra, title}`
+     * (source is a pick key: `ref:<source>` or `db:<database source>`).
+     * @param {object} [prefill] - Initial choices.
+     * @returns {Promise<?object>} The new panel, or null when cancelled.
+     */
+    openPanelDialog: function (prefill) { return doAddPanel(prefill); },
     container: container,
     /**
      * Tear down the builder and any live render.
@@ -14595,6 +15464,393 @@ function openShapeDialog(doc, spec, dataOf) {
 }
 
 /**
+ * The database source name a connector URL reads (`…/api/data?source=<name>`),
+ * or '' when it is not a database source.
+ * @param {string} url - A connector URL.
+ * @returns {string} The source name.
+ * @private
+ */
+function connectorSourceName(url) {
+  var m = /[?&]source=([^&#]+)/.exec(String(url || ''));
+  if (!m) return '';
+  try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch (e) { return m[1]; }
+}
+
+/**
+ * The "+ Control" dialog: a page filter (the plain control, set up in the
+ * properties bar) or a control that QUERIES a source — its values come from a
+ * column of one source, and picking one sets a parameter that another source's
+ * query reads (a database source's `:param`, read from its SQL). The caller
+ * wires it with {@link addQueryControl}.
+ * @param {Document} doc - The owning document.
+ * @param {object} ctx - `{sources: [{key, label, ref?, url?}], dataOf(pick),
+ *   sqlOf(pick), prefill?: {mode, choices, annotation, target, param}}`.
+ * @returns {Promise<?object>} `{mode:'filter'}`, `{mode:'param', choices, target,
+ *   annotation, param, field, value, title, style}` (choices / target are
+ *   picks), or null when cancelled.
+ * @private
+ */
+function openControlDialog(doc, ctx) {
+  var sources = ctx.sources || [];
+  var pre = ctx.prefill || {};
+  var byKey = {};
+  sources.forEach(function (s) { byKey[s.key] = s; });
+  var keys = sources.map(function (s) { return s.key; });
+  var choiceData = null;       // the choices source's data
+  var choiceToken = 0;
+  var targetToken = 0;
+  return new Promise(function (resolve) {
+    var overlay = modalOverlay();
+    var modal = el('div', 'cxb-modal cxb-modal-wide');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Add a control';
+    var modeSel = selectField(['param', 'filter'], pre.mode === 'filter' ? 'filter' : 'param', function () { draw(); });
+    labelOptions(modeSel, { param: 'Query a source — picking a value re-runs it', filter: 'Filter this page — by one column' });
+    var filterNote = el('p', 'cxb-links-intro');
+    filterNote.textContent = 'Adds a control that filters the panels on this page by one column of a source, in the browser. ' +
+      'Pick its source and column in the properties bar.';
+
+    var choicesSel = selectField(keys, pre.choices && byKey[pre.choices] ? pre.choices : keys[0] || '', function () { loadChoices(); });
+    labelOptions(choicesSel, sources.reduce(function (m, s) { m[s.key] = s.label; return m; }, {}));
+    var columnSel = el('select');
+    on(columnSel, 'change', function () { syncValues(); });
+    var valuesNote = el('div', 'cxb-links-none');
+    var targetSel = selectField(keys, pre.target && byKey[pre.target] ? pre.target : (keys[1] || keys[0] || ''), function () { loadTarget(); });
+    labelOptions(targetSel, sources.reduce(function (m, s) { m[s.key] = s.label; return m; }, {}));
+    var paramSel = el('select');
+    var paramInput = el('input');
+    paramInput.type = 'text';
+    paramInput.setAttribute('placeholder', 'parameter, e.g. region');
+    var fieldInput = el('input');
+    fieldInput.type = 'text';
+    fieldInput.setAttribute('placeholder', 'query field it fills (default: the parameter)');
+    var sqlView = el('pre', 'cxb-flow-sqltext');
+    var titleInput = el('input');
+    titleInput.type = 'text';
+    titleInput.setAttribute('placeholder', 'Control title (default: the column)');
+    // The value the dashboard opens with (the re-run source needs one to have rows).
+    var startInput = el('input');
+    startInput.type = 'text';
+    startInput.setAttribute('placeholder', 'type to search the values');
+    var startList = el('datalist');
+    startList.id = 'cxb-ctl-values-' + Date.now();
+    startInput.setAttribute('list', startList.id);
+    on(startInput, 'input', function () { startInput.setAttribute('data-touched', '1'); syncSummary(); });
+    var styleSel = selectField(['auto', 'dropdown', 'radio', 'buttons', 'search'], 'auto', function () {});
+    labelOptions(styleSel, { auto: 'Automatic (dropdown, or type-ahead search past 50 values)' });
+    var summary = el('p', 'cxb-links-intro');
+    var errEl = el('div', 'cxb-modal-err');
+    var paramWrap = el('div');
+    var queryWrap = el('div');
+    append(queryWrap, [field('Values from', choicesSel), field('Column', columnSel), valuesNote,
+      field('Re-runs', targetSel), paramWrap, field('Starting value', startInput), startList,
+      field('Title', titleInput), field('Style', styleSel), summary]);
+
+    /** Distinct values of the picked column. @returns {string[]} Values. */
+    function values() {
+      if (!choiceData || !columnSel.value) return [];
+      var v = annotationValues(choiceData, 'x', columnSel.value);
+      return v.length ? v : annotationValues(choiceData, 'z', columnSel.value);
+    }
+    function syncValues() {
+      var v = values();
+      valuesNote.textContent = !choiceData ? 'Loading…' : !columnSel.value ? 'This source has no text column to list.'
+        : v.length + ' value' + (v.length === 1 ? '' : 's') + ': ' + v.slice(0, 10).join(', ') + (v.length > 10 ? ', …' : '');
+      if (!paramInput.value.trim() && !paramSel.options.length) paramInput.value = paramNameFrom(columnSel.value);
+      startList.innerHTML = '';
+      v.slice(0, 2000).forEach(function (value) {
+        var o = document.createElement('option');
+        o.value = value;
+        startList.appendChild(o);
+      });
+      if (!startInput.getAttribute('data-touched')) startInput.value = v.length ? v[0] : '';
+      syncSummary();
+    }
+    function loadChoices() {
+      var mine = ++choiceToken;
+      choiceData = null;
+      columnSel.innerHTML = '';
+      syncValues();
+      Promise.resolve(ctx.dataOf(byKey[choicesSel.value])).then(function (data) {
+        if (mine !== choiceToken) return;
+        choiceData = data;
+        var names = data ? annotationNames(data, 'x') : [];
+        if (!names.length && data) names = annotationNames(data, 'z');
+        names.forEach(function (n) {
+          var o = document.createElement('option');
+          o.value = n; o.textContent = n;
+          columnSel.appendChild(o);
+        });
+        if (pre.annotation && names.indexOf(pre.annotation) !== -1) columnSel.value = pre.annotation;
+        syncValues();
+      });
+    }
+    function loadTarget() {
+      var mine = ++targetToken;
+      paramWrap.innerHTML = '';
+      sqlView.textContent = '';
+      Promise.resolve(ctx.sqlOf(byKey[targetSel.value])).then(function (sql) {
+        if (mine !== targetToken) return;
+        var params = sql ? sqlParamNames(sql) : [];
+        if (params.length) {
+          // A database source: its SQL names the parameters it takes.
+          paramSel.innerHTML = '';
+          params.forEach(function (p) {
+            var o = document.createElement('option');
+            o.value = p; o.textContent = ':' + p;
+            paramSel.appendChild(o);
+          });
+          if (pre.param && params.indexOf(pre.param) !== -1) paramSel.value = pre.param;
+          sqlView.innerHTML = String(sql).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/(^|[^:\w]):([A-Za-z_]\w*)/g, '$1<mark>:$2</mark>');
+          append(paramWrap, [field('Parameter', paramSel), field('Its SQL', sqlView)]);
+          on(paramSel, 'change', syncSummary);
+        } else {
+          paramSel.innerHTML = '';
+          if (pre.param && !paramInput.value) paramInput.value = pre.param;
+          var hint = el('div', 'cxb-links-none');
+          hint.textContent = sql === null || sql === undefined
+            ? 'Not a database source: name the parameter and the query field it fills.'
+            : 'Its SQL has no :parameter — add one (e.g. WHERE column = :value) in Data → Database sources.';
+          append(paramWrap, [field('Parameter', paramInput), field('Query field', fieldInput), hint]);
+          on(paramInput, 'input', syncSummary);
+        }
+        syncSummary();
+      });
+    }
+    function currentParam() { return paramSel.options.length ? paramSel.value : paramInput.value.trim(); }
+    function syncSummary() {
+      var p = currentParam();
+      var c = byKey[choicesSel.value], t = byKey[targetSel.value];
+      summary.textContent = columnSel.value && p && c && t
+        ? 'Lists the values of “' + columnSel.value + '” from ' + c.label + '; picking one sets $' + p +
+          ' and re-runs ' + t.label + ', so every panel on it refreshes' +
+          (startInput.value.trim() ? ' (it opens on “' + startInput.value.trim() + '”).' : '.') : '';
+    }
+    function draw() {
+      var query = modeSel.value === 'param';
+      queryWrap.style.display = query ? '' : 'none';
+      filterNote.style.display = query ? 'none' : '';
+    }
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var addBtn = button('Add control', function () {
+      errEl.textContent = '';
+      if (modeSel.value === 'filter') { close({ mode: 'filter' }); return; }
+      var p = currentParam();
+      if (!columnSel.value) { errEl.textContent = 'Pick the column whose values the control lists.'; return; }
+      if (!/^[A-Za-z_]\w*$/.test(p)) { errEl.textContent = 'Name the parameter (letters, digits and _).'; return; }
+      var v = values();
+      var style = styleSel.value === 'auto' ? (v.length > 50 ? 'search' : 'dropdown') : styleSel.value;
+      close({ mode: 'param', choices: byKey[choicesSel.value], target: byKey[targetSel.value],
+        annotation: columnSel.value, param: p, field: paramSel.options.length ? p : (fieldInput.value.trim() || p),
+        value: startInput.value.trim() || (v.length ? v[0] : null), title: titleInput.value.trim() || columnSel.value, style: style });
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, addBtn]);
+    append(modal, [heading, field('Kind', modeSel), filterNote, queryWrap, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    if (!keys.length) {
+      modeSel.value = 'filter';
+      modeSel.disabled = true;
+      filterNote.textContent = 'Add a data source first (Data dropdown on a panel, or + Data).';
+    }
+    draw();
+    if (keys.length) { loadChoices(); loadTarget(); }
+
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
+ * A parameter name from a column name (`Gene Name` → `gene_name`).
+ * @param {string} column - Column name.
+ * @returns {string} A bind-parameter name.
+ * @private
+ */
+function paramNameFrom(column) {
+  var name = String(column || '').toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^[^a-z]+|_+$/g, '');
+  return name || 'value';
+}
+
+/**
+ * The "+ Panel" dialog: pick a data source and a chart type, then its fields —
+ * X + Y + Color by for a scatter plot, X (the measure) + Group by + Color by
+ * for the others — plus any extra CanvasXpress config (JSON, applied last),
+ * with a live preview on the source's data. ⚙ keeps editing it afterwards.
+ * @param {Document} doc - The owning document.
+ * @param {object} ctx - `{sources: picks, dataOf(pick), CanvasXpress,
+ *   prefill?: {source, graphType, fields, extra, title}}`.
+ * @returns {Promise<?{pick: object, config: object, title: string}>} The panel
+ *   to add, or null when cancelled.
+ * @private
+ */
+function openPanelDialog(doc, ctx) {
+  var sources = ctx.sources || [];
+  var pre = ctx.prefill || {};
+  var byKey = {};
+  sources.forEach(function (s) { byKey[s.key] = s; });
+  var keys = sources.map(function (s) { return s.key; });
+  var data = null;
+  var token = 0;
+  var instance = null;
+  var fields = pre.fields || {};
+  return new Promise(function (resolve) {
+    var overlay = modalOverlay();
+    var modal = el('div', 'cxb-modal cxb-modal-wide cxb-modal-xl');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Add a panel';
+    // Default: the source a query control re-runs (its rows are what the
+    // dashboard is about), else the first.
+    var queried = sources.filter(function (s) { return s.queried; })[0];
+    var first = pre.source && byKey[pre.source] ? pre.source : (queried ? queried.key : keys[0] || '');
+    var sourceSel = selectField(keys, first, function () { fields = {}; load(); });
+    labelOptions(sourceSel, sources.reduce(function (m, s) { m[s.key] = s.label; return m; }, {}));
+    var typeSel = selectField(WIZARD_CHART_TYPES, WIZARD_CHART_TYPES.indexOf(pre.graphType) !== -1 ? pre.graphType : 'Boxplot',
+      function () { drawFields(); refresh(); });
+    labelOptions(typeSel, { Scatter2D: 'Scatter plot' });
+    var titleInput = el('input');
+    titleInput.type = 'text';
+    titleInput.value = pre.title || '';
+    titleInput.setAttribute('placeholder', 'Panel title');
+    var fieldsBox = el('div');
+    var extra = el('textarea', 'cxb-modal-json');
+    extra.value = pre.extra || '';
+    extra.setAttribute('placeholder', '{ "theme": "GGPlot", "showLegend": false }');
+    extra.style.minHeight = '90px';
+    var extraHelp = el('div', 'cxb-links-none');
+    extraHelp.textContent = 'Any CanvasXpress option, applied over the fields. Keep editing with ⚙ after adding.';
+    var errEl = el('div', 'cxb-modal-err');
+    var left = el('div', 'cxb-panel-fields');
+    append(left, [field('Data source', sourceSel), field('Chart type', typeSel), fieldsBox,
+      field('Extra config (JSON)', extra), extraHelp, field('Title', titleInput)]);
+    var previewHost = el('div', 'cxb-panel-preview');
+    var status = el('div', 'cxb-links-none');
+    var right = el('div', 'cxb-panel-right');
+    append(right, [previewHost, status]);
+    var cols = el('div', 'cxb-panel-cols');
+    append(cols, [left, right]);
+
+    var selects = {};
+    /** One column dropdown. */
+    function columnSelect(name, list, allowNone) {
+      var opts = (allowNone ? [''] : []).concat(list);
+      var value = fields[name] != null && opts.indexOf(fields[name]) !== -1 ? fields[name] : (allowNone ? '' : opts[0] || '');
+      var sel = selectField(opts, value, function () { fields[name] = sel.value; refresh(); });
+      fields[name] = value;
+      selects[name] = sel;
+      return sel;
+    }
+    function drawFields() {
+      fieldsBox.innerHTML = '';
+      selects = {};
+      var columns = data ? chartColumns(data) : { numbers: [], texts: [] };
+      var which = chartFieldsFor(typeSel.value);
+      if (!data) { fieldsBox.appendChild(el('div', 'cxb-links-none')).textContent = 'Loading the data…'; return; }
+      fieldsBox.appendChild(field(which.y ? 'X axis' : 'X axis (measure)', columnSelect('x', columns.numbers, false)));
+      if (which.y) {
+        if (fields.y == null && columns.numbers[1]) fields.y = columns.numbers[1];
+        fieldsBox.appendChild(field('Y axis', columnSelect('y', columns.numbers, false)));
+      }
+      if (!columns.numbers.length) {
+        fieldsBox.appendChild(el('div', 'cxb-links-none')).textContent =
+          'This source has no number column to chart: pick another source.';
+        return;
+      }
+      // Default groups: a text column with a manageable number of values (≤ 100).
+      var groupable = columns.texts.filter(function (t) {
+        return annotationValues(data, 'x', t).length + annotationValues(data, 'z', t).length <= 100;
+      });
+      if (fields.group == null) fields.group = groupable[0] || '';
+      if (which.groupKey) fieldsBox.appendChild(field('Group by', columnSelect('group', columns.texts, true)));
+      if (fields.color == null) fields.color = fields.group || '';
+      fieldsBox.appendChild(field('Color by', columnSelect('color', columns.texts.concat(columns.numbers), true)));
+    }
+    /** The config the form describes, or null (an error is shown). */
+    function config() {
+      errEl.textContent = '';
+      var more = {};
+      var text = extra.value.trim();
+      if (text) {
+        try { more = JSON.parse(text); } catch (e) { errEl.textContent = 'Extra config is not valid JSON: ' + e.message; return null; }
+        if (!more || typeof more !== 'object' || Array.isArray(more)) { errEl.textContent = 'Extra config must be a JSON object: { … }'; return null; }
+      }
+      return buildChartConfig(typeSel.value, fields, more, data);
+    }
+    function refresh() {
+      if (instance) { try { instance.destroy(); } catch (e) { /* gone */ } instance = null; }
+      previewHost.innerHTML = '';
+      if (!data || !chartColumns(data).numbers.length) return;
+      var c = config();
+      if (!c) return;
+      var CXlib = ctx.CanvasXpress;
+      if (typeof CXlib !== 'function') { status.textContent = 'Preview needs CanvasXpress on the page.'; return; }
+      var canvas = el('canvas');
+      canvas.id = 'cxb-panel-preview-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
+      canvas.setAttribute('width', Math.max(320, previewHost.clientWidth || 560));
+      canvas.setAttribute('height', 400);
+      previewHost.appendChild(canvas);
+      try {
+        instance = new CXlib(canvas.id, data, Object.assign(JSON.parse(JSON.stringify(c)), { resizable: false }), {});
+      } catch (e) { previewHost.textContent = 'Preview unavailable: ' + (e && e.message || e); }
+    }
+    function load() {
+      var mine = ++token;
+      data = null;
+      status.textContent = '';
+      drawFields();
+      refresh();
+      var pick = byKey[sourceSel.value];
+      if (!titleInput.value.trim() || titleInput.getAttribute('data-auto')) {
+        titleInput.value = pick ? pick.label.replace(/^🗄 /, '') : '';
+        titleInput.setAttribute('data-auto', '1');
+      }
+      Promise.resolve(ctx.dataOf(pick)).then(function (d) {
+        if (mine !== token) return;
+        data = d;
+        var rows = d && d.y ? Math.max((d.y.smps || []).length, (d.y.vars || []).length) : 0;
+        status.textContent = d ? 'Preview on ' + rows + ' rows of ' + (pick ? pick.label : '') + '.' : 'This source returned no data.';
+        drawFields();
+        refresh();
+      });
+    }
+    on(titleInput, 'input', function () { titleInput.removeAttribute('data-auto'); });
+    var extraTimer = null;
+    on(extra, 'input', function () { clearTimeout(extraTimer); extraTimer = setTimeout(refresh, 400); });
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var addBtn = button('Add panel', function () {
+      if (!data || !chartColumns(data).numbers.length) { errEl.textContent = 'Pick a source with a number column (or wait for its data).'; return; }
+      var c = config();
+      if (!c) return;
+      close({ pick: byKey[sourceSel.value], config: c, title: titleInput.value.trim() });
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, addBtn]);
+    append(modal, [heading, cols, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    if (!keys.length) {
+      status.textContent = 'Add a data source first (Data → + Database, or + Data).';
+      addBtn.disabled = true;
+    } else {
+      load();
+    }
+
+    function close(result) {
+      if (instance) { try { instance.destroy(); } catch (e) { /* gone */ } instance = null; }
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
  * A typed filter value from text: `$name` stays a param token; a number reads
  * as a number; "one of" / "between" split on commas.
  * @param {string} text - What was typed.
@@ -14728,5 +15984,5 @@ function withQueryParam(url, key, value) {
 }
 
 var version = "0.12.0";
-export { renderDashboard, validateSpec, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, parseSchemaVersion, DASHBOARD_SCHEMA_VERSION, DASHBOARD_SCHEMA_URL, MIGRATIONS, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuery, joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES, resolveFields, summarizeField, rowsPassing, normalizeState, hasRelationships, relationGraph, translateMarks, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES, setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS, tableFromData, profileColumns, applyDecimalComma, wizardSpec, transposeCxData, version };
-export default { renderDashboard, validateSpec, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, parseSchemaVersion, DASHBOARD_SCHEMA_VERSION, DASHBOARD_SCHEMA_URL, MIGRATIONS, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuery, joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES, resolveFields, summarizeField, rowsPassing, normalizeState, hasRelationships, relationGraph, translateMarks, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES, setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS, tableFromData, profileColumns, applyDecimalComma, wizardSpec, transposeCxData, version };
+export { renderDashboard, validateSpec, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, parseSchemaVersion, DASHBOARD_SCHEMA_VERSION, DASHBOARD_SCHEMA_URL, MIGRATIONS, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuery, joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES, resolveFields, summarizeField, rowsPassing, normalizeState, hasRelationships, relationGraph, translateMarks, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES, setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, addQueryControl, runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS, tableFromData, profileColumns, applyDecimalComma, wizardSpec, sqlParamNames, paramNameFor, choicesSql, detailSql, connectorSourceUrl, databaseExplorerSpec, orientConfig, WIZARD_CHART_TYPES, chartFieldsFor, buildChartConfig, chartColumns, transposeCxData, version };
+export default { renderDashboard, validateSpec, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, parseSchemaVersion, DASHBOARD_SCHEMA_VERSION, DASHBOARD_SCHEMA_URL, MIGRATIONS, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuery, joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES, resolveFields, summarizeField, rowsPassing, normalizeState, hasRelationships, relationGraph, translateMarks, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES, setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, addQueryControl, runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS, tableFromData, profileColumns, applyDecimalComma, wizardSpec, sqlParamNames, paramNameFor, choicesSql, detailSql, connectorSourceUrl, databaseExplorerSpec, orientConfig, WIZARD_CHART_TYPES, chartFieldsFor, buildChartConfig, chartColumns, transposeCxData, version };

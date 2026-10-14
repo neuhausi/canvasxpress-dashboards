@@ -3,7 +3,135 @@
 Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 (`cxd_server`). Versions follow the package version.
 
-## Unreleased
+## 0.13.0 — 2026-10-14
+
+### Data functions: runtime hardening for shared hosts
+- **Server environment hidden from snippets.** On Linux, when data functions are
+  enabled the server calls `prctl(PR_SET_DUMPABLE, 0)` at startup (per worker), so a
+  same-user snippet can no longer read the server's secrets out of
+  `/proc/<pid>/environ`. No-op on other platforms; the startup log reports whether it
+  applied.
+- **Isolation self-check.** New admin-only `GET /api/functions/selfcheck` runs one
+  probe through the exact snippet launch path (same wrapper, limits, minimal
+  environment) and reports `blocked`/`allowed` — never the data — for reading the
+  server's / other processes' `/proc/.../environ`, connecting to
+  `CXD_FUNCTIONS_PROBE_TARGET`, and writing outside the sandbox temp dir. Measure
+  isolation instead of trusting the wrapper.
+- **Server-wide remote runtime.** `CXD_FUNCTIONS_RUNTIME_URL` sets a default runtime
+  for function sources without their own `runtime` (a per-spec `runtime` still wins),
+  injected into the served app. New standalone `cxd_server.functions_app:app` serves
+  only the runtime contract (run / status / selfcheck), needs no database or secrets,
+  and refuses to start if the server's secret variables are present — so untrusted code
+  can run in a separate, secret-free app.
+
+### Database dashboards: source editor, query controls, panel dialog, guided path
+- **Data → + Database (and ✎) is a full editor** in a wide dialog: name; the connection
+  (same database as an existing source, or a URL); a **table browser** (tables and
+  views → columns with their types, click a column to insert it); templates — **All
+  rows**, **Values for a Control** (`SELECT DISTINCT`), **Rows for a :parameter**; the
+  SQL with its `:parameters` detected, each with a sample value; and **▶ Test**, which
+  runs the UNSAVED query (read-only, capped at 200 rows in the database) and previews
+  it. Server: `POST /api/connectors/schema` (tables, or one table's columns: catalog
+  only, SQLAlchemy `inspect`) and `POST /api/connectors/test` (same read-only check as a
+  saved source; params bound, never interpolated) — both session-guarded, taking
+  `{source}` (one of the user's SQL sources) or `{conn_url}` in the body.
+- **Builder → + Control asks what the control does:** *Filter this page* (as before) or
+  *Query a source*: values from a column of one source (its value count and first
+  values shown), the source it re-runs, the `:parameter` read from that source's SQL
+  (highlighted), a starting value (type-ahead over the values), title and style. One
+  click wires the parameter, the choices and the query binding; a database source the
+  dashboard does not use yet is added. Enabled with database sources even on an empty
+  dashboard. New model helper `addQueryControl(spec, opts)`.
+- **Builder → + Panel opens a dialog** with a live preview: data source (defaults to the
+  one a control re-runs), chart type, then X / Y / Color by for a scatter plot or X
+  (measure) / Group by / Color by for the others (Ridgeline groups by `ridgeBy`;
+  Histogram / Density take no group; default groups only a column with ≤ 100 values),
+  plus **Extra config (JSON)** applied last (invalid JSON reported, not applied). A
+  source with no number column says so instead of drawing. Helpers (wizard.js):
+  `WIZARD_CHART_TYPES`, `chartFieldsFor`, `buildChartConfig`, `chartColumns`,
+  `orientConfig`. The builder handle gains `openControlDialog(prefill)` and
+  `openPanelDialog(prefill)`.
+- **＋ Dashboard from database** (Dashboards toolbar, Data → + Dashboard, the Home card)
+  is now a guided path through those same tools: a title, then the source editor twice
+  (*the values to pick from*, *the query a pick re-runs* — same database, parameter name
+  carried over, the template written on the first column click), then a new dashboard
+  in the Builder with **+ Control** and **+ Panel** opened prefilled; saved at the end.
+  Suggested source names never replace existing ones (`-2`, `-3`…); cancelling midway
+  removes the sources it saved. Pure helpers kept: `sqlParamNames`, `paramNameFor`,
+  `choicesSql`, `detailSql`, `connectorSourceUrl`, `databaseExplorerSpec`.
+- A full-width **Dashboard from database** card on Home explains the pattern and starts
+  the guided path (sign-in first when signed out).
+### Dropdowns and wizard fields
+- **Every dropdown** in the app, dashboards, builder and dialogs draws the engine's chevron
+  (two `currentColor` diagonals: follows light/dark) inset ~12px from the right border,
+  with 30px of padding so text never runs under it (it used to sit on the border). Scoped
+  to the dashboards' own roots — an embedding page keeps its selects — and the engine's own
+  selects (customizer, data filter) keep theirs; forced-colors falls back to the native arrow.
+- **Wizard fields:** inputs and dropdowns share one 38px box (same padding, border, font)
+  with 6px between label and field.
+
+### Wizards: scatter-family charts and card picking
+- **Ridgeline, CDF, Density, Scatter2D… work on uploaded and database data.** The chart
+  selector names columns; when rows are samples (a CSV or a SQL query), scatter-family
+  charts now get the engine's `transposeData` (new `orientConfig(config, data)`,
+  wizard.js), so a Ridgeline has its ridges (it used to crash the engine) and a CDF its
+  curve (it used to plot one point) — in the cards and in the saved dashboard. Both
+  wizards ("Chart from data", "Dashboard from database").
+- Clicking a card's **chart** now picks it (the chart used to swallow the click; only
+  the title worked).
+- UI tokens regenerated from the engine (`--cx-z-footer-link`, dark `--cx-ui-border-accent`
+  follows `--cx-ui-dark-border-accent`); the token-fallback test is green again.
+- New pure helpers (wizard.js, exported): `sqlParamNames`, `paramNameFor`,
+  `choicesSql`, `detailSql`, `connectorSourceUrl`, `databaseExplorerSpec` — a param
+  Control (`dropdown`, or type-ahead `search` past 50 choices) over a chart re-queried
+  with `query: {<param>: "$<param>"}`.
+
+### Builder: data-flow card
+- Selecting a **param control** or a **chart it feeds** shows a floating card with the
+  wiring: control (and where its choices come from) → `$param = <current value>` → the
+  source it fills → the panels it feeds. Names select the element; a 🗄 database
+  source offers **SQL** (read-only, `:param` bind parameters highlighted) via the new
+  `describeConnectorSource(name)` builder option. Updates live as controls change
+  (new `onParamChange(param, value, done)` render option). `×` hides it until the
+  selection changes; it never shifts the layout.
+- `sourceUsesParam(source, param)` (spec.js) is now the single definition of "this
+  parameter feeds this source", shared by the renderer's re-query and the card.
+
+### Builder: chart ↔ table switch
+- **▦** on a chart's frame (or **▦ Table** in the toolbar when a chart is selected)
+  switches that panel's own CanvasXpress plot between its canvas and its built-in
+  data table — the engine's `changeView` (what its toolbar "View table" does), so
+  it is the chart's real data. **◧ Chart** / ▦ switches back.
+- **Record limit:** the Data page's database-source preview is capped at 500 rows in
+  the database itself (pushdown `limit`).
+
+### GTEx and GENCODE explorers in the app
+- **GTEx Gene Explorer** and **GENCODE Genome Browser** ship as Dashboards-page
+  examples (positions 5 and 6), openable in the Builder. GTEx reads two connectors
+  database sources seeded per user (`gtex-genes`, `gtex-expression` with `:gene`),
+  so its query and data are visible in the Builder; GENCODE's nested genome tracks
+  stay on `/api/gencode`.
+- **Connector URLs resolve against a subpath `baseUrl`:** a root-relative connector
+  URL (`/api/x`, `/connectors/...`) is prefixed with a same-origin path base
+  (`/dashboards`), like dataset and live sources — so stored specs work at the app
+  root, behind Apache, and from `examples/view.html`. Absolute-origin bases
+  (cross-origin embeds) are unchanged. New `prepareConnectors` store option (falls
+  back to `prepareLive`): opens the connectors session before the first database
+  fetch; `view.html` now bridges that session.
+
+### Filters reach every panel that shares the field
+- A Filters-panel predicate now also narrows a panel on another source that carries
+  the same field, with no declared relationship: a sample (x) annotation narrows
+  samples (`filterSmpBy`), a variable (z) annotation narrows variables
+  (`filterVarBy`). A source shaped with `pushdown.groupBy` on that field matches its
+  row ids (Sales Model: Product → "Revenue by product").
+
+### Shipped examples stay in sync
+- `examples/serve.py` re-seeds a shipped example when its spec file changes
+  (sha256 in `seed-state.json`), so fixes reach the stored copy the Builder opens;
+  an explicit `shipped_order` sets their order on the Dashboards page.
+- Reproducible Bench: the survival grouping is named `cluster` (was `group`), so one
+  cluster control filters the heatmap and the Kaplan–Meier plot.
 
 ### Assistant sees the shared example datasets
 - **Fix:** the assistant (`POST /api/llm/dashboard`) cataloged only the signed-in

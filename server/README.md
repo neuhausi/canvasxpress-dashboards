@@ -95,6 +95,22 @@ datasets only; data written into a spec travels with the spec. **Lineage**
 (`GET /api/lineage`, and across every user for admins) lists which dashboards
 read which datasets and connectors.
 
+**Databricks "sign in as the viewer" (Posit Connect).** When this server runs as
+Posit Connect content, a Databricks connector source can sign in **as the
+signed-in viewer** instead of storing a token — each viewer reads Databricks as
+themselves. The source opts in with the username `posit-connect` and no password
+(`databricks://posit-connect@dbc-1234.cloud.databricks.com?http_path=…&catalog=…&schema=…`);
+on every request the viewer's `Posit-Connect-User-Session-Token` is exchanged for
+that viewer's Databricks token (a fresh one per request, never stored). It needs
+the `posit-connect` extra (`pip install 'canvasxpress-dashboards-server[posit-connect]'`,
+which pulls `canvasxpress-connectors[posit-connect]`); a Connect admin creates a
+Databricks OAuth integration of the **Viewer** type and the content owner attaches
+it in the content's **Access** panel. Set `CXC_CONNECT_OAUTH_AUDIENCE` to the
+integration GUID only if more than one integration is attached. **Limitation:**
+such a source has no credential of its own, so it works only for a signed-in
+viewer on Connect — it cannot be read on a **scheduled dataset refresh** (no
+viewer → a clear error); use a PAT source for scheduled data.
+
 **Data functions** (`kind:"function"` sources — R / Python snippets) run in
 this server only when `CXD_FUNCTIONS=admin` or `users`; the default is `off`.
 In `admin` mode (recommended) only administrators may **write** functions — run
@@ -109,6 +125,31 @@ timeout, resource limits and — where the OS supports it — no network; see th
 main README's *Data functions* section for every `CXD_FUNCTIONS_*` knob, and
 `GET /api/functions/status` for what is in effect. It executes user-supplied
 code: run `users` mode only inside a container / VM you trust.
+
+Three further hardening knobs for a shared host where snippets run as the same OS
+user as the server:
+
+- On **Linux**, when functions are enabled the server calls
+  `prctl(PR_SET_DUMPABLE, 0)` at startup (per worker), which makes its
+  `/proc/<pid>/environ` unreadable to same-user snippets — so a snippet cannot
+  read the server's secrets (store URLs, `ENCRYPTION_KEY`, session secret) out of
+  `/proc`. It is a no-op elsewhere, and protects the server's own processes, not a
+  parent supervisor the host may run. The startup log reports whether it applied.
+- `GET /api/functions/selfcheck` (**admin only**) runs one probe through the real
+  snippet launch path and reports, for each thing a hostile snippet might try,
+  `blocked`/`allowed` (never the data it read): reading the server's and other
+  same-user processes' `/proc/.../environ`, opening a TCP connection to
+  `CXD_FUNCTIONS_PROBE_TARGET` (`host:port`; skipped when unset), and writing
+  outside its temp dir. Measure isolation instead of trusting the wrapper.
+- `CXD_FUNCTIONS_RUNTIME_URL` names a **server-wide default runtime** for function
+  sources that carry no `runtime` of their own (a spec's own `runtime` still
+  wins). Point it at the standalone, secret-free runtime app
+  (`cxd_server.functions_app:app`) — which serves only the runtime contract
+  (`POST /api/functions/run`, `GET /api/functions/status` + `.../selfcheck`),
+  needs no database or secrets, and **refuses to start** if it sees the server's
+  secret variables in its environment — deployed as its own app (e.g. a second
+  Posit Connect content item) at a same-origin path. Then the main app never
+  executes user code.
 
 To turn them on for a deployed demo (e.g. so the shipped Cohort Explorer's R
 panel computes): install the interpreters' packages on the host (`pip install
@@ -177,6 +218,7 @@ uvicorn cxd_server.app:create_dashboards_app --factory --reload
 | `GET` | `/api/admin/audit/verify` | Admin: re-check the hash chain → `{ok, checked, first_seq, last_seq, broken_at}` |
 | `GET` | `/api/functions/status` | Data-function runtime: `{enabled, mode, languages, timeout, memoryMb, networkIsolation}` |
 | `POST` | `/api/functions/run` | Run a data function (`{language, code, inputs, params, axis}` → `{data}`); needs `CXD_FUNCTIONS` |
+| `GET` | `/api/functions/selfcheck` | Admin only: isolation probe through the real launch path → `{available, networkIsolation, languages, checks}` (each `blocked`/`allowed`/`skipped`) |
 | `GET`·`POST` | `/api/admin/users` | Admin: list / create users (needs `CXD_ADMINS`) |
 | `POST` | `/api/admin/users/{u}/password` | Admin: reset a user's password |
 | `DELETE` | `/api/admin/users/{u}` | Admin: delete a user + their dashboards |

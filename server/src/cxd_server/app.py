@@ -42,7 +42,8 @@ from .datasets import DatasetStore, reshape_to_cx, filter_cx_data
 from .engine import DEFAULT_CANVASXPRESS_URL, EngineMiddleware, engine_is_default
 from .audit import (AuditLog, NullAuditLog, SqlAuditLog, SqliteAuditLog, action_for, iter_actions,
                     open_audit_log, target_from)
-from .functions import FunctionError, FunctionsConfig, functions_status, run_function
+from .functions import (FunctionError, FunctionsConfig, functions_status, harden_process,
+                        run_function, self_check)
 from .governance import (PERMISSIONS, Governance, GovernanceError, apply_policy, build_lineage,
                          open_governance, spec_sources)
 from .jobs import Jobs
@@ -601,6 +602,14 @@ def create_dashboards_app(
 
     @contextlib.asynccontextmanager
     async def lifespan(_app):
+        # Data functions run as this OS user: make our environ unreadable to
+        # them (Linux only; no-op elsewhere). Done per worker, early at startup.
+        if functions.mode != "off":
+            hardened = harden_process()
+            print("[functions] environ hardening: applied=%s platform=%s%s"
+                  % (hardened["applied"], hardened["platform"],
+                     (" (" + hardened["reason"] + ")") if hardened.get("reason") else ""),
+                  flush=True)
         if scheduler_enabled:
             jobs_holder["scheduler"].start()
         try:
@@ -2237,6 +2246,15 @@ def create_dashboards_app(
         # the functions of administrators' dashboards.
         return dict(functions_status(functions), canAuthor=can_author_functions(user))
 
+    @app.get("/api/functions/selfcheck")
+    def function_self_check(request: Request):
+        # Admin only: runs one probe subprocess through the real snippet launch
+        # path and reports what it could/couldn't do (blocked/allowed), never the
+        # data. Lets operators measure isolation instead of trusting the wrapper.
+        require_admin(request)
+        note(request)
+        return self_check(functions)
+
     @app.post("/api/functions/run")
     async def function_run(request: Request):
         user = require_user(request)
@@ -2770,7 +2788,8 @@ def create_dashboards_app(
         index_html = _render_index(
             canvasxpress_url=canvasxpress_url,
             canvasxpress_license=canvasxpress_license,
-            client_config={"llmEnabled": bool(llm_api_key)},
+            client_config={"llmEnabled": bool(llm_api_key),
+                           "functionsRuntime": functions.runtime_url},
             banner=(os.getenv("CXD_BANNER") or "").strip() or None,
         )
         if index_html is not None:

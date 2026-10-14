@@ -35,6 +35,13 @@ output size caps. Network isolation needs an OS sandbox: ``auto`` uses
 none — :func:`functions_status` reports what is actually in effect, and
 ``CXD_FUNCTIONS_WRAPPER`` can name any wrapper (e.g. ``firejail --net=none``).
 Run it inside a container or VM for real multi-tenant use.
+
+Three further hardening seams: :func:`harden_process` makes the server's
+``/proc/<pid>/environ`` unreadable to same-user snippets (Linux); :func:`self_check`
+runs one probe through the real launch path and reports what it could/couldn't do
+(``blocked``/``allowed``); and ``CXD_FUNCTIONS_RUNTIME_URL`` names a server-wide
+default runtime so snippets can run in a separate, secret-free app
+(:mod:`cxd_server.functions_app`) instead of this process.
 """
 
 from __future__ import annotations
@@ -68,7 +75,8 @@ class FunctionsConfig:
     def __init__(self, mode: str = "off", timeout: float = 20.0, memory_mb: int = 1024,
                  max_input: int = 20_000_000, max_output: int = 20_000_000,
                  max_concurrent: int = 2, python: Optional[str] = None,
-                 rscript: Optional[str] = None, wrapper: str = "auto"):
+                 rscript: Optional[str] = None, wrapper: str = "auto",
+                 runtime_url: Optional[str] = None, probe_target: Optional[str] = None):
         self.mode = mode if mode in MODES else "off"
         self.timeout = timeout
         self.memory_mb = memory_mb
@@ -77,6 +85,12 @@ class FunctionsConfig:
         self.python = python or sys.executable
         self.rscript = rscript or shutil.which("Rscript") or "Rscript"
         self.wrapper_setting = wrapper
+        # Server-wide default runtime for function sources that carry no
+        # ``runtime`` of their own (a per-spec ``runtime`` still wins). Injected
+        # into the served app's client config; see app.py.
+        self.runtime_url = (runtime_url or "").strip() or None
+        # ``host:port`` the isolation self-check tries to reach (skipped unset).
+        self.probe_target = (probe_target or "").strip() or None
         self._slots = threading.BoundedSemaphore(max(1, max_concurrent))
         self._wrapper: Optional[List[str]] = None
         self._isolation: Optional[str] = None
@@ -100,6 +114,8 @@ class FunctionsConfig:
             python=os.getenv("CXD_FUNCTIONS_PYTHON") or None,
             rscript=os.getenv("CXD_FUNCTIONS_RSCRIPT") or None,
             wrapper=os.getenv("CXD_FUNCTIONS_WRAPPER", "auto"),
+            runtime_url=os.getenv("CXD_FUNCTIONS_RUNTIME_URL") or None,
+            probe_target=os.getenv("CXD_FUNCTIONS_PROBE_TARGET") or None,
         )
 
     def wrapper(self) -> List[str]:
@@ -132,6 +148,109 @@ def functions_status(config: FunctionsConfig) -> Dict[str, Any]:
         "memoryMb": config.memory_mb,
         "networkIsolation": config.isolation() if config.mode != "off" else None,
     }
+
+
+def harden_process() -> Dict[str, Any]:
+    """Make this process's ``/proc/<pid>/environ`` unreadable by same-user code.
+
+    Data-function snippets run as the same OS user as the server, so a snippet
+    could otherwise read the server's secrets (database URLs, API keys,
+    ``ENCRYPTION_KEY``) out of ``/proc/<server pid>/environ``. On Linux,
+    ``prctl(PR_SET_DUMPABLE, 0)`` clears the dumpable flag, which makes the
+    kernel reparent ``/proc/<pid>`` files to root and deny same-user reads of
+    ``environ``/``maps``/``mem``. Call it once per worker process, early at
+    startup. It is a no-op (and harmless) on non-Linux platforms.
+
+    Note the limit: this protects *this* process and the ones it spawns, not a
+    parent process (e.g. a gunicorn master, or a host supervisor) that the
+    operator may run with secrets in its own environment.
+
+    :returns: ``{"applied": bool, "platform": <system>, "reason"?: <str>}``.
+    :public:
+    """
+    system = platform.system()
+    if system != "Linux":
+        return {"applied": False, "platform": system,
+                "reason": "PR_SET_DUMPABLE is Linux-only; no-op here"}
+    try:
+        import ctypes
+        PR_SET_DUMPABLE = 4
+        libc = ctypes.CDLL("libc.so.6", use_errno=True)
+        rc = libc.prctl(PR_SET_DUMPABLE, 0, 0, 0, 0)
+        if rc != 0:
+            err = ctypes.get_errno()
+            return {"applied": False, "platform": system,
+                    "reason": "prctl(PR_SET_DUMPABLE, 0) failed (errno %d)" % err}
+        return {"applied": True, "platform": system}
+    except Exception as exc:                       # pragma: no cover - platform specific
+        return {"applied": False, "platform": system, "reason": str(exc)}
+
+
+def self_check(config: FunctionsConfig) -> Dict[str, Any]:
+    """Measure, don't guess: run one probe through the real snippet launch path.
+
+    Launches a single Python probe subprocess through exactly the same path as a
+    data function (same wrapper, resource limits and minimal environment) and
+    has it attempt the things a hostile snippet would. Each check reports
+    ``"blocked"`` or ``"allowed"`` (never the data it managed to read). The probe
+    is Python-only; if the Python runtime is unavailable the checks report
+    ``"unknown"`` and ``available`` is False.
+
+    Checks: reading the server's ``/proc/<pid>/environ`` and its parent's;
+    reading any *other* same-user process's ``environ`` under ``/proc``; opening
+    a TCP connection to ``config.probe_target`` (skipped when unset); and writing
+    a file outside the sandbox temp dir (into the server's working directory).
+
+    :param config: The runtime settings to probe (wrapper, limits, target).
+    :returns: ``{available, networkIsolation, languages, checks: {...},
+        probeTarget?}`` where each check is ``blocked``/``allowed``/``skipped``/
+        ``unknown``.
+    :public:
+    """
+    status = functions_status(config)
+    report: Dict[str, Any] = {
+        "available": "python" in status["languages"],
+        "networkIsolation": config.isolation(),
+        "languages": status["languages"],
+        "probeTarget": config.probe_target,
+        "checks": {},
+    }
+    if not report["available"]:
+        report["checks"] = {name: "unknown" for name in
+                            ("serverEnviron", "parentEnviron", "otherEnviron",
+                             "network", "fileWrite")}
+        report["error"] = "Python runtime unavailable; cannot run the probe"
+        return report
+    with tempfile.TemporaryDirectory(prefix="cxd-fn-probe-") as workdir:
+        # Tell the probe which pids to target and where to try writing / connecting,
+        # via a file (the sandbox environment is deliberately minimal).
+        spec = {
+            "serverPid": os.getpid(),
+            "parentPid": os.getppid(),
+            "outsidePath": os.path.join(os.getcwd(), ".cxd-fn-selfcheck-probe"),
+            "target": config.probe_target,
+        }
+        with open(os.path.join(workdir, "probe.json"), "w") as fh:
+            json.dump(spec, fh)
+        harness = os.path.join(workdir, "probe.py")
+        with open(harness, "w") as fh:
+            fh.write(_PROBE_HARNESS)
+        try:
+            proc = _launch([config.python, "-I", harness], workdir, config,
+                           min(config.timeout, 15))
+        except subprocess.TimeoutExpired:
+            report["error"] = "Isolation probe timed out"
+            return report
+        except OSError as exc:
+            report["error"] = "Could not start the isolation probe: %s" % exc
+            return report
+        result_path = os.path.join(workdir, "probe-result.json")
+        if proc.returncode != 0 or not os.path.exists(result_path):
+            report["error"] = _failure_message(proc)
+            return report
+        with open(result_path) as fh:
+            report["checks"] = json.load(fh)
+    return report
 
 
 def run_function(payload: Any, config: FunctionsConfig) -> Dict[str, Any]:
@@ -197,14 +316,8 @@ def _execute(request: Dict[str, Any], config: FunctionsConfig) -> Any:
             with open(harness, "w") as fh:
                 fh.write(_R_HARNESS)
             command = [config.rscript, "--vanilla", harness]
-        env = {"PATH": os.getenv("PATH", "/usr/bin:/bin"), "HOME": workdir, "TMPDIR": workdir,
-               "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1"}
         try:
-            proc = subprocess.run(
-                config.wrapper() + command, cwd=workdir, env=env, capture_output=True,
-                stdin=subprocess.DEVNULL,
-                timeout=config.timeout, preexec_fn=_limits(config) if os.name == "posix" else None,
-            )
+            proc = _launch(command, workdir, config, config.timeout)
         except subprocess.TimeoutExpired:
             raise FunctionError("Data function timed out after %gs" % config.timeout, 504)
         except OSError as exc:
@@ -249,6 +362,46 @@ def _failure_message(proc: subprocess.CompletedProcess) -> str:
         return "Data function failed (exit code %s)" % proc.returncode
     lines = text.splitlines()[-12:]
     return "Data function failed:\n" + "\n".join(lines)[-2000:]
+
+
+def _sandbox_env(workdir: str) -> Dict[str, str]:
+    """The minimal environment every sandboxed run (and the self-check) gets.
+
+    Deliberately omits the server's own variables so a snippet cannot read a
+    secret out of its own environment; the self-check runs through this same
+    function so what it measures is what real snippets see.
+
+    :param workdir: The run's temporary directory (becomes ``HOME``/``TMPDIR``).
+    :returns: The environment dict passed to the subprocess.
+    :private:
+    """
+    return {"PATH": os.getenv("PATH", "/usr/bin:/bin"), "HOME": workdir, "TMPDIR": workdir,
+            "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1"}
+
+
+def _launch(command: List[str], workdir: str, config: FunctionsConfig,
+            timeout: float) -> subprocess.CompletedProcess:
+    """Run ``command`` through the sandbox launch path shared by every snippet.
+
+    Applies the resolved wrapper, the minimal environment, the working
+    directory, stdin on ``/dev/null`` and (on POSIX) the resource-limit
+    ``preexec_fn`` — exactly the path a real data function takes, so the
+    isolation self-check measures the real conditions.
+
+    :param command: The interpreter invocation (wrapper is prepended here).
+    :param workdir: Working directory and sandbox ``HOME``/``TMPDIR``.
+    :param config: The runtime settings (wrapper, limits).
+    :param timeout: Wall-clock timeout in seconds.
+    :returns: The completed process (stdout/stderr captured).
+    :raises subprocess.TimeoutExpired: if it runs past ``timeout``.
+    :raises OSError: if the interpreter cannot be started.
+    :private:
+    """
+    return subprocess.run(
+        config.wrapper() + command, cwd=workdir, env=_sandbox_env(workdir),
+        capture_output=True, stdin=subprocess.DEVNULL, timeout=timeout,
+        preexec_fn=_limits(config) if os.name == "posix" else None,
+    )
 
 
 def _limits(config: FunctionsConfig):
@@ -378,6 +531,75 @@ def main():
         out = {"error": "%s: %s%s" % (type(exc).__name__, exc, where)}
     with open("result.json", "w") as fh:
         json.dump(out, fh, allow_nan=False, default=str)
+
+main()
+'''
+
+_PROBE_HARNESS = r'''
+import json, os, socket
+
+def can_read_environ(pid):
+    try:
+        with open("/proc/%d/environ" % pid, "rb") as fh:
+            fh.read(1)
+        return "allowed"
+    except OSError:
+        return "blocked"
+
+def other_environ():
+    # Any OTHER same-user process whose environ we can read (not ourselves).
+    me = os.getpid()
+    uid = os.getuid() if hasattr(os, "getuid") else None
+    try:
+        pids = [int(n) for n in os.listdir("/proc") if n.isdigit()]
+    except OSError:
+        return "blocked"
+    for pid in pids:
+        if pid == me:
+            continue
+        try:
+            if uid is not None and os.stat("/proc/%d" % pid).st_uid != uid:
+                continue
+            with open("/proc/%d/environ" % pid, "rb") as fh:
+                fh.read(1)
+            return "allowed"
+        except OSError:
+            continue
+    return "blocked"
+
+def network(target):
+    if not target:
+        return "skipped"
+    host, _, port = target.rpartition(":")
+    try:
+        sock = socket.create_connection((host, int(port)), timeout=3)
+        sock.close()
+        return "allowed"
+    except (OSError, ValueError):
+        return "blocked"
+
+def file_write(path):
+    try:
+        with open(path, "w") as fh:
+            fh.write("probe")
+        os.remove(path)
+        return "allowed"
+    except OSError:
+        return "blocked"
+
+def main():
+    with open("probe.json") as fh:
+        spec = json.load(fh)
+    linux = os.path.isdir("/proc")
+    checks = {
+        "serverEnviron": can_read_environ(spec["serverPid"]) if linux else "unknown",
+        "parentEnviron": can_read_environ(spec["parentPid"]) if linux else "unknown",
+        "otherEnviron": other_environ() if linux else "unknown",
+        "network": network(spec.get("target")),
+        "fileWrite": file_write(spec["outsidePath"]),
+    }
+    with open("probe-result.json", "w") as fh:
+        json.dump(checks, fh)
 
 main()
 '''

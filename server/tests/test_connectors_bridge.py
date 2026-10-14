@@ -141,3 +141,68 @@ def test_an_account_made_directly_in_the_connectors_app_is_not_taken_over(demo):
     client, status = _sign_in(module)
     assert status == 401, "the bridge cannot prove the account is alice's"
     assert module._connectors_store.check_user("alice", "her-own-password")
+
+
+def test_schema_lists_tables_then_columns_for_the_wizard(demo, warehouse, tmp_path):
+    """POST /api/connectors/schema: tables (and views) of a user's source or of a
+    connection URL, then one table's columns with a number/text kind."""
+    import sqlite3 as _sqlite3
+    con = _sqlite3.connect(warehouse[len("sqlite:///"):])
+    con.execute("CREATE VIEW low_stock AS SELECT item FROM stock WHERE qty < 30")
+    con.commit()
+    con.close()
+    module = demo()
+    client, status = _sign_in(module, signup=True)
+    assert status == 200
+    assert client.post("/connectors/api/sources", json={
+        "name": "wh", "conn_url": warehouse, "sql": "SELECT * FROM stock"}).status_code == 200
+
+    tables = client.post("/api/connectors/schema", json={"source": "wh"})
+    assert tables.status_code == 200, tables.text
+    assert tables.json() == {"tables": [{"name": "stock", "kind": "table"},
+                                        {"name": "low_stock", "kind": "view"}], "truncated": False}
+    by_url = client.post("/api/connectors/schema", json={"conn_url": warehouse})
+    assert by_url.json()["tables"][0]["name"] == "stock"
+
+    cols = client.post("/api/connectors/schema", json={"source": "wh", "table": "stock"})
+    assert cols.json() == {"table": "stock", "columns": [
+        {"name": "item", "type": "TEXT", "kind": "text"},
+        {"name": "qty", "type": "INTEGER", "kind": "number"}]}
+
+    assert client.post("/api/connectors/schema", json={"source": "wh", "table": "nope"}).status_code == 404
+    assert client.post("/api/connectors/schema", json={"source": "missing"}).status_code == 404
+    assert client.post("/api/connectors/schema", json={}).status_code == 400
+    bad = client.post("/api/connectors/schema", json={"conn_url": "sqlite:///" + str(tmp_path / "no" / "x.db")})
+    assert bad.status_code == 502
+    # Another user cannot read this user's source.
+    other, _ = _sign_in(module, username="bob", password="secret2", signup=True)
+    assert other.post("/api/connectors/schema", json={"source": "wh"}).status_code == 404
+    # Signed out: refused.
+    from fastapi.testclient import TestClient as _TC
+    assert _TC(module.app).post("/api/connectors/schema", json={"conn_url": warehouse}).status_code == 401
+
+
+def test_test_runs_unsaved_sql_read_only_with_bound_params_and_a_cap(demo, warehouse):
+    """POST /api/connectors/test: the editor's Test button — runs SQL that is not
+    saved yet, binds :params (never interpolated), caps rows, refuses writes."""
+    module = demo()
+    client, status = _sign_in(module, signup=True)
+    assert status == 200
+    assert client.post("/connectors/api/sources", json={
+        "name": "wh", "conn_url": warehouse, "sql": "SELECT * FROM stock"}).status_code == 200
+    ok = client.post("/api/connectors/test", json={
+        "source": "wh", "sql": "SELECT item, qty FROM stock WHERE item = :item", "params": {"item": "nuts"}})
+    assert ok.status_code == 200, ok.text
+    body = ok.json()
+    assert body["rows"] == 1 and body["columns"] == ["item", "qty"] and body["truncated"] is False
+    assert body["data"]["y"]["smps"] == ["nuts"] and body["data"]["y"]["data"] == [[25.0]]
+    capped = client.post("/api/connectors/test", json={"conn_url": warehouse, "sql": "SELECT * FROM stock", "limit": 1})
+    assert capped.json()["rows"] == 1 and capped.json()["truncated"] is True
+    none = client.post("/api/connectors/test", json={"source": "wh", "sql": "SELECT * FROM stock WHERE item = :item"})
+    assert none.status_code == 200 and none.json()["rows"] == 0          # :item unbound -> NULL -> no rows
+    assert client.post("/api/connectors/test", json={"source": "wh", "sql": "DELETE FROM stock"}).status_code == 400
+    assert client.post("/api/connectors/test", json={"source": "wh", "sql": "SELECT nope FROM stock"}).status_code == 502
+    assert client.post("/api/connectors/test", json={"source": "wh"}).status_code == 400
+    # The rows are untouched.
+    still = client.post("/api/connectors/test", json={"source": "wh", "sql": "SELECT 'all' AS k, count(*) AS n FROM stock"})
+    assert still.json()["data"]["y"]["data"] == [[2.0]]

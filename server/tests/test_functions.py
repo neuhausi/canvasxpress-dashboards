@@ -13,9 +13,16 @@ from fastapi.testclient import TestClient
 HAS_PANDAS = importlib.util.find_spec("pandas") is not None
 requires_pandas = pytest.mark.skipif(not HAS_PANDAS, reason="pandas not installed")
 
+import os
+import platform
+import socket
+
 from cxd_server.app import create_dashboards_app
-from cxd_server.functions import FunctionError, FunctionsConfig, functions_status, run_function
+from cxd_server.functions import (FunctionError, FunctionsConfig, functions_status,
+                                  harden_process, run_function, self_check)
 from cxd_server.store import DashboardStore
+
+IS_LINUX = platform.system() == "Linux"
 
 CLIN = {"y": {"vars": ["Age"], "smps": ["c1", "c2", "c3", "c4"], "data": [[61, 55, 70, None]]},
         "x": {"Arm": ["drug", "placebo", "drug", "placebo"]}}
@@ -182,3 +189,125 @@ def test_users_mode_runs_and_reports_snippet_errors(tmp_path):
     assert r.json()["data"]["y"]["smps"] == ["c1", "c2", "c3", "c4"]
     bad = client.post("/api/functions/run", json=dict(BODY, code="result = nope"))
     assert bad.status_code == 400 and "NameError" in bad.json()["detail"]
+
+
+# ---- hardening: /proc/<pid>/environ unreadable to snippets (Linux only) ----
+
+def test_harden_process_sets_non_dumpable_on_linux():
+    result = harden_process()
+    assert result["platform"] == platform.system()
+    if IS_LINUX:
+        assert result["applied"] is True
+        # The kernel's dumpable flag is now 0, so same-user code cannot read our
+        # /proc/<pid>/environ. (This makes the pytest process non-dumpable for the
+        # rest of the run, which is harmless.)
+        import ctypes
+        libc = ctypes.CDLL("libc.so.6", use_errno=True)
+        assert libc.prctl(3, 0, 0, 0, 0) == 0   # PR_GET_DUMPABLE -> 0
+    else:
+        assert result["applied"] is False
+        assert "Linux" in result["reason"]
+
+
+# ---- isolation self-check ----
+
+@requires_pandas
+def test_self_check_reports_shape_and_skips_unset_target(config):
+    report = self_check(config)
+    assert report["available"] is True
+    assert isinstance(report["networkIsolation"], str)
+    assert "python" in report["languages"]
+    for name in ("serverEnviron", "parentEnviron", "otherEnviron", "network", "fileWrite"):
+        assert name in report["checks"]
+    # No probe target configured -> the network check is skipped, never guessed.
+    assert report["checks"]["network"] == "skipped"
+
+
+@requires_pandas
+def test_self_check_network_blocked_and_allowed(config):
+    # A live listener on loopback: the probe reaches it (unless an OS sandbox
+    # denies the network) -> "allowed"; a closed port -> "blocked". Simulates both.
+    listener = socket.socket()
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(1)
+    port = listener.getsockname()[1]
+    try:
+        config.probe_target = "127.0.0.1:%d" % port
+        allowed = self_check(config)["checks"]["network"]
+    finally:
+        listener.close()
+    config.probe_target = "127.0.0.1:%d" % port   # now closed
+    blocked = self_check(config)["checks"]["network"]
+    # When no network isolation is in effect the open port is reachable; when a
+    # wrapper denies the network both are "blocked". Either way the closed port
+    # is never "allowed", and an isolation-free host distinguishes the two.
+    if config.isolation() == "none":
+        assert allowed == "allowed"
+    assert blocked == "blocked"
+
+
+@requires_pandas
+def test_self_check_server_environ_blocked_after_hardening(config):
+    # Only meaningful on Linux with /proc; the probe reads /proc/<server pid>/environ.
+    if not IS_LINUX:
+        assert self_check(config)["checks"]["serverEnviron"] == "unknown"
+        return
+    # Before hardening a child can read this (dumpable) process's environ ...
+    before = self_check(config)["checks"]["serverEnviron"]
+    harden_process()
+    # ... after it, the kernel denies the same-user read.
+    after = self_check(config)["checks"]["serverEnviron"]
+    assert after == "blocked"
+    assert before in ("allowed", "blocked")   # 'allowed' unless already hardened
+
+
+# ---- server-wide default runtime URL ----
+
+def test_from_env_reads_runtime_url_and_probe_target(monkeypatch):
+    monkeypatch.setenv("CXD_FUNCTIONS", "users")
+    monkeypatch.setenv("CXD_FUNCTIONS_RUNTIME_URL", "https://runtime.example/api/functions/run")
+    monkeypatch.setenv("CXD_FUNCTIONS_PROBE_TARGET", "example.org:443")
+    cfg = FunctionsConfig.from_env()
+    assert cfg.runtime_url == "https://runtime.example/api/functions/run"
+    assert cfg.probe_target == "example.org:443"
+    # Blank values collapse to None (not an empty string).
+    monkeypatch.setenv("CXD_FUNCTIONS_RUNTIME_URL", "")
+    assert FunctionsConfig.from_env().runtime_url is None
+
+
+# ---- admin-only self-check endpoint ----
+
+@requires_pandas
+def test_selfcheck_endpoint_is_admin_only(tmp_path):
+    app = _app(tmp_path, "admin")
+    admin = TestClient(app)
+    _login(admin, "first")          # bootstraps as admin
+    other = TestClient(app)
+    _login(other, "second")
+    assert admin.get("/api/functions/selfcheck").status_code == 200
+    body = admin.get("/api/functions/selfcheck").json()
+    assert "checks" in body and "networkIsolation" in body
+    assert other.get("/api/functions/selfcheck").status_code == 403
+
+
+# ---- standalone secret-free runtime app ----
+
+def test_standalone_runtime_refuses_to_start_with_a_secret(monkeypatch):
+    from cxd_server.functions_app import create_functions_app
+    monkeypatch.setenv("SESSION_SECRET", "nope")
+    with pytest.raises(RuntimeError, match="SESSION_SECRET"):
+        create_functions_app()
+
+
+@requires_pandas
+def test_standalone_runtime_runs_a_snippet(monkeypatch):
+    from cxd_server.functions_app import create_functions_app, _FORBIDDEN_ENV
+    for name in _FORBIDDEN_ENV:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("CXD_FUNCTIONS", "off")   # promoted to 'users' by the app
+    app = create_functions_app()
+    client = TestClient(app)
+    assert client.get("/api/functions/status").json()["enabled"] is True
+    r = client.post("/api/functions/run", json=BODY)
+    assert r.status_code == 200, r.text
+    assert r.json()["data"]["y"]["smps"] == ["c1", "c2", "c3", "c4"]

@@ -807,3 +807,38 @@ function clampInt(value, min, max, fallback) {
   if (max < min) max = min;
   return Math.max(min, Math.min(max, n));
 }
+
+/**
+ * Add a control that QUERIES a source: its choices are the distinct values of
+ * one column of `choicesRef`, and picking one sets `$param`, which `targetRef`'s
+ * query reads (`query[field] = "$param"`), so that source re-runs and every
+ * panel on it refreshes. One step instead of the Param / Choices / Query
+ * fields by hand. An earlier binding of the same parameter on the target is
+ * replaced; the parameter starts at `value` (a real choice, so the target has
+ * rows on first render).
+ * @param {object} spec - The current spec (both refs must exist).
+ * @param {object} opts - `{id, param, choicesRef, annotation, targetRef,
+ *   field?, value?, title?, style?, x?, y?, w?, h?}`; `field` defaults to the
+ *   parameter name (a SQL source's `:param`).
+ * @returns {object} A new spec with the parameter, the binding and the control.
+ * @throws {Error} When a ref is missing or the parameter name is invalid.
+ * @public
+ */
+export function addQueryControl(spec, opts) {
+  var o = opts || {};
+  if (!spec.data || !spec.data[o.choicesRef]) throw new Error('No data source "' + o.choicesRef + '" for the choices');
+  if (!spec.data[o.targetRef]) throw new Error('No data source "' + o.targetRef + '" to query');
+  if (!/^[A-Za-z_]\w*$/.test(o.param || '')) throw new Error('A parameter name is letters, digits and _');
+  var next = setParam(spec, o.param, { value: o.value == null || o.value === '' ? null : String(o.value), type: 'string' });
+  next = setSourceQuery(next, o.targetRef, o.field || o.param, '$' + o.param);
+  return addPanel(next, {
+    id: o.id,
+    type: 'control',
+    mode: 'param',
+    param: o.param,
+    title: o.title || o.annotation || o.param,
+    style: o.style || 'dropdown',
+    optionsFrom: { dataRef: o.choicesRef, annotation: o.annotation },
+    x: o.x, y: o.y, w: o.w || 4, h: o.h || 2
+  });
+}
