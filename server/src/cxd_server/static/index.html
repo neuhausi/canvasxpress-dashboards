@@ -296,6 +296,11 @@
     document.getElementById('nav-examples').href = API_BASE + '/examples/index.html';
     var client = CanvasXpressDashboards.createDashboardClient({ baseUrl: API_BASE });
 
+    // Server-wide default data-function runtime (CXD_FUNCTIONS_RUNTIME_URL),
+    // injected by the served app. A function source's own `runtime` still wins;
+    // when neither is set, the local cxd_server endpoint is used.
+    var FUNCTIONS_RUNTIME = (window.__CXD_CONFIG__ && window.__CXD_CONFIG__.functionsRuntime) || '';
+
     var CXD = CanvasXpressDashboards;
 
     // The working dashboard, shared across views (Builder edits it, Settings
@@ -383,7 +388,6 @@
           notice('🔌', 'Connect your data', 'Bind panels to your own sources through <b>canvasxpress-connectors</b> — SQL warehouses, spreadsheets, business apps and finance feeds:' + connChips, 'n-md') +
           notice('🗄', 'Dashboard from database', 'Turn a database into an explorer like <b>GTEx Gene Explorer</b>: pick a connection, name the column whose values a Control lists, write the query that runs for the picked value (<code>WHERE gene = :gene</code>, always a bound parameter) and choose a chart from a live sample. Both queries are saved as your database sources, so they stay editable in <b>Data</b>; in the Builder, selecting the Control shows how it is wired, SQL included. <a href="#" class="home-dbwizard">Start the wizard</a>.', 'n-feature') +
           notice('📡', 'Real-time streams', 'A panel can follow a stream as it happens: pick a 📡 stream in the panel’s <b>Data</b> list, set how many samples to keep and how often to update, and the chart slides forward with each new reading — no reload, one redraw per frame however fast data arrives. The browser never holds a credential, and every subscription is recorded in the audit log. <a href="' + API_BASE + '/examples/live-ops.html">See it in Live Ops</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/live-streaming.md" target="_blank" rel="noopener">How it works</a>.', 'n-feature') +
-          notice('🪪', 'Sign in as the viewer', 'On <b>Posit Connect</b>, a Databricks source can read as the <b>signed-in viewer</b> instead of a shared token — each person sees only what their own Databricks grants allow, and the source stores no credential at all. Register it with the user <code>posit-connect</code> and no password; a fresh viewer token is exchanged per request, never stored. <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/databricks-viewer-oauth.md" target="_blank" rel="noopener">How it works</a>.', 'n-feature') +
           notice('🧩', 'Blend and link sources', 'Link related sources in <b>🔗 Links</b>: pick each source and its key, and selecting an order marks its customer everywhere. Join two sources from <b>+ Data → Join two sources</b>. Filter the whole board from one <b>Filters</b> panel with saved schemes. No JSON needed. <a href="' + API_BASE + '/examples/cohort-explorer.html">See it in the Cohort Explorer</a>.', 'n-md') +
           notice('🧪', 'R and Python functions', 'A data source can be a short R or Python snippet over your other sources — rank genes against survival, fit a model — and its result feeds panels like any dataset. Runs on the server in a sandbox, when an admin enables it.', 'n-md') +
           notice('ƒx', 'Calculated fields', 'Define a field once on a data source (a formula such as <code>Revenue / Units</code> or <code>Age &gt;= 50 ? "50+" : "&lt;50"</code>, or bins of a number column) and every panel, <b>Filters</b> panel, join and link on that source can use it, like a column of the source itself. Open <b>ƒx Fields</b> in the Builder: it checks the formula as you type and previews the first values. <a href="' + API_BASE + '/examples/sales-model.html">See it in the Sales Model</a>.', 'n-md') +
@@ -456,6 +460,7 @@
         spec: currentSpec,
         client: client,
         baseUrl: API_BASE,
+        functionsRuntime: FUNCTIONS_RUNTIME,
         // Per-user database sources (bridged canvasxpress-connectors): offered
         // in the per-panel Data dropdown as live connector sources.
         listConnectorSources: function () {
@@ -1694,12 +1699,6 @@
       var url = textInput(state.connUrl, 'sqlite:///path.db · postgresql+psycopg://user:pw@host/db');
       var urlField = labeledField('Connection URL', url);
       left.appendChild(urlField);
-      // Databricks on Posit Connect can sign in as the signed-in viewer (no stored
-      // token): user "posit-connect", no password. See docs/databricks-viewer-oauth.md.
-      var urlHint = el('div', 'cxd-wizard-note');
-      urlHint.innerHTML = 'Databricks: <code>databricks://token:&lt;PAT&gt;@host?http_path=…&amp;catalog=…&amp;schema=…</code>, ' +
-        'or on Posit Connect read as the viewer with <code>databricks://posit-connect@host?…</code> (no token stored).';
-      urlField.appendChild(urlHint);
       var tableSel = el('select');
       tableSel.innerHTML = '<option value="">—</option>';
       left.appendChild(labeledField('Table', tableSel));
@@ -1853,6 +1852,12 @@
       }).then(function (res) {
         var sources = res.sources || [];
         state.names = sources.map(function (s) { return s.name; });
+        // A suggested name (the wizard's) never replaces an existing source.
+        if (!editing && opts.name && name.value === opts.name && state.names.indexOf(opts.name) !== -1) {
+          var n = 2;
+          while (state.names.indexOf(opts.name + '-' + n) !== -1) n++;
+          name.value = opts.name + '-' + n;
+        }
         dbPick.innerHTML = '';
         sources.forEach(function (s) {
           if (editing && s.name === prefill.name) return;   // its own URL is in the box
@@ -3624,7 +3629,7 @@
         if (h && h.destroy) { try { h.destroy(); } catch (e) {} }
         var host = document.getElementById('s-preview');
         if (!host) return null;   // user navigated away mid-chain
-        return CXD.renderDashboard(currentSpec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE , prepareLive: ensureConnectorsSession });
+        return CXD.renderDashboard(currentSpec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE, functionsRuntime: FUNCTIONS_RUNTIME, prepareLive: ensureConnectorsSession });
       });
     }
 
@@ -4204,7 +4209,7 @@
         var host = document.getElementById('dash-host');
         if (!host) return null;
         host.innerHTML = '';
-        return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE , prepareLive: ensureConnectorsSession });
+        return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE, functionsRuntime: FUNCTIONS_RUNTIME, prepareLive: ensureConnectorsSession });
       });
     }
 
@@ -4227,7 +4232,7 @@
           var host = document.getElementById('dash-host');
           if (!host) return null;
           host.innerHTML = '';
-          return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE , prepareLive: ensureConnectorsSession });
+          return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE, functionsRuntime: FUNCTIONS_RUNTIME, prepareLive: ensureConnectorsSession });
         });
       });
     }
