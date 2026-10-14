@@ -169,6 +169,10 @@ Control panels need no dataRef when mode is "config", or when mode is "param"
 with options/optionsFrom/style:"search".
 
 ## Rules
+- Build EXACTLY what the user asked for — nothing extra. A request for one
+  chart ("make an oncoprint", "a bar chart of X") yields ONE panel: no
+  companion summary charts, tables, text panels or annotation extras unless
+  the user asked for them or asks for "a dashboard" of the data.
 - Bind to the user's datasets (listed below) with kind "dataset" + their exact
   id and store. Only use "inline" for tiny data the user dictated in chat.
 - config.graphType: Bar, Line, Area, Pie, Scatter2D, Scatter3D, Boxplot,
@@ -2391,18 +2395,40 @@ def create_dashboards_app(
         wanted = body.get("datasets")
         wanted = set(wanted) if isinstance(wanted, list) and wanted else None
 
-        # Catalog the user's datasets — id/store plus a schema sketch so the
-        # model binds panels to real columns without ever seeing full data.
+        # Catalog the datasets the user can SEE — their own plus the shared
+        # example datasets — matching GET /api/datasets, which feeds the
+        # assistant's checklist. Cataloging only ds.list(user) made every
+        # shipped example dataset (owner = examples_owner; "Bench: …" etc.)
+        # invisible here: the user could tick them, but the model was told no
+        # datasets exist and fell back to inline sample data. Render-time reads
+        # already fall back to the examples owner (GET /api/datasets/{id}), so
+        # a spec bound to one renders for every user. Datasets shared via a
+        # grant are NOT cataloged: a spec source cannot name an owner yet.
         catalog = []
         data_by_id = {}
-        for name in dataset_store_names():
+        catalog_seen = set()
+        catalog_owners = [user]
+        if examples_owner and examples_owner != user:
+            catalog_owners.append(examples_owner)
+        for ds_owner in catalog_owners:
+          for name in dataset_store_names():
             ds = dataset_store_for(name)
-            for meta in ds.list(user):
+            for meta in ds.list(ds_owner):
+                key = (meta.get("store") or name, meta.get("id"))
+                if key in catalog_seen:
+                    continue
                 if wanted is not None and meta.get("id") not in wanted:
                     continue
+                catalog_seen.add(key)
                 entry = {"id": meta.get("id"), "title": meta.get("title"),
                          "store": meta.get("store")}
-                data = ds.get(user, meta.get("id")) or {}
+                data = ds.get(ds_owner, meta.get("id")) or {}
+                # The same row/column policy a direct read applies; a dataset
+                # the policy withholds entirely stays out of the catalog.
+                data = secured(data, user, ds_owner, meta.get("store"), meta.get("id"))
+                if data is None:
+                    catalog_seen.discard(key)
+                    continue
                 data_by_id[meta.get("id")] = data
                 if isinstance(data, list):   # tabular 2D array (CSV-derived)
                     headers = [str(c) for c in (data[0] if data else [])]

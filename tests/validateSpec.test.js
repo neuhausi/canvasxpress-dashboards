@@ -388,3 +388,15 @@ test('pushdown: allowed on any source except live (it runs in the browser when t
   assert.ok(validateSpec(spec({ kind: 'live', url: '/s', pushdown: q })).errors.some(function (e) { return /pushdown is not supported on a live source/.test(e); }));
   assert.ok(validateSpec(spec({ kind: 'inline', value: value, pushdown: true })).errors.some(function (e) { return /pushdown must be an object/.test(e); }));
 });
+
+test('layout.stackBelow takes a px width or false', function () {
+  function withStack(v) {
+    return Object.assign({}, VALID, { layout: Object.assign({}, VALID.layout, { stackBelow: v }) });
+  }
+  assert.equal(validateSpec(withStack(640)).valid, true);
+  assert.equal(validateSpec(withStack(0)).valid, true);
+  assert.equal(validateSpec(withStack(false)).valid, true);
+  assert.equal(validateSpec(withStack('640px')).valid, false);
+  assert.equal(validateSpec(withStack(true)).valid, false);
+  assert.equal(validateSpec(withStack(-1)).valid, false);
+});

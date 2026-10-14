@@ -5,6 +5,30 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Assistant sees the shared example datasets
+- **Fix:** the assistant (`POST /api/llm/dashboard`) cataloged only the signed-in
+  user's own datasets, while its checklist (`GET /api/datasets`) also shows the
+  shared example datasets (owner = `CXD_EXAMPLES_OWNER`) — so ticking "Bench: …"
+  still produced "no stored datasets" and inline sample panels. The catalog now
+  matches the checklist (own + example datasets, the user's own id winning on a
+  clash, row/column security applied). Grant-shared datasets remain out of the
+  catalog: a spec source cannot name an owner yet.
+
+### Phones: single-column stacking
+- **`layout.stackBelow` (default 640):** when the dashboard container is narrower than
+  the breakpoint, the grid stacks to one full-width column in reading order (by row,
+  then column), each panel keeping its own height; it restores on resize back. The
+  per-cell ResizeObservers re-fit every chart to its new cell. `false` disables;
+  the builder is never stacked (it edits the real grid coordinates). Schema + both
+  validators (JS and server) accept the key.
+
+### Builder: undo / redo
+- **Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z (or Ctrl+Y), ↶/↷ toolbar buttons**, and `undo()`/
+  `redo()` on the builder handle. Snapshot history over the spec (100 entries);
+  rapid commits — a drag's per-move previews, a typing burst — coalesce into one
+  entry, so undo reverts the whole interaction. Text fields keep the browser's
+  native text undo; a JSON-editor apply is one discrete step.
+
 ### Follow the website's style preset
 - **Site-theme bridge:** the app shell now follows the style preset a visitor picks on
   canvasxpress.org (navbar palette icon; same-origin `localStorage` `cx-site-theme`, or

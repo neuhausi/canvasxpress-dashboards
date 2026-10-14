@@ -66,6 +66,11 @@
         "cols": { "type": "integer", "minimum": 1, "default": 12 },
         "rowHeight": { "type": "number", "minimum": 1, "default": 120 },
         "gap": { "type": "number", "minimum": 0, "default": 12 },
+        "stackBelow": {
+          "description": "Narrow-screen fallback: when the dashboard container is narrower than this many px, panels stack in one full-width column in reading order (each keeps its own height). false disables stacking.",
+          "oneOf": [{ "type": "number", "minimum": 0 }, { "const": false }],
+          "default": 640
+        },
         "items": {
           "type": "array",
           "items": { "$ref": "#/definitions/layoutItem" }

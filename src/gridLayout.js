@@ -50,3 +50,35 @@ export function cellArea(item) {
     row: (item.y + 1) + ' / span ' + item.h
   };
 }
+
+/**
+ * Single-column (stacked) layout for narrow screens: panels in reading order
+ * (by `y`, then `x`), each full-width and keeping its own height (`h` unit
+ * rows), so a phone shows the dashboard top-to-bottom instead of crushing
+ * `cols` tracks into the viewport.
+ * @param {object[]} items - Layout items (`{panel, x, y, w, h}`).
+ * @param {number} rowHeight - Height of one unit row (px).
+ * @param {number} gap - Uniform gutter size (px) between tracks.
+ * @returns {{columns: string, rows: string, gap: string, maxRow: number,
+ *   areaByPanel: object}} One-column track templates plus each panel's
+ *   `{column, row}` placement, keyed by its panel id.
+ */
+export function stackedTemplate(items, rowHeight, gap) {
+  var sorted = (items || []).slice().sort(function (a, b) {
+    return (a.y - b.y) || (a.x - b.x);
+  });
+  var row = 0;
+  var areaByPanel = {};
+  sorted.forEach(function (it) {
+    var h = Math.max(1, it.h || 1);
+    areaByPanel[it.panel] = { column: '1 / span 1', row: (row + 1) + ' / span ' + h };
+    row += h;
+  });
+  return {
+    columns: 'minmax(0, 1fr)',
+    rows: 'repeat(' + Math.max(row, 1) + ', ' + rowHeight + 'px)',
+    gap: (gap || 0) + 'px',
+    maxRow: Math.max(row, 1),
+    areaByPanel: areaByPanel
+  };
+}

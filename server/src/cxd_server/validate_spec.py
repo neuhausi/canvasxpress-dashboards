@@ -165,6 +165,13 @@ def _check_layout(spec: dict, panels: Any, errors: list) -> None:
     if cols is not None and not (_is_int(cols) and cols >= 1):
         errors.append("spec.layout.cols must be an integer >= 1")
 
+    # Narrow-screen stacking breakpoint: a width in px, or false to disable.
+    stack = layout.get("stackBelow")
+    if stack is not None and stack is not False and not (
+            isinstance(stack, (int, float)) and not isinstance(stack, bool)
+            and math.isfinite(stack) and stack >= 0):
+        errors.append("spec.layout.stackBelow must be a width in px (a number >= 0) or false")
+
 
 def _check_panels(panels: Any, data: Any, params: Any, errors: list) -> None:
     """Validate every panel: data requirement, control wiring, references."""

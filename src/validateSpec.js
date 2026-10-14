@@ -100,6 +100,11 @@ export function validateSpec(spec) {
     if (layout.cols != null && !(Number.isInteger(layout.cols) && layout.cols >= 1)) {
       errors.push('spec.layout.cols must be an integer >= 1');
     }
+    // Narrow-screen stacking breakpoint: a width in px, or false to disable.
+    if (layout.stackBelow != null && layout.stackBelow !== false &&
+        !(typeof layout.stackBelow === 'number' && isFinite(layout.stackBelow) && layout.stackBelow >= 0)) {
+      errors.push('spec.layout.stackBelow must be a width in px (a number >= 0) or false');
+    }
   }
 
   // --- panels ---

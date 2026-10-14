@@ -32,16 +32,18 @@ div#toolbar [240,10 1140x126]
 div#toolbar>div.cxb-trow:1 [240,10 1140x80] 
 div#toolbar>div.cxb-trow:1>input.cxb-title-input [240,15 204x30] font-weight=600; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=5px 8px 5px 8px; bg=rgb(255, 255, 255)
 div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:1 [452,14 43x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:2 [503,14 83x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:3 [593,14 73x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:4 [675,14 88x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:5 [770,14 97x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:6 [875,14 88x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:7 [971,10 91x40] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:8 [1069,14 90x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:9 [1167,14 130x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:10 [240,58 107x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cX-Button--primary.cxb-btn.cxb-btn-primary:11 [355,58 64x32] color=rgb(255, 255, 255); font-weight=500; border=1px / solid / rgb(61, 88, 255); radius=6px; padding=6px 13px 6px 13px; bg=rgb(61, 88, 255)
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:2 [503,14 42x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:3 [552,14 42x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:4 [602,14 83x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:5 [693,14 73x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:6 [774,14 88x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:7 [870,14 97x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:8 [975,14 88x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:9 [1070,10 91x40] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:10 [1169,14 90x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:11 [240,58 130x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:12 [378,58 107x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cX-Button--primary.cxb-btn.cxb-btn-primary:13 [492,58 64x32] color=rgb(255, 255, 255); font-weight=500; border=1px / solid / rgb(61, 88, 255); radius=6px; padding=6px 13px 6px 13px; bg=rgb(61, 88, 255)
 div#toolbar>div.cxb-props.cxb-tgroup:2 [240,102 1140x34] 
 div#view [220,147 1180x798] padding=16px 20px 32px 20px
 div#view>div [240,163 1140x750] 

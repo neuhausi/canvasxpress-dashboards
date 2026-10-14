@@ -3367,6 +3367,38 @@ function cellArea(item) {
   };
 }
 
+/**
+ * Single-column (stacked) layout for narrow screens: panels in reading order
+ * (by `y`, then `x`), each full-width and keeping its own height (`h` unit
+ * rows), so a phone shows the dashboard top-to-bottom instead of crushing
+ * `cols` tracks into the viewport.
+ * @param {object[]} items - Layout items (`{panel, x, y, w, h}`).
+ * @param {number} rowHeight - Height of one unit row (px).
+ * @param {number} gap - Uniform gutter size (px) between tracks.
+ * @returns {{columns: string, rows: string, gap: string, maxRow: number,
+ *   areaByPanel: object}} One-column track templates plus each panel's
+ *   `{column, row}` placement, keyed by its panel id.
+ */
+function stackedTemplate(items, rowHeight, gap) {
+  var sorted = (items || []).slice().sort(function (a, b) {
+    return (a.y - b.y) || (a.x - b.x);
+  });
+  var row = 0;
+  var areaByPanel = {};
+  sorted.forEach(function (it) {
+    var h = Math.max(1, it.h || 1);
+    areaByPanel[it.panel] = { column: '1 / span 1', row: (row + 1) + ' / span ' + h };
+    row += h;
+  });
+  return {
+    columns: 'minmax(0, 1fr)',
+    rows: 'repeat(' + Math.max(row, 1) + ', ' + rowHeight + 'px)',
+    gap: (gap || 0) + 'px',
+    maxRow: Math.max(row, 1),
+    areaByPanel: areaByPanel
+  };
+}
+
 /* ==== src/validateSpec.js ==== */
 /**
  * Lightweight, dependency-free validator for the dashboard spec.
@@ -3467,6 +3499,11 @@ function validateSpec(spec) {
     }
     if (layout.cols != null && !(Number.isInteger(layout.cols) && layout.cols >= 1)) {
       errors.push('spec.layout.cols must be an integer >= 1');
+    }
+    // Narrow-screen stacking breakpoint: a width in px, or false to disable.
+    if (layout.stackBelow != null && layout.stackBelow !== false &&
+        !(typeof layout.stackBelow === 'number' && isFinite(layout.stackBelow) && layout.stackBelow >= 0)) {
+      errors.push('spec.layout.stackBelow must be a width in px (a number >= 0) or false');
     }
   }
 
@@ -4242,6 +4279,13 @@ function renderDashboard(spec, target, options) {
   var cols = (spec.layout && spec.layout.cols) || 12;
   var rowHeight = (spec.layout && spec.layout.rowHeight) || 30;
   var gap = (spec.layout && spec.layout.gap != null) ? spec.layout.gap : 12;
+  // Narrow-screen fallback: below this container width (px) the grid stacks to
+  // one full-width column in reading order. spec.layout.stackBelow overrides;
+  // false (or 0) disables. The builder disables it too (observeResize:false) —
+  // it edits the real grid coordinates.
+  var stackBelow = (spec.layout && spec.layout.stackBelow != null)
+    ? spec.layout.stackBelow : 640;
+  var stackedNow = false;
 
   // Dashboard background (colour + optional image) fills the WHOLE container,
   // including a margin around the grid so the background shows on all sides —
@@ -5098,10 +5142,38 @@ function renderDashboard(spec, target, options) {
    * @returns {void}
    */
   function refreshTemplate() {
-    var t = gridTemplate(renderedItems, cols, rowHeight, gap);
+    var t = stackedNow
+      ? stackedTemplate(renderedItems, rowHeight, gap)
+      : gridTemplate(renderedItems, cols, rowHeight, gap);
     grid.style.gridTemplateColumns = t.columns;
     grid.style.gridTemplateRows = t.rows;
     grid.style.gap = t.gap;
+    // Re-place every cell for the active mode (spans in the spec grid, or the
+    // one-column reading order) — the per-cell ResizeObservers then resize the
+    // charts to their new cells.
+    var areaByPanel = stackedNow ? t.areaByPanel : null;
+    for (var panelId in cellByPanel) {
+      if (!Object.prototype.hasOwnProperty.call(cellByPanel, panelId)) continue;
+      var entry = cellByPanel[panelId];
+      var area = areaByPanel ? areaByPanel[panelId] : cellArea(entry.item);
+      if (!area) continue;
+      entry.cell.root.style.gridColumn = area.column;
+      entry.cell.root.style.gridRow = area.row;
+    }
+  }
+
+  /**
+   * Stack (or unstack) the grid when the container width crosses the
+   * `stackBelow` breakpoint. No-op while the mode already matches.
+   * @returns {void}
+   */
+  function updateStacking() {
+    if (!stackBelow) return;
+    var width = container.clientWidth;
+    var narrow = width > 0 && width < stackBelow;
+    if (narrow === stackedNow) return;
+    stackedNow = narrow;
+    refreshTemplate();
   }
 
   /**
@@ -5122,6 +5194,8 @@ function renderDashboard(spec, target, options) {
     placeCell(cell.root, item);
     grid.appendChild(cell.root);
     cellByPanel[item.panel] = { cell: cell, item: item, instance: null };
+    // In stacked mode re-place everything so the newcomer joins the column.
+    if (stackedNow) refreshTemplate();
 
     // Text elements carry free-form text instead of a graph — no data or canvas.
     if (panel && panel.type === 'text') {
@@ -6297,6 +6371,18 @@ function renderDashboard(spec, target, options) {
   items.forEach(function (item) {
     pending.push(renderPanelItem(item, spec.panels[item.panel]));
   });
+
+  // Stack immediately when the dashboard mounts on a narrow screen, then track
+  // the container width (rotation, window resize, a sidebar opening). Gated on
+  // autoResize so the builder (which manages its own grid) is never stacked.
+  if (autoResize && stackBelow) {
+    updateStacking();
+    if (typeof ResizeObserver !== 'undefined') {
+      var stackObserver = new ResizeObserver(function () { updateStacking(); });
+      stackObserver.observe(container);
+      observers.push(stackObserver);
+    }
+  }
 
   // --- optional dashboard-wide controls (filter / table) ---
   var controls = spec.controls || [];
@@ -9992,6 +10078,16 @@ function createBuilder(target, options) {
   var linksBtn = null;      // disabled until there are two data sources to link
   var fieldsBtn = null;     // disabled until there is a (non-live) data source
   var shapeBtn = null;      // same rule as fieldsBtn
+  var undoBtn = null;       // disabled while the undo stack is empty
+  var redoBtn = null;       // disabled while the redo stack is empty
+  // Undo/redo state (see pushHistory/undo/redo below). Declared before
+  // buildToolbar() runs, which reads the stacks for the button states.
+  var undoStack = [];
+  var redoStack = [];
+  var HISTORY_LIMIT = 100;
+  var HISTORY_COALESCE_MS = 1000;
+  var lastHistoryAt = 0;
+  var restoringHistory = false;
   var baseUrl = options.baseUrl || '';   // cxd_server origin for kind:"dataset" sources
   var CX = options.CanvasXpress || (typeof globalThis !== 'undefined' ? globalThis.CanvasXpress : undefined);
   var selectedId = null;
@@ -10054,6 +10150,13 @@ function createBuilder(target, options) {
     var editJsonBtn = button('✎', function () { doEditJson(); });
     editJsonBtn.setAttribute('title', 'Edit dashboard JSON');
     editJsonBtn.setAttribute('aria-label', 'Edit dashboard JSON');
+    undoBtn = button('↶', function () { undo(); });
+    undoBtn.setAttribute('title', 'Undo (Ctrl+Z)');
+    undoBtn.setAttribute('aria-label', 'Undo');
+    redoBtn = button('↷', function () { redo(); });
+    redoBtn.setAttribute('title', 'Redo (Ctrl+Shift+Z)');
+    redoBtn.setAttribute('aria-label', 'Redo');
+    updateHistoryButtons();
     // "+ Function" appears only once the server says it runs data functions
     // for this user (the check is async; hidden until then).
     addFunctionBtn = button('+ Function', function () { doAddFunction(); });
@@ -10072,7 +10175,7 @@ function createBuilder(target, options) {
     // "Shape data": filter, keep columns or summarize, sort and limit a
     // source's rows (its `pushdown` query; in its database when it has one).
     shapeBtn = button('▦ Shape data', function () { doShapeData(); });
-    var createActions = [titleInput, editJsonBtn, addPanelBtn,
+    var createActions = [titleInput, editJsonBtn, undoBtn, redoBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }),
       button('+ Image', function () { doAddImage(); }),
       addControlBtn, addFiltersBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
@@ -10102,6 +10205,21 @@ function createBuilder(target, options) {
   // Track the selection inside text editors so the format toolbar (which blurs
   // the editor when clicked) can restore it before applying a command.
   if (typeof document !== 'undefined' && document.addEventListener && typeof window !== 'undefined') {
+    // Undo / redo keyboard shortcuts. Text fields keep the browser's native
+    // text undo: the shortcut is ignored while an input, textarea, select or
+    // contenteditable has focus. Ctrl/Cmd+Z undoes; +Shift (or Ctrl+Y) redoes.
+    document.addEventListener('keydown', function (ev) {
+      if (!root.isConnected) return;
+      if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
+      var key = (ev.key || '').toLowerCase();
+      if (key !== 'z' && key !== 'y') return;
+      var target = ev.target;
+      if (target && (/^(input|textarea|select)$/i.test(target.tagName || '') ||
+          (target.closest && target.closest('[contenteditable], .cxb-editable')))) return;
+      ev.preventDefault();
+      if (key === 'y' || ev.shiftKey) redo();
+      else undo();
+    });
     document.addEventListener('selectionchange', function () {
       var sel = window.getSelection && window.getSelection();
       if (!sel || !sel.rangeCount) return;
@@ -11246,6 +11364,30 @@ function createBuilder(target, options) {
     if (!inst || typeof inst.loadFile !== 'function') return;
     var title = (file.name || 'dataset').replace(/\.[^.]+$/, '');
     setMsg('Loading “' + (file.name || 'file') + '” …');
+    // Delimited text (CSV/TSV) uploads directly: the server keeps it a raw 2D
+    // array, so CanvasXpress's own ingest (arrayToCX) runs on every render and
+    // content auto-detection — e.g. an oncoprint gene × sample alteration
+    // matrix — keeps working. The engine loadFile path below flattens the file
+    // into a {y} object whose stored form bypasses that detection (a mutation
+    // matrix then renders as a plain heatmap). JSON/PNG still need the engine
+    // (CanvasXpress exports/PNGs only it can decode).
+    if (/\.(csv|tsv|tab|txt)$/i.test(file.name || '')) {
+      var finish = function (summary) {
+        availableDatasets.push(summary);
+        selectedId = panelId;
+        useDataset(summary);
+        loadDatasets();
+        setMsg('Loaded “' + (summary.title || summary.id) + '”.');
+      };
+      if (/\.csv$/i.test(file.name)) {
+        client.uploadDataset(file, { format: 'csv', title: title }).then(finish, showError);
+      } else {
+        file.text().then(function (text) {
+          return client.uploadDataset(delimitedToCsv(text), { format: 'csv', title: title });
+        }).then(finish, showError);
+      }
+      return;
+    }
     // Read the file's own config first (CanvasXpress JSON = {data, config}); a
     // File stays valid across this async read, so we pass it to loadFile below.
     readFileConfig(file, function (fileConfig) {
@@ -12562,6 +12704,83 @@ function createBuilder(target, options) {
     });
   }
 
+  // --- undo / redo -------------------------------------------------------
+  // Snapshot history over the spec (the builder is a spec editor, so the spec
+  // IS the state). Rapid commits — a drag's per-move previews, typing in the
+  // title or a text panel — coalesce into one entry: within the window only
+  // the FIRST commit pushes, so undo restores the state before the whole
+  // interaction, not one keystroke/pixel back. (State vars are declared with
+  // the toolbar button vars near the top — buildToolbar() reads them at init.)
+
+  /**
+   * Record the current spec on the undo stack (called before it is replaced).
+   * @param {boolean} [force] - Push even inside the coalescing window (used by
+   *   discrete edits like the JSON editor, which should undo one step at a time).
+   * @returns {void}
+   * @private
+   */
+  function pushHistory(force) {
+    if (restoringHistory) return;
+    var now = Date.now();
+    if (!force && undoStack.length && now - lastHistoryAt < HISTORY_COALESCE_MS) {
+      lastHistoryAt = now;
+      return;
+    }
+    lastHistoryAt = now;
+    undoStack.push(JSON.stringify(spec));
+    if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+    redoStack.length = 0;
+    updateHistoryButtons();
+  }
+
+  /**
+   * Replace the spec from a history snapshot and re-render everything.
+   * @param {string} json - A serialized spec snapshot.
+   * @returns {void}
+   * @private
+   */
+  function restoreHistory(json) {
+    restoringHistory = true;
+    try {
+      spec = JSON.parse(json);
+      selectedId = null;
+      updateAddPanelState();
+      titleInput.value = spec.title || spec.id;
+      if (options.onChange) { try { options.onChange(rawSpec()); } catch (e) { /* noop */ } }
+      rebuild();
+    } finally {
+      restoringHistory = false;
+    }
+    lastHistoryAt = 0;   // the next edit starts a fresh coalescing window
+    updateHistoryButtons();
+  }
+
+  /**
+   * Undo the last edit (Ctrl/Cmd+Z or the ↶ toolbar button).
+   * @returns {void}
+   */
+  function undo() {
+    if (!undoStack.length) return;
+    redoStack.push(JSON.stringify(spec));
+    restoreHistory(undoStack.pop());
+  }
+
+  /**
+   * Redo the last undone edit (Ctrl/Cmd+Shift+Z, Ctrl+Y or ↷).
+   * @returns {void}
+   */
+  function redo() {
+    if (!redoStack.length) return;
+    undoStack.push(JSON.stringify(spec));
+    restoreHistory(redoStack.pop());
+  }
+
+  /** Reflect stack depths on the toolbar buttons. @returns {void} @private */
+  function updateHistoryButtons() {
+    if (undoBtn) undoBtn.disabled = !undoStack.length;
+    if (redoBtn) redoBtn.disabled = !redoStack.length;
+  }
+
   /**
    * Apply a new spec, notify onChange, and optionally re-render the editor.
    * @param {object} nextSpec - The edited spec.
@@ -12570,6 +12789,7 @@ function createBuilder(target, options) {
    * @private
    */
   function commit(nextSpec, rerenderEditor) {
+    pushHistory();
     spec = nextSpec;
     updateAddPanelState();
     if (options.onChange) { try { options.onChange(getSpec()); } catch (e) { /* noop */ } }
@@ -12646,6 +12866,7 @@ function createBuilder(target, options) {
    * @returns {void}
    */
   function setSpec(nextSpec) {
+    pushHistory(true);   // a discrete step: a JSON-editor apply undoes in one go
     spec = migrateSpec(nextSpec).spec;
     selectedId = null;
     updateAddPanelState();
@@ -12691,6 +12912,10 @@ function createBuilder(target, options) {
   return {
     getSpec: getSpec,
     setSpec: setSpec,
+    /** Undo the last edit (also Ctrl/Cmd+Z and the ↶ button). @returns {void} */
+    undo: undo,
+    /** Redo the last undone edit (Ctrl/Cmd+Shift+Z, Ctrl+Y, ↷). @returns {void} */
+    redo: redo,
     /** @returns {Promise<void>} Resolves when the current live render settles. */
     whenReady: function () {
       // Settle the render, then the post-render config baselines it queued.
@@ -12782,6 +13007,25 @@ var SELF_HEALING_KEYS = { filterSmpBy: true, filterVarBy: true, smpTextColor: tr
  * @returns {object} A cleaned shallow copy.
  * @private
  */
+/**
+ * Convert tab-delimited (or plain) text to CSV for the server's dataset upload
+ * (its parser is comma-only). Cells containing commas, quotes or newlines are
+ * quoted per RFC 4180; text without tabs passes through as-is.
+ * @param {string} text - Raw delimited file text.
+ * @returns {string} CSV text.
+ * @private
+ */
+function delimitedToCsv(text) {
+  var body = String(text == null ? '' : text).replace(/^﻿/, '');
+  if (body.indexOf('\t') === -1) return body;
+  function quoteCell(cell) {
+    return /[",\n\r]/.test(cell) ? '"' + cell.replace(/"/g, '""') + '"' : cell;
+  }
+  return body.split(/\r?\n/).map(function (line) {
+    return line.split('\t').map(quoteCell).join(',');
+  }).join('\n');
+}
+
 function stripDerived(config) {
   var out = {};
   for (var k in config) {

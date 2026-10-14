@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gridTemplate, cellArea } from '../src/gridLayout.js';
+import { gridTemplate, cellArea, stackedTemplate } from '../src/gridLayout.js';
 
 test('cellArea places a panel as a plain span from its unit coordinate', function () {
   assert.deepEqual(cellArea({ x: 0, y: 0, w: 6, h: 3 }), { column: '1 / span 6', row: '1 / span 3' });
@@ -34,4 +34,28 @@ test('maxRow reflects the tallest panel stack', function () {
   var tpl = gridTemplate([{ x: 0, y: 0, w: 12, h: 4 }, { x: 0, y: 4, w: 12, h: 4 }], 12, 100, 30);
   assert.equal(tpl.rows, 'repeat(8, 100px)');
   assert.equal(tpl.maxRow, 8);
+});
+
+test('stackedTemplate stacks panels one-wide in reading order, keeping heights', function () {
+  var items = [
+    { panel: 'b', x: 6, y: 0, w: 6, h: 3 },
+    { panel: 'a', x: 0, y: 0, w: 6, h: 3 },
+    { panel: 'c', x: 0, y: 3, w: 12, h: 2 }
+  ];
+  var tpl = stackedTemplate(items, 130, 12);
+  assert.equal(tpl.columns, 'minmax(0, 1fr)');
+  assert.equal(tpl.rows, 'repeat(8, 130px)');
+  assert.equal(tpl.gap, '12px');
+  assert.equal(tpl.maxRow, 8);
+  // Reading order: a (y0 x0), b (y0 x6), c (y3) — each full-width, own height.
+  assert.deepEqual(tpl.areaByPanel.a, { column: '1 / span 1', row: '1 / span 3' });
+  assert.deepEqual(tpl.areaByPanel.b, { column: '1 / span 1', row: '4 / span 3' });
+  assert.deepEqual(tpl.areaByPanel.c, { column: '1 / span 1', row: '7 / span 2' });
+});
+
+test('stackedTemplate tolerates an empty item set', function () {
+  var tpl = stackedTemplate([], 100, 10);
+  assert.equal(tpl.rows, 'repeat(1, 100px)');
+  assert.equal(tpl.maxRow, 1);
+  assert.deepEqual(tpl.areaByPanel, {});
 });

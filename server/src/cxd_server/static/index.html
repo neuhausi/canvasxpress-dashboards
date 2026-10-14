@@ -623,11 +623,18 @@
         stop(e); pane.classList.remove('drop-active');
         var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
         if (!f) return;
-        // Prefer CanvasXpress's own loader (it reads CSV/TSV/JSON/PNG/… and
-        // updates the live table). Without a table instance yet, PNGs need one
-        // bootstrapped (only CanvasXpress can decode its own PNGs); plain
-        // text/JSON files upload directly.
-        if (dataPreviewInstance && typeof dataPreviewInstance.loadFile === 'function') {
+        // Delimited text (CSV/TSV) ALWAYS uploads directly: the server stores it
+        // as a raw 2D array, so CanvasXpress's own ingest (arrayToCX) runs on
+        // every render and content auto-detection — e.g. an oncoprint gene ×
+        // sample alteration matrix — keeps working. Routing it through the live
+        // preview instance's loadFile instead made the engine interpret the file
+        // RELATIVE to the currently previewed dataset (metadata merge / "not a
+        // valid file" alerts) and stored a flattened {y} object that bypasses
+        // auto-detection. Only PNGs (engine-encoded) and CanvasXpress JSON
+        // ({data, config} exports) still need the engine to decode them.
+        if (/\.(csv|tsv|tab|txt)$/i.test(f.name || '')) {
+          importDataFile(f);
+        } else if (dataPreviewInstance && typeof dataPreviewInstance.loadFile === 'function') {
           loadDroppedFileViaCanvasXpress(e.dataTransfer, f);
         } else if (/\.png$/i.test(f.name || '')) {
           bootstrapPreviewInstance(function () {

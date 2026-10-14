@@ -694,3 +694,55 @@ test('Shape data: filter, summarize, sort, preview, then Apply writes the pushdo
   });
   assert.deepEqual(validateSpec(builder.getSpec()).errors, []);
 });
+
+test('undo/redo: a committed edit reverts and reapplies; buttons track the stacks', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var calls = [];
+  var builder = createBuilder(container, {
+    spec: setDataSource(blankSpec('d1'), 'sample', DATA),
+    CanvasXpress: makeCX(calls)
+  });
+
+  builder.addPanel({ id: 'p1', title: 'Bar', dataRef: 'sample', config: { graphType: 'Bar' } });
+  await builder.whenReady();
+  // Past the coalescing window, so the second edit is its own history entry.
+  await new Promise(function (ok) { setTimeout(ok, 1100); });
+  builder.addPanel({ id: 'p2', title: 'Pie', dataRef: 'sample', config: { graphType: 'Pie' } });
+  await builder.whenReady();
+  assert.ok(builder.getSpec().panels.p2, 'second panel added');
+
+  builder.undo();
+  assert.ok(builder.getSpec().panels.p1, 'first panel survives undo');
+  assert.equal(builder.getSpec().panels.p2, undefined, 'second panel undone');
+
+  builder.redo();
+  assert.ok(builder.getSpec().panels.p2, 'second panel redone');
+
+  builder.undo();
+  builder.undo();
+  assert.equal(Object.keys(builder.getSpec().panels || {}).length, 0, 'both adds undone');
+  builder.undo();   // empty stack: a no-op, never a throw
+  var buttons = [].filter.call(container.querySelectorAll('button'), function (b) {
+    return b.textContent === '\u21b6' || b.textContent === '\u21b7';
+  });
+  assert.equal(buttons.length, 2, 'undo/redo buttons in the toolbar');
+  assert.equal(buttons[0].disabled, true, 'undo disabled on an empty stack');
+  assert.equal(buttons[1].disabled, false, 'redo enabled after undos');
+});
+
+test('rapid commits coalesce into one undo entry (drag/typing bursts)', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var calls = [];
+  var builder = createBuilder(container, {
+    spec: setDataSource(blankSpec('d1'), 'sample', DATA),
+    CanvasXpress: makeCX(calls)
+  });
+  // Two commits inside the window = one interaction; undo removes both.
+  builder.addPanel({ id: 'p1', dataRef: 'sample', config: { graphType: 'Bar' } });
+  builder.addPanel({ id: 'p2', dataRef: 'sample', config: { graphType: 'Pie' } });
+  await builder.whenReady();
+  builder.undo();
+  assert.equal(Object.keys(builder.getSpec().panels || {}).length, 0, 'burst undone as one step');
+});

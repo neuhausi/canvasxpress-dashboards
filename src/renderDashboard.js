@@ -15,7 +15,7 @@ import { validateSpec } from './validateSpec.js';
 import { migrateSpec } from './spec.js';
 import { injectStyles } from './styles.js';
 import { createDataStore, isEmptyData } from './dataStore.js';
-import { gridTemplate, cellArea } from './gridLayout.js';
+import { gridTemplate, cellArea, stackedTemplate } from './gridLayout.js';
 import { hasRelationships, relationGraph, translateMarks } from './marking.js';
 import { sourceAxis, sourceInputs, tableColumn, transposeCxData } from './join.js';
 import { resolveFields, rowsPassing, normalizeState, isActive, fieldKey } from './filters.js';
@@ -115,6 +115,13 @@ export function renderDashboard(spec, target, options) {
   var cols = (spec.layout && spec.layout.cols) || 12;
   var rowHeight = (spec.layout && spec.layout.rowHeight) || 30;
   var gap = (spec.layout && spec.layout.gap != null) ? spec.layout.gap : 12;
+  // Narrow-screen fallback: below this container width (px) the grid stacks to
+  // one full-width column in reading order. spec.layout.stackBelow overrides;
+  // false (or 0) disables. The builder disables it too (observeResize:false) —
+  // it edits the real grid coordinates.
+  var stackBelow = (spec.layout && spec.layout.stackBelow != null)
+    ? spec.layout.stackBelow : 640;
+  var stackedNow = false;
 
   // Dashboard background (colour + optional image) fills the WHOLE container,
   // including a margin around the grid so the background shows on all sides —
@@ -971,10 +978,38 @@ export function renderDashboard(spec, target, options) {
    * @returns {void}
    */
   function refreshTemplate() {
-    var t = gridTemplate(renderedItems, cols, rowHeight, gap);
+    var t = stackedNow
+      ? stackedTemplate(renderedItems, rowHeight, gap)
+      : gridTemplate(renderedItems, cols, rowHeight, gap);
     grid.style.gridTemplateColumns = t.columns;
     grid.style.gridTemplateRows = t.rows;
     grid.style.gap = t.gap;
+    // Re-place every cell for the active mode (spans in the spec grid, or the
+    // one-column reading order) — the per-cell ResizeObservers then resize the
+    // charts to their new cells.
+    var areaByPanel = stackedNow ? t.areaByPanel : null;
+    for (var panelId in cellByPanel) {
+      if (!Object.prototype.hasOwnProperty.call(cellByPanel, panelId)) continue;
+      var entry = cellByPanel[panelId];
+      var area = areaByPanel ? areaByPanel[panelId] : cellArea(entry.item);
+      if (!area) continue;
+      entry.cell.root.style.gridColumn = area.column;
+      entry.cell.root.style.gridRow = area.row;
+    }
+  }
+
+  /**
+   * Stack (or unstack) the grid when the container width crosses the
+   * `stackBelow` breakpoint. No-op while the mode already matches.
+   * @returns {void}
+   */
+  function updateStacking() {
+    if (!stackBelow) return;
+    var width = container.clientWidth;
+    var narrow = width > 0 && width < stackBelow;
+    if (narrow === stackedNow) return;
+    stackedNow = narrow;
+    refreshTemplate();
   }
 
   /**
@@ -995,6 +1030,8 @@ export function renderDashboard(spec, target, options) {
     placeCell(cell.root, item);
     grid.appendChild(cell.root);
     cellByPanel[item.panel] = { cell: cell, item: item, instance: null };
+    // In stacked mode re-place everything so the newcomer joins the column.
+    if (stackedNow) refreshTemplate();
 
     // Text elements carry free-form text instead of a graph — no data or canvas.
     if (panel && panel.type === 'text') {
@@ -2170,6 +2207,18 @@ export function renderDashboard(spec, target, options) {
   items.forEach(function (item) {
     pending.push(renderPanelItem(item, spec.panels[item.panel]));
   });
+
+  // Stack immediately when the dashboard mounts on a narrow screen, then track
+  // the container width (rotation, window resize, a sidebar opening). Gated on
+  // autoResize so the builder (which manages its own grid) is never stacked.
+  if (autoResize && stackBelow) {
+    updateStacking();
+    if (typeof ResizeObserver !== 'undefined') {
+      var stackObserver = new ResizeObserver(function () { updateStacking(); });
+      stackObserver.observe(container);
+      observers.push(stackObserver);
+    }
+  }
 
   // --- optional dashboard-wide controls (filter / table) ---
   var controls = spec.controls || [];
