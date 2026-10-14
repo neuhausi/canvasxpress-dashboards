@@ -18,3 +18,7 @@ examples/.cxd-demo/
 
 # ui-chrome gate: actuals written on a failed run
 tests/browser/ui-chrome-results/
+
+# Runtime billing state (per-deployment; holds live token pool / entitlements)
+server/token-pool.json
+server/entitlements.json
