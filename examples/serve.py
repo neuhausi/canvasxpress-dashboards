@@ -738,6 +738,19 @@ _seed()
 app = create_dashboards_app(serve_static=False)
 
 
+# Dev convenience: never let a browser serve a STALE viewer page or bundle from
+# cache (that silently hides freshly-built features behind an old umd.js). The
+# server still revalidates via ETag, so unchanged files are a cheap 304; only
+# changed ones are re-downloaded. Dev host only — the packaged server is separate.
+@app.middleware("http")
+async def _no_stale_assets(request, call_next):
+    response = await call_next(request)
+    content_type = response.headers.get("content-type", "")
+    if "text/html" in content_type or "javascript" in content_type:
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return response
+
+
 # Serve the app (builder) directly at / — routes win over the static mount.
 # builder.html loads the bundle app-root-relative ("canvasxpress-dashboards.umd.js"),
 # which resolves to the _shared_bundle route below on both / and a /dashboards/ subpath.
