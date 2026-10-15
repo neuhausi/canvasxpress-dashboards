@@ -5,6 +5,16 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### View-time AI Q&A — "ask this dashboard"
+- A signed-in viewer can **ask a question of a dashboard's data** and get an answer
+  **computed from the numbers, not hallucinated**. New `POST /api/dashboards/{id}/ask`
+  runs a bounded tool-use loop where the model may only call read-only data tools
+  (`describe`/`aggregate`/`top_n`/`filter_count` in `ask_tools.py`) over the dashboard's
+  resolved inline/dataset sources (row/column security applied) — no `eval`, no SQL; the
+  model sees only tool results. Returns `{answer, used}` (the figures behind the answer).
+  A floating **✨ Ask** box in the viewer (`mountAsk`, shown for users with `llm.use`).
+  Gated on `llm.use` + view access; `503` when no `CXD_LLM_API_KEY`. Guide: `docs/ask.md`.
+
 ### Fixed: Escape no longer corrupts dashboard panels
 - The engine's own "Click ESC to reset graph" handler was running on each panel and
   resetting its data view — revealing series/variables a dashboard had intentionally

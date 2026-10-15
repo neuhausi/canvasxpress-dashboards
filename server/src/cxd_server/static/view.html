@@ -115,6 +115,11 @@
                 baseUrl: base, dashboardId: spec.id, owner: owner,
                 currentUser: me.user, users: (dir && dir.users) || [], panels: panels
               });
+              // View-time Q&A: only for users allowed to use AI.
+              if (CanvasXpressDashboards.mountAsk &&
+                  (me.permissions || []).indexOf('llm.use') !== -1) {
+                CanvasXpressDashboards.mountAsk({ baseUrl: base, dashboardId: spec.id, owner: owner });
+              }
             });
         })
         .catch(function () { /* comments are optional chrome */ });

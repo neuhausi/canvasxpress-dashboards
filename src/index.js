@@ -17,6 +17,7 @@ export { joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchI
 export { resolveFields, summarizeField, rowsPassing, normalizeState } from './filters.js';
 export { hasRelationships, relationGraph, translateMarks } from './marking.js';
 export { mountComments } from './comments.js';
+export { mountAsk } from './ask.js';
 export { exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient } from './persistence.js';
 export {
   inlineSpecData, buildDashboardHtml, exportDashboardHtml,

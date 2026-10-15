@@ -20,6 +20,7 @@ emailed dashboards) · [large data](docs/large-data.md) (aggregate, filter and j
 database) · [live-data controls](docs/live-data-controls.md) ·
 [cross-filter](docs/cross-filter.md) (click a mark to filter related panels) ·
 [collaboration](docs/collaboration.md) (comments, threads, @mentions) ·
+[ask](docs/ask.md) (view-time Q&A of the data, computed not hallucinated) ·
 [Databricks as the viewer](docs/databricks-viewer-oauth.md) (Posit Connect OAuth) ·
 [server](server/README.md) · [changelog](CHANGELOG.md)
 

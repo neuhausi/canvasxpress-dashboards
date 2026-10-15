@@ -37,6 +37,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from . import mcp_bridge
 from . import billing
+from . import ask as ask_qa
 from .billing import EntitlementStore, TokenPool
 from .datasets import DatasetStore, reshape_to_cx, filter_cx_data
 from .engine import DEFAULT_CANVASXPRESS_URL, EngineMiddleware, engine_is_default
@@ -1569,6 +1570,67 @@ def create_dashboards_app(
         store.delete_comment(comment_id)
         note(request, owner=spec_owner, comment=comment_id)
         return {"comments": _thread_comments(store.list_comments(spec_owner, dashboard_id))}
+
+    # ---- view-time Q&A: ask a question of the dashboard's data ----
+    @app.post("/api/dashboards/{dashboard_id}/ask")
+    async def ask_dashboard(request: Request, dashboard_id: str, owner: Optional[str] = None):
+        """Answer a natural-language question about a dashboard's data.
+
+        Body: ``{question}``. The answer is **computed** from the data by
+        read-only tools (``ask_tools``) — the model never sees the raw rows to
+        reason over freely. Returns ``{answer, used}`` where ``used`` lists the
+        tool calls and their results (the figures behind the answer). Requires
+        the ``llm.use`` permission and view access to the dashboard.
+        """
+        user = require_permission(request, "llm.use")
+        spec_owner = resolve_viewable_owner(user, dashboard_id, owner)
+        body = await request.json() if _has_body(request) else {}
+        question = (body.get("question") or "").strip()
+        if not question:
+            raise HTTPException(status_code=400, detail="A question is required")
+        if not llm_api_key:
+            raise HTTPException(status_code=503, detail="AI is not configured on this server")
+        return await run_in_threadpool(_ask_work, request, spec_owner, dashboard_id, question)
+
+    def _ask_work(request: Request, spec_owner: str, dashboard_id: str, question: str) -> dict:
+        spec = store.get_dashboard(spec_owner, dashboard_id)
+        if spec is None:
+            raise HTTPException(status_code=404, detail="No such dashboard")
+        viewer = request.session.get("user")
+        data_by_ref = {}
+        for ref, source in (spec.get("data") or {}).items():
+            if not isinstance(source, dict):
+                continue
+            data = None
+            if source.get("kind") == "inline":
+                data = source.get("value")
+            elif source.get("kind") == "dataset":
+                data_owner = source.get("owner") or spec_owner
+                try:
+                    data = dataset_store_for(source.get("store")).get(data_owner, source.get("id"))
+                except KeyError:
+                    data = None
+                if data is not None:   # row/column security with the viewer's principals
+                    data = secured(data, viewer, data_owner, source.get("store"), source.get("id"))
+            if isinstance(data, dict) and data.get("y"):
+                data_by_ref[ref] = data
+        if not data_by_ref:
+            raise HTTPException(status_code=422, detail="This dashboard has no inspectable data")
+        import anthropic
+        client = anthropic.Anthropic(
+            **_anthropic_client_kwargs(llm_api_key, llm_base_url, llm_key_header))
+        model = llm_model or "claude-opus-5"
+        tally = {"calls": 0, "cost_usd": 0.0}
+        try:
+            result = ask_qa.run_ask(client, model, data_by_ref, question,
+                                    on_usage=lambda r: _log_usage(r, model, tally))
+        except anthropic.AuthenticationError:
+            raise HTTPException(status_code=503, detail="LLM API key was rejected")
+        except anthropic.APIStatusError as exc:
+            raise HTTPException(status_code=502, detail="LLM error: %s" % exc)
+        note(request, owner=spec_owner, dashboard=dashboard_id,
+             ask=question[:120], tools=len(result["used"]))
+        return result
 
     # ---- sharing ----
     @app.post("/api/dashboards/{dashboard_id}/share")
