@@ -78,6 +78,30 @@ def test_ask_answers_via_the_tool_loop(app_ai, monkeypatch):
     assert captured["question"] == "which region leads on revenue?"
 
 
+def test_asks_persist_and_list_and_delete(app_ai, monkeypatch):
+    c = TestClient(app_ai)
+    _signup(c)
+    c.post("/api/dashboards", json=_spec_with_data())
+    monkeypatch.setattr(ask_module, "run_ask",
+                        lambda *a, **k: {"answer": "West leads.", "used": [{"tool": "aggregate"}]})
+    # Ask twice; the POST returns the STORED ask (persisted).
+    r = c.post("/api/dashboards/d1/ask", json={"question": "which region leads?"})
+    assert r.status_code == 200 and r.json()["answer"] == "West leads."
+    assert r.json()["ask_id"] and r.json()["author"] == "alice"
+    c.post("/api/dashboards/d1/ask", json={"question": "and the smallest?"})
+    # History lists them, newest first.
+    asks = c.get("/api/dashboards/d1/asks").json()["asks"]
+    assert [a["question"] for a in asks] == ["and the smallest?", "which region leads?"]
+    # Delete one.
+    aid = asks[0]["ask_id"]
+    left = c.delete("/api/dashboards/d1/asks/%s" % aid).json()["asks"]
+    assert [a["question"] for a in left] == ["which region leads?"]
+    # Deleting the dashboard removes its asks.
+    c.delete("/api/dashboards/d1")
+    c.post("/api/dashboards", json=_spec_with_data())
+    assert c.get("/api/dashboards/d1/asks").json()["asks"] == []
+
+
 def test_ask_422_when_no_inspectable_data(app_ai, monkeypatch):
     c = TestClient(app_ai)
     _signup(c)

@@ -96,6 +96,23 @@ class StubElement {
     return child;
   }
 
+  /** @returns {StubElement|null} The first child node, or null. */
+  get firstChild() { return this.children[0] || null; }
+
+  /**
+   * Insert `child` before `ref` (or append when `ref` is null/absent).
+   * @param {object} child - Node to insert.
+   * @param {object} [ref] - Existing child to insert before.
+   * @returns {object} The inserted child.
+   */
+  insertBefore(child, ref) {
+    child.parentNode = this;
+    var idx = ref ? this.children.indexOf(ref) : -1;
+    if (idx === -1) this.children.push(child);
+    else this.children.splice(idx, 0, child);
+    return child;
+  }
+
   /**
    * @param {StubElement} child - Child to remove.
    * @returns {StubElement} The child.

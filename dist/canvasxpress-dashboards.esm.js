@@ -162,7 +162,7 @@ var dashboardCss = [
   '.cxd-ask-toggle:hover { background: var(--cxd-title-bg); }',
   '.cxd-ask-toggle:focus { outline: 2px solid var(--cx-ui-focus); outline-offset: 2px; }',
   '.cxd-ask-toggle.cxd-ask-open { background: var(--cx-ui-accent); color: var(--cx-ui-on-accent); border-color: var(--cx-ui-accent); }',
-  '.cxd-ask-panel { position: fixed; left: 16px; bottom: 58px; width: 360px; max-width: 92vw;',
+  '.cxd-ask-panel { position: fixed; left: 16px; bottom: 58px; width: 360px; max-width: 92vw; max-height: 72vh;',
   '  z-index: var(--cx-z-modal); display: flex; flex-direction: column; gap: 8px; padding: 12px 14px;',
   '  background: var(--cxd-panel-bg); border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-lg);',
   '  box-shadow: var(--cx-shadow-3); font: 13px/1.5 var(--cxd-font); color: inherit; }',
@@ -176,13 +176,25 @@ var dashboardCss = [
   '.cxd-ask-send { align-self: flex-end; padding: 5px 14px; border: none; border-radius: var(--cx-radius-md);',
   '  background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent); font: 600 12.5px/1.4 var(--cxd-font); cursor: pointer; }',
   '.cxd-ask-send:disabled { opacity: .5; cursor: default; }',
-  '.cxd-ask-answer:empty { display: none; }',
-  '.cxd-ask-text { margin: 2px 0; }',
+  '.cxd-ask-history { flex: 1 1 auto; overflow-y: auto; min-height: 0; }',
+  '.cxd-ask-history:empty { display: none; }',
+  '.cxd-ask-status-line { font-size: 12.5px; }',
   '.cxd-ask-status { color: var(--cxd-muted); }',
   '.cxd-ask-error { color: var(--cx-ui-danger); }',
+  '.cxd-ask-entry { padding: 8px 0; border-top: 1px solid var(--cxd-border); }',
+  '.cxd-ask-entry:first-child { border-top: none; }',
+  '.cxd-ask-q { font-weight: 600; margin-bottom: 3px; }',
+  '.cxd-ask-qmark { display: inline-block; min-width: 16px; padding: 0 5px; border-radius: var(--cx-radius-pill);',
+  '  background: var(--cx-ui-accent-tint); color: var(--cx-ui-accent); font-size: 11px; }',
+  '.cxd-ask-text { margin: 2px 0; white-space: pre-wrap; word-break: break-word; }',
   '.cxd-ask-used { font-size: 12px; color: var(--cxd-muted); }',
   '.cxd-ask-used summary { cursor: pointer; }',
   '.cxd-ask-usedlist { margin: 4px 0 0; padding-left: 18px; }',
+  '.cxd-ask-entrymeta { display: flex; align-items: center; gap: 10px; margin-top: 4px; }',
+  '.cxd-ask-author { font-size: 11.5px; font-weight: 600; color: var(--cxd-muted); }',
+  '.cxd-ask-time { font-size: 11px; color: var(--cxd-muted); }',
+  '.cxd-ask-del { margin-left: auto; border: none; background: none; color: var(--cx-ui-danger); font: inherit; font-size: 11.5px; cursor: pointer; padding: 0; }',
+  '.cxd-ask-del:hover { text-decoration: underline; }',
   '.cxd-code-edit { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; resize: vertical; border-radius: var(--cx-radius-md);',
   '  border: 1px solid var(--cxd-border); background: var(--cxd-title-bg); color: inherit;',
   '  font: 12.5px/1.5 var(--cx-font-mono); white-space: pre; tab-size: 2; }',
@@ -2738,6 +2750,23 @@ function ael(doc, tag, cls, text) {
 }
 
 /**
+ * A short relative time ("just now", "5m", "3h", "2d", or a date). Named
+ * distinctly from comments.js's copy so the two don't collide in the bundle.
+ * @param {string} iso - ISO-8601 timestamp.
+ * @returns {string} The relative label.
+ */
+function askRelativeTime(iso) {
+  var then = Date.parse(iso);
+  if (isNaN(then)) return '';
+  var secs = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (secs < 45) return 'just now';
+  if (secs < 3600) return Math.round(secs / 60) + 'm';
+  if (secs < 86400) return Math.round(secs / 3600) + 'h';
+  if (secs < 7 * 86400) return Math.round(secs / 86400) + 'd';
+  return new Date(then).toLocaleDateString();
+}
+
+/**
  * A one-line summary of a tool call + its result, for the "figures used" list.
  * @param {object} use - A `{tool, args, result}` entry from the API.
  * @returns {string} A compact human description.
@@ -2808,11 +2837,17 @@ function mountAsk(opts) {
   form.appendChild(askBtn);
   panel.appendChild(form);
 
-  var answer = ael(doc, 'div', 'cxd-ask-answer');
-  panel.appendChild(answer);
+  var status = ael(doc, 'div', 'cxd-ask-status-line');
+  status.hidden = true;
+  panel.appendChild(status);
+  var history = ael(doc, 'div', 'cxd-ask-history');
+  panel.appendChild(history);
 
   mountInto.appendChild(toggle);
   mountInto.appendChild(panel);
+
+  // The ask history endpoints are on /asks (plural); the single question POST is /ask.
+  var asksRoot = base + '/api/dashboards/' + encodeURIComponent(id) + '/asks';
 
   function open() { panel.hidden = false; toggle.classList.add('cxd-ask-open'); input.focus(); }
   function close() { panel.hidden = true; toggle.classList.remove('cxd-ask-open'); }
@@ -2820,34 +2855,76 @@ function mountAsk(opts) {
   closeBtn.addEventListener('click', close);
 
   /**
-   * Render the answer (and the figures it used) into the answer area.
-   * @param {object} result - The `{answer, used}` response.
+   * Show (or clear) a transient status/error line above the history.
+   * @param {string} text - The message, or "" to clear.
+   * @param {boolean} [isError] - Style as an error.
    * @returns {void}
    */
-  function showAnswer(result) {
-    answer.innerHTML = '';
-    var text = (result && result.answer) || 'No answer.';
-    answer.appendChild(ael(doc, 'p', 'cxd-ask-text', text));
-    var used = (result && result.used) || [];
+  function showStatus(text, isError) {
+    status.className = 'cxd-ask-status-line' + (isError ? ' cxd-ask-error' : ' cxd-ask-status');
+    status.textContent = text || '';
+    status.hidden = !text;
+  }
+
+  /**
+   * Build one persisted Q&A history entry: the question, the answer, the figures
+   * it used, who asked, and a delete control.
+   * @param {object} ask - A stored ask `{ask_id, author, question, answer, used, created_at}`.
+   * @returns {HTMLElement} The entry element.
+   */
+  function entryEl(ask) {
+    var entry = ael(doc, 'div', 'cxd-ask-entry');
+    var q = ael(doc, 'div', 'cxd-ask-q');
+    q.appendChild(ael(doc, 'span', 'cxd-ask-qmark', 'Q'));
+    q.appendChild(doc.createTextNode(' ' + (ask.question || '')));
+    entry.appendChild(q);
+    entry.appendChild(ael(doc, 'p', 'cxd-ask-text', ask.answer || 'No answer.'));
+    var used = ask.used || [];
     if (used.length) {
       var details = ael(doc, 'details', 'cxd-ask-used');
       details.appendChild(ael(doc, 'summary', null, 'Figures used (' + used.length + ')'));
       var list = ael(doc, 'ul', 'cxd-ask-usedlist');
       used.forEach(function (u) { list.appendChild(ael(doc, 'li', null, describeUse(u))); });
       details.appendChild(list);
-      answer.appendChild(details);
+      entry.appendChild(details);
     }
+    var meta = ael(doc, 'div', 'cxd-ask-entrymeta');
+    if (ask.author) meta.appendChild(ael(doc, 'span', 'cxd-ask-author', ask.author));
+    if (ask.created_at) meta.appendChild(ael(doc, 'span', 'cxd-ask-time', askRelativeTime(ask.created_at)));
+    if (ask.ask_id) {
+      var del = ael(doc, 'button', 'cxd-ask-del', 'Delete');
+      del.type = 'button';
+      del.addEventListener('click', function () {
+        del.disabled = true;
+        fetch(asksRoot + '/' + encodeURIComponent(ask.ask_id) + ownerQuery,
+          { method: 'DELETE', credentials: 'include' })
+          .then(function (r) { if (r.ok) { if (entry.parentNode) entry.parentNode.removeChild(entry); } else del.disabled = false; },
+                function () { del.disabled = false; });
+      });
+      meta.appendChild(del);
+    }
+    entry.appendChild(meta);
+    return entry;
   }
 
   /**
-   * Show a transient status/error line in the answer area.
-   * @param {string} text - The message.
-   * @param {boolean} [isError] - Style as an error.
+   * Replace the history list with these asks (newest first).
+   * @param {object[]} asks - Stored asks.
    * @returns {void}
    */
-  function showStatus(text, isError) {
-    answer.innerHTML = '';
-    answer.appendChild(ael(doc, 'p', isError ? 'cxd-ask-error' : 'cxd-ask-status', text));
+  function renderHistory(asks) {
+    history.innerHTML = '';
+    (asks || []).forEach(function (a) { history.appendChild(entryEl(a)); });
+  }
+
+  /**
+   * Load the persisted ask history for this dashboard.
+   * @returns {Promise<void>} Resolves once rendered.
+   */
+  function loadHistory() {
+    return fetch(asksRoot + ownerQuery, { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : { asks: [] }; })
+      .then(function (d) { renderHistory((d && d.asks) || []); }, function () {});
   }
 
   form.addEventListener('submit', function (ev) {
@@ -2865,17 +2942,22 @@ function mountAsk(opts) {
         if (!r.ok) throw new Error((data && data.detail) || ('HTTP ' + r.status));
         return data;
       });
-    }).then(function (result) {
+    }).then(function (ask) {
       askBtn.disabled = false;
-      showAnswer(result);
+      input.value = '';
+      showStatus('');
+      history.insertBefore(entryEl(ask), history.firstChild);  // newest on top, persisted
     }, function (err) {
       askBtn.disabled = false;
       showStatus(err && err.message ? err.message : 'Something went wrong.', true);
     });
   });
 
+  loadHistory();
+
   return {
     open: open,
+    refresh: loadHistory,
     destroy: function () {
       if (toggle.parentNode) toggle.parentNode.removeChild(toggle);
       if (panel.parentNode) panel.parentNode.removeChild(panel);

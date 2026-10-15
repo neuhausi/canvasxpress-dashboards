@@ -1434,6 +1434,7 @@ def create_dashboards_app(
             raise HTTPException(status_code=403, detail="Dashboard is locked")
         store.delete_dashboard(target, dashboard_id)
         store.delete_dashboard_comments(target, dashboard_id)
+        store.delete_dashboard_asks(target, dashboard_id)
         governance.forget_resource("dashboard", target, dashboard_id)
         return {"dashboards": store.list_dashboards(user)}
 
@@ -1590,9 +1591,30 @@ def create_dashboards_app(
             raise HTTPException(status_code=400, detail="A question is required")
         if not llm_api_key:
             raise HTTPException(status_code=503, detail="AI is not configured on this server")
-        return await run_in_threadpool(_ask_work, request, spec_owner, dashboard_id, question)
+        return await run_in_threadpool(_ask_work, request, user, spec_owner, dashboard_id, question)
 
-    def _ask_work(request: Request, spec_owner: str, dashboard_id: str, question: str) -> dict:
+    @app.get("/api/dashboards/{dashboard_id}/asks")
+    def list_asks(request: Request, dashboard_id: str, owner: Optional[str] = None):
+        """The persisted Q&A history for a dashboard (newest first), for anyone
+        with view access."""
+        user = require_user(request)
+        spec_owner = resolve_viewable_owner(user, dashboard_id, owner)
+        return {"asks": store.list_asks(spec_owner, dashboard_id)}
+
+    @app.delete("/api/dashboards/{dashboard_id}/asks/{ask_id}")
+    def delete_ask(request: Request, dashboard_id: str, ask_id: str, owner: Optional[str] = None):
+        user = require_user(request)
+        spec_owner = resolve_viewable_owner(user, dashboard_id, owner)
+        ask = store.get_ask(ask_id)
+        if ask is None or ask["owner"] != spec_owner or ask["dashboard_id"] != dashboard_id:
+            raise HTTPException(status_code=404, detail="No such ask")
+        if not (ask["author"] == user or spec_owner == user or user_is_admin(user)):
+            raise HTTPException(status_code=403, detail="Not allowed to delete this")
+        store.delete_ask(ask_id)
+        note(request, owner=spec_owner, ask=ask_id)
+        return {"asks": store.list_asks(spec_owner, dashboard_id)}
+
+    def _ask_work(request: Request, user: str, spec_owner: str, dashboard_id: str, question: str) -> dict:
         spec = store.get_dashboard(spec_owner, dashboard_id)
         if spec is None:
             raise HTTPException(status_code=404, detail="No such dashboard")
@@ -1630,7 +1652,11 @@ def create_dashboards_app(
             raise HTTPException(status_code=502, detail="LLM error: %s" % exc)
         note(request, owner=spec_owner, dashboard=dashboard_id,
              ask=question[:120], tools=len(result["used"]))
-        return result
+        # Persist the Q&A so it survives a reload / dashboard switch and shows as
+        # history to anyone with view access.
+        stored = store.add_ask(spec_owner, dashboard_id, user, question,
+                               result.get("answer", ""), result.get("used", []), _now_iso())
+        return stored
 
     # ---- sharing ----
     @app.post("/api/dashboards/{dashboard_id}/share")

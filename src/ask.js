@@ -24,6 +24,23 @@ function ael(doc, tag, cls, text) {
 }
 
 /**
+ * A short relative time ("just now", "5m", "3h", "2d", or a date). Named
+ * distinctly from comments.js's copy so the two don't collide in the bundle.
+ * @param {string} iso - ISO-8601 timestamp.
+ * @returns {string} The relative label.
+ */
+function askRelativeTime(iso) {
+  var then = Date.parse(iso);
+  if (isNaN(then)) return '';
+  var secs = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (secs < 45) return 'just now';
+  if (secs < 3600) return Math.round(secs / 60) + 'm';
+  if (secs < 86400) return Math.round(secs / 3600) + 'h';
+  if (secs < 7 * 86400) return Math.round(secs / 86400) + 'd';
+  return new Date(then).toLocaleDateString();
+}
+
+/**
  * A one-line summary of a tool call + its result, for the "figures used" list.
  * @param {object} use - A `{tool, args, result}` entry from the API.
  * @returns {string} A compact human description.
@@ -94,11 +111,17 @@ export function mountAsk(opts) {
   form.appendChild(askBtn);
   panel.appendChild(form);
 
-  var answer = ael(doc, 'div', 'cxd-ask-answer');
-  panel.appendChild(answer);
+  var status = ael(doc, 'div', 'cxd-ask-status-line');
+  status.hidden = true;
+  panel.appendChild(status);
+  var history = ael(doc, 'div', 'cxd-ask-history');
+  panel.appendChild(history);
 
   mountInto.appendChild(toggle);
   mountInto.appendChild(panel);
+
+  // The ask history endpoints are on /asks (plural); the single question POST is /ask.
+  var asksRoot = base + '/api/dashboards/' + encodeURIComponent(id) + '/asks';
 
   function open() { panel.hidden = false; toggle.classList.add('cxd-ask-open'); input.focus(); }
   function close() { panel.hidden = true; toggle.classList.remove('cxd-ask-open'); }
@@ -106,34 +129,76 @@ export function mountAsk(opts) {
   closeBtn.addEventListener('click', close);
 
   /**
-   * Render the answer (and the figures it used) into the answer area.
-   * @param {object} result - The `{answer, used}` response.
+   * Show (or clear) a transient status/error line above the history.
+   * @param {string} text - The message, or "" to clear.
+   * @param {boolean} [isError] - Style as an error.
    * @returns {void}
    */
-  function showAnswer(result) {
-    answer.innerHTML = '';
-    var text = (result && result.answer) || 'No answer.';
-    answer.appendChild(ael(doc, 'p', 'cxd-ask-text', text));
-    var used = (result && result.used) || [];
+  function showStatus(text, isError) {
+    status.className = 'cxd-ask-status-line' + (isError ? ' cxd-ask-error' : ' cxd-ask-status');
+    status.textContent = text || '';
+    status.hidden = !text;
+  }
+
+  /**
+   * Build one persisted Q&A history entry: the question, the answer, the figures
+   * it used, who asked, and a delete control.
+   * @param {object} ask - A stored ask `{ask_id, author, question, answer, used, created_at}`.
+   * @returns {HTMLElement} The entry element.
+   */
+  function entryEl(ask) {
+    var entry = ael(doc, 'div', 'cxd-ask-entry');
+    var q = ael(doc, 'div', 'cxd-ask-q');
+    q.appendChild(ael(doc, 'span', 'cxd-ask-qmark', 'Q'));
+    q.appendChild(doc.createTextNode(' ' + (ask.question || '')));
+    entry.appendChild(q);
+    entry.appendChild(ael(doc, 'p', 'cxd-ask-text', ask.answer || 'No answer.'));
+    var used = ask.used || [];
     if (used.length) {
       var details = ael(doc, 'details', 'cxd-ask-used');
       details.appendChild(ael(doc, 'summary', null, 'Figures used (' + used.length + ')'));
       var list = ael(doc, 'ul', 'cxd-ask-usedlist');
       used.forEach(function (u) { list.appendChild(ael(doc, 'li', null, describeUse(u))); });
       details.appendChild(list);
-      answer.appendChild(details);
+      entry.appendChild(details);
     }
+    var meta = ael(doc, 'div', 'cxd-ask-entrymeta');
+    if (ask.author) meta.appendChild(ael(doc, 'span', 'cxd-ask-author', ask.author));
+    if (ask.created_at) meta.appendChild(ael(doc, 'span', 'cxd-ask-time', askRelativeTime(ask.created_at)));
+    if (ask.ask_id) {
+      var del = ael(doc, 'button', 'cxd-ask-del', 'Delete');
+      del.type = 'button';
+      del.addEventListener('click', function () {
+        del.disabled = true;
+        fetch(asksRoot + '/' + encodeURIComponent(ask.ask_id) + ownerQuery,
+          { method: 'DELETE', credentials: 'include' })
+          .then(function (r) { if (r.ok) { if (entry.parentNode) entry.parentNode.removeChild(entry); } else del.disabled = false; },
+                function () { del.disabled = false; });
+      });
+      meta.appendChild(del);
+    }
+    entry.appendChild(meta);
+    return entry;
   }
 
   /**
-   * Show a transient status/error line in the answer area.
-   * @param {string} text - The message.
-   * @param {boolean} [isError] - Style as an error.
+   * Replace the history list with these asks (newest first).
+   * @param {object[]} asks - Stored asks.
    * @returns {void}
    */
-  function showStatus(text, isError) {
-    answer.innerHTML = '';
-    answer.appendChild(ael(doc, 'p', isError ? 'cxd-ask-error' : 'cxd-ask-status', text));
+  function renderHistory(asks) {
+    history.innerHTML = '';
+    (asks || []).forEach(function (a) { history.appendChild(entryEl(a)); });
+  }
+
+  /**
+   * Load the persisted ask history for this dashboard.
+   * @returns {Promise<void>} Resolves once rendered.
+   */
+  function loadHistory() {
+    return fetch(asksRoot + ownerQuery, { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : { asks: [] }; })
+      .then(function (d) { renderHistory((d && d.asks) || []); }, function () {});
   }
 
   form.addEventListener('submit', function (ev) {
@@ -151,17 +216,22 @@ export function mountAsk(opts) {
         if (!r.ok) throw new Error((data && data.detail) || ('HTTP ' + r.status));
         return data;
       });
-    }).then(function (result) {
+    }).then(function (ask) {
       askBtn.disabled = false;
-      showAnswer(result);
+      input.value = '';
+      showStatus('');
+      history.insertBefore(entryEl(ask), history.firstChild);  // newest on top, persisted
     }, function (err) {
       askBtn.disabled = false;
       showStatus(err && err.message ? err.message : 'Something went wrong.', true);
     });
   });
 
+  loadHistory();
+
   return {
     open: open,
+    refresh: loadHistory,
     destroy: function () {
       if (toggle.parentNode) toggle.parentNode.removeChild(toggle);
       if (panel.parentNode) panel.parentNode.removeChild(panel);

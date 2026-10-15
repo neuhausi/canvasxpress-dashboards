@@ -82,6 +82,18 @@ class DashboardStore:
             );
             CREATE INDEX IF NOT EXISTS comments_board
                 ON comments (owner, dashboard_id, created_at);
+            CREATE TABLE IF NOT EXISTS asks (
+                ask_id       TEXT PRIMARY KEY,
+                owner        TEXT NOT NULL,   -- dashboard owner
+                dashboard_id TEXT NOT NULL,   -- dashboard id
+                author       TEXT NOT NULL,   -- who asked
+                question     TEXT NOT NULL,
+                answer       TEXT,
+                used         TEXT,            -- JSON: the tool calls behind the answer
+                created_at   TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS asks_board
+                ON asks (owner, dashboard_id, created_at);
             """
         )
         # Migrate DBs created before is_admin existed (no-op if already present).
@@ -423,5 +435,73 @@ class DashboardStore:
         """Drop every comment on a dashboard (called when the dashboard is deleted)."""
         with self._lock:
             self._conn.execute("DELETE FROM comments WHERE owner = ? AND dashboard_id = ?",
+                               (owner, dashboard_id))
+            self._conn.commit()
+
+    # ---- view-time Q&A history (asks persist per dashboard) ----
+    _ASK_COLS = ("ask_id", "owner", "dashboard_id", "author", "question",
+                 "answer", "used", "created_at")
+
+    @classmethod
+    def _ask_row(cls, row) -> dict:
+        """Map an asks SELECT row (``_ASK_COLS`` order) to a dict, parsing ``used``."""
+        d = dict(zip(cls._ASK_COLS, row))
+        d["used"] = json.loads(d["used"]) if d["used"] else []
+        return d
+
+    def add_ask(self, owner: str, dashboard_id: str, author: str, question: str,
+                answer: str, used, created_at: str) -> dict:
+        """Record an answered question on a dashboard and return it.
+
+        :param owner: The dashboard's owner.
+        :param dashboard_id: The dashboard id.
+        :param author: Who asked.
+        :param question: The question text.
+        :param answer: The computed answer.
+        :param used: The tool calls behind the answer (JSON-serializable).
+        :param created_at: ISO timestamp.
+        :returns: The stored ask as a dict.
+        """
+        ask_id = secrets.token_urlsafe(12)
+        with self._lock:
+            self._conn.execute(
+                "INSERT INTO asks (ask_id, owner, dashboard_id, author, question, answer, used, "
+                "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (ask_id, owner, dashboard_id, author, question, answer,
+                 json.dumps(used) if used else None, created_at),
+            )
+            self._conn.commit()
+        return self.get_ask(ask_id)
+
+    def get_ask(self, ask_id: str) -> Optional[dict]:
+        """One ask by id, or None."""
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT " + ", ".join(self._ASK_COLS) + " FROM asks WHERE ask_id = ?",
+                (ask_id,),
+            ).fetchone()
+        return self._ask_row(row) if row else None
+
+    def list_asks(self, owner: str, dashboard_id: str, limit: int = 50) -> List[dict]:
+        """The most recent asks on a dashboard, newest first."""
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT " + ", ".join(self._ASK_COLS) + " FROM asks "
+                "WHERE owner = ? AND dashboard_id = ? ORDER BY created_at DESC, ask_id DESC LIMIT ?",
+                (owner, dashboard_id, int(limit)),
+            ).fetchall()
+        return [self._ask_row(r) for r in rows]
+
+    def delete_ask(self, ask_id: str) -> bool:
+        """Delete one ask. Returns True if it existed."""
+        with self._lock:
+            cur = self._conn.execute("DELETE FROM asks WHERE ask_id = ?", (ask_id,))
+            self._conn.commit()
+            return cur.rowcount > 0
+
+    def delete_dashboard_asks(self, owner: str, dashboard_id: str) -> None:
+        """Drop every ask on a dashboard (called when the dashboard is deleted)."""
+        with self._lock:
+            self._conn.execute("DELETE FROM asks WHERE owner = ? AND dashboard_id = ?",
                                (owner, dashboard_id))
             self._conn.commit()
