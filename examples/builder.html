@@ -183,12 +183,20 @@
     .admin-tab:hover { color: inherit; }
     .admin-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
     /* Publish & embed codes in the share box */
-    .cxd-embed-codes { margin-top: 8px; font-size: 13px; }
+    .cxd-embed-codes { margin-top: 8px; font-size: 13px; max-width: 100%; }
     .cxd-embed-head { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
-    .cxd-embed-pick { flex: 1; font-size: 13px; }
+    .cxd-embed-pick { flex: 1; min-width: 0; max-width: 100%; font-size: 13px; }
     .cxd-embed-row { display: flex; gap: 6px; margin-top: 4px; align-items: flex-start; }
-    .cxd-embed-code { flex: 1; font: 12px var(--cx-font-mono); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); padding: 4px; }
-    .cxd-embed-copy { padding: 3px 8px; font-size: 12px; white-space: nowrap; }
+    /* min-width:0 lets the textarea shrink inside the flex row instead of
+       overflowing the card (flex items default to min-width:auto); box-sizing
+       keeps padding inside the 100% width. */
+    .cxd-embed-code { flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; resize: vertical;
+      font: 12px var(--cx-font-mono); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); padding: 4px; }
+    .cxd-embed-copy { padding: 3px 8px; font-size: 12px; white-space: nowrap; flex: none; }
+    /* Header of the inline share box: title + an obvious close (✕). */
+    .cxd-share-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .cxd-share-close { padding: 2px 8px; font-size: 14px; line-height: 1; background: transparent;
+      border: 1px solid var(--rail-border); color: inherit; }
     /* Every dropdown in the app draws the engine's chevron (two currentColor diagonals: it follows
        the text colour in light and dark), inset from the right border instead of on it, with room
        so the text never runs under it. The engine's own selects (customizer, data filter, its classed
@@ -3906,8 +3914,11 @@
           // Shared WITH me (by another owner) vs mine: only the owner manages it.
           var fromOther = !!d.shared;
           var mine = !fromOther && !d.example;
+          // The badge doubles as "show the link again" (click it) so the Share
+          // button can be a simple Share/Unshare toggle without losing access to
+          // the existing link once shared.
           var sharedBadge = isShared && mine
-            ? ' <span style="font-size:13px;font-weight:600;color:var(--cx-ui-text);background:var(--cx-ui-accent-tint-subtle);border-radius:var(--cx-radius-pill);padding:1px 8px;vertical-align:middle">🔗 shared' +
+            ? ' <span data-act="showlink" title="Show the share link and embed codes" style="cursor:pointer;font-size:13px;font-weight:600;color:var(--cx-ui-text);background:var(--cx-ui-accent-tint-subtle);border-radius:var(--cx-radius-pill);padding:1px 8px;vertical-align:middle">🔗 shared' +
               (d.visibility === 'auth' ? ' (sign-in)' : '') + '</span>'
             : '';
           // A compact access icon describing YOUR access; hovering shows the owner
@@ -3949,11 +3960,14 @@
               (mine && hasPerm('share.grant')
                 ? '<button class="cta" data-act="people" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">People</button>'
                 : '') +
-              (mine && hasPerm('share.public')
+              // One toggle: "Share link" when not shared, "Unshare" when shared
+              // (Unshare in the danger colour so it stands out on the selected
+              // card's accent-tint background, where a neutral border washes out).
+              (mine && hasPerm('share.public') && !isShared
                 ? '<button class="cta" data-act="share" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Share link</button>'
                 : '') +
               (mine && isShared
-                ? '<button class="cta" data-act="unshare" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Unshare</button>'
+                ? '<button class="cta" data-act="unshare" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--cx-ui-danger);color:var(--cx-ui-danger)">Unshare</button>'
                 : '') +
               '<button class="cta" data-act="history" title="Versions and electronic signatures" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">History</button>' +
               (hasPerm('schedule.create')
@@ -3991,6 +4005,9 @@
               activate('Schedules');
             } else if (act === 'share') {
               shareDashboard(d, item.querySelector('.dash-share'));
+            } else if (act === 'showlink') {
+              // Re-open the link/embed for an already-shared board (no re-send).
+              shareDashboard(d, item.querySelector('.dash-share'), true);
             } else if (act === 'unshare') {
               client.share(d.id, 'private').then(loadDashList);
             } else if (act === 'del') {
@@ -4018,22 +4035,40 @@
     // Publish a read-only share link for a dashboard and surface it inline
     // (with copy). 'public' = anyone with the link; the server also supports
     // 'auth' (signed-in users only) and 'private' (revoke).
-    function shareDashboard(d, box) {
+    function shareDashboard(d, box, skipMail) {
       if (!box) return;
+      // Collapse an already-open box toggles it shut (a second click / the ✕).
+      if (skipMail && box.style.display === 'block') {
+        box.style.display = 'none'; box.innerHTML = ''; return;
+      }
       box.style.display = 'block';
       box.textContent = 'Publishing share link…';
       client.share(d.id, 'public').then(function (summary) {
         var url = summary.share_url ||
           (location.origin + '/shared.html?token=' + summary.share_token);
-        // Open the default email client with the link pre-filled; the inline
-        // box below stays as the copy/revoke fallback.
+        // When first sharing, open the default email client with the link
+        // pre-filled; re-opening an already-shared board (skipMail) just shows
+        // the copy/revoke/embed box.
         var title = d.title || d.id;
-        location.href = 'mailto:?subject=' +
+        if (!skipMail) location.href = 'mailto:?subject=' +
           encodeURIComponent('Dashboard shared with you: ' + title) +
           '&body=' + encodeURIComponent(
             'I’ve shared the dashboard “' + title + '” with you (read-only, no account needed):\n\n' +
             url + '\n');
         box.innerHTML = '';
+        // An obvious way to collapse the whole share/embed block again.
+        var shead = document.createElement('div');
+        shead.className = 'cxd-share-head';
+        var stitle = document.createElement('b');
+        stitle.textContent = 'Share link';
+        var sclose = document.createElement('button');
+        sclose.className = 'cta cxd-share-close';
+        sclose.textContent = '✕';
+        sclose.title = 'Close';
+        sclose.setAttribute('aria-label', 'Close share options');
+        sclose.onclick = function (e) { e.stopPropagation(); box.style.display = 'none'; box.innerHTML = ''; };
+        shead.appendChild(stitle); shead.appendChild(sclose);
+        box.appendChild(shead);
         var input = document.createElement('input');
         input.value = url; input.readOnly = true;
         input.style.cssText = 'width:100%;box-sizing:border-box;padding:4px 6px;font-size:14px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)';
@@ -4051,7 +4086,7 @@
         };
         var revoke = document.createElement('button');
         revoke.className = 'cta'; revoke.textContent = 'Unshare';
-        revoke.style.cssText = 'padding:3px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit';
+        revoke.style.cssText = 'padding:3px 10px;font-size:14px;background:transparent;border:1px solid var(--cx-ui-danger);color:var(--cx-ui-danger)';
         revoke.onclick = function (e) {
           e.stopPropagation();
           client.share(d.id, 'private').then(function () {

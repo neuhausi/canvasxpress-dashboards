@@ -2334,10 +2334,12 @@ var sharedCache = new Map();
  *   the bridged connectors session.
  * @param {number} [options.busyRetryMs=250] - First wait before retrying a data
  *   function the runtime refused as busy (429); doubles per retry, capped at 2s.
- * @param {string} [options.functionsRuntime] - Default runtime URL for
- *   `kind:"function"` sources that carry no `runtime` of their own. A source's
- *   own `runtime` still wins; when neither is set the local cxd_server endpoint
- *   (`<baseUrl>/api/functions/run`) is used.
+ * @param {string} [options.functionsRuntime] - Optional default runtime URL for
+ *   `kind:"function"` sources that carry no `runtime` of their own. The cxd_server
+ *   app no longer injects this: the browser posts function sources to the main
+ *   app (`<baseUrl>/api/functions/run`), which authorizes them and forwards to the
+ *   server-wide runtime itself. A source's own `runtime` still wins and is called
+ *   directly (bypassing that authorization). Left here for non-cxd_server hosts.
  * @param {function} [options.EventSource] - EventSource constructor for
  *   `kind:"live"` subscriptions; defaults to the global (injectable for tests).
  *   When neither exists (e.g. server-side), `subscribe` is a no-op.
@@ -2899,8 +2901,10 @@ function resolveFunction(store, ref, sourceSpec, opts, env) {
       payload.inputs[name] = { data: datas[k], axis: sourceAxis(refs[k], sources) };
     });
     payload.params = resolveTemplate(sourceSpec.args, env.params);
-    // A source's own `runtime` wins; then a server-wide default runtime
-    // (env.functionsRuntime); then the local cxd_server endpoint.
+    // A source's own `runtime` wins (called directly); otherwise the main app
+    // endpoint, which authorizes and forwards to the server-wide runtime. The
+    // env.functionsRuntime fallback is kept for non-cxd_server hosts; cxd_server
+    // no longer sets it (it forwards server-side instead).
     var runtimeUrl = sourceSpec.runtime || env.functionsRuntime || '';
     var url = runtimeUrl || (env.baseUrl + '/api/functions/run');
     // Call fetch unbound: the native window.fetch throws "Illegal invocation"
