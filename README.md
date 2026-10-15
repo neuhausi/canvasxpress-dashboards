@@ -21,7 +21,7 @@ database) · [live-data controls](docs/live-data-controls.md) ·
 [cross-filter](docs/cross-filter.md) (click a mark to filter related panels) ·
 [collaboration](docs/collaboration.md) (comments, threads, @mentions) ·
 [ask](docs/ask.md) (view-time Q&A of the data, computed not hallucinated) ·
-[Databricks as the viewer](docs/databricks-viewer-oauth.md) (Posit Connect OAuth) ·
+[Databricks as the viewer + Unity Catalog browser](docs/databricks-viewer-oauth.md) (Posit Connect OAuth or a shared token) ·
 [server](server/README.md) · [changelog](CHANGELOG.md)
 
 ---
@@ -298,7 +298,7 @@ keyed differently, declare how the sources relate:
   { "left": "expr", "right": "clin", "on": { "left": "smps", "right": "patient_id" } },
   { "left": "expr", "right": "genes", "on": { "left": "Top", "right": "vars" } }
 ],
-"markingMode": "focus"   // focus (default) | highlight | ghost
+"markingMode": "focus"   // focus (default) | highlight | ghost | filter
 ```
 
 In the builder, **🔗 Links** does this without JSON: pick two sources and a key
@@ -307,9 +307,13 @@ shows. **+ Data → Join two sources** builds a join the same way.
 
 - **Marking** — selecting rows in a panel marks the related rows in the panels
   of every source reachable through relationships (several hops, both
-  directions), shown with CanvasXpress's declarative highlight in
-  `markingMode`. A related source with no matching rows shows fully dimmed.
-  Esc / an empty selection clears the marks.
+  directions), shown according to `markingMode`: `focus` greys the rest
+  (default), `highlight` outlines the marked rows while the rest stay visible,
+  `ghost` fades the unrelated rows away, and `filter` narrows the related
+  panels to the selection — true click-to-cross-filter with no control.
+  A related source with no matching rows shows fully dimmed.
+  Esc / an empty selection clears the marks. See the
+  [Cross-Filter, Highlight and Ghost examples](examples/index.html).
 - **Filtering** — a filter control on one source also narrows panels whose
   source lacks that annotation but is related: the control source's matching
   rows are translated and kept (several picks intersect).

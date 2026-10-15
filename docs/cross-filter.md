@@ -69,3 +69,8 @@ Open **🔗 Links**, add the relationship (source + key on each side), and set
 - [`examples/cross-filter-genomics`](../examples/cross-filter-genomics.spec.json)
   — clinical patients ↔ expression samples linked on patient id (a tumor-response
   scatter cross-filtering an expression heatmap and a PD-L1 boxplot).
+- [`examples/linked-highlight`](../examples/linked-highlight.spec.json) — the same
+  orders ↔ reps link with `markingMode: "highlight"` (related rows outlined, the
+  rest stay visible).
+- [`examples/linked-ghost`](../examples/linked-ghost.spec.json) — the same link with
+  `markingMode: "ghost"` (unrelated rows fade away, the selection stands out).
