@@ -14,7 +14,7 @@
   "data": {
     "sales": {
       "kind": "connector",
-      "url": "/api/data?source=sales",
+      "url": "/connectors/api/data?source=sales",
       "ttl": 60000,
       "refresh": 300
     }

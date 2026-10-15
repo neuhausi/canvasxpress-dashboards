@@ -537,6 +537,26 @@ def test_forward_sends_connect_api_key_when_configured(monkeypatch):
     assert seen["token"] == RUNTIME_TOKEN
 
 
+def test_sandbox_env_pins_blas_and_openmp_threads():
+    """The snippet environment caps BLAS/OpenMP thread pools to 1, so numpy's
+    OpenBLAS doesn't over-reserve per-core buffers and blow the memory cap."""
+    from cxd_server.functions import _sandbox_env
+    env = _sandbox_env("/tmp/wd")
+    for var in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS",
+                "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+        assert env[var] == "1"
+
+
+@requires_pandas
+def test_self_check_blocks_file_write_when_sandboxed():
+    """Where an OS sandbox is in effect, a snippet cannot write outside its temp
+    dir (into the server's working directory) — self-check reports it blocked."""
+    config = FunctionsConfig(mode="users", timeout=10)
+    if config.isolation() == "none":
+        pytest.skip("no OS sandbox available on this host")
+    assert self_check(config)["checks"]["fileWrite"] == "blocked"
+
+
 def test_startup_warns_when_runtime_url_set_without_token(tmp_path, capsys):
     """A runtime URL with no token would get a confusing 401; warn at startup."""
     create_dashboards_app(

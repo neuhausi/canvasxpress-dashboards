@@ -472,7 +472,13 @@ def _sandbox_env(workdir: str) -> Dict[str, str]:
     :private:
     """
     return {"PATH": os.getenv("PATH", "/usr/bin:/bin"), "HOME": workdir, "TMPDIR": workdir,
-            "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1"}
+            "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
+            # Pin BLAS/OpenMP thread pools to 1. numpy's OpenBLAS otherwise reserves
+            # a large per-core buffer on import (threads × ~per-core MB), which blows
+            # the RLIMIT_AS memory cap and fails with "Memory allocation still failed"
+            # — worse on many-core hosts. One thread keeps a snippet inside its cap.
+            "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1",
+            "NUMEXPR_NUM_THREADS": "1", "VECLIB_MAXIMUM_THREADS": "1"}
 
 
 def _launch(command: List[str], workdir: str, config: FunctionsConfig,
@@ -516,18 +522,53 @@ def _limits(config: FunctionsConfig):
     return apply
 
 
+def _temp_roots() -> List[str]:
+    """The writable temp roots a run's workdir lives under (TMPDIR + its realpath).
+
+    Every run / self-check uses a ``tempfile`` workdir, so confining writes to
+    these roots still lets a snippet write its own result while blocking writes to
+    the server's working directory and the rest of the filesystem.
+    """
+    base = tempfile.gettempdir()
+    roots = [base, os.path.realpath(base)]
+    out = []
+    for root in roots:
+        if root and root not in out:
+            out.append(root)
+    return out
+
+
 def _resolve_wrapper(setting: str):
-    """Resolve the sandbox wrapper: ``auto``, ``none``, or an explicit command."""
+    """Resolve the sandbox wrapper: ``auto``, ``none``, or an explicit command.
+
+    ``auto`` confines BOTH network and filesystem writes where the OS supports it:
+    macOS ``sandbox-exec`` denies the network and every write outside the temp
+    roots (and ``/dev``); Linux prefers ``bwrap`` (bubblewrap) with a read-only
+    root, a writable bind of the temp root and no network, falling back to
+    ``unshare -rn`` (network only) when bwrap is unavailable or blocked. The temp
+    roots are stable, so the wrapper can be resolved once and reused per run.
+    """
     setting = (setting or "auto").strip()
     if setting.lower() == "none":
         return [], "none"
     if setting.lower() != "auto":
         return shlex.split(setting), "custom wrapper: " + setting
     system = platform.system()
+    roots = _temp_roots()
     if system == "Darwin" and shutil.which("sandbox-exec"):
-        prefix = ["sandbox-exec", "-p", "(version 1)(allow default)(deny network*)"]
+        writable = "".join('(subpath "%s")' % r for r in roots) + '(subpath "/dev")'
+        profile = ("(version 1)(allow default)(deny network*)"
+                   "(deny file-write*)(allow file-write* " + writable + ")")
+        prefix = ["sandbox-exec", "-p", profile]
         if _works(prefix + ["/usr/bin/true"]):
-            return prefix, "sandbox-exec (network denied)"
+            return prefix, "sandbox-exec (network + filesystem-write denied outside temp)"
+    if system == "Linux" and shutil.which("bwrap"):
+        prefix = ["bwrap", "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc",
+                  "--unshare-net", "--die-with-parent"]
+        for root in roots:
+            prefix += ["--bind", root, root]
+        if _works(prefix + ["true"]):
+            return prefix, "bwrap (read-only root, writable temp, no network)"
     if system == "Linux" and shutil.which("unshare"):
         prefix = ["unshare", "-rn"]
         if _works(prefix + ["true"]):

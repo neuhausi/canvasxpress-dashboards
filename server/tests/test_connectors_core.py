@@ -360,4 +360,23 @@ def test_launcher_hook_seeds_demo_sources_when_enabled(monkeypatch, tmp_path):
     assert install_from_env(app) is not None
     client = _bridged(app, "ann")
     names = {s["name"] for s in client.get("/api/connectors/sources-meta").json()["sources"]}
-    assert {"inventory", "furniture-only"} <= names
+    assert {"inventory", "furniture-only", "sales"} <= names
+
+
+def test_sales_demo_source_returns_revenue_by_region(tmp_path):
+    """The packaged `sales` demo source (backing the Sales Live example on any
+    install) reads revenue-by-region live through the connectors data endpoint."""
+    pytest.importorskip("cx_connectors.sqlstore")
+    from cxd_server.demo_sources import seed_demo_sources
+    app = create_dashboards_app(store=DashboardStore(str(tmp_path / "dash.db")), session_secret="s",
+                                serve_static=False, dataset_store_uri="file://" + str(tmp_path / "ds"),
+                                scheduler_enabled=False)
+    install_connectors(app, str(tmp_path / "c.db"), generate_key(), session_secret="s",
+                       seed=seed_demo_sources)
+    client = _bridged(app, "ann")
+    r = client.get("/connectors/api/data?source=sales")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["y"]["vars"] == ["Revenue"]
+    assert set(body["y"]["smps"]) == {"North", "South", "East", "West", "Central"}
+    assert all(v > 0 for v in body["y"]["data"][0])

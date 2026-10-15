@@ -43,7 +43,20 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
   flag), matching the dashboards app's own session cookie.
 - Demo-database copies are written atomically (temp + `os.replace`) and re-copied if
   their size drifts from the packaged database — safe under multiple worker processes.
+- **Sales Live** is now a packaged `sales` demo source (revenue by region, live jitter via
+  SQL `RANDOM()`), so the example renders on any install / Connect, not just the dev launcher.
 - Requires `canvasxpress-connectors[web,sql]>=0.8`.
+
+### Data-function sandbox hardening
+- **BLAS/OpenMP thread pools pinned to 1** in the snippet environment
+  (`OPENBLAS_NUM_THREADS` etc.), so numpy's OpenBLAS no longer over-reserves per-core
+  buffers and fails under the memory cap on many-core hosts.
+- **Filesystem writes confined.** The `auto` wrapper now denies writes outside the run's
+  temp dir: macOS `sandbox-exec` denies file-write outside the temp roots; Linux prefers
+  `bwrap` (read-only root, writable temp, no network) and falls back to `unshare -rn`.
+  The self-check reports `fileWrite: blocked` where supported.
+- R functions still need the `jsonlite` package on the host (install it on Connect); the
+  runtime already hides R when it is missing.
 
 ## 0.13.0 — 2026-10-14
 

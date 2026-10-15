@@ -121,10 +121,15 @@ admin dashboards on every call, so everyone sees those charts (and their
 read-only `</> Code` recipe) but cannot run code of their own. In `users` mode
 any logged-in user whose role has `function.run` may write functions.
 `GET /api/functions/status` reports `canAuthor` for the caller. Each run is a sandboxed subprocess with a
-timeout, resource limits and — where the OS supports it — no network; see the
-main README's *Data functions* section for every `CXD_FUNCTIONS_*` knob, and
-`GET /api/functions/status` for what is in effect. It executes user-supplied
-code: run `users` mode only inside a container / VM you trust.
+timeout, resource limits and — where the OS supports it — no network **and no
+filesystem writes outside its own temp dir** (macOS `sandbox-exec`; Linux `bwrap`
+when installed, else `unshare -rn` for network only); BLAS/OpenMP thread pools are
+pinned to 1 so numpy stays inside the memory cap. See the main README's *Data
+functions* section for every `CXD_FUNCTIONS_*` knob, and
+`GET /api/functions/status` for what is in effect. **R** functions need the
+`jsonlite` package on the host (`install.packages("jsonlite")`); the runtime hides
+R when it is missing. It executes user-supplied code: run `users` mode only inside
+a container / VM you trust.
 
 Three further hardening knobs for a shared host where snippets run as the same OS
 user as the server:

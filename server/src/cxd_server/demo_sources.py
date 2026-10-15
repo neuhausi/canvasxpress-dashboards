@@ -132,14 +132,24 @@ _FURNITURE_SQL = (
     'SELECT item AS "Item", stock AS "Stock", price AS "Price",'
     ' ROUND(stock * price, 2) AS "Value", warehouse AS "Warehouse"'
     " FROM product_inventory WHERE category = 'Furniture' ORDER BY item")
+# Revenue by region for the "Sales Live" example. A small per-query random delta
+# (±15%, via SQLite RANDOM()) makes the auto-refreshing panels visibly update each
+# poll — the live feel the dev launcher's /api/data?source=sales simulated, now a
+# packaged connector source so the example also works on a plain install / Connect.
+# Region stays the sample id (rows_to_cx: first column -> smps), Revenue the value.
+_SALES_SQL = (
+    'SELECT region AS "Region",'
+    ' CAST(SUM(revenue) * (0.85 + (ABS(RANDOM()) % 1000) / 1000.0 * 0.30) AS INTEGER) AS "Revenue"'
+    " FROM sales GROUP BY region ORDER BY SUM(revenue) DESC")
 
 
 def demo_sources() -> List[Dict[str, str]]:
-    """The demo sources to register, with the current read-only inventory URL."""
-    url = demo_db_url("inventory.db")
+    """The demo sources to register, with the current read-only demo-db URLs."""
+    inventory = demo_db_url("inventory.db")
     return [
-        {"name": "inventory", "conn_url": url, "sql": _INVENTORY_SQL},
-        {"name": "furniture-only", "conn_url": url, "sql": _FURNITURE_SQL},
+        {"name": "inventory", "conn_url": inventory, "sql": _INVENTORY_SQL},
+        {"name": "furniture-only", "conn_url": inventory, "sql": _FURNITURE_SQL},
+        {"name": "sales", "conn_url": demo_db_url("sales.db"), "sql": _SALES_SQL},
     ]
 
 
