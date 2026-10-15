@@ -96,6 +96,10 @@ export var dashboardCss = [
   '.cxd-comments-toggle.cxd-comments-open { background: var(--cx-ui-accent); color: var(--cx-ui-on-accent); border-color: var(--cx-ui-accent); }',
   '.cxd-comments-count { min-width: 18px; padding: 0 5px; border-radius: var(--cx-radius-pill);',
   '  background: var(--cx-ui-accent); color: var(--cx-ui-on-accent); font-size: 11px; text-align: center; }',
+  // The panels set display:flex, which would override the `hidden` attribute (so
+  // close() could not hide them). Re-assert none when hidden so they truly collapse,
+  // leaving only the always-visible toggle pills.
+  '.cxd-comments-rail[hidden], .cxd-ask-panel[hidden] { display: none; }',
   '.cxd-comments-rail { position: fixed; top: 0; right: 0; bottom: 0; width: 340px; max-width: 92vw;',
   '  z-index: var(--cx-z-modal); display: flex; flex-direction: column;',
   '  background: var(--cxd-panel-bg); border-left: 1px solid var(--cxd-border); box-shadow: var(--cx-shadow-3);',
