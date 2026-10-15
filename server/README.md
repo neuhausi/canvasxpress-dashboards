@@ -111,6 +111,22 @@ such a source has no credential of its own, so it works only for a signed-in
 viewer on Connect — it cannot be read on a **scheduled dataset refresh** (no
 viewer → a clear error); use a PAT source for scheduled data.
 
+**Databricks catalog browser (Data → Databricks).** Set `CXD_DATABRICKS_HOST`
+(e.g. `dbc-1234.cloud.databricks.com`) and the Data page browses Unity Catalog:
+pick a SQL warehouse, open catalogs → schemas → tables (lazy, filterable, capped at
+1000 with a "truncated" note), preview a table's columns and first 50 rows, then
+**Save as source** or start a **Dashboard from this table**. Unset, the section
+(and the Home notice) is hidden. It works with or without Posit Connect, chosen by
+`CXD_DATABRICKS_AUTH`: `auto` (default; the Connect viewer when the request carries
+the session header, else `CXD_DATABRICKS_TOKEN`), `posit-connect`, or `token`
+(one shared token — every user reads as it; saved sources then carry a
+`REPLACE_WITH_TOKEN` placeholder to edit). Install with the `posit-connect` extra, or
+`databricks` when not on Connect; SQLAlchemy is capped below 2.1 (it breaks the
+Databricks driver). The token is resolved per request and never logged, cached or
+returned. Routes (session-guarded): `GET /api/connectors/databricks/{config,warehouses,
+catalogs,schemas,tables,table}` and `POST …/save-source`. Details:
+[docs/databricks-viewer-oauth.md](../docs/databricks-viewer-oauth.md).
+
 **Data functions** (`kind:"function"` sources — R / Python snippets) run in
 this server only when `CXD_FUNCTIONS=admin` or `users`; the default is `off`.
 In `admin` mode (recommended) only administrators may **write** functions — run

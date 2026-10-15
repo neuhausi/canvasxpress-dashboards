@@ -495,6 +495,9 @@
           notice('🎨', 'Edit every panel', 'Every panel opens the native CanvasXpress customizer — click the ⚙ to change chart type, colors, grouping and axes. Drag panels to reorder or resize them, and every change is saved with the dashboard. Prefer to describe it? Ask the chat assistant and it applies the tweak for you. Swap a panel’s dataset on the fly and the chart updates in place — no reload.', 'n-md') +
           notice('🔌', 'Connect your data', 'Bind panels to your own sources through <b>canvasxpress-connectors</b> — SQL warehouses, spreadsheets, business apps and finance feeds:' + connChips, 'n-md') +
           notice('🗄', 'Dashboard from database', 'Turn a database into an explorer like <b>GTEx Gene Explorer</b>: pick a connection, name the column whose values a Control lists, write the query that runs for the picked value (<code>WHERE gene = :gene</code>, always a bound parameter) and choose a chart from a live sample. Both queries are saved as your database sources, so they stay editable in <b>Data</b>; in the Builder, selecting the Control shows how it is wired, SQL included. <a href="#" class="home-dbwizard">Start the wizard</a>.', 'n-feature') +
+          '<div id="home-dbx-notice" style="display:none">' +
+            notice('🧱', 'Browse Databricks', 'Explore Unity Catalog from <b>Data → Databricks</b>: pick a SQL warehouse, open catalogs, schemas and tables, and preview a table’s columns and first 50 rows. <b>Save as source</b> or start a <b>Dashboard from this table</b>. On Posit Connect it reads Databricks as you, with your own grants; elsewhere it uses the server’s shared token. <a href="#" class="home-dbx">Open Data</a>.', 'n-feature') +
+          '</div>' +
           notice('📡', 'Real-time streams', 'A panel can follow a stream as it happens: pick a 📡 stream in the panel’s <b>Data</b> list, set how many samples to keep and how often to update, and the chart slides forward with each new reading — no reload, one redraw per frame however fast data arrives. The browser never holds a credential, and every subscription is recorded in the audit log. <a href="' + API_BASE + '/examples/live-ops.html">See it in Live Ops</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/live-streaming.md" target="_blank" rel="noopener">How it works</a>.', 'n-feature') +
           notice('🧩', 'Blend and link sources', 'Link related sources in <b>🔗 Links</b>: pick each source and its key, and selecting an order marks its customer everywhere. Join two sources from <b>+ Data → Join two sources</b>. Filter the whole board from one <b>Filters</b> panel with saved schemes. No JSON needed. <a href="' + API_BASE + '/examples/cohort-explorer.html">See it in the Cohort Explorer</a>.', 'n-md') +
           notice('🎯', 'Cross-filter and linked selection', 'Click a bar, point or cell and every linked panel responds — no code. A dashboard’s <code>markingMode</code> sets how: <b>Focus</b> greys the rest, <b>Highlight</b> outlines the marked rows, <b>Ghost</b> fades the unrelated away, and <b>Filter</b> narrows the related panels to the selection (true cross-filtering). Press <b>Esc</b> to clear. <a href="' + API_BASE + '/examples/cross-filter-demo.html">Cross-Filter</a> · <a href="' + API_BASE + '/examples/linked-highlight.html">Highlight</a> · <a href="' + API_BASE + '/examples/linked-ghost.html">Ghost</a>.', 'n-feature') +
@@ -521,6 +524,20 @@
           showDbWizard();
         };
       });
+      [].slice.call(viewEl.querySelectorAll('.home-dbx')).forEach(function (link) {
+        link.onclick = function (ev) {
+          ev.preventDefault();
+          if (!currentUser) { pendingView = 'Data'; showLogin('Data'); return; }
+          activate('Data');
+        };
+      });
+      // Shown only for a signed-in user on a server with CXD_DATABRICKS_HOST set.
+      if (currentUser) {
+        dbxApi('config').then(function (cfg) {
+          var box = document.getElementById('home-dbx-notice');
+          if (cfg.enabled && box) box.style.display = 'contents';
+        }, function () { /* not available: stay hidden */ });
+      }
       [].slice.call(viewEl.querySelectorAll('.howto-step')).forEach(function (s) {
         s.onclick = function () { activate('Builder'); };
       });

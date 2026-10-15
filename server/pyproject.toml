@@ -52,7 +52,10 @@ connectors = ["canvasxpress-connectors[web,sql]>=0.8"]
 # Posit Connect (databricks://posit-connect@host...). Uses the cx_connectors
 # databricks_oauth resolver and open_store, so it needs the same 0.8+ as above
 # plus its posit-sdk extra. See connectors.py.
-posit-connect = ["canvasxpress-connectors[web,sql,posit-connect]>=0.8"]
+posit-connect = ["canvasxpress-connectors[web,sql,databricks,posit-connect]>=0.8", "SQLAlchemy>=2.0,<2.1"]
+# The Data page's Databricks catalog browser WITHOUT Posit Connect (CXD_DATABRICKS_AUTH=token).
+# SQLAlchemy 2.1 breaks the Databricks driver ("Expected tuple, got Row"), hence the cap.
+databricks = ["canvasxpress-connectors[web,sql,databricks]>=0.8", "SQLAlchemy>=2.0,<2.1"]
 dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6", "pandas>=2.0", "PyJWT[crypto]>=2.8"]
 
 [project.urls]

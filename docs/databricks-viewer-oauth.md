@@ -75,3 +75,28 @@ the strongest form of [row/column governance](governance.md) because it is
 enforced by Databricks itself, not re-implemented here. No Databricks credential
 is ever stored by the dashboards server for these sources, and the exchanged
 token is never written to a log, a cache, or the browser.
+
+## Browse Unity Catalog (Data → Databricks)
+
+Set `CXD_DATABRICKS_HOST` (e.g. `dbc-1234.cloud.databricks.com`) and the Data page
+gains a **Databricks** card: pick a SQL warehouse (your last choice is remembered
+in the browser), expand catalogs → schemas → tables (each level loads on demand,
+has a filter box and a count, and says when it was capped at 1000), and select a
+table to see its columns and first 50 rows. **Save as source** creates a normal
+source with a default `SELECT *` you can edit; **Dashboard from this table**
+opens the *Dashboard from database* wizard on it. With the variable unset the
+card is hidden.
+
+Whose identity the calls use (`CXD_DATABRICKS_AUTH`):
+
+| Mode | Identity |
+|------|----------|
+| `auto` (default) | The Posit Connect viewer when the request carries the Connect session header, otherwise `CXD_DATABRICKS_TOKEN` if set, otherwise 403 |
+| `posit-connect` | Always the viewer (403 with no session token, 502 if the exchange fails) |
+| `token` | The shared `CXD_DATABRICKS_TOKEN` — every signed-in user reads as that token |
+
+Off Connect, saved sources get `databricks://token:REPLACE_WITH_TOKEN@…`; put a
+token in the URL when you edit the source (the shared token is never copied into
+a stored source). Install with `pip install 'canvasxpress-dashboards-server[posit-connect]'`
+or, without Connect, `[databricks]`. SQLAlchemy is capped below 2.1 because 2.1
+breaks the Databricks driver.

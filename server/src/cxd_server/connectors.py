@@ -405,6 +405,8 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
     app.add_api_route("/api/connectors/schema", schema, methods=["POST"], include_in_schema=False)
     app.add_api_route("/api/connectors/test", test_sql, methods=["POST"], include_in_schema=False)
     _before_root_mount(app, [r for r in app.router.routes if r not in before])
+    from .databricks_browser import install_databricks
+    install_databricks(app, store)
     print("  [connectors] database sources enabled at /connectors (store: %s)"
           % _store_location_label(db_path))
     return store
