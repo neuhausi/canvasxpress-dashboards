@@ -182,21 +182,43 @@
       background: none; color: var(--muted); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
     .admin-tab:hover { color: inherit; }
     .admin-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-    /* Publish & embed codes in the share box */
-    .cxd-embed-codes { margin-top: 8px; font-size: 13px; max-width: 100%; }
-    .cxd-embed-head { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
-    .cxd-embed-pick { flex: 1; min-width: 0; max-width: 100%; font-size: 13px; }
-    .cxd-embed-row { display: flex; gap: 6px; margin-top: 4px; align-items: flex-start; }
+    /* The inline share box reads as a self-contained panel (a lighter surface
+       sitting on the selected card's accent tint), with the same field styling
+       as the rest of the app so it looks finished, not bolted on. */
+    .cxd-share-box { background: var(--cx-ui-surface); border: 1px solid var(--rail-border);
+      border-radius: var(--cx-radius-lg); padding: 12px; box-shadow: var(--cx-shadow-1); }
+    .cxd-share-head { display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; margin-bottom: 8px; font-size: 14px; }
+    .cxd-share-head b { font-size: 14px; }
+    .cxd-share-close { display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; padding: 0; font-size: 14px; line-height: 1; border-radius: var(--cx-radius-md);
+      background: transparent; border: 1px solid var(--rail-border); color: var(--cx-ui-text-muted); cursor: pointer; }
+    .cxd-share-close:hover { background: var(--cx-ui-surface-sunken); color: inherit; }
+    /* Link row: a polished field + aligned action buttons (shared control height). */
+    .cxd-share-link { width: 100%; box-sizing: border-box; height: 36px; padding: 0 10px;
+      font: 13px/1.4 var(--cx-font-mono); color: inherit; background: var(--cx-ui-surface);
+      border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); }
+    .cxd-share-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .cxd-share-actions .cta { height: 34px; padding: 0 14px; font-size: 14px; border-radius: var(--cx-radius-md); }
+    /* Publish & embed codes */
+    .cxd-embed-codes { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rail-border);
+      font-size: 13px; max-width: 100%; }
+    .cxd-embed-head { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .cxd-embed-head b { font-size: 14px; }
+    /* Match the app's field look (height, padding, surface, radius); the global
+       select rule adds the chevron and its right-hand room. */
+    .cxd-embed-pick { flex: 1; min-width: 0; max-width: 100%; height: 36px; box-sizing: border-box;
+      padding: 0 32px 0 10px; font: 14px/1.4 var(--cx-font-sans); color: inherit;
+      background-color: var(--cx-ui-surface); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); }
+    .cxd-embed-row { display: flex; gap: 8px; margin-top: 8px; align-items: stretch; }
     /* min-width:0 lets the textarea shrink inside the flex row instead of
        overflowing the card (flex items default to min-width:auto); box-sizing
        keeps padding inside the 100% width. */
     .cxd-embed-code { flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; resize: vertical;
-      font: 12px var(--cx-font-mono); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); padding: 4px; }
-    .cxd-embed-copy { padding: 3px 8px; font-size: 12px; white-space: nowrap; flex: none; }
-    /* Header of the inline share box: title + an obvious close (✕). */
-    .cxd-share-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .cxd-share-close { padding: 2px 8px; font-size: 14px; line-height: 1; background: transparent;
-      border: 1px solid var(--rail-border); color: inherit; }
+      font: 12px/1.5 var(--cx-font-mono); color: inherit; background: var(--cx-ui-surface-sunken, var(--cx-ui-surface));
+      border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); padding: 8px; }
+    .cxd-embed-copy { align-self: flex-start; padding: 0 12px; height: 34px; font-size: 12px;
+      white-space: nowrap; flex: none; border-radius: var(--cx-radius-md); }
     /* Every dropdown in the app draws the engine's chevron (two currentColor diagonals: it follows
        the text colour in light and dark), inset from the right border instead of on it, with room
        so the text never runs under it. The engine's own selects (customizer, data filter, its classed
@@ -3977,7 +3999,7 @@
                 ? '<button class="cta" data-act="del" style="padding:4px 10px;font-size:14px;background:transparent;border:1px solid var(--rail-border);color:inherit">Delete</button>'
                 : '') +
             '</div>' +
-            '<div class="dash-share" style="display:none;margin-top:8px;font-size:14px"></div>';
+            '<div class="dash-share cxd-share-box" style="display:none;margin-top:8px;font-size:14px"></div>';
           item.onclick = function (e) {
             var act = e.target.getAttribute && e.target.getAttribute('data-act');
             if (act === 'view') {
@@ -4071,13 +4093,12 @@
         box.appendChild(shead);
         var input = document.createElement('input');
         input.value = url; input.readOnly = true;
-        input.style.cssText = 'width:100%;box-sizing:border-box;padding:4px 6px;font-size:14px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)';
+        input.className = 'cxd-share-link';
         input.onclick = function (e) { e.stopPropagation(); input.select(); };
         var row = document.createElement('div');
-        row.style.cssText = 'display:flex;gap:6px;margin-top:4px';
+        row.className = 'cxd-share-actions';
         var copy = document.createElement('button');
         copy.className = 'cta'; copy.textContent = 'Copy link';
-        copy.style.cssText = 'padding:3px 10px;font-size:14px';
         copy.onclick = function (e) {
           e.stopPropagation();
           (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject())
@@ -4086,7 +4107,7 @@
         };
         var revoke = document.createElement('button');
         revoke.className = 'cta'; revoke.textContent = 'Unshare';
-        revoke.style.cssText = 'padding:3px 10px;font-size:14px;background:transparent;border:1px solid var(--cx-ui-danger);color:var(--cx-ui-danger)';
+        revoke.style.cssText = 'background:transparent;border:1px solid var(--cx-ui-danger);color:var(--cx-ui-danger)';
         revoke.onclick = function (e) {
           e.stopPropagation();
           client.share(d.id, 'private').then(function () {
