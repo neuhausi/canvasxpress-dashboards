@@ -908,6 +908,110 @@ test('a filter pick narrows panels on related sources that lack the annotation',
   handle.destroy();
 });
 
+test('markingMode "filter": a selection cross-filters related panels, leaving the origin', async function () {
+  var live = [];
+  var CX = markingCX(live);
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var spec = JSON.parse(JSON.stringify(REL_SPEC));
+  spec.markingMode = 'filter';
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CX });
+  await handle.ready;
+  var expr = panelInst(live, 'expr');
+  var clin = panelInst(live, 'clin');
+  var genes = panelInst(live, 'genes');
+  [expr, clin, genes].forEach(function (i) { i.filters = []; });
+
+  // Select p2 in expr: clin relates via patient_id (p2 -> c3, c4), genes via
+  // Top (p2 -> EGFR). The origin panel is never narrowed by its own selection.
+  CX.selector = { smps: { p2: true }, vars: { GeneA: true } };
+  expr.events.select.call(expr, {});
+  await delay(0);
+  assert.deepEqual(clin.filters.slice(1), [['filterSmpBy', ['c3', 'c4']]], 'related samples filtered, not highlighted');
+  assert.deepEqual(genes.filters.slice(1), [['filterVarBy', ['EGFR']]], 'related variables filtered (second hop)');
+  assert.deepEqual(expr.filters[expr.filters.length - 1], ['reset'], 'the origin panel is left unfiltered');
+  assert.deepEqual(clin.highlightSmp, ['c1'], 'filter mode does not touch highlight state');
+  var chip = container.querySelector('.cxd-xfilter-reset');
+  assert.ok(chip && chip.style.display !== 'none', 'the reset control appears while cross-filtering');
+
+  // The reset control clears the cross-filter on every related panel.
+  [expr, clin, genes].forEach(function (i) { i.filters = []; });
+  chip.onclick();
+  await delay(0);
+  assert.deepEqual(clin.filters[clin.filters.length - 1], ['reset'], 'reset clears the cross-filter');
+  assert.deepEqual(genes.filters[genes.filters.length - 1], ['reset'], 'genes cross-filter cleared too');
+  assert.equal(chip.style.display, 'none', 'the reset control hides once cleared');
+
+  // A genuine empty selection (an empty-space click, well after the real one)
+  // also clears it.
+  CX.selector = { smps: { p2: true }, vars: { GeneA: true } };
+  expr.events.select.call(expr, {});
+  await delay(0);
+  assert.ok(chip.style.display !== 'none', 'cross-filtering again re-shows the control');
+  [expr, clin, genes].forEach(function (i) { i.filters = []; });
+  await delay(160); // past the spurious-deselect window, so this empty is a real clear
+  CX.selector = { smps: {}, vars: {} };
+  expr.events.select.call(expr, {});
+  await delay(0);
+  assert.deepEqual(clin.filters[clin.filters.length - 1], ['reset'], 'empty selection clears the cross-filter');
+  assert.equal(chip.style.display, 'none', 'and hides the reset control');
+  handle.destroy();
+});
+
+test('markingMode "filter": a bar chart\'s auto-deselect does not wipe the cross-filter', async function () {
+  var live = [];
+  var CX = markingCX(live);
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var spec = JSON.parse(JSON.stringify(REL_SPEC));
+  spec.markingMode = 'filter';
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CX });
+  await handle.ready;
+  var expr = panelInst(live, 'expr');
+  var clin = panelInst(live, 'clin');
+  [expr, clin].forEach(function (i) { i.filters = []; });
+
+  // A bar reports the pick, then fires select again EMPTY ~instantly as it
+  // auto-deselects. The second (spurious) empty must NOT clear the filter.
+  CX.selector = { smps: { p2: true }, vars: { GeneA: true } };
+  expr.events.select.call(expr, {});
+  await delay(0);
+  CX.selector = { smps: {}, vars: {} };
+  expr.events.select.call(expr, {});   // spurious empty, immediately after
+  await delay(0);
+  var chip = container.querySelector('.cxd-xfilter-reset');
+  assert.ok(chip && chip.style.display !== 'none', 'the cross-filter survives the auto-deselect');
+  assert.deepEqual(clin.filters[clin.filters.length - 1], ['filterSmpBy', ['c3', 'c4']],
+    'related panel stays filtered to the picked rows');
+  handle.destroy();
+});
+
+test('markingMode "filter": Escape clears the cross-filter (the engine advertises it)', async function () {
+  var live = [];
+  var CX = markingCX(live);
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var spec = JSON.parse(JSON.stringify(REL_SPEC));
+  spec.markingMode = 'filter';
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CX });
+  await handle.ready;
+  var expr = panelInst(live, 'expr');
+  var clin = panelInst(live, 'clin');
+
+  CX.selector = { smps: { p2: true }, vars: { GeneA: true } };
+  expr.events.select.call(expr, {});
+  await delay(0);
+  var chip = container.querySelector('.cxd-xfilter-reset');
+  assert.ok(chip && chip.style.display !== 'none', 'cross-filter is active');
+
+  [expr, clin].forEach(function (i) { i.filters = []; });
+  document.dispatchEvent('keydown', { key: 'Escape' });
+  await delay(0);
+  assert.equal(chip.style.display, 'none', 'Escape hides the reset control');
+  assert.deepEqual(clin.filters[clin.filters.length - 1], ['reset'], 'Escape reopens the cross-filtered panel');
+  handle.destroy();
+});
+
 // --- Filters panel (type:"filters") + filter schemes ---
 
 /**

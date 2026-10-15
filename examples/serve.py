@@ -555,6 +555,28 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.set_locked(EXAMPLES_OWNER, genomics["id"], True)
         print("  [seed] shipped dashboard: %s" % genomics["id"])
 
+    # Cross-Filter showcases (markingMode:"filter"): a business case
+    # (orders <-> reps on Region) and a scientific case (clinical patients <->
+    # expression samples on patient id). Inline sources move into the dataset
+    # store; the spec-level relationships + markingMode ride along unchanged, so
+    # clicking a mark filters the related panels.
+    for spec_file, prefix in (("cross-filter-demo.spec.json", "xfilter-demo-"),
+                              ("cross-filter-genomics.spec.json", "xfilter-genomics-")):
+        xf = load_spec(spec_file)
+        if xf and xf["id"] not in saved:
+            xf = copy.deepcopy(xf)
+            for ref, source in xf.get("data", {}).items():
+                if source.get("kind") != "inline":
+                    continue
+                dataset_id = prefix + ref
+                if dataset_id not in have:
+                    datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                    title="Cross-Filter: " + ref, dataset_id=dataset_id, locked=True)
+                xf["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+            dashboards.save_dashboard(EXAMPLES_OWNER, xf, now)
+            dashboards.set_locked(EXAMPLES_OWNER, xf["id"], True)
+            print("  [seed] shipped dashboard: %s" % xf["id"])
+
     # The two data-function showcases — Cohort Explorer (join + relationship +
     # Filters panel + an R function) and Dose-Response Lab (an R nls() fit and two
     # Python pandas summaries) — are owned by the ADMIN and shared view-only with

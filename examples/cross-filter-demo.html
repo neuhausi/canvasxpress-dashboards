@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" data-cx-ui-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — Cross-Filter</title>
+
+  <!-- CanvasXpress (peer dependency): rendering + broadcast coordination -->
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+
+  <!-- canvasxpress-dashboards renderer (UMD drop-in) -->
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    header { padding: 16px 24px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: var(--cx-ui-text-muted); font-size: 13px; }
+    #dashboard { padding: 16px 24px 32px; }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <a class="cxd-open" href="../?open=cross-filter-demo">✏️ Open in Builder</a>
+    <span class="cxd-here">🎯 Cross-Filter</span>
+  </nav>
+  <header>
+    <h1>Cross-Filter (click to filter)</h1>
+    <p>Two datasets — 24 orders and 12 sales reps — linked on <b>Region</b> with
+       <code>markingMode:"filter"</code>. Click one or more bars in <em>Revenue by
+       Order</em> and both rep panels instantly filter to the reps in that region.
+       A floating <b>Reset cross-filter</b> control (or a click on empty space) clears it.</p>
+  </header>
+
+  <div id="dashboard"></div>
+
+  <script>
+    fetch('./cross-filter-demo.spec.json')
+      .then(function (res) { return res.json(); })
+      .then(function (spec) {
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard');
+      })
+      .then(function (handle) {
+        console.log('Dashboard rendered:', handle.instances.length, 'instances in group', handle.broadcastGroup);
+      })
+      .catch(function (err) {
+        document.getElementById('dashboard').textContent = 'Failed to render: ' + err.message;
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

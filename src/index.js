@@ -16,6 +16,7 @@ export { createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuer
 export { joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES } from './join.js';
 export { resolveFields, summarizeField, rowsPassing, normalizeState } from './filters.js';
 export { hasRelationships, relationGraph, translateMarks } from './marking.js';
+export { mountComments } from './comments.js';
 export { exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient } from './persistence.js';
 export {
   inlineSpecData, buildDashboardHtml, exportDashboardHtml,

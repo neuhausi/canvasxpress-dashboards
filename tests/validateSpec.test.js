@@ -316,7 +316,7 @@ test('flags bad relationships, axes, and markingMode', function () {
   assert.ok(errors.includes('spec.relationships[0].right "ghost" has no matching entry in spec.data'));
   assert.ok(errors.includes('spec.relationships[1] relationship requires a left ref string'));
   assert.ok(errors.includes('spec.relationships[2] must be an object'));
-  assert.ok(errors.includes('spec.markingMode must be "focus", "highlight", or "ghost"'));
+  assert.ok(errors.some(function (e) { return e.indexOf('spec.markingMode must be one of') === 0; }));
 });
 
 test('source calculatedFields: formula and bin shapes are checked', function () {

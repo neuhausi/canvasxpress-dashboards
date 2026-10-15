@@ -1,0 +1,391 @@
+{
+  "$schema": "../schema/dashboard.schema.json",
+  "schemaVersion": "1.1",
+  "id": "cross-filter-genomics",
+  "title": "Cross-Filter \u2014 Clinical \u00d7 Expression",
+  "version": 1,
+  "broadcastGroup": "cross-filter-genomics",
+  "theme": "auto",
+  "relationships": [
+    {
+      "left": "clinical",
+      "right": "expression",
+      "on": {
+        "left": "smps",
+        "right": "patient_id"
+      }
+    }
+  ],
+  "markingMode": "filter",
+  "layout": {
+    "cols": 12,
+    "rowHeight": 40,
+    "gap": 12,
+    "items": [
+      {
+        "panel": "intro",
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 2
+      },
+      {
+        "panel": "clinical",
+        "x": 0,
+        "y": 2,
+        "w": 6,
+        "h": 7
+      },
+      {
+        "panel": "heatmap",
+        "x": 6,
+        "y": 2,
+        "w": 6,
+        "h": 7
+      },
+      {
+        "panel": "pdl1",
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 6
+      }
+    ]
+  },
+  "data": {
+    "clinical": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": [
+            "Age",
+            "TumorChange"
+          ],
+          "smps": [
+            "P001",
+            "P002",
+            "P003",
+            "P004",
+            "P005",
+            "P006",
+            "P007",
+            "P008",
+            "P009",
+            "P010",
+            "P011",
+            "P012",
+            "P013",
+            "P014",
+            "P015",
+            "P016"
+          ],
+          "data": [
+            [
+              45,
+              52,
+              59,
+              66,
+              73,
+              50,
+              57,
+              64,
+              71,
+              48,
+              55,
+              62,
+              69,
+              46,
+              53,
+              60
+            ],
+            [
+              -40,
+              16,
+              22,
+              28,
+              -40,
+              -35,
+              -30,
+              22,
+              28,
+              34,
+              -30,
+              16,
+              -40,
+              28,
+              34,
+              -25
+            ]
+          ]
+        },
+        "x": {
+          "Arm": [
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo"
+          ],
+          "Response": [
+            "Responder",
+            "NonResponder",
+            "NonResponder",
+            "NonResponder",
+            "Responder",
+            "Responder",
+            "Responder",
+            "NonResponder",
+            "NonResponder",
+            "NonResponder",
+            "Responder",
+            "NonResponder",
+            "Responder",
+            "NonResponder",
+            "NonResponder",
+            "Responder"
+          ]
+        }
+      }
+    },
+    "expression": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": [
+            "TP53",
+            "EGFR",
+            "KRAS",
+            "MYC",
+            "CD274",
+            "ERBB2"
+          ],
+          "smps": [
+            "S101",
+            "S102",
+            "S103",
+            "S104",
+            "S105",
+            "S106",
+            "S107",
+            "S108",
+            "S109",
+            "S110",
+            "S111",
+            "S112",
+            "S113",
+            "S114",
+            "S115",
+            "S116"
+          ],
+          "data": [
+            [
+              8.2,
+              4.1,
+              4.4,
+              4.7,
+              9.4,
+              8.2,
+              8.5,
+              4.4,
+              4.7,
+              5.0,
+              8.2,
+              4.1,
+              8.8,
+              4.7,
+              5.0,
+              8.2
+            ],
+            [
+              7.4,
+              9.4,
+              7.8,
+              9.0,
+              6.6,
+              7.8,
+              9.0,
+              8.2,
+              9.4,
+              7.8,
+              8.2,
+              7.4,
+              7.8,
+              9.8,
+              8.2,
+              8.6
+            ],
+            [
+              8.2,
+              7.4,
+              8.6,
+              9.8,
+              7.4,
+              8.6,
+              7.0,
+              9.0,
+              7.4,
+              8.6,
+              9.0,
+              8.2,
+              8.6,
+              7.8,
+              9.0,
+              6.6
+            ],
+            [
+              9.0,
+              8.2,
+              9.4,
+              7.8,
+              8.2,
+              6.6,
+              7.8,
+              9.8,
+              8.2,
+              9.4,
+              7.0,
+              9.0,
+              6.6,
+              8.6,
+              9.8,
+              7.4
+            ],
+            [
+              9.4,
+              3.8,
+              4.1,
+              4.4,
+              9.1,
+              9.4,
+              8.2,
+              4.1,
+              4.4,
+              4.7,
+              9.4,
+              3.8,
+              8.5,
+              4.4,
+              4.7,
+              9.4
+            ],
+            [
+              7.8,
+              9.8,
+              8.2,
+              9.4,
+              7.0,
+              8.2,
+              6.6,
+              8.6,
+              9.8,
+              8.2,
+              8.6,
+              7.8,
+              8.2,
+              7.4,
+              8.6,
+              9.0
+            ]
+          ]
+        },
+        "x": {
+          "patient_id": [
+            "P001",
+            "P002",
+            "P003",
+            "P004",
+            "P005",
+            "P006",
+            "P007",
+            "P008",
+            "P009",
+            "P010",
+            "P011",
+            "P012",
+            "P013",
+            "P014",
+            "P015",
+            "P016"
+          ],
+          "Arm": [
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo",
+            "Drug",
+            "Placebo"
+          ]
+        }
+      }
+    }
+  },
+  "panels": {
+    "intro": {
+      "type": "text",
+      "value": "**Select patients** in *Tumor response* (left) \u2014 e.g. the responders with negative tumor change \u2014 and the expression panels narrow to just those patients' samples. This is `markingMode:\"filter\"` cross-filtering two linked datasets (16 patients \u2194 their expression samples, joined on patient id). Select in the heatmap to filter the clinical scatter the other way."
+    },
+    "clinical": {
+      "title": "Tumor response by patient (select to filter)",
+      "dataRef": "clinical",
+      "config": {
+        "graphType": "Scatter2D",
+        "title": false,
+        "dataPointSize": 14,
+        "colorBy": "Response",
+        "xAxis": [
+          "Age"
+        ],
+        "yAxis": [
+          "TumorChange"
+        ]
+      }
+    },
+    "heatmap": {
+      "title": "Expression (genes \u00d7 samples)",
+      "dataRef": "expression",
+      "config": {
+        "graphType": "Heatmap",
+        "title": false,
+        "samplesClustered": true,
+        "variablesClustered": true
+      }
+    },
+    "pdl1": {
+      "title": "CD274 (PD-L1) by Arm",
+      "dataRef": "expression",
+      "config": {
+        "graphType": "Boxplot",
+        "title": false,
+        "graphOrientation": "vertical",
+        "groupingFactors": [
+          "Arm"
+        ],
+        "xAxis": [
+          "CD274"
+        ],
+        "colorBy": "Arm"
+      }
+    }
+  }
+}

@@ -83,6 +83,19 @@ test('serializeSpec: canonical top-level order, stable text, trailing newline', 
   assert.deepEqual(JSON.parse(text), JSON.parse(JSON.stringify(shuffled)), 'content unchanged');
 });
 
+test('markingMode:"filter" (cross-filter) survives migrate + canonical serialize + parse', function () {
+  var spec = {
+    schemaVersion: '1.1', id: 'xf', title: 'xf', layout: SPEC.layout, data: SPEC.data, panels: SPEC.panels,
+    relationships: [{ left: 'a', right: 'b', on: { left: 'smps', right: 'k' } }],
+    markingMode: 'filter'
+  };
+  var migrated = migrateSpec(spec).spec;
+  var roundtripped = JSON.parse(serializeSpec(migrated));
+  assert.equal(roundtripped.markingMode, 'filter', 'the filter mode is preserved');
+  assert.deepEqual(canonicalSpec(roundtripped), canonicalSpec(migrated), 'no key is added, dropped or reordered');
+  assert.deepEqual(migrateSpec(migrated).applied, [], 'a filter spec needs no migration (no format-version bump)');
+});
+
 test('dashboardDiff: equal specs, and layout items matched by panel id', function () {
   assert.equal(dashboardsEqual(SPEC, clone(SPEC)), true);
   var reordered = clone(SPEC);

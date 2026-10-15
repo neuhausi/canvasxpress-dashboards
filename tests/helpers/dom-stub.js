@@ -186,6 +186,22 @@ class StubDocument {
     this.head = new StubElement('head', this);
     this.body = new StubElement('body', this);
     this._byId = {};
+    this._events = {};
+  }
+
+  /** @param {string} type - Event type. @param {function} handler - Listener. */
+  addEventListener(type, handler) {
+    (this._events[type] || (this._events[type] = [])).push(handler);
+  }
+
+  /** @param {string} type - Event type. @param {function} handler - Listener. */
+  removeEventListener(type, handler) {
+    this._events[type] = (this._events[type] || []).filter(function (h) { return h !== handler; });
+  }
+
+  /** @param {string} type - Event type. @param {object} [event] - Event object. */
+  dispatchEvent(type, event) {
+    (this._events[type] || []).forEach(function (handler) { handler(event || { type: type }); });
   }
 
   /**
@@ -193,6 +209,19 @@ class StubDocument {
    * @returns {StubElement} A new detached element.
    */
   createElement(tag) { return new StubElement(tag, this); }
+
+  /**
+   * @param {string} text - Text content.
+   * @returns {object} A minimal text node (appendable; inert to selectors —
+   *   it carries an empty classList/children so tree walks skip over it).
+   */
+  createTextNode(text) {
+    return {
+      nodeType: 3, textContent: String(text), tagName: '#text', id: '',
+      children: [], attributes: {},
+      classList: { contains: function () { return false; } }
+    };
+  }
 
   /**
    * @param {string} id - Element id.

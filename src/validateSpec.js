@@ -21,7 +21,7 @@ var DATA_KINDS = ['inline', 'connector', 'dataset', 'join', 'function', 'live'];
 var FUNCTION_LANGUAGES = ['python', 'r'];
 
 /** @type {string[]} How related panels show marked rows (CanvasXpress highlightMode). */
-var MARKING_MODES = ['focus', 'highlight', 'ghost'];
+var MARKING_MODES = ['focus', 'highlight', 'ghost', 'filter'];
 
 /** @type {string[]} Where a calculated field lands (CanvasXpress calculatedFields `target`). */
 var CALC_TARGETS = ['variable', 'sampleAnnotation', 'variableAnnotation'];
@@ -332,7 +332,7 @@ export function validateSpec(spec) {
     }
   }
   if (spec.markingMode != null && MARKING_MODES.indexOf(spec.markingMode) === -1) {
-    errors.push('spec.markingMode must be "focus", "highlight", or "ghost"');
+    errors.push('spec.markingMode must be one of: ' + MARKING_MODES.join(', '));
   }
 
   // --- filter schemes (named Filters-panel states) ---

@@ -67,6 +67,21 @@ class DashboardStore:
                 updated_at  TEXT NOT NULL,
                 PRIMARY KEY (owner, id)
             );
+            CREATE TABLE IF NOT EXISTS comments (
+                comment_id   TEXT PRIMARY KEY,
+                owner        TEXT NOT NULL,   -- dashboard owner
+                dashboard_id TEXT NOT NULL,   -- dashboard id
+                panel_id     TEXT,            -- optional panel anchor
+                parent_id    TEXT,            -- optional thread parent
+                author       TEXT NOT NULL,   -- the commenting user
+                body         TEXT NOT NULL,
+                mentions     TEXT,            -- JSON array of @mentioned usernames
+                created_at   TEXT NOT NULL,
+                resolved_at  TEXT,
+                resolved_by  TEXT
+            );
+            CREATE INDEX IF NOT EXISTS comments_board
+                ON comments (owner, dashboard_id, created_at);
             """
         )
         # Migrate DBs created before is_admin existed (no-op if already present).
@@ -314,3 +329,99 @@ class DashboardStore:
             "locked": bool(row[4]),
             "updated_at": row[5],
         }
+
+    # ---- comments (collaboration: viewer threads + @mentions) ----
+    _COMMENT_COLS = ("comment_id", "owner", "dashboard_id", "panel_id", "parent_id",
+                     "author", "body", "mentions", "created_at", "resolved_at", "resolved_by")
+
+    @classmethod
+    def _comment_row(cls, row) -> dict:
+        """Map a comments SELECT row (``_COMMENT_COLS`` order) to a dict, parsing
+        the JSON ``mentions`` list and the resolved flag."""
+        d = dict(zip(cls._COMMENT_COLS, row))
+        d["mentions"] = json.loads(d["mentions"]) if d["mentions"] else []
+        d["resolved"] = d["resolved_at"] is not None
+        return d
+
+    def add_comment(self, owner: str, dashboard_id: str, author: str, body: str,
+                    created_at: str, panel_id: Optional[str] = None,
+                    parent_id: Optional[str] = None,
+                    mentions: Optional[List[str]] = None) -> dict:
+        """Insert a comment (or threaded reply) on a dashboard and return it.
+
+        :param owner: The dashboard's owner.
+        :param dashboard_id: The dashboard id.
+        :param author: The commenting user.
+        :param body: The comment text.
+        :param created_at: ISO timestamp.
+        :param panel_id: Optional panel the comment is anchored to.
+        :param parent_id: Optional parent comment id (a threaded reply).
+        :param mentions: Usernames @mentioned in the body.
+        :returns: The stored comment as a dict.
+        """
+        comment_id = secrets.token_urlsafe(12)
+        mentions_json = json.dumps(list(mentions)) if mentions else None
+        with self._lock:
+            self._conn.execute(
+                "INSERT INTO comments (comment_id, owner, dashboard_id, panel_id, parent_id, "
+                "author, body, mentions, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (comment_id, owner, dashboard_id, panel_id, parent_id,
+                 author, body, mentions_json, created_at),
+            )
+            self._conn.commit()
+        return self.get_comment(comment_id)
+
+    def list_comments(self, owner: str, dashboard_id: str) -> List[dict]:
+        """Every comment on a dashboard, oldest first (the API threads them)."""
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT " + ", ".join(self._COMMENT_COLS) + " FROM comments "
+                "WHERE owner = ? AND dashboard_id = ? ORDER BY created_at ASC, comment_id ASC",
+                (owner, dashboard_id),
+            ).fetchall()
+        return [self._comment_row(r) for r in rows]
+
+    def get_comment(self, comment_id: str) -> Optional[dict]:
+        """One comment by id, or None."""
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT " + ", ".join(self._COMMENT_COLS) + " FROM comments WHERE comment_id = ?",
+                (comment_id,),
+            ).fetchone()
+        return self._comment_row(row) if row else None
+
+    def resolve_comment(self, comment_id: str, resolved_by: str, when: str,
+                        resolved: bool = True) -> Optional[dict]:
+        """Mark a comment resolved (or reopen it). Returns the updated comment, or
+        None if it does not exist."""
+        if self.get_comment(comment_id) is None:
+            return None
+        with self._lock:
+            if resolved:
+                self._conn.execute(
+                    "UPDATE comments SET resolved_at = ?, resolved_by = ? WHERE comment_id = ?",
+                    (when, resolved_by, comment_id),
+                )
+            else:
+                self._conn.execute(
+                    "UPDATE comments SET resolved_at = NULL, resolved_by = NULL WHERE comment_id = ?",
+                    (comment_id,),
+                )
+            self._conn.commit()
+        return self.get_comment(comment_id)
+
+    def delete_comment(self, comment_id: str) -> bool:
+        """Delete a comment and any replies that point at it. Returns True if the
+        comment existed."""
+        with self._lock:
+            cur = self._conn.execute("DELETE FROM comments WHERE comment_id = ? OR parent_id = ?",
+                                     (comment_id, comment_id))
+            self._conn.commit()
+            return cur.rowcount > 0
+
+    def delete_dashboard_comments(self, owner: str, dashboard_id: str) -> None:
+        """Drop every comment on a dashboard (called when the dashboard is deleted)."""
+        with self._lock:
+            self._conn.execute("DELETE FROM comments WHERE owner = ? AND dashboard_id = ?",
+                               (owner, dashboard_id))
+            self._conn.commit()

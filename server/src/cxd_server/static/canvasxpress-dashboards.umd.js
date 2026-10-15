@@ -97,6 +97,61 @@ var dashboardCss = [
   '  font: 12.5px/1.5 var(--cx-font-mono); white-space: pre; tab-size: 2; }',
   '.cxd-code-copy { position: absolute; top: 6px; right: 6px; padding: 1px 8px; border: 1px solid var(--cxd-border);',
   '  border-radius: var(--cx-radius-md); background: var(--cxd-panel-bg); color: var(--cxd-muted); font-size: 12px; cursor: pointer; }',
+  /* Floating "Reset cross-filter" control, shown only while a filter-mode
+     selection is narrowing the dashboard (markingMode:"filter"). */
+  '.cxd-xfilter-reset { position: fixed; right: 16px; bottom: 16px; z-index: var(--cx-z-modal);',
+  '  padding: 7px 14px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-pill);',
+  '  background: var(--cxd-panel-bg); color: inherit; font: 600 12.5px/1.3 var(--cxd-font);',
+  '  cursor: pointer; box-shadow: var(--cx-shadow-2); }',
+  '.cxd-xfilter-reset:hover { background: var(--cxd-title-bg); }',
+  '.cxd-xfilter-reset:focus { outline: 2px solid var(--cx-ui-focus); outline-offset: 2px; }',
+  /* Collaboration: comments toggle + slide-in rail (hosted app only). */
+  '.cxd-comments-toggle { position: fixed; left: 16px; bottom: 16px; z-index: var(--cx-z-modal);',
+  '  display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px;',
+  '  border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-pill);',
+  '  background: var(--cxd-panel-bg); color: inherit; font: 600 12.5px/1.3 var(--cxd-font);',
+  '  cursor: pointer; box-shadow: var(--cx-shadow-2); }',
+  '.cxd-comments-toggle:hover { background: var(--cxd-title-bg); }',
+  '.cxd-comments-toggle:focus { outline: 2px solid var(--cx-ui-focus); outline-offset: 2px; }',
+  '.cxd-comments-toggle.cxd-comments-open { background: var(--cx-ui-accent); color: var(--cx-ui-on-accent); border-color: var(--cx-ui-accent); }',
+  '.cxd-comments-count { min-width: 18px; padding: 0 5px; border-radius: var(--cx-radius-pill);',
+  '  background: var(--cx-ui-accent); color: var(--cx-ui-on-accent); font-size: 11px; text-align: center; }',
+  '.cxd-comments-rail { position: fixed; top: 0; right: 0; bottom: 0; width: 340px; max-width: 92vw;',
+  '  z-index: var(--cx-z-modal); display: flex; flex-direction: column;',
+  '  background: var(--cxd-panel-bg); border-left: 1px solid var(--cxd-border); box-shadow: var(--cx-shadow-3);',
+  '  font: 13px/1.5 var(--cxd-font); color: inherit; }',
+  '.cxd-comments-head { display: flex; align-items: center; justify-content: space-between;',
+  '  padding: 12px 14px; border-bottom: 1px solid var(--cxd-border); }',
+  '.cxd-comments-title { margin: 0; font-size: 15px; }',
+  '.cxd-comments-close { border: none; background: none; color: var(--cxd-muted); font-size: 22px; line-height: 1; cursor: pointer; }',
+  '.cxd-comments-list { flex: 1 1 auto; overflow-y: auto; padding: 10px 14px; }',
+  '.cxd-comments-empty { color: var(--cxd-muted); padding: 24px 4px; text-align: center; }',
+  '.cxd-comments-error { background: var(--cx-ui-danger-tint); color: var(--cx-ui-danger); padding: 6px 10px;',
+  '  border-radius: var(--cx-radius-sm); margin-bottom: 8px; font-size: 12.5px; }',
+  '.cxd-cmt { padding: 9px 0; border-bottom: 1px solid var(--cxd-border); }',
+  '.cxd-cmt-reply { margin-left: 16px; padding-left: 10px; border-left: 2px solid var(--cxd-border); border-bottom: none; }',
+  '.cxd-cmt-resolved { opacity: .6; }',
+  '.cxd-cmt-meta { display: flex; align-items: baseline; gap: 8px; }',
+  '.cxd-cmt-author { font-weight: 600; }',
+  '.cxd-cmt-time { color: var(--cxd-muted); font-size: 11.5px; }',
+  '.cxd-cmt-badge { margin-left: auto; padding: 0 7px; border-radius: var(--cx-radius-pill);',
+  '  background: var(--cxd-title-bg); color: var(--cxd-muted); font-size: 11px; }',
+  '.cxd-cmt-body { margin: 3px 0 5px; white-space: pre-wrap; word-break: break-word; }',
+  '.cxd-cmt-mention { color: var(--cx-ui-accent); font-weight: 600; }',
+  '.cxd-cmt-actions { display: flex; gap: 12px; }',
+  '.cxd-cmt-link { border: none; background: none; color: var(--cx-ui-accent); font: inherit; font-size: 12px; cursor: pointer; padding: 0; }',
+  '.cxd-cmt-link:hover { text-decoration: underline; }',
+  '.cxd-cmt-del { color: var(--cx-ui-danger); }',
+  '.cxd-cmt-link:disabled { opacity: .5; cursor: default; text-decoration: none; }',
+  '.cxd-comments-composer, .cxd-cmt-replybox { display: flex; flex-direction: column; gap: 6px; }',
+  '.cxd-comments-composer { padding: 10px 14px; border-top: 1px solid var(--cxd-border); }',
+  '.cxd-cmt-replybox { margin: 8px 0 2px; }',
+  '.cxd-comments-input { width: 100%; box-sizing: border-box; resize: vertical; padding: 7px 9px;',
+  '  border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md); background: var(--cxd-title-bg); color: inherit; font: inherit; }',
+  '.cxd-comments-input:focus { outline: 2px solid var(--cx-ui-focus); outline-offset: -1px; }',
+  '.cxd-comments-send { align-self: flex-end; padding: 5px 14px; border: none; border-radius: var(--cx-radius-md);',
+  '  background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent); font: 600 12.5px/1.4 var(--cxd-font); cursor: pointer; }',
+  '.cxd-comments-send:disabled { opacity: .5; cursor: default; }',
   '.cxd-code-edit { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; resize: vertical; border-radius: var(--cx-radius-md);',
   '  border: 1px solid var(--cxd-border); background: var(--cxd-title-bg); color: inherit;',
   '  font: 12.5px/1.5 var(--cx-font-mono); white-space: pre; tab-size: 2; }',
@@ -2288,6 +2343,315 @@ function isNumber(v) {
   return typeof v === 'number' && isFinite(v);
 }
 
+/* ==== src/comments.js ==== */
+/**
+ * Dashboard comments rail: a collapsible side panel where signed-in viewers of a
+ * dashboard leave comments, reply in threads, @mention teammates, and resolve a
+ * thread. It talks to the server comment API
+ * (`/api/dashboards/{id}/comments`), so it is only useful inside the hosted app
+ * (the standalone example pages have no session). Mount it after the dashboard
+ * renders; it adds a floating toggle button and a slide-in rail.
+ *
+ * @module comments
+ */
+
+/**
+ * Create an element with an optional class and text.
+ * @param {Document} doc - Owning document.
+ * @param {string} tag - Tag name.
+ * @param {string} [cls] - Class name.
+ * @param {string} [text] - Text content.
+ * @returns {HTMLElement} The new element.
+ */
+function cel(doc, tag, cls, text) {
+  var node = doc.createElement(tag);
+  if (cls) node.className = cls;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+/**
+ * A short relative time ("just now", "5m", "3h", "2d", or a date).
+ * @param {string} iso - ISO-8601 timestamp.
+ * @returns {string} The relative label.
+ */
+function relativeTime(iso) {
+  var then = Date.parse(iso);
+  if (isNaN(then)) return '';
+  var secs = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (secs < 45) return 'just now';
+  if (secs < 3600) return Math.round(secs / 60) + 'm';
+  if (secs < 86400) return Math.round(secs / 3600) + 'h';
+  if (secs < 7 * 86400) return Math.round(secs / 86400) + 'd';
+  return new Date(then).toLocaleDateString();
+}
+
+/**
+ * Append a comment body to a node, bolding @mentions of known users.
+ * @param {Document} doc - Owning document.
+ * @param {HTMLElement} into - Target node.
+ * @param {string} body - The comment text.
+ * @param {object} knownUsers - Set-like map of valid usernames.
+ * @returns {void}
+ */
+function renderBody(doc, into, body, knownUsers) {
+  var re = /(^|[^\w@])@([A-Za-z0-9][A-Za-z0-9._-]*)/g;
+  var last = 0;
+  var m;
+  while ((m = re.exec(body)) !== null) {
+    var lead = m[1];
+    var name = m[2];
+    into.appendChild(doc.createTextNode(body.slice(last, m.index) + lead));
+    if (Object.prototype.hasOwnProperty.call(knownUsers, name)) {
+      into.appendChild(cel(doc, 'b', 'cxd-cmt-mention', '@' + name));
+    } else {
+      into.appendChild(doc.createTextNode('@' + name));
+    }
+    last = m.index + m[0].length;
+  }
+  into.appendChild(doc.createTextNode(body.slice(last)));
+}
+
+/**
+ * Mount the comments rail for a dashboard.
+ * @param {object} opts - Options.
+ * @param {string} opts.baseUrl - API base (no trailing slash), e.g. "/dashboards".
+ * @param {string} opts.dashboardId - The dashboard id.
+ * @param {string} [opts.owner] - The dashboard's owner, when it is not the viewer's own.
+ * @param {string} [opts.currentUser] - The signed-in username (for permission hints).
+ * @param {string[]} [opts.users] - Usernames to recognize in @mentions.
+ * @param {Document} [opts.doc] - Owning document (defaults to `document`).
+ * @param {HTMLElement} [opts.mountInto] - Where to append the UI (defaults to `<body>`).
+ * @returns {{destroy: function, refresh: function, open: function}} Handle.
+ * @public
+ */
+function mountComments(opts) {
+  opts = opts || {};
+  var doc = opts.doc || (typeof document !== 'undefined' ? document : null);
+  if (!doc) throw new Error('mountComments needs a document');
+  var base = opts.baseUrl || '';
+  var id = opts.dashboardId;
+  var owner = opts.owner || null;
+  var currentUser = opts.currentUser || null;
+  var knownUsers = {};
+  (opts.users || []).forEach(function (u) { knownUsers[u] = true; });
+  if (currentUser) knownUsers[currentUser] = true;
+  var mountInto = opts.mountInto || doc.body || doc.documentElement;
+
+  var ownerQuery = owner ? ('?owner=' + encodeURIComponent(owner)) : '';
+  var apiRoot = base + '/api/dashboards/' + encodeURIComponent(id) + '/comments';
+
+  /**
+   * Call the comment API.
+   * @param {string} method - HTTP method.
+   * @param {string} path - Path appended to the comments root (may be "").
+   * @param {object} [body] - JSON body for writes.
+   * @returns {Promise<object>} The parsed response.
+   */
+  function api(method, path, body) {
+    var opt = { method: method, credentials: 'include', headers: {} };
+    if (body) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    return fetch(apiRoot + path + (path.indexOf('?') === -1 ? ownerQuery : ''), opt).then(function (r) {
+      if (!r.ok) { var e = new Error('HTTP ' + r.status); e.status = r.status; throw e; }
+      return r.status === 204 ? {} : r.json();
+    });
+  }
+
+  // --- UI skeleton -------------------------------------------------------
+  var toggle = cel(doc, 'button', 'cxd-comments-toggle');
+  toggle.type = 'button';
+  toggle.setAttribute('aria-label', 'Comments');
+  toggle.appendChild(doc.createTextNode('💬 Comments'));
+  var countBadge = cel(doc, 'span', 'cxd-comments-count');
+  countBadge.hidden = true;
+  toggle.appendChild(countBadge);
+
+  var rail = cel(doc, 'aside', 'cxd-comments-rail');
+  rail.hidden = true;
+  rail.setAttribute('aria-label', 'Dashboard comments');
+  var head = cel(doc, 'div', 'cxd-comments-head');
+  head.appendChild(cel(doc, 'h2', 'cxd-comments-title', 'Comments'));
+  var closeBtn = cel(doc, 'button', 'cxd-comments-close', '×');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close comments');
+  head.appendChild(closeBtn);
+  rail.appendChild(head);
+
+  var list = cel(doc, 'div', 'cxd-comments-list');
+  rail.appendChild(list);
+
+  var composer = cel(doc, 'form', 'cxd-comments-composer');
+  var textarea = cel(doc, 'textarea', 'cxd-comments-input');
+  textarea.setAttribute('rows', '2');
+  textarea.setAttribute('placeholder', 'Add a comment…  use @name to mention');
+  var sendBtn = cel(doc, 'button', 'cxd-comments-send', 'Comment');
+  sendBtn.type = 'submit';
+  composer.appendChild(textarea);
+  composer.appendChild(sendBtn);
+  rail.appendChild(composer);
+
+  mountInto.appendChild(toggle);
+  mountInto.appendChild(rail);
+
+  // --- behavior ----------------------------------------------------------
+  function open() { rail.hidden = false; toggle.classList.add('cxd-comments-open'); textarea.focus(); }
+  function close() { rail.hidden = true; toggle.classList.remove('cxd-comments-open'); }
+  toggle.addEventListener('click', function () { if (rail.hidden) open(); else close(); });
+  closeBtn.addEventListener('click', close);
+
+  /**
+   * Count every comment in a threaded list (roots + replies).
+   * @param {object[]} threads - Threaded comments.
+   * @returns {number} The total.
+   */
+  function totalCount(threads) {
+    var n = 0;
+    threads.forEach(function (t) { n += 1 + ((t.replies && t.replies.length) || 0); });
+    return n;
+  }
+
+  /**
+   * Build one comment card (root or reply).
+   * @param {object} comment - The comment.
+   * @param {boolean} isReply - Whether it is a reply (indented, no own reply box).
+   * @returns {HTMLElement} The card element.
+   */
+  function card(comment, isReply) {
+    var root = cel(doc, 'div', 'cxd-cmt' + (isReply ? ' cxd-cmt-reply' : '') + (comment.resolved ? ' cxd-cmt-resolved' : ''));
+    var meta = cel(doc, 'div', 'cxd-cmt-meta');
+    meta.appendChild(cel(doc, 'span', 'cxd-cmt-author', comment.author));
+    meta.appendChild(cel(doc, 'span', 'cxd-cmt-time', relativeTime(comment.created_at)));
+    if (comment.resolved) meta.appendChild(cel(doc, 'span', 'cxd-cmt-badge', 'resolved'));
+    root.appendChild(meta);
+
+    var bodyEl = cel(doc, 'div', 'cxd-cmt-body');
+    renderBody(doc, bodyEl, comment.body, knownUsers);
+    root.appendChild(bodyEl);
+
+    var actions = cel(doc, 'div', 'cxd-cmt-actions');
+    if (!isReply) {
+      var replyBtn = cel(doc, 'button', 'cxd-cmt-link', 'Reply');
+      replyBtn.type = 'button';
+      replyBtn.addEventListener('click', function () { toggleReply(root, comment); });
+      actions.appendChild(replyBtn);
+    }
+    var resolveBtn = cel(doc, 'button', 'cxd-cmt-link', comment.resolved ? 'Reopen' : 'Resolve');
+    resolveBtn.type = 'button';
+    resolveBtn.addEventListener('click', function () {
+      resolveBtn.disabled = true;
+      api('POST', '/' + encodeURIComponent(comment.comment_id) + '/resolve', { resolved: !comment.resolved })
+        .then(refresh, function (e) { resolveBtn.disabled = false; reportError(e); });
+    });
+    actions.appendChild(resolveBtn);
+    // The author / dashboard owner / an admin may delete; others get a 403 we surface.
+    if (!currentUser || comment.author === currentUser || owner === currentUser || owner == null) {
+      var delBtn = cel(doc, 'button', 'cxd-cmt-link cxd-cmt-del', 'Delete');
+      delBtn.type = 'button';
+      delBtn.addEventListener('click', function () {
+        delBtn.disabled = true;
+        api('DELETE', '/' + encodeURIComponent(comment.comment_id))
+          .then(refresh, function (e) { delBtn.disabled = false; reportError(e); });
+      });
+      actions.appendChild(delBtn);
+    }
+    root.appendChild(actions);
+    return root;
+  }
+
+  /**
+   * Toggle an inline reply composer under a root comment.
+   * @param {HTMLElement} rootCard - The root card element.
+   * @param {object} comment - The root comment.
+   * @returns {void}
+   */
+  function toggleReply(rootCard, comment) {
+    var existing = rootCard.querySelector('.cxd-cmt-replybox');
+    if (existing) { existing.parentNode.removeChild(existing); return; }
+    var box = cel(doc, 'form', 'cxd-cmt-replybox');
+    var input = cel(doc, 'textarea', 'cxd-comments-input');
+    input.setAttribute('rows', '2');
+    input.setAttribute('placeholder', 'Reply…');
+    var send = cel(doc, 'button', 'cxd-comments-send', 'Reply');
+    send.type = 'submit';
+    box.appendChild(input);
+    box.appendChild(send);
+    box.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = input.value.trim();
+      if (!text) return;
+      send.disabled = true;
+      api('POST', '', { body: text, parentId: comment.comment_id })
+        .then(refresh, function (err) { send.disabled = false; reportError(err); });
+    });
+    rootCard.appendChild(box);
+    input.focus();
+  }
+
+  /**
+   * Show an error line at the top of the list.
+   * @param {Error} e - The error.
+   * @returns {void}
+   */
+  function reportError(e) {
+    var msg = e && e.status === 403 ? 'You are not allowed to do that.'
+      : e && e.status === 401 ? 'Sign in to comment.'
+      : 'Something went wrong.';
+    var line = cel(doc, 'div', 'cxd-comments-error', msg);
+    list.insertBefore(line, list.firstChild);
+    setTimeout(function () { if (line.parentNode) line.parentNode.removeChild(line); }, 4000);
+  }
+
+  /**
+   * Re-fetch and re-render every comment.
+   * @returns {Promise<void>} Resolves once rendered.
+   */
+  function refresh() {
+    return api('GET', '').then(function (res) {
+      var threads = (res && res.comments) || [];
+      list.innerHTML = '';
+      var n = totalCount(threads);
+      countBadge.textContent = String(n);
+      countBadge.hidden = n === 0;
+      if (!threads.length) {
+        list.appendChild(cel(doc, 'div', 'cxd-comments-empty', 'No comments yet. Start the conversation.'));
+        return;
+      }
+      threads.forEach(function (t) {
+        var c = card(t, false);
+        (t.replies || []).forEach(function (r) { c.appendChild(card(r, true)); });
+        list.appendChild(c);
+      });
+    }, function (e) {
+      // 401/404 (not signed in / no such board) just hide the feature quietly.
+      if (e && (e.status === 401 || e.status === 404)) { toggle.hidden = true; return; }
+      reportError(e);
+    });
+  }
+
+  composer.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = textarea.value.trim();
+    if (!text) return;
+    sendBtn.disabled = true;
+    api('POST', '', { body: text }).then(function () {
+      textarea.value = '';
+      sendBtn.disabled = false;
+      return refresh();
+    }, function (err) { sendBtn.disabled = false; reportError(err); });
+  });
+
+  refresh();
+
+  return {
+    open: open,
+    refresh: refresh,
+    destroy: function () {
+      if (toggle.parentNode) toggle.parentNode.removeChild(toggle);
+      if (rail.parentNode) rail.parentNode.removeChild(rail);
+    }
+  };
+}
+
 /* ==== src/dataStore.js ==== */
 /**
  * Data resolution for dashboards: inline values and authenticated
@@ -3554,7 +3918,7 @@ var DATA_KINDS = ['inline', 'connector', 'dataset', 'join', 'function', 'live'];
 var FUNCTION_LANGUAGES = ['python', 'r'];
 
 /** @type {string[]} How related panels show marked rows (CanvasXpress highlightMode). */
-var MARKING_MODES = ['focus', 'highlight', 'ghost'];
+var MARKING_MODES = ['focus', 'highlight', 'ghost', 'filter'];
 
 /** @type {string[]} Where a calculated field lands (CanvasXpress calculatedFields `target`). */
 var CALC_TARGETS = ['variable', 'sampleAnnotation', 'variableAnnotation'];
@@ -3865,7 +4229,7 @@ function validateSpec(spec) {
     }
   }
   if (spec.markingMode != null && MARKING_MODES.indexOf(spec.markingMode) === -1) {
-    errors.push('spec.markingMode must be "focus", "highlight", or "ghost"');
+    errors.push('spec.markingMode must be one of: ' + MARKING_MODES.join(', '));
   }
 
   // --- filter schemes (named Filters-panel states) ---
@@ -4535,6 +4899,15 @@ function renderDashboard(spec, target, options) {
       var related = markingGraph && ref ? relatedRowFilter(picks.filter(function (w) {
         return applicable.indexOf(w) === -1;
       }), ref) : null;
+      // A filter-mode cross-filter selection narrows this instance to the
+      // selected (translated) rows of its source — intersected with any
+      // relationship-translated control picks, exactly like a Filters panel.
+      var crossIds = crossFilterRows(ref, inst);
+      if (crossIds) {
+        related = related
+          ? { axis: related.axis, ids: related.ids.filter(function (id) { return crossIds.indexOf(id) !== -1; }) }
+          : { axis: sourceAxis(ref, spec.data || {}), ids: crossIds };
+      }
       // Filters-panel predicates (on this source, translated via relationships,
       // or applied directly to a shared field). Split by axis: sample (x) rows
       // narrow via filterSmpBy, variable (z) rows via filterVarBy.
@@ -4733,7 +5106,19 @@ function renderDashboard(spec, target, options) {
   var doc = container.ownerDocument || (typeof document !== 'undefined' ? document : null);
   var escListener = null;
   if (doc && typeof doc.addEventListener === 'function') {
-    escListener = function (ev) { if (ev.key === 'Escape') resetAllControls(); };
+    escListener = function (ev) {
+      if (ev.key !== 'Escape') return;
+      // The dashboard owns the composed view, so the engine's own "reset graph"
+      // Escape handler must NOT run on the panels: it reveals series/variables
+      // the dashboard constrained (e.g. a hidden second measure) and
+      // double-restores cross-filtered data (duplicated bars). Swallow Escape
+      // and do the dashboard-level reset instead: clear an active cross-filter,
+      // else snap controls/filters back to All.
+      if (crossMarks != null) clearCrossFilter();
+      else resetAllControls();
+      if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
+      if (typeof ev.preventDefault === 'function') ev.preventDefault();
+    };
     doc.addEventListener('keydown', escListener);
   }
   var pending = [];        // per-cell settle promises (feed handle.ready)
@@ -5077,6 +5462,14 @@ function renderDashboard(spec, target, options) {
   // --- cross-source marking (spec.relationships + join sources) ---
   var markingGraph = hasRelationships(spec) ? relationGraph(spec) : null;
   var markingMode = spec.markingMode || 'focus';
+  // "filter" marking FILTERS the related panels to the selected rows (true
+  // cross-filter) instead of highlighting them. It composes with the Filters
+  // panel through applyControlFilters, so it goes through that pass rather than
+  // the highlight path (markInstance/clearMarking).
+  var crossFilterMode = markingMode === 'filter';
+  var crossMarks = null;      // { originRef, origin, ids, marks } of the active filter-mode selection, or null
+  var lastMarkedAt = 0;       // when a non-empty selection was last marked (to swallow a bar's auto-deselect)
+  var SPURIOUS_DESELECT_MS = 120;  // an empty selection within this of a real one is the engine auto-deselecting
   var markedInstances = [];   // [{ instance, highlightSmp, highlightVar, highlightMode }] to restore
   var markingSeq = 0;         // guards against an older async marking landing last
 
@@ -5113,9 +5506,26 @@ function renderDashboard(spec, target, options) {
     var seq = ++markingSeq;
     var ids = selectedRows(originRef, origin);
     if (!ids.length) {
-      clearMarking();
+      // Empty selection clears the active marking — a filter in filter mode, a
+      // highlight otherwise.
+      if (crossFilterMode) {
+        // Some charts (bars) do not keep a selection: the engine fires `select`
+        // with the picked rows and then, a few ms later, fires it again EMPTY as
+        // it auto-deselects. That spurious empty must not wipe the filter just
+        // applied, so an empty selection is ignored when it lands right after a
+        // real one; a genuine clear (the Reset control, or an empty click
+        // seconds later) still works. See SPURIOUS_DESELECT_MS.
+        var now = (typeof Date !== 'undefined') ? Date.now() : 0;
+        if (lastMarkedAt && (now - lastMarkedAt) < SPURIOUS_DESELECT_MS) {
+          return Promise.resolve();
+        }
+        clearCrossFilter();
+      } else {
+        clearMarking();
+      }
       return Promise.resolve();
     }
+    lastMarkedAt = (typeof Date !== 'undefined') ? Date.now() : 0;
     // Resolve every source the graph can traverse (memoized; normally ready).
     var refs = markingGraph ? Object.keys(markingGraph) : [];
     return Promise.all(refs.map(function (ref) {
@@ -5125,6 +5535,15 @@ function renderDashboard(spec, target, options) {
       var marks = markingGraph
         ? translateMarks(originRef, ids, markingGraph, function (ref) { return refData[ref] || null; })
         : {};
+      if (crossFilterMode) {
+        // Record the selection and re-run the filter pass: applyControlFilters
+        // folds these rows into each related instance's filter (and intersects
+        // them with any Filters-panel state), leaving the origin panel alone.
+        crossMarks = { originRef: originRef, origin: origin, ids: ids, marks: marks };
+        applyControlFilters();
+        showCrossFilterReset();
+        return;
+      }
       clearMarking();
       // Same-source panels in the other orientation: the engine names the rows
       // along the origin's axis, which is the other dimension for them.
@@ -5138,6 +5557,27 @@ function renderDashboard(spec, target, options) {
         (refBindings[ref] || []).forEach(function (b) { markInstance(b.instance, instanceAxis(b, ref), marks[ref]); });
       });
     });
+  }
+
+  /**
+   * The rows of `ref` that an active filter-mode selection keeps on one
+   * instance, or null when it imposes no constraint there. The origin instance
+   * (the panel the selection was made in) is never narrowed by its own
+   * selection; a source unrelated to the selection is left alone; every related
+   * source is narrowed to its translated rows (the origin source's own other
+   * panels to the raw selection).
+   * @param {string} ref - The instance's source ref.
+   * @param {object} inst - The CanvasXpress instance.
+   * @returns {(string[]|null)} Row ids of `ref` to keep, or null for no constraint.
+   * @private
+   */
+  function crossFilterRows(ref, inst) {
+    if (!crossMarks || !ref) return null;
+    if (ref === crossMarks.originRef) {
+      return inst === crossMarks.origin ? null : crossMarks.ids.slice();
+    }
+    if (Object.prototype.hasOwnProperty.call(crossMarks.marks, ref)) return crossMarks.marks[ref].slice();
+    return null;
   }
 
   /**
@@ -5162,6 +5602,48 @@ function renderDashboard(spec, target, options) {
     if (typeof instance.draw === 'function') {
       try { instance.draw(); } catch (e) { /* keep marking the others */ }
     }
+  }
+
+  var xfilterChip = null;    // lazily created "Reset cross-filter" control
+
+  /**
+   * Show (creating it on first use) the floating "Reset cross-filter" control
+   * while a filter-mode selection is narrowing the dashboard. Filtered-away
+   * panels have no marks left to click, so this is the dependable way to clear.
+   * @returns {void}
+   */
+  function showCrossFilterReset() {
+    if (!doc) return;
+    if (!xfilterChip) {
+      xfilterChip = doc.createElement('button');
+      xfilterChip.type = 'button';
+      xfilterChip.className = 'cxd-xfilter-reset';
+      xfilterChip.textContent = '✕ Reset cross-filter';
+      xfilterChip.setAttribute('aria-label', 'Reset cross-filter');
+      xfilterChip.onclick = function () { clearCrossFilter(); };
+      container.appendChild(xfilterChip);
+    }
+    xfilterChip.style.display = '';
+  }
+
+  /**
+   * Hide the "Reset cross-filter" control.
+   * @returns {void}
+   */
+  function hideCrossFilterReset() {
+    if (xfilterChip) xfilterChip.style.display = 'none';
+  }
+
+  /**
+   * Clear an active filter-mode cross-filter: drop the recorded selection, hide
+   * the reset control, and re-run the filter pass so every panel reopens.
+   * @returns {void}
+   */
+  function clearCrossFilter() {
+    crossMarks = null;
+    lastMarkedAt = 0;
+    hideCrossFilterReset();
+    applyControlFilters();
   }
 
   /**
@@ -9441,8 +9923,12 @@ function updateSettings(spec, changes) {
   return next;
 }
 
-/** @type {string[]} How a selection shows in related panels (default `focus`). */
-var MARKING_MODES = ['focus', 'highlight', 'ghost'];
+/**
+ * @type {string[]} How a selection shows in related panels (default `focus`).
+ * `focus`/`highlight`/`ghost` highlight the marked rows; `filter` narrows the
+ * related panels to them (true cross-filter).
+ */
+var MARKING_MODES = ['focus', 'highlight', 'ghost', 'filter'];
 
 /**
  * Encode a pair of key columns as the `on` grammar that `kind:"join"` sources
@@ -14786,7 +15272,8 @@ function openLinksDialog(doc, spec, dataOf) {
     labelOptions(modeSel, {
       focus: 'Focus: grey out everything else',
       highlight: 'Highlight: outline the related rows',
-      ghost: 'Ghost: fade everything else'
+      ghost: 'Ghost: fade everything else',
+      filter: 'Filter: narrow related panels to the selection (cross-filter)'
     });
 
     var errEl = el('div', 'cxb-modal-err');
@@ -15913,7 +16400,9 @@ function formatValue(value) {
 function describeLinkCount(spec) {
   var n = (spec.relationships || []).length;
   if (!n) return 'No cross-source links.';
-  return (n === 1 ? '1 link' : n + ' links') + ' · selections show as ' + (spec.markingMode || 'focus') + '.';
+  var mode = spec.markingMode || 'focus';
+  var effect = mode === 'filter' ? 'selections filter related panels' : 'selections show as ' + mode;
+  return (n === 1 ? '1 link' : n + ' links') + ' · ' + effect + '.';
 }
 
 /**
@@ -16042,6 +16531,7 @@ var CanvasXpressDashboards = {
   hasRelationships: hasRelationships,
   relationGraph: relationGraph,
   translateMarks: translateMarks,
+  mountComments: mountComments,
   exportSpec: exportSpec,
   importSpecFromFile: importSpecFromFile,
   parseAndValidate: parseAndValidate,

@@ -344,7 +344,8 @@ test('setMarkingMode sets a non-default mode, clears on focus/empty, and rejects
   assert.deepEqual(validateSpec(s).errors, []);
   assert.equal(Object.prototype.hasOwnProperty.call(setMarkingMode(s, 'focus'), 'markingMode'), false);
   assert.equal(Object.prototype.hasOwnProperty.call(setMarkingMode(s, ''), 'markingMode'), false);
-  assert.throws(function () { setMarkingMode(s, 'filter'); }, /marking mode must be one of/);
+  assert.equal(setMarkingMode(s, 'filter').markingMode, 'filter', 'filter is a valid mode');
+  assert.throws(function () { setMarkingMode(s, 'nope'); }, /marking mode must be one of/);
 });
 
 test('buildJoinSource builds a valid join that really blends the two sources', function () {

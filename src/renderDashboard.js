@@ -238,6 +238,15 @@ export function renderDashboard(spec, target, options) {
       var related = markingGraph && ref ? relatedRowFilter(picks.filter(function (w) {
         return applicable.indexOf(w) === -1;
       }), ref) : null;
+      // A filter-mode cross-filter selection narrows this instance to the
+      // selected (translated) rows of its source — intersected with any
+      // relationship-translated control picks, exactly like a Filters panel.
+      var crossIds = crossFilterRows(ref, inst);
+      if (crossIds) {
+        related = related
+          ? { axis: related.axis, ids: related.ids.filter(function (id) { return crossIds.indexOf(id) !== -1; }) }
+          : { axis: sourceAxis(ref, spec.data || {}), ids: crossIds };
+      }
       // Filters-panel predicates (on this source, translated via relationships,
       // or applied directly to a shared field). Split by axis: sample (x) rows
       // narrow via filterSmpBy, variable (z) rows via filterVarBy.
@@ -436,7 +445,19 @@ export function renderDashboard(spec, target, options) {
   var doc = container.ownerDocument || (typeof document !== 'undefined' ? document : null);
   var escListener = null;
   if (doc && typeof doc.addEventListener === 'function') {
-    escListener = function (ev) { if (ev.key === 'Escape') resetAllControls(); };
+    escListener = function (ev) {
+      if (ev.key !== 'Escape') return;
+      // The dashboard owns the composed view, so the engine's own "reset graph"
+      // Escape handler must NOT run on the panels: it reveals series/variables
+      // the dashboard constrained (e.g. a hidden second measure) and
+      // double-restores cross-filtered data (duplicated bars). Swallow Escape
+      // and do the dashboard-level reset instead: clear an active cross-filter,
+      // else snap controls/filters back to All.
+      if (crossMarks != null) clearCrossFilter();
+      else resetAllControls();
+      if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
+      if (typeof ev.preventDefault === 'function') ev.preventDefault();
+    };
     doc.addEventListener('keydown', escListener);
   }
   var pending = [];        // per-cell settle promises (feed handle.ready)
@@ -780,6 +801,14 @@ export function renderDashboard(spec, target, options) {
   // --- cross-source marking (spec.relationships + join sources) ---
   var markingGraph = hasRelationships(spec) ? relationGraph(spec) : null;
   var markingMode = spec.markingMode || 'focus';
+  // "filter" marking FILTERS the related panels to the selected rows (true
+  // cross-filter) instead of highlighting them. It composes with the Filters
+  // panel through applyControlFilters, so it goes through that pass rather than
+  // the highlight path (markInstance/clearMarking).
+  var crossFilterMode = markingMode === 'filter';
+  var crossMarks = null;      // { originRef, origin, ids, marks } of the active filter-mode selection, or null
+  var lastMarkedAt = 0;       // when a non-empty selection was last marked (to swallow a bar's auto-deselect)
+  var SPURIOUS_DESELECT_MS = 120;  // an empty selection within this of a real one is the engine auto-deselecting
   var markedInstances = [];   // [{ instance, highlightSmp, highlightVar, highlightMode }] to restore
   var markingSeq = 0;         // guards against an older async marking landing last
 
@@ -816,9 +845,26 @@ export function renderDashboard(spec, target, options) {
     var seq = ++markingSeq;
     var ids = selectedRows(originRef, origin);
     if (!ids.length) {
-      clearMarking();
+      // Empty selection clears the active marking — a filter in filter mode, a
+      // highlight otherwise.
+      if (crossFilterMode) {
+        // Some charts (bars) do not keep a selection: the engine fires `select`
+        // with the picked rows and then, a few ms later, fires it again EMPTY as
+        // it auto-deselects. That spurious empty must not wipe the filter just
+        // applied, so an empty selection is ignored when it lands right after a
+        // real one; a genuine clear (the Reset control, or an empty click
+        // seconds later) still works. See SPURIOUS_DESELECT_MS.
+        var now = (typeof Date !== 'undefined') ? Date.now() : 0;
+        if (lastMarkedAt && (now - lastMarkedAt) < SPURIOUS_DESELECT_MS) {
+          return Promise.resolve();
+        }
+        clearCrossFilter();
+      } else {
+        clearMarking();
+      }
       return Promise.resolve();
     }
+    lastMarkedAt = (typeof Date !== 'undefined') ? Date.now() : 0;
     // Resolve every source the graph can traverse (memoized; normally ready).
     var refs = markingGraph ? Object.keys(markingGraph) : [];
     return Promise.all(refs.map(function (ref) {
@@ -828,6 +874,15 @@ export function renderDashboard(spec, target, options) {
       var marks = markingGraph
         ? translateMarks(originRef, ids, markingGraph, function (ref) { return refData[ref] || null; })
         : {};
+      if (crossFilterMode) {
+        // Record the selection and re-run the filter pass: applyControlFilters
+        // folds these rows into each related instance's filter (and intersects
+        // them with any Filters-panel state), leaving the origin panel alone.
+        crossMarks = { originRef: originRef, origin: origin, ids: ids, marks: marks };
+        applyControlFilters();
+        showCrossFilterReset();
+        return;
+      }
       clearMarking();
       // Same-source panels in the other orientation: the engine names the rows
       // along the origin's axis, which is the other dimension for them.
@@ -841,6 +896,27 @@ export function renderDashboard(spec, target, options) {
         (refBindings[ref] || []).forEach(function (b) { markInstance(b.instance, instanceAxis(b, ref), marks[ref]); });
       });
     });
+  }
+
+  /**
+   * The rows of `ref` that an active filter-mode selection keeps on one
+   * instance, or null when it imposes no constraint there. The origin instance
+   * (the panel the selection was made in) is never narrowed by its own
+   * selection; a source unrelated to the selection is left alone; every related
+   * source is narrowed to its translated rows (the origin source's own other
+   * panels to the raw selection).
+   * @param {string} ref - The instance's source ref.
+   * @param {object} inst - The CanvasXpress instance.
+   * @returns {(string[]|null)} Row ids of `ref` to keep, or null for no constraint.
+   * @private
+   */
+  function crossFilterRows(ref, inst) {
+    if (!crossMarks || !ref) return null;
+    if (ref === crossMarks.originRef) {
+      return inst === crossMarks.origin ? null : crossMarks.ids.slice();
+    }
+    if (Object.prototype.hasOwnProperty.call(crossMarks.marks, ref)) return crossMarks.marks[ref].slice();
+    return null;
   }
 
   /**
@@ -865,6 +941,48 @@ export function renderDashboard(spec, target, options) {
     if (typeof instance.draw === 'function') {
       try { instance.draw(); } catch (e) { /* keep marking the others */ }
     }
+  }
+
+  var xfilterChip = null;    // lazily created "Reset cross-filter" control
+
+  /**
+   * Show (creating it on first use) the floating "Reset cross-filter" control
+   * while a filter-mode selection is narrowing the dashboard. Filtered-away
+   * panels have no marks left to click, so this is the dependable way to clear.
+   * @returns {void}
+   */
+  function showCrossFilterReset() {
+    if (!doc) return;
+    if (!xfilterChip) {
+      xfilterChip = doc.createElement('button');
+      xfilterChip.type = 'button';
+      xfilterChip.className = 'cxd-xfilter-reset';
+      xfilterChip.textContent = '✕ Reset cross-filter';
+      xfilterChip.setAttribute('aria-label', 'Reset cross-filter');
+      xfilterChip.onclick = function () { clearCrossFilter(); };
+      container.appendChild(xfilterChip);
+    }
+    xfilterChip.style.display = '';
+  }
+
+  /**
+   * Hide the "Reset cross-filter" control.
+   * @returns {void}
+   */
+  function hideCrossFilterReset() {
+    if (xfilterChip) xfilterChip.style.display = 'none';
+  }
+
+  /**
+   * Clear an active filter-mode cross-filter: drop the recorded selection, hide
+   * the reset control, and re-run the filter pass so every panel reopens.
+   * @returns {void}
+   */
+  function clearCrossFilter() {
+    crossMarks = null;
+    lastMarkedAt = 0;
+    hideCrossFilterReset();
+    applyControlFilters();
   }
 
   /**

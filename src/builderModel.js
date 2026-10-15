@@ -422,8 +422,12 @@ export function updateSettings(spec, changes) {
   return next;
 }
 
-/** @type {string[]} How a selection shows in related panels (default `focus`). */
-export var MARKING_MODES = ['focus', 'highlight', 'ghost'];
+/**
+ * @type {string[]} How a selection shows in related panels (default `focus`).
+ * `focus`/`highlight`/`ghost` highlight the marked rows; `filter` narrows the
+ * related panels to them (true cross-filter).
+ */
+export var MARKING_MODES = ['focus', 'highlight', 'ghost', 'filter'];
 
 /**
  * Encode a pair of key columns as the `on` grammar that `kind:"join"` sources

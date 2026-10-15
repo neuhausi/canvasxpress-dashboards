@@ -103,9 +103,9 @@
     },
     "markingMode": {
       "type": "string",
-      "enum": ["focus", "highlight", "ghost"],
+      "enum": ["focus", "highlight", "ghost", "filter"],
       "default": "focus",
-      "description": "How panels on related sources show marked rows (CanvasXpress highlightMode): focus greys the rest, highlight recolors the marked rows, ghost fades the rest."
+      "description": "How panels on related sources react to a selection: focus greys the rest, highlight recolors the marked rows, ghost fades the rest, and filter narrows the related panels to the selected rows (true cross-filter)."
     },
     "params": {
       "type": "object",

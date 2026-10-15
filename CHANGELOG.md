@@ -3,6 +3,64 @@
 Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 (`cxd_server`). Versions follow the package version.
 
+## Unreleased
+
+### Fixed: Escape no longer corrupts dashboard panels
+- The engine's own "Click ESC to reset graph" handler was running on each panel and
+  resetting its data view — revealing series/variables a dashboard had intentionally
+  constrained (e.g. a hidden second measure appearing in a bar/boxplot) and double-restoring
+  cross-filtered data (duplicated bars). A dashboard owns the composed view, so **Escape now
+  does a dashboard-level reset only** (clear an active cross-filter, else snap controls and
+  Filters back to All) and no longer lets the engine reset individual panels. Affects any
+  board with bars/boxplots/constrained series (Sales Model, Cohort Explorer, Live Ops, the
+  cross-filter demos, …).
+
+### Collaboration: dashboard comments + threads + @mentions (server)
+- **Viewer comments on a dashboard.** New `comments` table + store methods and REST API:
+  `GET/POST /api/dashboards/{id}/comments`, `POST …/comments/{cid}/resolve`,
+  `DELETE …/comments/{cid}`. Anyone who can **view** a dashboard (owner, a shipped example,
+  or a share grant) may comment; **resolve/delete** is limited to the comment's author, the
+  dashboard owner, or an admin. Comments thread (a `parentId` reply), can anchor to a
+  `panelId`, carry parsed **@mentions** (validated against real users), and are audited.
+  Deleting a dashboard removes its comments.
+- **Comments rail in the viewer.** A floating **💬 Comments** control (with an unread count)
+  opens a side rail where signed-in viewers post, reply in threads, resolve/reopen, and delete
+  their own comments; @mentions of known users are highlighted. `mountComments()` is exported
+  and wired into the hosted app's `view.html` (it stays hidden for anonymous viewers). Mention
+  email notifications are still to come.
+
+### True no-code cross-filter (`markingMode: "filter"`)
+- **A selection now filters, not just highlights.** A new fourth marking mode,
+  `"filter"`, narrows every related panel to the selected (relationship-translated)
+  rows — the signature BI cross-filter gesture — instead of highlighting them. The
+  existing `focus`/`highlight`/`ghost` modes are unchanged. The panel the selection
+  was made in is never narrowed by its own selection, and an empty selection clears
+  the cross-filter on every related panel.
+- **Composes with the Filters panel.** Cross-filter runs through the same
+  `applyControlFilters` pass as control picks and Filters-panel predicates, so when
+  both target a panel their row sets **intersect** rather than clobber. Implemented
+  entirely client-side (reuses `filterUserData`); no SQL pushdown of synthetic row ids,
+  so database-backed sources are unaffected. No engine (`build/js`) change.
+- Added `"filter"` to the `markingMode` enum (`validateSpec`, `builderModel`, JSON Schema).
+- **Three ways to clear a cross-filter.** The floating **✕ Reset cross-filter** control, the
+  **Escape** key (the engine already shows "Click ESC to reset graph", so ESC now also undoes
+  the cross-filter even on a board with no filter controls), or a click on empty space.
+- **Cross-filter now works from a bar click.** Bar charts fire `select` with the picked
+  rows and then, ~instantly, fire it again empty as the engine auto-deselects the bar; that
+  spurious empty was wiping the filter the moment it was applied. In filter mode an empty
+  selection landing within a short window of a real one is now ignored, so clicking a bar
+  (or any chart that auto-deselects) filters and stays filtered — a genuine clear (the Reset
+  control, or an empty-space click) still works.
+- **Builder + viewer affordances.** The Links dialog's "When you select marks" picker now
+  offers *Filter: narrow related panels to the selection (cross-filter)*, and the links
+  summary reads "selections filter related panels" in that mode. At runtime a floating
+  **✕ Reset cross-filter** control appears while a cross-filter is active and clears it in
+  one click (an empty selection in the origin panel clears it too).
+- **Docs + examples.** New guide `docs/cross-filter.md`, and two gallery examples:
+  `cross-filter-demo` (orders ↔ reps on Region) and `cross-filter-genomics` (clinical
+  patients ↔ expression samples on patient id — a tumor-response scatter cross-filtering
+  an expression heatmap and a PD-L1 boxplot).
+
 ## 0.14.0 — 2026-10-14
 
 ### Remote function runtime: the main app is the only authorizer

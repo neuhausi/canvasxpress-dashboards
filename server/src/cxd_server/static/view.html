@@ -94,6 +94,28 @@
       m.textContent = msg;
     }
 
+    // Collaboration: add the comments rail once the dashboard is rendered. It
+    // needs a signed-in session and the comment API; /auth/me tells us who we
+    // are (and silently skips the rail when not logged in), /api/directory gives
+    // the usernames to recognize in @mentions.
+    function mountCommentsRail(spec) {
+      if (!CanvasXpressDashboards.mountComments) return;
+      fetch(base + '/auth/me', { credentials: 'include' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (me) {
+          if (!me || !me.user) return;   // not signed in: no comments
+          fetch(base + '/api/directory', { credentials: 'include' })
+            .then(function (r) { return r.ok ? r.json() : { users: [] }; })
+            .then(function (dir) {
+              CanvasXpressDashboards.mountComments({
+                baseUrl: base, dashboardId: spec.id, owner: owner,
+                currentUser: me.user, users: (dir && dir.users) || []
+              });
+            });
+        })
+        .catch(function () { /* comments are optional chrome */ });
+    }
+
     // Wire the export toolbar once the dashboard is rendered. HTML export bakes
     // in the data + libraries (self-contained); PNG/PDF rasterize the live board.
     function wireToolbar(spec, handle) {
@@ -153,6 +175,7 @@
             document.documentElement.setAttribute('data-cx-ui-theme',
               document.getElementById('dashboard').getAttribute('data-cx-ui-theme') || 'auto');
             wireToolbar(spec, handle);
+            mountCommentsRail(spec);
           });
       }).catch(function (err) {
         if (err && err.status === 401) fail('Sign in to view this dashboard.');

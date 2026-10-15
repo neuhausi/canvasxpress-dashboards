@@ -382,6 +382,24 @@ def _now_iso() -> str:
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
+_MENTION_RE = re.compile(r"(?<![\w@])@([A-Za-z0-9][A-Za-z0-9._-]*)")
+
+
+def _parse_mentions(body: str, known_users) -> list:
+    """The @mentioned usernames in a comment body that are real users.
+
+    :param body: The comment text.
+    :param known_users: An iterable of valid usernames to match against.
+    :returns: The matched usernames, de-duplicated, in first-seen order.
+    """
+    valid = set(known_users)
+    seen = []
+    for name in _MENTION_RE.findall(body or ""):
+        if name in valid and name not in seen:
+            seen.append(name)
+    return seen
+
+
 def create_dashboards_app(
     store: Optional[DashboardStore] = None,
     session_secret: Optional[str] = None,
@@ -1414,8 +1432,105 @@ def create_dashboards_app(
                 and not is_disposable(target, dashboard_id)):
             raise HTTPException(status_code=403, detail="Dashboard is locked")
         store.delete_dashboard(target, dashboard_id)
+        store.delete_dashboard_comments(target, dashboard_id)
         governance.forget_resource("dashboard", target, dashboard_id)
         return {"dashboards": store.list_dashboards(user)}
+
+    # ---- collaboration: comments + threads + @mentions ----
+    def resolve_viewable_owner(user: str, dashboard_id: str, owner: Optional[str]) -> str:
+        """The owner of a dashboard ``user`` may VIEW (and therefore comment on),
+        resolving ``?owner=``, the shipped examples, and share grants the same way
+        :func:`get_dashboard` does. Raises 404 when there is no such dashboard the
+        user can see.
+
+        :param user: The requesting user.
+        :param dashboard_id: The dashboard id.
+        :param owner: An explicit ``?owner=`` (another owner), or None for the caller.
+        :returns: The resolved owner the comment belongs to.
+        """
+        if owner and owner != user:
+            if (user_is_admin(user) or owner == examples_owner or is_disposable(owner, dashboard_id)
+                    or governance.access_level(user, "dashboard", owner, dashboard_id)):
+                if store.get_summary(owner, dashboard_id) is not None:
+                    return owner
+            raise HTTPException(status_code=404, detail="No such dashboard")
+        if store.get_summary(user, dashboard_id) is not None:
+            return user
+        foreign = foreign_dashboard_owner(user, dashboard_id)
+        if foreign is not None:
+            return foreign
+        raise HTTPException(status_code=404, detail="No such dashboard")
+
+    def _thread_comments(flat: list) -> list:
+        """Nest replies under their parent: top-level comments get a ``replies``
+        list (oldest first); an orphaned reply (missing parent) is shown top-level."""
+        by_id = {c["comment_id"]: dict(c, replies=[]) for c in flat}
+        roots = []
+        for c in flat:
+            node = by_id[c["comment_id"]]
+            parent = by_id.get(c["parent_id"]) if c["parent_id"] else None
+            (parent["replies"] if parent else roots).append(node)
+        return roots
+
+    @app.get("/api/dashboards/{dashboard_id}/comments")
+    def list_comments(request: Request, dashboard_id: str, owner: Optional[str] = None):
+        user = require_user(request)
+        spec_owner = resolve_viewable_owner(user, dashboard_id, owner)
+        return {"comments": _thread_comments(store.list_comments(spec_owner, dashboard_id))}
+
+    @app.post("/api/dashboards/{dashboard_id}/comments")
+    async def post_comment(request: Request, dashboard_id: str, owner: Optional[str] = None):
+        user = require_user(request)
+        spec_owner = resolve_viewable_owner(user, dashboard_id, owner)
+        body = await request.json() if _has_body(request) else {}
+        text = (body.get("body") or "").strip()
+        if not text:
+            raise HTTPException(status_code=400, detail="Comment body is required")
+        parent_id = body.get("parentId")
+        if parent_id:
+            parent = store.get_comment(parent_id)
+            if (parent is None or parent["owner"] != spec_owner
+                    or parent["dashboard_id"] != dashboard_id):
+                raise HTTPException(status_code=400, detail="No such parent comment")
+        mentions = _parse_mentions(text, store.list_users())
+        comment = store.add_comment(spec_owner, dashboard_id, user, text, _now_iso(),
+                                    panel_id=body.get("panelId"), parent_id=parent_id,
+                                    mentions=mentions)
+        note(request, owner=spec_owner, comment=comment["comment_id"], mentions=mentions)
+        return {"comment": comment}
+
+    def _own_comment_or_moderator(user: str, spec_owner: str, comment: dict) -> None:
+        """Allow the comment's author, the dashboard owner, or an admin; else 403."""
+        if not (comment["author"] == user or spec_owner == user or user_is_admin(user)):
+            raise HTTPException(status_code=403, detail="Not allowed to modify this comment")
+
+    @app.post("/api/dashboards/{dashboard_id}/comments/{comment_id}/resolve")
+    async def resolve_comment(request: Request, dashboard_id: str, comment_id: str,
+                              owner: Optional[str] = None):
+        user = require_user(request)
+        spec_owner = resolve_viewable_owner(user, dashboard_id, owner)
+        comment = store.get_comment(comment_id)
+        if comment is None or comment["owner"] != spec_owner or comment["dashboard_id"] != dashboard_id:
+            raise HTTPException(status_code=404, detail="No such comment")
+        _own_comment_or_moderator(user, spec_owner, comment)
+        body = await request.json() if _has_body(request) else {}
+        resolved = bool(body.get("resolved", True))
+        updated = store.resolve_comment(comment_id, user, _now_iso(), resolved=resolved)
+        note(request, owner=spec_owner, comment=comment_id, resolved=resolved)
+        return {"comment": updated}
+
+    @app.delete("/api/dashboards/{dashboard_id}/comments/{comment_id}")
+    def delete_comment(request: Request, dashboard_id: str, comment_id: str,
+                       owner: Optional[str] = None):
+        user = require_user(request)
+        spec_owner = resolve_viewable_owner(user, dashboard_id, owner)
+        comment = store.get_comment(comment_id)
+        if comment is None or comment["owner"] != spec_owner or comment["dashboard_id"] != dashboard_id:
+            raise HTTPException(status_code=404, detail="No such comment")
+        _own_comment_or_moderator(user, spec_owner, comment)
+        store.delete_comment(comment_id)
+        note(request, owner=spec_owner, comment=comment_id)
+        return {"comments": _thread_comments(store.list_comments(spec_owner, dashboard_id))}
 
     # ---- sharing ----
     @app.post("/api/dashboards/{dashboard_id}/share")

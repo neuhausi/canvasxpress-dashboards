@@ -4519,7 +4519,8 @@ function openLinksDialog(doc, spec, dataOf) {
     labelOptions(modeSel, {
       focus: 'Focus: grey out everything else',
       highlight: 'Highlight: outline the related rows',
-      ghost: 'Ghost: fade everything else'
+      ghost: 'Ghost: fade everything else',
+      filter: 'Filter: narrow related panels to the selection (cross-filter)'
     });
 
     var errEl = el('div', 'cxb-modal-err');
@@ -5646,7 +5647,9 @@ function formatValue(value) {
 function describeLinkCount(spec) {
   var n = (spec.relationships || []).length;
   if (!n) return 'No cross-source links.';
-  return (n === 1 ? '1 link' : n + ' links') + ' · selections show as ' + (spec.markingMode || 'focus') + '.';
+  var mode = spec.markingMode || 'focus';
+  var effect = mode === 'filter' ? 'selections filter related panels' : 'selections show as ' + mode;
+  return (n === 1 ? '1 link' : n + ' links') + ' · ' + effect + '.';
 }
 
 /**
