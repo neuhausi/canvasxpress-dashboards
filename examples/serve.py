@@ -595,7 +595,9 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     # store; the spec-level relationships + markingMode ride along unchanged, so
     # clicking a mark filters the related panels.
     for spec_file, prefix in (("cross-filter-demo.spec.json", "xfilter-demo-"),
-                              ("cross-filter-genomics.spec.json", "xfilter-genomics-")):
+                              ("cross-filter-genomics.spec.json", "xfilter-genomics-"),
+                              ("linked-highlight.spec.json", "linked-highlight-"),
+                              ("linked-ghost.spec.json", "linked-ghost-")):
         xf = load_spec(spec_file)
         if xf and xf["id"] not in saved:
             xf = copy.deepcopy(xf)

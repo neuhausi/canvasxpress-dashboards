@@ -1,0 +1,323 @@
+{
+  "$schema": "../schema/dashboard.schema.json",
+  "schemaVersion": "1.1",
+  "id": "linked-highlight",
+  "title": "Linked Selection \u2014 Highlight",
+  "version": 1,
+  "broadcastGroup": "linked-highlight",
+  "theme": "auto",
+  "relationships": [
+    {
+      "left": "orders",
+      "right": "reps",
+      "on": {
+        "left": "Region",
+        "right": "Region"
+      }
+    }
+  ],
+  "markingMode": "highlight",
+  "layout": {
+    "cols": 12,
+    "rowHeight": 40,
+    "gap": 12,
+    "items": [
+      {
+        "panel": "intro",
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 2
+      },
+      {
+        "panel": "orders",
+        "x": 0,
+        "y": 2,
+        "w": 7,
+        "h": 7
+      },
+      {
+        "panel": "repBars",
+        "x": 7,
+        "y": 2,
+        "w": 5,
+        "h": 7
+      },
+      {
+        "panel": "repScatter",
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 6
+      }
+    ]
+  },
+  "data": {
+    "orders": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": [
+            "Revenue",
+            "Units"
+          ],
+          "smps": [
+            "O001",
+            "O002",
+            "O003",
+            "O004",
+            "O005",
+            "O006",
+            "O007",
+            "O008",
+            "O009",
+            "O010",
+            "O011",
+            "O012",
+            "O013",
+            "O014",
+            "O015",
+            "O016",
+            "O017",
+            "O018",
+            "O019",
+            "O020",
+            "O021",
+            "O022",
+            "O023",
+            "O024"
+          ],
+          "data": [
+            [
+              132,
+              158,
+              159,
+              185,
+              186,
+              212,
+              99,
+              117,
+              110,
+              128,
+              121,
+              139,
+              156,
+              190,
+              199,
+              233,
+              242,
+              276,
+              73,
+              88,
+              78,
+              93,
+              83,
+              98
+            ],
+            [
+              14.7,
+              15.8,
+              14.5,
+              15.4,
+              23.2,
+              23.6,
+              9.9,
+              10.6,
+              9.2,
+              16.0,
+              13.4,
+              13.9,
+              14.2,
+              15.8,
+              24.9,
+              25.9,
+              24.2,
+              25.1,
+              6.1,
+              11.0,
+              8.7,
+              9.3,
+              7.5,
+              8.2
+            ]
+          ]
+        },
+        "x": {
+          "Region": [
+            "North",
+            "North",
+            "North",
+            "North",
+            "North",
+            "North",
+            "South",
+            "South",
+            "South",
+            "South",
+            "South",
+            "South",
+            "West",
+            "West",
+            "West",
+            "West",
+            "West",
+            "West",
+            "Central",
+            "Central",
+            "Central",
+            "Central",
+            "Central",
+            "Central"
+          ],
+          "Segment": [
+            "SMB",
+            "Mid",
+            "Ent",
+            "SMB",
+            "Mid",
+            "Ent",
+            "Mid",
+            "Ent",
+            "SMB",
+            "Mid",
+            "Ent",
+            "SMB",
+            "Ent",
+            "SMB",
+            "Mid",
+            "Ent",
+            "SMB",
+            "Mid",
+            "SMB",
+            "Mid",
+            "Ent",
+            "SMB",
+            "Mid",
+            "Ent"
+          ]
+        }
+      }
+    },
+    "reps": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": [
+            "Quota",
+            "Attainment"
+          ],
+          "smps": [
+            "Rep 01",
+            "Rep 02",
+            "Rep 03",
+            "Rep 04",
+            "Rep 05",
+            "Rep 06",
+            "Rep 07",
+            "Rep 08",
+            "Rep 09",
+            "Rep 10",
+            "Rep 11",
+            "Rep 12"
+          ],
+          "data": [
+            [
+              113,
+              126,
+              139,
+              112,
+              125,
+              138,
+              111,
+              124,
+              137,
+              110,
+              123,
+              136
+            ],
+            [
+              108.6,
+              102.6,
+              96.6,
+              79.4,
+              73.4,
+              102.4,
+              118.8,
+              112.8,
+              106.8,
+              74.2,
+              68.2,
+              97.2
+            ]
+          ]
+        },
+        "x": {
+          "Region": [
+            "North",
+            "North",
+            "North",
+            "South",
+            "South",
+            "South",
+            "West",
+            "West",
+            "West",
+            "Central",
+            "Central",
+            "Central"
+          ]
+        }
+      }
+    }
+  },
+  "panels": {
+    "intro": {
+      "type": "text",
+      "value": "**Click a bar** in *Revenue by Order* (left). Both rep panels react to the selection via `markingMode:\"highlight\"` \u2014 the related rep rows are **outlined**, the rest stay visible. Same two datasets as the cross-filter demo (orders \u2194 reps on **Region**); only the **Links** behavior differs."
+    },
+    "orders": {
+      "title": "Revenue by Order (select to highlight)",
+      "dataRef": "orders",
+      "config": {
+        "graphType": "Bar",
+        "title": false,
+        "graphOrientation": "vertical",
+        "colorBy": "Region",
+        "smpLabelRotate": 45,
+        "xAxis": [
+          "Revenue"
+        ]
+      }
+    },
+    "repBars": {
+      "title": "Rep Attainment %",
+      "dataRef": "reps",
+      "config": {
+        "graphType": "Bar",
+        "title": false,
+        "graphOrientation": "vertical",
+        "colorBy": "Region",
+        "smpLabelRotate": 45,
+        "xAxis": [
+          "Attainment"
+        ]
+      }
+    },
+    "repScatter": {
+      "title": "Rep Quota vs Attainment",
+      "dataRef": "reps",
+      "config": {
+        "graphType": "Scatter2D",
+        "title": false,
+        "dataPointSize": 14,
+        "colorBy": "Region",
+        "xAxis": [
+          "Quota"
+        ],
+        "yAxis": [
+          "Attainment"
+        ]
+      }
+    }
+  }
+}
