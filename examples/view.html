@@ -228,7 +228,6 @@
             document.documentElement.setAttribute('data-cx-ui-theme',
               document.getElementById('dashboard').getAttribute('data-cx-ui-theme') || 'auto');
             wireToolbar(spec, handle);
-            mountCollab(spec);
           });
       }).catch(function (err) {
         if (err && err.status === 401) fail('Sign in to view this dashboard.');

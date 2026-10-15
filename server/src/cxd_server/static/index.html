@@ -373,8 +373,57 @@
     var navItems = [].slice.call(document.querySelectorAll('.nav-item'));
     var currentBuilder = null;
     var currentPreview = null;
+    var previewCollab = null;       // [comments, ask] handles for the inline View pane
+    var directoryUsers = null;      // cached /api/directory users (for @mention highlighting)
+
+    // Tear down the comments/Ask controls mounted for the inline View.
+    function destroyPreviewCollab() {
+      if (previewCollab) {
+        previewCollab.forEach(function (h) { try { if (h && h.destroy) h.destroy(); } catch (e) {} });
+        previewCollab = null;
+      }
+    }
+
+    // Mount the comments rail + Ask box for the dashboard shown in the inline
+    // View pane (not the full-page Preview tab, which stays clean).
+    function mountPreviewCollab(spec, summary) {
+      destroyPreviewCollab();
+      if (!currentUser || !CXD.mountComments) return;
+      var owner = (summary && (summary.shared || summary.example)) ? summary.owner : null;
+      var panels = Object.keys(spec.panels || {}).map(function (pid) {
+        return { id: pid, title: (spec.panels[pid] || {}).title || pid };
+      });
+      function mount(users) {
+        previewCollab = [];
+        previewCollab.push(CXD.mountComments({
+          baseUrl: API_BASE, dashboardId: spec.id, owner: owner,
+          currentUser: currentUser, users: users || [], panels: panels
+        }));
+        if (CXD.mountAsk && currentPermissions.indexOf('llm.use') !== -1) {
+          previewCollab.push(CXD.mountAsk({ baseUrl: API_BASE, dashboardId: spec.id, owner: owner }));
+        }
+        // The pills default to the window's bottom-left; the inline View has the
+        // nav + dashboard list there, so shift them to sit over the preview pane.
+        setTimeout(function () {
+          var pane = document.getElementById('dash-preview');
+          var left = pane ? Math.round(pane.getBoundingClientRect().left) + 8 : 16;
+          var ct = document.querySelector('.cxd-comments-toggle');
+          var at = document.querySelector('.cxd-ask-toggle');
+          var ap = document.querySelector('.cxd-ask-panel');
+          if (ct) ct.style.left = left + 'px';
+          if (at) at.style.left = (left + 134) + 'px';
+          if (ap) ap.style.left = left + 'px';
+        }, 0);
+      }
+      if (directoryUsers) { mount(directoryUsers); return; }
+      fetch(API_BASE + '/api/directory', { credentials: 'include' })
+        .then(function (r) { return r.ok ? r.json() : { users: [] }; })
+        .then(function (d) { directoryUsers = (d && d.users) || []; mount(directoryUsers); })
+        .catch(function () { mount([]); });
+    }
 
     function teardown() {
+      destroyPreviewCollab();
       if (currentBuilder) {
         // Capture the builder's latest spec (folds in live ⚙-customizer edits)
         // before destroying it, so other views see the current state.
@@ -4293,6 +4342,7 @@
 
     // Render a spec (e.g. an old version) in the Dashboards preview pane.
     function previewSpec(spec, label) {
+      destroyPreviewCollab();
       var titleEl = document.getElementById('dash-title');
       if (titleEl) { titleEl.style.display = ''; titleEl.textContent = label + ' (read-only preview)'; }
       currentPreview = Promise.resolve(currentPreview).then(function (h) {
@@ -4317,6 +4367,7 @@
       // "click View…" hint line instead of printing the title over it.
       var titleEl = document.getElementById('dash-title');
       if (titleEl) titleEl.style.display = 'none';
+      destroyPreviewCollab();
       client.load(summary.id, summary.shared ? { owner: summary.owner } : undefined).then(function (spec) {
         currentPreview = Promise.resolve(currentPreview).then(function (h) {
           if (h && h.destroy) { try { h.destroy(); } catch (e) {} }
@@ -4324,7 +4375,7 @@
           if (!host) return null;
           host.innerHTML = '';
           return CXD.renderDashboard(spec, host, { CanvasXpress: window.CanvasXpress, baseUrl: API_BASE, functionsRuntime: FUNCTIONS_RUNTIME, prepareLive: ensureConnectorsSession });
-        });
+        }).then(function (h) { mountPreviewCollab(spec, summary); return h; });
       });
     }
 
