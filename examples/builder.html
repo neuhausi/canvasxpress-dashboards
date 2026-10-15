@@ -174,6 +174,15 @@
     .data-dropzone.drop-active { border-color: var(--accent); color: var(--accent);
       background: var(--cx-ui-accent-tint-subtle); }
 
+    /* Dashboards view: bound the two columns to the viewport so the card list and
+       the preview each scroll INDEPENDENTLY (like File Sources on the Data page).
+       Selecting a dashboard low in the list no longer pushes the preview out of
+       view — the preview stays put and keeps its own scroll. */
+    .cxd-dash-view { height: calc(100vh - 170px); min-height: 460px; align-items: stretch; }
+    .cxd-dash-view .cxd-dash-col { min-height: 0; }
+    .cxd-dash-view #dash-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+    .cxd-dash-view #dash-preview { min-height: 0; overflow: auto; }
+
     /* Dark: <html data-cx-ui-theme="auto"> (follows the OS) swaps the --cx-ui-* roles these read; a
        dashboard sets its own theme on its container, and builder modals copy it. */
       .access-icon { font-size: 14px; cursor: help; vertical-align: middle; margin-left: 2px; }
@@ -3788,14 +3797,14 @@
           '<button class="cta" id="dash-dbwizard" title="A Control that lists values from your database, over a chart that re-queries it for the picked value">＋ Dashboard from database</button>' +
         '</div>';
       viewEl.innerHTML =
-        '<div class="data-view">' +
-          '<div style="flex:0 0 320px;width:320px;box-sizing:border-box;display:flex;flex-direction:column">' +
+        '<div class="data-view cxd-dash-view">' +
+          '<div class="cxd-dash-col" style="flex:0 0 320px;width:320px;box-sizing:border-box;display:flex;flex-direction:column">' +
             '<div class="cxb-dash-search-wrap">' +
               '<input id="dash-search" type="search" placeholder="Search dashboards…"/>' +
               '<button type="button" id="dash-filter-btn" title="Filter by what a dashboard uses" aria-label="Filter by what a dashboard uses" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h12l-4.5 5.5V13l-3-1.5V8.5z"/></svg><span id="dash-filter-badge"></span></button>' +
               '<div id="dash-chips" role="group" aria-label="Filter by what a dashboard uses"></div>' +
             '</div>' +
-            '<div class="data-list" id="dash-list" style="flex:none;width:auto;align-self:stretch"><div class="placeholder">Loading…</div></div>' +
+            '<div class="data-list" id="dash-list" style="width:auto;align-self:stretch"><div class="placeholder">Loading…</div></div>' +
           '</div>' +
           '<div class="data-preview" id="dash-preview" style="padding:0 12px 12px">' +
             '<div class="data-preview-title" id="dash-title">Click “View” on a dashboard to preview it here.</div>' +
