@@ -228,6 +228,24 @@
       border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); padding: 8px; }
     .cxd-embed-copy { align-self: flex-start; padding: 0 12px; height: 34px; font-size: 12px;
       white-space: nowrap; flex: none; border-radius: var(--cx-radius-md); }
+
+    /* Shared filter-bar controls (Audit log, Schedules): one 36px height, one
+       field look (surface, border, radius) and one button look, so these toolbars
+       read like the rest of the app instead of raw native inputs/buttons. */
+    .cxd-filterbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .cxd-control { height: 36px; box-sizing: border-box; padding: 0 10px; font: inherit; font-size: 14px;
+      line-height: 1.4; color: inherit; background: var(--cx-ui-surface); border: 1px solid var(--rail-border);
+      border-radius: var(--cx-radius-md); vertical-align: middle; }
+    select.cxd-control { padding-right: 32px; }                 /* room for the chevron */
+    textarea.cxd-control { height: auto; min-height: 36px; padding: 8px 10px; }
+    .cxd-btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; box-sizing: border-box;
+      padding: 0 16px; font: inherit; font-size: 14px; font-weight: 600; line-height: 1; white-space: nowrap;
+      border: 1px solid transparent; border-radius: var(--cx-radius-md); cursor: pointer; text-decoration: none;
+      background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent); }
+    .cxd-btn:hover { background: var(--cx-ui-accent-hover); }
+    .cxd-btn--ghost { background: transparent; border-color: var(--rail-border); color: inherit; }
+    .cxd-btn--ghost:hover { background: var(--cx-ui-surface-sunken); }
+    .cxd-btn:disabled { opacity: .55; cursor: not-allowed; }
     /* Every dropdown in the app draws the engine's chevron (two currentColor diagonals: it follows
        the text colour in light and dark), inset from the right border instead of on it, with room
        so the text never runs under it. The engine's own selects (customizer, data filter, its classed
@@ -1121,14 +1139,14 @@
         '<p style="color:var(--muted);margin:0 0 8px;font-size:14px">Every sign-in, change, share, ' +
           'share-link view and data-function run, newest first. Append-only and hash-chained: ' +
           '<b>Verify chain</b> detects any edited or deleted entry.</p>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">' +
-          '<input id="audit-actor" placeholder="User" style="width:130px"/>' +
-          '<select id="audit-action"><option value="">All actions</option></select>' +
-          '<select id="audit-outcome"><option value="">Any outcome</option>' +
+        '<div class="cxd-filterbar">' +
+          '<input id="audit-actor" class="cxd-control" placeholder="User" style="width:130px"/>' +
+          '<select id="audit-action" class="cxd-control"><option value="">All actions</option></select>' +
+          '<select id="audit-outcome" class="cxd-control"><option value="">Any outcome</option>' +
             '<option value="ok">ok</option><option value="denied">denied</option><option value="error">error</option></select>' +
-          '<button id="audit-apply">Apply</button>' +
-          '<button id="audit-verify">Verify chain</button>' +
-          '<a id="audit-export" href="#" download>Export CSV</a>' +
+          '<button id="audit-apply" class="cxd-btn">Apply</button>' +
+          '<button id="audit-verify" class="cxd-btn cxd-btn--ghost">Verify chain</button>' +
+          '<a id="audit-export" class="cxd-btn cxd-btn--ghost" href="#" download>Export CSV</a>' +
         '</div>' +
         '<div id="audit-status" style="min-height:18px;font-size:14px;margin-bottom:6px"></div>' +
         '<div style="overflow:auto;max-height:480px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)">' +
@@ -1140,7 +1158,7 @@
             '<tbody id="audit-rows"><tr><td colspan="6" style="padding:8px">Loading…</td></tr></tbody>' +
           '</table>' +
         '</div>' +
-        '<button id="audit-more" style="margin-top:8px;display:none">Load older</button>' +
+        '<button id="audit-more" class="cxd-btn cxd-btn--ghost" style="margin-top:8px;display:none">Load older</button>' +
         '</div>';
 
       // Tabs: every pane stays in the DOM (all the wiring below finds its
@@ -2947,10 +2965,10 @@
         }
         host.innerHTML =
           '<label style="display:flex;gap:6px;align-items:center">Your email for alerts and subscriptions ' +
-            '<input id="sched-email" type="email" placeholder="you@example.org" style="font-size:15px;padding:4px 8px;width:240px"/></label>' +
-          '<button id="sched-email-save" style="font-size:14px;padding:4px 10px">Save</button>' +
+            '<input id="sched-email" class="cxd-control" type="email" placeholder="you@example.org" style="width:240px"/></label>' +
+          '<button id="sched-email-save" class="cxd-btn">Save</button>' +
           '<span id="sched-email-msg" style="font-size:14px"></span>' +
-          '<button id="sched-email-resend" style="font-size:14px;padding:4px 10px;display:none">Resend link</button>' +
+          '<button id="sched-email-resend" class="cxd-btn cxd-btn--ghost" style="display:none">Resend link</button>' +
           '<span style="flex:1"></span>' +
           chip(status.enabled, 'Scheduler on', 'Scheduler off (CXD_SCHEDULER)') +
           chip(status.email, 'Email', 'Email not configured') +
@@ -3082,7 +3100,8 @@
       var kind = sc.kind;
       var cfg = JSON.parse(JSON.stringify(sc.config || {}));
       var body = openModal((sc.id ? 'Edit: ' : '') + SCHEDULE_KINDS[kind].label);
-      var S = 'font-size:15px;padding:5px 8px';
+      // Fields use the shared .cxd-control look (same height/border/radius as the
+      // rest of the app) instead of short native inputs.
       function row(label, control, hint) {
         var r = document.createElement('div');
         r.style.cssText = 'display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin:8px 0';
@@ -3094,10 +3113,10 @@
       }
       function input(value, placeholder, type) {
         var i = document.createElement('input'); i.type = type || 'text'; i.value = value == null ? '' : value;
-        if (placeholder) i.placeholder = placeholder; i.style.cssText = S; return i;
+        if (placeholder) i.placeholder = placeholder; i.className = 'cxd-control'; return i;
       }
       function select(options, value) {
-        var sel = document.createElement('select'); sel.style.cssText = S + ';padding-right:30px';
+        var sel = document.createElement('select'); sel.className = 'cxd-control';
         options.forEach(function (o) { var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op); });
         if (value != null) sel.value = value;
         return sel;
@@ -3165,7 +3184,7 @@
             wrap.appendChild(smallButton(principalLabel(p) + ' ✕', function () { chosen.splice(i, 1); draw(); }));
           });
           var pick = document.createElement('select');
-          pick.style.cssText = 'font-size:14px;padding:3px 28px 3px 6px';
+          pick.className = 'cxd-control';
           pick.innerHTML = '<option value="">+ add a person or group…</option>' +
             (dir.groups || []).map(function (g) { return '<option value="group:' + esc(g) + '">' + esc(principalLabel('group:' + g)) + '</option>'; }).join('') +
             (dir.users || []).map(function (u) { return '<option value="user:' + esc(u) + '">' + esc(principalLabel('user:' + u)) + '</option>'; }).join('');
