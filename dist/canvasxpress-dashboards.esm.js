@@ -193,6 +193,9 @@ var dashboardCss = [
   '.cxd-ask-entrymeta { display: flex; align-items: center; gap: 10px; margin-top: 4px; }',
   '.cxd-ask-author { font-size: 11.5px; font-weight: 600; color: var(--cxd-muted); }',
   '.cxd-ask-time { font-size: 11px; color: var(--cxd-muted); }',
+  '.cxd-ask-pin { border: none; background: none; color: var(--cx-ui-accent); font: inherit; font-size: 11.5px; cursor: pointer; padding: 0; }',
+  '.cxd-ask-pin:hover { text-decoration: underline; }',
+  '.cxd-ask-pin:disabled { color: var(--cxd-muted); cursor: default; text-decoration: none; }',
   '.cxd-ask-del { margin-left: auto; border: none; background: none; color: var(--cx-ui-danger); font: inherit; font-size: 11.5px; cursor: pointer; padding: 0; }',
   '.cxd-ask-del:hover { text-decoration: underline; }',
   '.cxd-code-edit { display: block; width: 100%; box-sizing: border-box; padding: 10px 12px; resize: vertical; border-radius: var(--cx-radius-md);',
@@ -2891,6 +2894,23 @@ function mountAsk(opts) {
     var meta = ael(doc, 'div', 'cxd-ask-entrymeta');
     if (ask.author) meta.appendChild(ael(doc, 'span', 'cxd-ask-author', ask.author));
     if (ask.created_at) meta.appendChild(ael(doc, 'span', 'cxd-ask-time', askRelativeTime(ask.created_at)));
+    if (ask.ask_id) {
+      // Pin the answer onto the dashboard as a text panel (needs edit access;
+      // the server returns 403 otherwise, surfaced as a tooltip).
+      var pin = ael(doc, 'button', 'cxd-ask-pin', 'Pin as panel');
+      pin.type = 'button';
+      pin.addEventListener('click', function () {
+        pin.disabled = true;
+        fetch(asksRoot + '/' + encodeURIComponent(ask.ask_id) + '/pin' + ownerQuery,
+          { method: 'POST', credentials: 'include' })
+          .then(function (r) {
+            if (r.ok) { pin.textContent = 'Pinned ✓'; return; }
+            pin.disabled = false;
+            r.json().then(function (d) { pin.title = (d && d.detail) || 'Could not pin'; }, function () {});
+          }, function () { pin.disabled = false; });
+      });
+      meta.appendChild(pin);
+    }
     if (ask.ask_id) {
       var del = ael(doc, 'button', 'cxd-ask-del', 'Delete');
       del.type = 'button';

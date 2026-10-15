@@ -387,6 +387,40 @@ def _seed():
             print("  [seed] NOTE: %s not found — skipping %s." % (path, dataset_id))
 
     _seed_shipped_dashboards(dashboards, datasets, have, now)
+    _seed_demo_collaboration(dashboards, now)
+
+
+def _seed_demo_collaboration(dashboards, now):
+    """Seed a sample comment thread + a couple of answered asks on the scientific
+    cross-filter dashboard, so the collaboration + Ask features have something to
+    show in a demo. Idempotent: skips if the board already has comments/asks."""
+    board = "cross-filter-genomics"
+    if dashboards.get_summary(EXAMPLES_OWNER, board) is None:
+        return
+    if not dashboards.list_comments(EXAMPLES_OWNER, board):
+        root = dashboards.add_comment(
+            EXAMPLES_OWNER, board, DEMO_USER,
+            "Responders cluster at negative tumor change — nice separation. "
+            "cc @admin, should we flag the two outliers?",
+            now, panel_id="clinical")
+        dashboards.add_comment(
+            EXAMPLES_OWNER, board, ADMIN_USER,
+            "Agreed. CD274 also runs higher in the Drug arm — worth a follow-up.",
+            now, parent_id=root["comment_id"], mentions=[DEMO_USER])
+        print("  [seed] demo comment thread on %s" % board)
+    if not dashboards.list_asks(EXAMPLES_OWNER, board):
+        dashboards.add_ask(
+            EXAMPLES_OWNER, board, DEMO_USER,
+            "Which arm has higher CD274 and how many responders are there?",
+            "The Drug arm has higher CD274 (avg 7.23 vs 5.50 in Placebo). "
+            "There are 7 responders out of 16 patients (44%).",
+            [{"tool": "describe", "args": {"source": "expression"}, "result": {}},
+             {"tool": "aggregate", "args": {"source": "expression", "group_by": "Arm",
+                                            "measure": "CD274"},
+              "result": {"groups": [{"group": "Drug", "value": 7.23},
+                                    {"group": "Placebo", "value": 5.50}]}}],
+            now)
+        print("  [seed] demo ask history on %s" % board)
 
 
 def _seed_shipped_dashboards(dashboards, datasets, have, now):

@@ -1614,6 +1614,30 @@ def create_dashboards_app(
         note(request, owner=spec_owner, ask=ask_id)
         return {"asks": store.list_asks(spec_owner, dashboard_id)}
 
+    @app.post("/api/dashboards/{dashboard_id}/asks/{ask_id}/pin")
+    def pin_ask(request: Request, dashboard_id: str, ask_id: str, owner: Optional[str] = None):
+        """Pin an answered question onto the dashboard as a text panel (requires
+        edit access; a locked board is admin-only)."""
+        user = require_user(request)
+        target = resolve_write_owner(user, owner, dashboard_id)   # 403 if cannot edit
+        ask = store.get_ask(ask_id)
+        if ask is None or ask["owner"] != target or ask["dashboard_id"] != dashboard_id:
+            raise HTTPException(status_code=404, detail="No such ask")
+        spec = store.get_dashboard(target, dashboard_id)
+        if spec is None:
+            raise HTTPException(status_code=404, detail="No such dashboard")
+        pid = "ask-" + ask_id
+        panels = spec.setdefault("panels", {})
+        panels[pid] = {"type": "text",
+                       "value": "**Q: " + ask["question"] + "**\n\n" + (ask.get("answer") or "")}
+        layout = spec.setdefault("layout", {})
+        items = layout.setdefault("items", [])
+        bottom = max([int(it.get("y", 0)) + int(it.get("h", 1)) for it in items] or [0])
+        items.append({"panel": pid, "x": 0, "y": bottom, "w": int(layout.get("cols", 12)), "h": 3})
+        store.save_dashboard(target, spec, _now_iso())
+        note(request, owner=target, pinned_ask=ask_id, panel=pid)
+        return {"panel": pid}
+
     def _ask_work(request: Request, user: str, spec_owner: str, dashboard_id: str, question: str) -> dict:
         spec = store.get_dashboard(spec_owner, dashboard_id)
         if spec is None:
@@ -1638,6 +1662,13 @@ def create_dashboards_app(
                 data_by_ref[ref] = data
         if not data_by_ref:
             raise HTTPException(status_code=422, detail="This dashboard has no inspectable data")
+        # Hosted-Cloud AI metering: a view-time ask spends one AI credit. Self-host
+        # (paywall off), admins and the shipped-examples owner are never metered.
+        # Charged before the model call so an out-of-credits ask costs nothing.
+        if paywall_on and not (user_is_admin(user) or user == examples_owner):
+            if not entitlements.consume_credit(user):
+                raise HTTPException(status_code=402,
+                                    detail="Out of AI credits. Top up to keep asking.")
         import anthropic
         client = anthropic.Anthropic(
             **_anthropic_client_kwargs(llm_api_key, llm_base_url, llm_key_header))

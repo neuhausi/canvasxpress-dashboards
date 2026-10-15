@@ -102,6 +102,42 @@ def test_asks_persist_and_list_and_delete(app_ai, monkeypatch):
     assert c.get("/api/dashboards/d1/asks").json()["asks"] == []
 
 
+def test_ask_meters_ai_credits_when_paywall_on(tmp_path, monkeypatch):
+    monkeypatch.setenv("CXD_PAYWALL", "on")
+    store = DashboardStore(str(tmp_path / "dash.db"))
+    app = create_dashboards_app(store=store, session_secret="s", serve_static=False,
+                                dataset_store_uri="file://" + str(tmp_path / "ds"),
+                                llm_api_key="test-key")
+    alice = TestClient(app)
+    _signup(alice, "alice", "secret1")          # first user -> admin (never metered)
+    alice.post("/api/dashboards", json=_spec_with_data())
+    bob = TestClient(app)
+    _signup(bob, "bob", "secret1")               # non-admin, no AI credits
+    assert alice.post("/api/dashboards/d1/grants",
+                      json={"principal": "user:bob", "level": "view"}).status_code == 200
+    monkeypatch.setattr(ask_module, "run_ask", lambda *a, **k: {"answer": "ok", "used": []})
+    # bob is out of credits -> 402 before any model call
+    r = bob.post("/api/dashboards/d1/ask", params={"owner": "alice"}, json={"question": "x?"})
+    assert r.status_code == 402, r.text
+    # the admin owner is exempt from metering
+    assert alice.post("/api/dashboards/d1/ask", json={"question": "x?"}).status_code == 200
+
+
+def test_pin_ask_adds_a_text_panel(app_ai, monkeypatch):
+    c = TestClient(app_ai)
+    _signup(c)
+    c.post("/api/dashboards", json=_spec_with_data())
+    monkeypatch.setattr(ask_module, "run_ask", lambda *a, **k: {"answer": "West.", "used": []})
+    aid = c.post("/api/dashboards/d1/ask", json={"question": "top region?"}).json()["ask_id"]
+    r = c.post("/api/dashboards/d1/asks/%s/pin" % aid)
+    assert r.status_code == 200, r.text
+    pid = r.json()["panel"]
+    spec = c.get("/api/dashboards/d1").json()
+    assert pid in spec["panels"] and spec["panels"][pid]["type"] == "text"
+    assert "top region?" in spec["panels"][pid]["value"]
+    assert any(it["panel"] == pid for it in spec["layout"]["items"])
+
+
 def test_ask_422_when_no_inspectable_data(app_ai, monkeypatch):
     c = TestClient(app_ai)
     _signup(c)

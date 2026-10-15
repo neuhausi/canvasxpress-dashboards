@@ -166,6 +166,23 @@ export function mountAsk(opts) {
     if (ask.author) meta.appendChild(ael(doc, 'span', 'cxd-ask-author', ask.author));
     if (ask.created_at) meta.appendChild(ael(doc, 'span', 'cxd-ask-time', askRelativeTime(ask.created_at)));
     if (ask.ask_id) {
+      // Pin the answer onto the dashboard as a text panel (needs edit access;
+      // the server returns 403 otherwise, surfaced as a tooltip).
+      var pin = ael(doc, 'button', 'cxd-ask-pin', 'Pin as panel');
+      pin.type = 'button';
+      pin.addEventListener('click', function () {
+        pin.disabled = true;
+        fetch(asksRoot + '/' + encodeURIComponent(ask.ask_id) + '/pin' + ownerQuery,
+          { method: 'POST', credentials: 'include' })
+          .then(function (r) {
+            if (r.ok) { pin.textContent = 'Pinned ✓'; return; }
+            pin.disabled = false;
+            r.json().then(function (d) { pin.title = (d && d.detail) || 'Could not pin'; }, function () {});
+          }, function () { pin.disabled = false; });
+      });
+      meta.appendChild(pin);
+    }
+    if (ask.ask_id) {
       var del = ael(doc, 'button', 'cxd-ask-del', 'Delete');
       del.type = 'button';
       del.addEventListener('click', function () {
