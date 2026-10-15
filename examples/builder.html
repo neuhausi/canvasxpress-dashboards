@@ -418,9 +418,9 @@
           var at = document.querySelector('.cxd-ask-toggle');
           var ap = document.querySelector('.cxd-ask-panel');
           if (ct) ct.style.left = left + 'px';
-          // A generous fixed offset clears the Comments pill (its width varies
-          // with the count badge, which loads async, so measuring is unreliable).
-          if (at) at.style.left = (left + 180) + 'px';
+          // Fixed offset clears the Comments pill with a small gap (its width
+          // varies with the count badge, which loads async, so measuring is unreliable).
+          if (at) at.style.left = (left + 150) + 'px';
           if (ap) ap.style.left = left + 'px';
         }, 0);
       }
