@@ -113,6 +113,7 @@ class FunctionsConfig:
         self._slots = threading.BoundedSemaphore(max(1, max_concurrent))
         self._wrapper: Optional[List[str]] = None
         self._isolation: Optional[str] = None
+        self._confines_writes: Optional[bool] = None
         self._languages: Optional[List[str]] = None
 
     @classmethod
@@ -142,13 +143,21 @@ class FunctionsConfig:
     def wrapper(self) -> List[str]:
         """The command prefix that sandboxes a run (resolved once)."""
         if self._wrapper is None:
-            self._wrapper, self._isolation = _resolve_wrapper(self.wrapper_setting)
+            self._wrapper, self._isolation, self._confines_writes = _resolve_wrapper(self.wrapper_setting)
         return self._wrapper
 
     def isolation(self) -> str:
         """Human-readable network isolation actually in effect."""
         self.wrapper()
         return self._isolation or "none"
+
+    def confines_filesystem_writes(self) -> bool:
+        """Whether the resolved wrapper actually prevents writes outside the run's
+        temp dir. True for the macOS sandbox-exec profile and Linux ``bwrap``;
+        False for ``unshare -rn`` (network only), ``none``, and custom wrappers
+        (whose effect is unknown)."""
+        self.wrapper()
+        return bool(self._confines_writes)
 
 
 def functions_status(config: FunctionsConfig) -> Dict[str, Any]:
@@ -550,9 +559,10 @@ def _resolve_wrapper(setting: str):
     """
     setting = (setting or "auto").strip()
     if setting.lower() == "none":
-        return [], "none"
+        return [], "none", False
     if setting.lower() != "auto":
-        return shlex.split(setting), "custom wrapper: " + setting
+        # A custom wrapper's effect is unknown, so we don't claim it confines writes.
+        return shlex.split(setting), "custom wrapper: " + setting, False
     system = platform.system()
     roots = _temp_roots()
     if system == "Darwin" and shutil.which("sandbox-exec"):
@@ -561,19 +571,20 @@ def _resolve_wrapper(setting: str):
                    "(deny file-write*)(allow file-write* " + writable + ")")
         prefix = ["sandbox-exec", "-p", profile]
         if _works(prefix + ["/usr/bin/true"]):
-            return prefix, "sandbox-exec (network + filesystem-write denied outside temp)"
+            return prefix, "sandbox-exec (network + filesystem-write denied outside temp)", True
     if system == "Linux" and shutil.which("bwrap"):
         prefix = ["bwrap", "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc",
                   "--unshare-net", "--die-with-parent"]
         for root in roots:
             prefix += ["--bind", root, root]
         if _works(prefix + ["true"]):
-            return prefix, "bwrap (read-only root, writable temp, no network)"
+            return prefix, "bwrap (read-only root, writable temp, no network)", True
     if system == "Linux" and shutil.which("unshare"):
+        # Network namespace only — it does NOT confine filesystem writes.
         prefix = ["unshare", "-rn"]
         if _works(prefix + ["true"]):
-            return prefix, "unshare -rn (no network namespace access)"
-    return [], "none"
+            return prefix, "unshare -rn (no network namespace access)", False
+    return [], "none", False
 
 
 def _works(command: List[str]) -> bool:

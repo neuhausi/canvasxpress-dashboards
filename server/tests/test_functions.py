@@ -549,12 +549,21 @@ def test_sandbox_env_pins_blas_and_openmp_threads():
 
 @requires_pandas
 def test_self_check_blocks_file_write_when_sandboxed():
-    """Where an OS sandbox is in effect, a snippet cannot write outside its temp
-    dir (into the server's working directory) — self-check reports it blocked."""
+    """Where the wrapper confines filesystem writes (macOS sandbox-exec / Linux
+    bwrap), a snippet cannot write outside its temp dir (into the server's working
+    directory) — self-check reports it blocked. On a host whose wrapper only
+    sandboxes the network (unshare -rn) or has none, writes are correctly allowed,
+    so the check is skipped."""
     config = FunctionsConfig(mode="users", timeout=10)
-    if config.isolation() == "none":
-        pytest.skip("no OS sandbox available on this host")
+    if not config.confines_filesystem_writes():
+        pytest.skip("wrapper on this host does not confine filesystem writes")
     assert self_check(config)["checks"]["fileWrite"] == "blocked"
+
+
+def test_write_confinement_reported_per_wrapper():
+    """`none` and a custom wrapper never claim to confine writes (unknown effect)."""
+    assert FunctionsConfig(wrapper="none").confines_filesystem_writes() is False
+    assert FunctionsConfig(wrapper="/usr/bin/env").confines_filesystem_writes() is False
 
 
 def test_startup_warns_when_runtime_url_set_without_token(tmp_path, capsys):
