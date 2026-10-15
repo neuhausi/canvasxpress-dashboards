@@ -67,6 +67,33 @@ test('mountComments posts a new comment to the API', async function () {
   h.destroy();
 });
 
+test('mountComments anchors a comment to a chosen panel and shows the badge', async function () {
+  var threads = [{
+    comment_id: 'a', author: 'alice', body: 'on the chart', created_at: new Date().toISOString(),
+    mentions: [], resolved: false, panel_id: 'p2', parent_id: null, replies: []
+  }];
+  var calls = [];
+  global.fetch = fakeFetch(threads, calls);
+  var h = mountComments({
+    baseUrl: '/d', dashboardId: 'x', currentUser: 'alice', users: [],
+    panels: [{ id: 'p1', title: 'Revenue' }, { id: 'p2', title: 'Attainment' }]
+  });
+  await flush();
+  // the anchored comment shows an "on <title>" badge resolved from the panel map
+  var anchor = document.body.querySelectorAll('.cxd-cmt-anchor')[0];
+  assert.ok(anchor && anchor.textContent.indexOf('Attainment') !== -1, 'anchor badge names the panel');
+  // posting with a chosen panel sends panelId
+  var sel = document.body.querySelectorAll('.cxd-comments-anchor')[0];
+  assert.ok(sel, 'the composer has a panel picker');
+  sel.value = 'p1';
+  document.body.querySelectorAll('.cxd-comments-input')[0].value = 'look here';
+  document.body.querySelectorAll('.cxd-comments-composer')[0].dispatchEvent('submit', { preventDefault: function () {} });
+  await flush();
+  var post = calls.filter(function (c) { return c.method === 'POST'; })[0];
+  assert.equal(post.body.panelId, 'p1', 'the chosen panel id is sent');
+  h.destroy();
+});
+
 test('mountComments hides itself when the API says 401/404', async function () {
   global.fetch = function () { return Promise.resolve({ ok: false, status: 401, json: function () { return Promise.resolve({}); } }); };
   var h = mountComments({ baseUrl: '/d', dashboardId: 'x', currentUser: 'alice', users: [] });

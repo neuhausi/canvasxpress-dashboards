@@ -90,6 +90,15 @@ export function mountComments(opts) {
   var knownUsers = {};
   (opts.users || []).forEach(function (u) { knownUsers[u] = true; });
   if (currentUser) knownUsers[currentUser] = true;
+  // Panels a comment can be anchored to: id -> label (for the composer picker
+  // and the "on <panel>" badge). Accepts [{id, title}] or ["id", ...].
+  var panelLabels = {};
+  var panelList = (opts.panels || []).map(function (p) {
+    var pid = (p && p.id != null) ? p.id : p;
+    var label = (p && p.title) ? p.title : pid;
+    panelLabels[pid] = label;
+    return { id: pid, title: label };
+  });
   var mountInto = opts.mountInto || doc.body || doc.documentElement;
 
   var ownerQuery = owner ? ('?owner=' + encodeURIComponent(owner)) : '';
@@ -138,8 +147,22 @@ export function mountComments(opts) {
   var textarea = cel(doc, 'textarea', 'cxd-comments-input');
   textarea.setAttribute('rows', '2');
   textarea.setAttribute('placeholder', 'Add a comment…  use @name to mention');
+  // Optional anchor picker: "Whole dashboard" + each panel.
+  var anchorSel = null;
+  if (panelList.length) {
+    anchorSel = cel(doc, 'select', 'cxd-comments-anchor');
+    var optAll = cel(doc, 'option', null, 'Whole dashboard');
+    optAll.value = '';
+    anchorSel.appendChild(optAll);
+    panelList.forEach(function (p) {
+      var o = cel(doc, 'option', null, 'On: ' + p.title);
+      o.value = p.id;
+      anchorSel.appendChild(o);
+    });
+  }
   var sendBtn = cel(doc, 'button', 'cxd-comments-send', 'Comment');
   sendBtn.type = 'submit';
+  if (anchorSel) composer.appendChild(anchorSel);
   composer.appendChild(textarea);
   composer.appendChild(sendBtn);
   rail.appendChild(composer);
@@ -175,6 +198,9 @@ export function mountComments(opts) {
     var meta = cel(doc, 'div', 'cxd-cmt-meta');
     meta.appendChild(cel(doc, 'span', 'cxd-cmt-author', comment.author));
     meta.appendChild(cel(doc, 'span', 'cxd-cmt-time', relativeTime(comment.created_at)));
+    if (comment.panel_id) {
+      meta.appendChild(cel(doc, 'span', 'cxd-cmt-anchor', 'on ' + (panelLabels[comment.panel_id] || comment.panel_id)));
+    }
     if (comment.resolved) meta.appendChild(cel(doc, 'span', 'cxd-cmt-badge', 'resolved'));
     root.appendChild(meta);
 
@@ -287,7 +313,9 @@ export function mountComments(opts) {
     var text = textarea.value.trim();
     if (!text) return;
     sendBtn.disabled = true;
-    api('POST', '', { body: text }).then(function () {
+    var post = { body: text };
+    if (anchorSel && anchorSel.value) post.panelId = anchorSel.value;
+    api('POST', '', post).then(function () {
       textarea.value = '';
       sendBtn.disabled = false;
       return refresh();

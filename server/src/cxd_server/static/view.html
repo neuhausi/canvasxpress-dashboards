@@ -107,9 +107,13 @@
           fetch(base + '/api/directory', { credentials: 'include' })
             .then(function (r) { return r.ok ? r.json() : { users: [] }; })
             .then(function (dir) {
+              var panels = Object.keys(spec.panels || {}).map(function (pid) {
+                var panel = spec.panels[pid] || {};
+                return { id: pid, title: panel.title || pid };
+              });
               CanvasXpressDashboards.mountComments({
                 baseUrl: base, dashboardId: spec.id, owner: owner,
-                currentUser: me.user, users: (dir && dir.users) || []
+                currentUser: me.user, users: (dir && dir.users) || [], panels: panels
               });
             });
         })

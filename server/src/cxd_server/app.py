@@ -1497,7 +1497,45 @@ def create_dashboards_app(
                                     panel_id=body.get("panelId"), parent_id=parent_id,
                                     mentions=mentions)
         note(request, owner=spec_owner, comment=comment["comment_id"], mentions=mentions)
+        notify_mentions(spec_owner, dashboard_id, comment)
         return {"comment": comment}
+
+    def notify_mentions(spec_owner: str, dashboard_id: str, comment: dict) -> None:
+        """Email each @mentioned user (except the author) who has a deliverable
+        address that a comment names. Best-effort: email being off or a send
+        failure never fails the comment.
+
+        :param spec_owner: The dashboard's owner.
+        :param dashboard_id: The dashboard id.
+        :param comment: The stored comment (carries author, body, mentions).
+        :returns: None.
+        """
+        recipients = [m for m in comment.get("mentions", []) if m != comment["author"]]
+        if not recipients or mailer is None or not getattr(mailer, "enabled", True):
+            return
+        summary = store.get_summary(spec_owner, dashboard_id)
+        title = (summary and summary.get("title")) or dashboard_id
+        link = dashboard_link(spec_owner, dashboard_id)
+        link_text = ("\n\nOpen the dashboard: " + link) if link else ""
+        link_html = ("<p><a href='%s'>Open the dashboard</a></p>" % html.escape(link)) if link else ""
+        messages = []
+        for name in recipients:
+            to = schedules.email_of(name)
+            if not to:
+                continue
+            subject = "%s mentioned you on \u201c%s\u201d" % (comment["author"], title)
+            text = "%s mentioned you in a comment on \u201c%s\u201d:\n\n  %s%s" % (
+                comment["author"], title, comment["body"], link_text)
+            body_html = ("<p><b>%s</b> mentioned you on <b>%s</b>:</p>"
+                         "<blockquote style='margin:0;padding:4px 12px'>%s</blockquote>%s") % (
+                html.escape(comment["author"]), html.escape(title),
+                html.escape(comment["body"]), link_html)
+            messages.append((to, subject, text, body_html, []))
+        if messages:
+            try:
+                mailer.send(messages)
+            except Exception:   # noqa: BLE001 - notifications are best-effort
+                pass
 
     def _own_comment_or_moderator(user: str, spec_owner: str, comment: dict) -> None:
         """Allow the comment's author, the dashboard owner, or an admin; else 403."""

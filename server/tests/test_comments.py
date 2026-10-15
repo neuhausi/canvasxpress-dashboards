@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from cxd_server.app import create_dashboards_app
+from cxd_server.mailer import MemoryMailer
 from cxd_server.store import DashboardStore
 
 
@@ -131,6 +132,47 @@ def test_shared_viewer_can_comment(app):
     cid = r.json()["comment"]["comment_id"]
     assert bob.delete("/api/dashboards/d1/comments/%s" % cid,
                       params={"owner": "alice"}).status_code == 200
+
+
+@pytest.fixture
+def app_with_mail(tmp_path, monkeypatch):
+    """App whose @mention emails go to an in-memory mailer; email verification off."""
+    monkeypatch.setenv("CXD_EMAIL_VERIFY", "off")
+    store = DashboardStore(str(tmp_path / "dash.db"))
+    mailer = MemoryMailer()
+    app = create_dashboards_app(
+        store=store, session_secret="test-secret", serve_static=False,
+        dataset_store_uri="file://" + str(tmp_path / "datasets"), mailer=mailer,
+    )
+    return app, mailer
+
+
+def test_mention_emails_the_mentioned_user(app_with_mail):
+    app, mailer = app_with_mail
+    owner = _client(app)
+    _signup(owner, "alice", "secret1")
+    owner.post("/api/dashboards", json=_spec())
+    bob = _client(app)
+    _signup(bob, "bob", "secret1")
+    assert bob.put("/api/me/profile", json={"email": "bob@example.test"}).status_code == 200
+
+    r = owner.post("/api/dashboards/d1/comments", json={"body": "please review @bob (not @ghost)"})
+    assert r.status_code == 200, r.text
+    assert len(mailer.sent) == 1, "exactly one email (bob; ghost is not a user)"
+    msg = mailer.sent[0]
+    assert msg["To"] == "bob@example.test"
+    assert "mentioned you" in msg["Subject"]
+
+
+def test_no_email_for_self_mention_or_no_address(app_with_mail):
+    app, mailer = app_with_mail
+    owner = _client(app)
+    _signup(owner, "alice", "secret1")
+    owner.post("/api/dashboards", json=_spec())
+    _signup(_client(app), "bob", "secret1")   # bob exists but set no email
+    # alice mentions herself and bob (no address) -> no email goes out.
+    owner.post("/api/dashboards/d1/comments", json={"body": "@alice and @bob"})
+    assert mailer.sent == []
 
 
 def test_deleting_dashboard_removes_its_comments(app):

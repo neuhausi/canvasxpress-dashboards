@@ -19,6 +19,7 @@ security, lineage, audit log) · [single sign-on](docs/sso.md) (OpenID Connect) 
 emailed dashboards) · [large data](docs/large-data.md) (aggregate, filter and join in the
 database) · [live-data controls](docs/live-data-controls.md) ·
 [cross-filter](docs/cross-filter.md) (click a mark to filter related panels) ·
+[collaboration](docs/collaboration.md) (comments, threads, @mentions) ·
 [Databricks as the viewer](docs/databricks-viewer-oauth.md) (Posit Connect OAuth) ·
 [server](server/README.md) · [changelog](CHANGELOG.md)
 

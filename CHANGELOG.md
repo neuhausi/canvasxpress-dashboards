@@ -24,10 +24,13 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
   `panelId`, carry parsed **@mentions** (validated against real users), and are audited.
   Deleting a dashboard removes its comments.
 - **Comments rail in the viewer.** A floating **💬 Comments** control (with an unread count)
-  opens a side rail where signed-in viewers post, reply in threads, resolve/reopen, and delete
-  their own comments; @mentions of known users are highlighted. `mountComments()` is exported
-  and wired into the hosted app's `view.html` (it stays hidden for anonymous viewers). Mention
-  email notifications are still to come.
+  opens a side rail where signed-in viewers post, reply in threads, **anchor a comment to a
+  panel**, resolve/reopen, and delete their own comments; @mentions of known users are
+  highlighted. `mountComments()` is exported and wired into the hosted app's `view.html` (it
+  stays hidden for anonymous viewers).
+- **@mention email.** Mentioning `@user` emails them a notification (the mention + a link to
+  the dashboard) when the server has SMTP configured and the user has a deliverable address;
+  best-effort, so a mail failure never blocks the comment. Guide: `docs/collaboration.md`.
 
 ### True no-code cross-filter (`markingMode: "filter"`)
 - **A selection now filters, not just highlights.** A new fourth marking mode,
