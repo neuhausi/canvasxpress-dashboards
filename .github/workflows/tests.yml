@@ -35,9 +35,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install (dev, web, sql, postgres, llm)
+      - name: Install (dev, web, sql, postgres, llm, connectors)
         working-directory: server
-        run: pip install -e '.[dev,web,sql,postgres,llm]'
+        run: pip install -e '.[dev,web,sql,postgres,llm,connectors]'
 
       # Full suite. With CXD_TEST_PG_URL set, the store conformance tests run their
       # asserts twice — once on SQLite, once on the real Postgres service above —
