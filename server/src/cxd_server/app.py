@@ -1669,7 +1669,12 @@ def create_dashboards_app(
             if not entitlements.consume_credit(user):
                 raise HTTPException(status_code=402,
                                     detail="Out of AI credits. Top up to keep asking.")
-        import anthropic
+        try:
+            import anthropic
+        except ImportError:
+            raise HTTPException(status_code=503,
+                                detail="AI Q&A is not configured on this server "
+                                       "(install the 'llm' extra).")
         client = anthropic.Anthropic(
             **_anthropic_client_kwargs(llm_api_key, llm_base_url, llm_key_header))
         model = llm_model or "claude-opus-5"
