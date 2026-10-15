@@ -162,12 +162,16 @@ var dashboardCss = [
   '.cxd-comments-send:disabled { opacity: .5; cursor: default; }',
   /* View-time Q&A: the "Ask" toggle + popover. */
   '.cxd-ask-toggle { position: fixed; left: 150px; bottom: 16px; z-index: var(--cx-z-modal);',
+  '  display: inline-flex; align-items: center; gap: 7px;',
   '  padding: 7px 14px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-pill);',
   '  background: var(--cxd-panel-bg); color: inherit; font: 600 12.5px/1.3 var(--cxd-font);',
   '  cursor: pointer; box-shadow: var(--cx-shadow-2); }',
   '.cxd-ask-toggle:hover { background: var(--cxd-title-bg); }',
   '.cxd-ask-toggle:focus { outline: 2px solid var(--cx-ui-focus); outline-offset: 2px; }',
   '.cxd-ask-toggle.cxd-ask-open { background: var(--cx-ui-accent); color: var(--cx-ui-on-accent); border-color: var(--cx-ui-accent); }',
+  '.cxd-ask-count { min-width: 18px; padding: 0 5px; border-radius: var(--cx-radius-pill);',
+  '  background: var(--cx-ui-accent); color: var(--cx-ui-on-accent); font-size: 11px; text-align: center; }',
+  '.cxd-ask-toggle.cxd-ask-open .cxd-ask-count { background: var(--cx-ui-on-accent); color: var(--cx-ui-accent); }',
   '.cxd-ask-panel { position: fixed; left: 16px; bottom: 58px; width: 360px; max-width: 92vw; max-height: 72vh;',
   '  z-index: var(--cx-z-modal); display: flex; flex-direction: column; gap: 8px; padding: 12px 14px;',
   '  background: var(--cxd-panel-bg); border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-lg);',
@@ -2825,6 +2829,9 @@ function mountAsk(opts) {
   toggle.type = 'button';
   toggle.setAttribute('aria-label', 'Ask about this data');
   toggle.appendChild(doc.createTextNode('✨ Ask'));
+  var countBadge = ael(doc, 'span', 'cxd-ask-count');
+  countBadge.hidden = true;
+  toggle.appendChild(countBadge);
 
   var panel = ael(doc, 'div', 'cxd-ask-panel');
   panel.hidden = true;
@@ -2924,7 +2931,7 @@ function mountAsk(opts) {
         del.disabled = true;
         fetch(asksRoot + '/' + encodeURIComponent(ask.ask_id) + ownerQuery,
           { method: 'DELETE', credentials: 'include' })
-          .then(function (r) { if (r.ok) { if (entry.parentNode) entry.parentNode.removeChild(entry); } else del.disabled = false; },
+          .then(function (r) { if (r.ok) { if (entry.parentNode) entry.parentNode.removeChild(entry); updateCount(); } else del.disabled = false; },
                 function () { del.disabled = false; });
       });
       meta.appendChild(del);
@@ -2941,6 +2948,17 @@ function mountAsk(opts) {
   function renderHistory(asks) {
     history.innerHTML = '';
     (asks || []).forEach(function (a) { history.appendChild(entryEl(a)); });
+    updateCount();
+  }
+
+  /**
+   * Refresh the count badge on the toggle from the number of history entries.
+   * @returns {void}
+   */
+  function updateCount() {
+    var n = history.querySelectorAll('.cxd-ask-entry').length;
+    countBadge.textContent = String(n);
+    countBadge.hidden = n === 0;
   }
 
   /**
@@ -2973,6 +2991,7 @@ function mountAsk(opts) {
       input.value = '';
       showStatus('');
       history.insertBefore(entryEl(ask), history.firstChild);  // newest on top, persisted
+      updateCount();
     }, function (err) {
       askBtn.disabled = false;
       showStatus(err && err.message ? err.message : 'Something went wrong.', true);

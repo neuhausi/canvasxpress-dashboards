@@ -90,6 +90,9 @@ export function mountAsk(opts) {
   toggle.type = 'button';
   toggle.setAttribute('aria-label', 'Ask about this data');
   toggle.appendChild(doc.createTextNode('✨ Ask'));
+  var countBadge = ael(doc, 'span', 'cxd-ask-count');
+  countBadge.hidden = true;
+  toggle.appendChild(countBadge);
 
   var panel = ael(doc, 'div', 'cxd-ask-panel');
   panel.hidden = true;
@@ -189,7 +192,7 @@ export function mountAsk(opts) {
         del.disabled = true;
         fetch(asksRoot + '/' + encodeURIComponent(ask.ask_id) + ownerQuery,
           { method: 'DELETE', credentials: 'include' })
-          .then(function (r) { if (r.ok) { if (entry.parentNode) entry.parentNode.removeChild(entry); } else del.disabled = false; },
+          .then(function (r) { if (r.ok) { if (entry.parentNode) entry.parentNode.removeChild(entry); updateCount(); } else del.disabled = false; },
                 function () { del.disabled = false; });
       });
       meta.appendChild(del);
@@ -206,6 +209,17 @@ export function mountAsk(opts) {
   function renderHistory(asks) {
     history.innerHTML = '';
     (asks || []).forEach(function (a) { history.appendChild(entryEl(a)); });
+    updateCount();
+  }
+
+  /**
+   * Refresh the count badge on the toggle from the number of history entries.
+   * @returns {void}
+   */
+  function updateCount() {
+    var n = history.querySelectorAll('.cxd-ask-entry').length;
+    countBadge.textContent = String(n);
+    countBadge.hidden = n === 0;
   }
 
   /**
@@ -238,6 +252,7 @@ export function mountAsk(opts) {
       input.value = '';
       showStatus('');
       history.insertBefore(entryEl(ask), history.firstChild);  // newest on top, persisted
+      updateCount();
     }, function (err) {
       askBtn.disabled = false;
       showStatus(err && err.message ? err.message : 'Something went wrong.', true);
