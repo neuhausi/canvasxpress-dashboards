@@ -3002,10 +3002,17 @@
         var newHost = document.getElementById('sched-new-host');
         newHost.innerHTML = '';
         if (status.can_create) {
+          // Primary toolbar actions: the same .cta buttons as the Dashboards /
+          // Builder toolbars (not the compact row-action primitive), so the
+          // toolbar reads consistently across pages.
           Object.keys(SCHEDULE_KINDS).forEach(function (kind) {
-            newHost.appendChild(smallButton('+ ' + SCHEDULE_KINDS[kind].label, function () {
-              editSchedule({ kind: kind }, status, load);
-            }, 'border-radius:var(--cx-radius-md)'));
+            var btn = document.createElement('button');
+            btn.className = 'cta';
+            // Fullwidth ＋ (U+FF0B), matching the Dashboards "＋ Chart from data"
+            // toolbar buttons, so the glyph metrics — and the button height — line up.
+            btn.textContent = '＋ ' + SCHEDULE_KINDS[kind].label;
+            btn.onclick = function () { editSchedule({ kind: kind }, status, load); };
+            newHost.appendChild(btn);
           });
         }
       }
