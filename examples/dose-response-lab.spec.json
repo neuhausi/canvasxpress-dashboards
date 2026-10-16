@@ -3228,6 +3228,7 @@
       "dataRef": "patients",
       "config": {
         "graphType": "Scatter2D",
+        "dataPointSize": "auto",
         "xAxis": [
           "ctdna_baseline"
         ],

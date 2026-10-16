@@ -574,7 +574,7 @@
           "MarginPct"
         ],
         "colorBy": "Region",
-        "dataPointSize": 14
+        "dataPointSize": "auto"
       }
     },
     "filters": {

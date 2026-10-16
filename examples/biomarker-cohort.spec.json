@@ -3298,6 +3298,7 @@
       "dataRef": "scatter",
       "config": {
         "graphType": "Scatter2D",
+        "dataPointSize": "auto",
         "xAxis": [
           "IL6"
         ],

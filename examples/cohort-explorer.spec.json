@@ -2206,6 +2206,7 @@
       "dataRef": "cohort",
       "config": {
         "graphType": "Scatter2D",
+        "dataPointSize": "auto",
         "xAxis": [
           "CD274"
         ],
@@ -2240,6 +2241,7 @@
       "dataRef": "labs",
       "config": {
         "graphType": "Scatter2D",
+        "dataPointSize": "auto",
         "xAxis": [
           "CRP"
         ],

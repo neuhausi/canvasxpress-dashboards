@@ -309,7 +309,7 @@
       "config": {
         "graphType": "Scatter2D",
         "title": false,
-        "dataPointSize": 14,
+        "dataPointSize": "auto",
         "colorBy": "Region",
         "xAxis": [
           "Quota"

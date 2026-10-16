@@ -306,7 +306,7 @@
       "dataRef": "correlation",
       "config": {
         "graphType": "Scatter2D",
-        "dataPointSize": 9,
+        "dataPointSize": "auto",
         "scatterOutlineThreshold": 0,
         "transparency": 0.5,
         "xAxisMinorTicks": false,
