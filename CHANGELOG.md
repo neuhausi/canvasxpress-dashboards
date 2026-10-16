@@ -5,6 +5,26 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Fixed: comments, Ask history and dashboard deletion on the SQL (Postgres) store
+- `SqlDashboardStore` now has the comments and Ask-history methods `DashboardStore` has
+  (`cxd_comments` / `cxd_asks` tables, created on start), so every comments/Ask route works
+  on a Postgres deployment instead of returning 500. A test fails if the two stores' public
+  methods ever diverge again.
+- **Deleting a dashboard** forgets its grants first, then removes the dashboard, its comments
+  and its asks in one transaction (`purge_dashboard`): a failure no longer leaves a deleted
+  dashboard with grants behind, and a re-created id starts clean. Retrying is safe.
+- **Deleting a user** now also removes the comments and asks on their dashboards, and cleans
+  grants/schedules/SSO links before the account, so a failure deletes nothing. Comments they
+  wrote on other people's dashboards are kept.
+
+### Data page: Databricks catalog browser
+- With `CXD_DATABRICKS_HOST` set, **Data → Databricks** browses Unity Catalog (SQL warehouse
+  picker, catalogs → schemas → tables, filter and counts, columns and a 50-row preview) with
+  **Save as source** and **Dashboard from this table**; a Home notice announces it. Works
+  on or off Posit Connect (`CXD_DATABRICKS_AUTH`: `auto` | `posit-connect` | `token`); hidden
+  when the host is unset. SQLAlchemy is capped below 2.1 (it breaks the Databricks driver).
+  Docs: `docs/databricks-viewer-oauth.md`.
+
 ### View-time AI Q&A — "ask this dashboard"
 - A signed-in viewer can **ask a question of a dashboard's data** and get an answer
   **computed from the numbers, not hallucinated**. New `POST /api/dashboards/{id}/ask`

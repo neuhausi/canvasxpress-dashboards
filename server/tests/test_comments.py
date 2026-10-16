@@ -1,16 +1,17 @@
 """Collaboration: dashboard comments, threads, @mentions and permissions."""
 
 import pytest
+from dashstores import backend_params
 from fastapi.testclient import TestClient
 
 from cxd_server.app import create_dashboards_app
 from cxd_server.mailer import MemoryMailer
-from cxd_server.store import DashboardStore
 
 
-@pytest.fixture
-def app(tmp_path):
-    store = DashboardStore(str(tmp_path / "dash.db"))
+@pytest.fixture(**backend_params())
+def app(request, tmp_path):
+    """The app on every dashboard-store backend (SQLite, SQL, + Postgres in CI)."""
+    store = request.param(tmp_path)
     return create_dashboards_app(
         store=store,
         session_secret="test-secret",
@@ -134,11 +135,11 @@ def test_shared_viewer_can_comment(app):
                       params={"owner": "alice"}).status_code == 200
 
 
-@pytest.fixture
-def app_with_mail(tmp_path, monkeypatch):
+@pytest.fixture(**backend_params())
+def app_with_mail(request, tmp_path, monkeypatch):
     """App whose @mention emails go to an in-memory mailer; email verification off."""
     monkeypatch.setenv("CXD_EMAIL_VERIFY", "off")
-    store = DashboardStore(str(tmp_path / "dash.db"))
+    store = request.param(tmp_path)
     mailer = MemoryMailer()
     app = create_dashboards_app(
         store=store, session_secret="test-secret", serve_static=False,

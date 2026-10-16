@@ -1255,11 +1255,18 @@ def create_dashboards_app(
             raise HTTPException(status_code=400, detail="You cannot delete your own account")
         if user_is_admin(username):
             raise HTTPException(status_code=400, detail="Cannot delete another admin (revoke their admin rights first)")
-        if not store.delete_user(username):
+        if username not in store.list_users():
             raise HTTPException(status_code=404, detail="No such user")
+        # Memberships, grants, schedules and SSO links first (all idempotent): if one
+        # fails the account is untouched and a retry works. Then the user with their
+        # dashboards, comments and asks in one transaction; if THAT fails the account
+        # is left without access (fails closed) and a retry finishes it. Nothing
+        # outlives the account for a re-registered username to inherit.
         governance.forget_user(username)
         schedules.forget_user(username)
         identities.forget_user(username)
+        if not store.delete_user(username):
+            raise HTTPException(status_code=404, detail="No such user")
         return {"users": store.list_users()}
 
     def resolve_write_owner(user: str, owner: Optional[str],
@@ -1432,10 +1439,13 @@ def create_dashboards_app(
         if (store.is_locked(target, dashboard_id) and not user_is_admin(user)
                 and not is_disposable(target, dashboard_id)):
             raise HTTPException(status_code=403, detail="Dashboard is locked")
-        store.delete_dashboard(target, dashboard_id)
-        store.delete_dashboard_comments(target, dashboard_id)
-        store.delete_dashboard_asks(target, dashboard_id)
+        # Grants first, then the dashboard with its comments and asks in ONE store
+        # transaction. If forgetting the grants fails nothing is deleted (a retry
+        # works); if the purge fails the dashboard is left without grants (owner-
+        # only: fails closed). Either way no grant outlives its dashboard, where a
+        # re-created id could inherit it. forget_resource is idempotent.
         governance.forget_resource("dashboard", target, dashboard_id)
+        store.purge_dashboard(target, dashboard_id)
         return {"dashboards": store.list_dashboards(user)}
 
     # ---- collaboration: comments + threads + @mentions ----

@@ -6,7 +6,14 @@ from fastapi.testclient import TestClient
 
 from cxd_server.app import create_dashboards_app
 from cxd_server.databricks_browser import (
-    AuthError, databricks_host, make_auth, install_databricks, source_url, table_sql, valid_name)
+    AuthError,
+    databricks_host,
+    install_databricks,
+    make_auth,
+    source_url,
+    table_sql,
+    valid_name,
+)
 from cxd_server.store import DashboardStore
 
 HOST = "dbc-1234.cloud.databricks.com"

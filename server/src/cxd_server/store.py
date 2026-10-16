@@ -177,13 +177,21 @@ class DashboardStore:
             return cur.rowcount > 0
 
     def delete_user(self, username: str) -> bool:
-        """Delete a user and all of their dashboards. False if user is absent."""
+        """Delete a user, their dashboards, and the comments and Ask history on
+        those dashboards, in one transaction. False if user is absent. (Comments
+        they wrote on OTHER people's dashboards stay: they are part of those
+        discussions.)"""
         with self._lock:
-            cur = self._conn.execute(
-                "DELETE FROM users WHERE username = ?", (username,)
-            )
-            self._conn.execute("DELETE FROM dashboards WHERE owner = ?", (username,))
-            self._conn.commit()
+            try:
+                cur = self._conn.execute(
+                    "DELETE FROM users WHERE username = ?", (username,)
+                )
+                for table in ("dashboards", "comments", "asks"):
+                    self._conn.execute("DELETE FROM %s WHERE owner = ?" % table, (username,))
+                self._conn.commit()
+            except Exception:
+                self._conn.rollback()
+                raise
             return cur.rowcount > 0
 
     # ---- dashboards ----
@@ -273,6 +281,21 @@ class DashboardStore:
                 "DELETE FROM dashboards WHERE owner = ? AND id = ?", (owner, dashboard_id)
             )
             self._conn.commit()
+
+    def purge_dashboard(self, owner: str, dashboard_id: str) -> None:
+        """Delete a dashboard together with its comments and Ask history in ONE
+        transaction: all gone or none (no stale comments to leak into a dashboard
+        later re-created under the same id)."""
+        with self._lock:
+            try:
+                for table, column in (("dashboards", "id"), ("comments", "dashboard_id"),
+                                      ("asks", "dashboard_id")):
+                    self._conn.execute("DELETE FROM %s WHERE owner = ? AND %s = ?" % (table, column),
+                                       (owner, dashboard_id))
+                self._conn.commit()
+            except Exception:
+                self._conn.rollback()
+                raise
 
     # ---- sharing ----
     def set_visibility(self, owner: str, dashboard_id: str, visibility: str) -> Optional[dict]:

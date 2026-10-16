@@ -1,11 +1,11 @@
 """The /api/dashboards/{id}/ask HTTP endpoint: gating, data resolution, wiring."""
 
 import pytest
+from dashstores import backend_params
 from fastapi.testclient import TestClient
 
 from cxd_server import ask as ask_module
 from cxd_server.app import create_dashboards_app
-from cxd_server.store import DashboardStore
 
 
 def _spec_with_data(dashboard_id="d1"):
@@ -21,16 +21,16 @@ def _signup(client, username="alice", password="secret1"):
     assert client.post("/auth/signup", json={"username": username, "password": password}).status_code == 200
 
 
-@pytest.fixture
-def app_no_ai(tmp_path):
-    store = DashboardStore(str(tmp_path / "dash.db"))
+@pytest.fixture(**backend_params())
+def app_no_ai(request, tmp_path):
+    store = request.param(tmp_path)
     return create_dashboards_app(store=store, session_secret="s", serve_static=False,
                                  dataset_store_uri="file://" + str(tmp_path / "ds"))
 
 
-@pytest.fixture
-def app_ai(tmp_path):
-    store = DashboardStore(str(tmp_path / "dash.db"))
+@pytest.fixture(**backend_params())
+def app_ai(request, tmp_path):
+    store = request.param(tmp_path)
     return create_dashboards_app(store=store, session_secret="s", serve_static=False,
                                  dataset_store_uri="file://" + str(tmp_path / "ds"),
                                  llm_api_key="test-key")
@@ -102,9 +102,8 @@ def test_asks_persist_and_list_and_delete(app_ai, monkeypatch):
     assert c.get("/api/dashboards/d1/asks").json()["asks"] == []
 
 
-def test_ask_meters_ai_credits_when_paywall_on(tmp_path, monkeypatch):
+def test_ask_meters_ai_credits_when_paywall_on(store, tmp_path, monkeypatch):
     monkeypatch.setenv("CXD_PAYWALL", "on")
-    store = DashboardStore(str(tmp_path / "dash.db"))
     app = create_dashboards_app(store=store, session_secret="s", serve_static=False,
                                 dataset_store_uri="file://" + str(tmp_path / "ds"),
                                 llm_api_key="test-key")
