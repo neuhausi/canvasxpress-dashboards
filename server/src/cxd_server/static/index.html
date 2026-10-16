@@ -110,11 +110,20 @@
     .conn-chip .ci { font-size: 19px; line-height: 1; }
     .placeholder { padding: 60px 20px; text-align: center; color: var(--muted); }
 
+    /* One side-panel width for every page with a left column (Builder, Dashboards,
+       Data, Settings); the .cxd-left-resizer handle drags it, the app remembers it. */
+    :root { --cxd-left-w: 320px; }
+    .cxd-left-resizer { flex: none; align-self: stretch; width: 10px; margin: 0 -5px; position: relative;
+      cursor: col-resize; touch-action: none; z-index: var(--cx-z-raised); }
+    .cxd-left-resizer::after { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px;
+      border-radius: var(--cx-radius-sm); background: transparent; transition: background .15s; }
+    .cxd-left-resizer:hover::after, .cxd-left-resizer.cxd-dragging::after { background: var(--cx-ui-accent); }
+    body.cxd-col-resizing { cursor: col-resize; user-select: none; }
     /* Settings view */
     .settings { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
     /* An outer panel (like the Dashboards list) holding one card per
        category. */
-    .settings-form { flex: 0 0 320px; min-width: 0; box-sizing: border-box;
+    .settings-form { flex: 0 0 var(--cxd-left-w); min-width: 0; box-sizing: border-box;
       background: var(--cx-ui-surface); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-lg);
       padding: 10px; display: flex; flex-direction: column; gap: 12px; }
     .settings-form h3 { margin: 0 0 4px; font-size:16px; }
@@ -141,6 +150,14 @@
 
     /* Data view: dataset list + CanvasXpress table preview */
     .data-view { display: flex; gap: 16px; align-items: stretch; }
+    /* Data page source sections (File / Database / Databricks): the header toggles the section. */
+    .cxd-src-head { display: flex; align-items: center; gap: 6px; width: 100%; margin: 0 0 6px; padding: 0;
+      border: none; background: none; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600;
+      text-transform: uppercase; text-align: left; cursor: pointer; }
+    .cxd-src-head:hover { color: var(--cx-ui-text); }
+    .cxd-src-chev { display: inline-block; width: 12px; transition: transform .15s; }
+    .cxd-src-collapsed .cxd-src-head { margin-bottom: 0; }
+    .cxd-src-collapsed .cxd-src-chev { transform: rotate(-90deg); }
     .data-list { flex: 0 0 260px; width: 260px; box-sizing: border-box; align-self: flex-start; background: var(--cx-ui-surface);
       border: 1px solid var(--rail-border); border-radius: var(--cx-radius-lg); overflow: hidden; }
     /* Cards: breathing room on all sides instead of edge-to-edge rows. */
@@ -393,6 +410,61 @@
     var toolbarEl = document.getElementById('toolbar');
     var viewEl = document.getElementById('view');
     var navItems = [].slice.call(document.querySelectorAll('.nav-item'));
+
+    // --- Shared side-panel width. Every page with a left column (Builder,
+    // Dashboards, Data, Settings) sizes it from --cxd-left-w; dragging any
+    // .cxd-left-resizer sets it for all of them and remembers it in this browser.
+    // Double-click resets. One delegated handler covers every page.
+    var LEFT_W_KEY = 'cxd.leftPanelWidth';
+    var LEFT_W_DEFAULT = 320;
+    function clampLeftWidth(px) {
+      var max = Math.max(260, Math.min(640, Math.round(window.innerWidth * 0.5)));
+      return Math.max(240, Math.min(max, Math.round(px)));
+    }
+    function setLeftWidth(px, save) {
+      var w = clampLeftWidth(px);
+      document.documentElement.style.setProperty('--cxd-left-w', w + 'px');
+      if (save) {
+        try { localStorage.setItem(LEFT_W_KEY, String(w)); } catch (e) { /* not remembered */ }
+      }
+      return w;
+    }
+    (function restoreLeftWidth() {
+      var saved = null;
+      try { saved = parseInt(localStorage.getItem(LEFT_W_KEY), 10); } catch (e) { saved = null; }
+      if (saved) setLeftWidth(saved, false);
+    })();
+    function leftWidthChanged() {
+      // Charts and the builder stage re-fit to the new space.
+      try { window.dispatchEvent(new Event('resize')); } catch (e) { /* old browser */ }
+    }
+    document.addEventListener('pointerdown', function (ev) {
+      var handle = ev.target && ev.target.closest && ev.target.closest('.cxd-left-resizer');
+      if (!handle || ev.button !== 0) return;
+      var panel = handle.previousElementSibling;
+      if (!panel) return;
+      ev.preventDefault();
+      var startX = ev.clientX;
+      var startW = panel.getBoundingClientRect().width;
+      handle.classList.add('cxd-dragging');
+      document.body.classList.add('cxd-col-resizing');
+      function move(e) { setLeftWidth(startW + (e.clientX - startX), false); }
+      function up(e) {
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+        handle.classList.remove('cxd-dragging');
+        document.body.classList.remove('cxd-col-resizing');
+        setLeftWidth(startW + (e.clientX - startX), true);
+        leftWidthChanged();
+      }
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    });
+    document.addEventListener('dblclick', function (ev) {
+      if (!(ev.target && ev.target.closest && ev.target.closest('.cxd-left-resizer'))) return;
+      setLeftWidth(LEFT_W_DEFAULT, true);
+      leftWidthChanged();
+    });
     var currentBuilder = null;
     var currentPreview = null;
     var previewCollab = null;       // [comments, ask] handles for the inline View pane
@@ -580,7 +652,7 @@
           // scroll internally instead of running off the page.
           // Outer panel + one card per section, matching the Dashboards and
           // Settings left panels.
-          '<div id="chat-panel" style="flex:0 0 320px;box-sizing:border-box;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-lg);background:var(--rail-bg);padding:10px;overflow:hidden">' +
+          '<div id="chat-panel" style="flex:0 0 var(--cxd-left-w);box-sizing:border-box;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-lg);background:var(--rail-bg);padding:10px;overflow:hidden">' +
             '<div class="data-dropzone" style="flex:none;margin:0;padding:12px 12px;text-align:left;border-style:solid;background:var(--rail-bg);border:1px solid var(--cx-ui-border);border-radius:var(--cx-radius-lg);border-style:solid">' +
               '<div style="font-weight:600;font-size:16px;margin-bottom:6px">💬 Assistant</div>' +
               '<strong>How it works:</strong> tick the datasets to use, then describe the ' +
@@ -601,6 +673,7 @@
               '</div>' +
             '</div>' +
           '</div>' +
+          '<div class="cxd-left-resizer" title="Drag to resize the side panel (every page follows) · double-click to reset" role="separator" aria-orientation="vertical"></div>' +
           '<div id="builder-host" style="flex:1;min-width:0;border:1px solid var(--rail-border);border-radius:var(--cx-radius-lg);padding:0 12px 12px;background:var(--rail-bg)"></div>' +
         '</div>';
       currentBuilder = CXD.createBuilder(document.getElementById('builder-host'), {
@@ -684,7 +757,7 @@
         '<div class="data-view">' +
           // Pinned to the viewport like the Builder's Assistant column: the
           // column never grows past the window; each card scrolls internally.
-          '<div id="data-left-col" style="flex:0 0 300px;display:flex;flex-direction:column;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px;overflow-y:auto">' +
+          '<div id="data-left-col" style="flex:0 0 var(--cxd-left-w);min-width:0;display:flex;flex-direction:column;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px;overflow-y:auto">' +
             '<div class="data-dropzone" id="data-dropzone" style="margin:0 0 12px">' +
               '<span class="dz-icon">📥</span>' +
               '<strong>Drop files here</strong> to upload a dataset:<br>' +
@@ -693,12 +766,12 @@
             '</div>' +
             '<input id="data-search" type="search" placeholder="Search datasets…" style="flex:none;width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:8px;font:inherit;font-size:15px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)"/>' +
             '<div class="data-list" id="file-sources" style="flex:none;width:auto;align-self:stretch;padding:10px;display:flex;flex-direction:column;height:420px;min-height:250px">' +
-              '<div style="font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:6px">File sources</div>' +
+              '<button type="button" class="cxd-src-head" aria-expanded="true"><span class="cxd-src-chev" aria-hidden="true">▾</span>File sources</button>' +
               '<div id="data-list" style="flex:1;min-height:0;overflow-y:auto"><div class="placeholder">Loading…</div></div>' +
             '</div>' +
             '<div id="data-splitter" title="Drag to resize" style="flex:none;height:8px;margin:4px 0;cursor:ns-resize;border-top:1px solid var(--rail-border);border-bottom:1px solid var(--rail-border);background:repeating-linear-gradient(90deg,transparent,transparent 4px,var(--rail-border) 4px,var(--rail-border) 8px);background-size:24px 2px;background-position:center;background-repeat:no-repeat"></div>' +
             '<div class="data-list" id="db-sources" style="flex:1;min-height:250px;width:auto;align-self:stretch;padding:10px;display:flex;flex-direction:column;overflow:hidden">' +
-              '<div style="font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:6px">Database sources</div>' +
+              '<button type="button" class="cxd-src-head" aria-expanded="true"><span class="cxd-src-chev" aria-hidden="true">▾</span>Database sources</button>' +
               '<div id="db-source-list" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px"><div class="placeholder">Loading…</div></div>' +
               '<div style="display:flex;gap:6px;margin-top:8px">' +
                 '<button class="cta cxd-db-card-btn" id="db-source-add">+ Database</button>' +
@@ -706,7 +779,7 @@
               '</div>' +
             '</div>' +
             '<div class="data-list" id="dbx-sources" style="display:none;flex:none;height:380px;width:auto;align-self:stretch;margin-top:12px;padding:10px;flex-direction:column;overflow:hidden">' +
-              '<div style="font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:6px">Databricks</div>' +
+              '<button type="button" class="cxd-src-head" aria-expanded="true"><span class="cxd-src-chev" aria-hidden="true">▾</span>Databricks</button>' +
               '<div class="cxd-dbx-top">' +
                 '<select id="dbx-warehouse" class="cxd-control" aria-label="SQL warehouse"></select>' +
                 '<div id="dbx-state" class="cxd-dbx-state"></div>' +
@@ -714,6 +787,7 @@
               '<div id="dbx-tree" style="flex:1;min-height:0;overflow-y:auto"></div>' +
             '</div>' +
           '</div>' +
+          '<div class="cxd-left-resizer" title="Drag to resize the side panel (every page follows) · double-click to reset" role="separator" aria-orientation="vertical"></div>' +
           '<div class="data-preview" id="data-preview">' +
             '<div class="data-preview-title" id="data-title">Select a dataset to preview it — or drop a file here to import it.</div>' +
             '<div id="data-canvas-host"></div>' +
@@ -734,6 +808,73 @@
       wireDbSourceForm();
       loadDbSources();
       setupDatabricks();
+      wireSourceCollapse();
+    }
+
+    // Data page: each source section (File / Database / Databricks) collapses to
+    // its header. A collapsed card keeps only the header (its own height and flex
+    // are saved and restored); the File/Database splitter hides while either of
+    // them is collapsed. Remembered per browser (a per-viewer convenience).
+    var SRC_COLLAPSE_KEY = 'cxd.data.collapsedSources';
+    function wireSourceCollapse() {
+      var saved = {};
+      try { saved = JSON.parse(localStorage.getItem(SRC_COLLAPSE_KEY) || '{}') || {}; } catch (e) { saved = {}; }
+      function remember(id, collapsed) {
+        try {
+          if (collapsed) saved[id] = true; else delete saved[id];
+          localStorage.setItem(SRC_COLLAPSE_KEY, JSON.stringify(saved));
+        } catch (e) { /* storage unavailable: still toggles */ }
+      }
+      function syncSplitter() {
+        var splitter = document.getElementById('data-splitter');
+        var files = document.getElementById('file-sources');
+        var db = document.getElementById('db-sources');
+        if (!splitter || !files || !db) return;
+        var either = files.classList.contains('cxd-src-collapsed') || db.classList.contains('cxd-src-collapsed');
+        splitter.style.display = either ? 'none' : '';
+      }
+      function setCollapsed(card, collapsed) {
+        var head = card.querySelector('.cxd-src-head');
+        if (collapsed === card.classList.contains('cxd-src-collapsed')) return;
+        if (collapsed) {
+          // Keep whatever size the card has now (the splitter may have resized it).
+          card.setAttribute('data-size', JSON.stringify({ height: card.style.height, minHeight: card.style.minHeight, flex: card.style.flex }));
+          card.style.height = 'auto';
+          card.style.minHeight = '0';
+          card.style.flex = 'none';
+        } else {
+          var size = {};
+          try { size = JSON.parse(card.getAttribute('data-size') || '{}'); } catch (e) { size = {}; }
+          card.style.height = size.height || '';
+          card.style.minHeight = size.minHeight || '';
+          card.style.flex = size.flex || '';
+        }
+        card.classList.toggle('cxd-src-collapsed', collapsed);
+        [].forEach.call(card.children, function (child) {
+          if (child === head) return;
+          if (collapsed) {
+            child.setAttribute('data-display', child.style.display);   // e.g. a flex row
+            child.style.display = 'none';
+          } else {
+            child.style.display = child.getAttribute('data-display') || '';
+            child.removeAttribute('data-display');
+          }
+        });
+        if (head) head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        syncSplitter();
+      }
+      ['file-sources', 'db-sources', 'dbx-sources'].forEach(function (id) {
+        var card = document.getElementById(id);
+        var head = card && card.querySelector('.cxd-src-head');
+        if (!head) return;
+        head.title = 'Collapse or expand';
+        head.onclick = function () {
+          var collapsed = !card.classList.contains('cxd-src-collapsed');
+          setCollapsed(card, collapsed);
+          remember(id, collapsed);
+        };
+        if (saved[id]) setCollapsed(card, true);
+      });
     }
 
     // Dialog to import a dataset into the store from a file, pasted text, or an
@@ -3685,6 +3826,7 @@
             '<label>Font family<select id="s-font"></select></label>' +
             '</div>' +
           '</div>' +
+          '<div class="cxd-left-resizer" title="Drag to resize the side panel (every page follows) · double-click to reset" role="separator" aria-orientation="vertical"></div>' +
           '<div class="settings-preview"><div id="s-preview"></div></div>' +
         '</div>';
 
@@ -4136,7 +4278,7 @@
         '</div>';
       viewEl.innerHTML =
         '<div class="data-view cxd-dash-view">' +
-          '<div class="cxd-dash-col" style="flex:0 0 320px;width:320px;box-sizing:border-box;display:flex;flex-direction:column">' +
+          '<div class="cxd-dash-col" style="flex:0 0 var(--cxd-left-w);width:var(--cxd-left-w);box-sizing:border-box;display:flex;flex-direction:column">' +
             '<div class="cxb-dash-search-wrap">' +
               '<input id="dash-search" type="search" placeholder="Search dashboards…"/>' +
               '<button type="button" id="dash-filter-btn" title="Filter by what a dashboard uses" aria-label="Filter by what a dashboard uses" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h12l-4.5 5.5V13l-3-1.5V8.5z"/></svg><span id="dash-filter-badge"></span></button>' +
@@ -4144,6 +4286,7 @@
             '</div>' +
             '<div class="data-list" id="dash-list" style="width:auto;align-self:stretch"><div class="placeholder">Loading…</div></div>' +
           '</div>' +
+          '<div class="cxd-left-resizer" title="Drag to resize the side panel (every page follows) · double-click to reset" role="separator" aria-orientation="vertical"></div>' +
           '<div class="data-preview" id="dash-preview" style="padding:0 12px 12px">' +
             '<div class="data-preview-title" id="dash-title">Click “View” on a dashboard to preview it here.</div>' +
             '<div id="dash-host"></div>' +

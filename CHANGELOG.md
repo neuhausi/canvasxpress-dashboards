@@ -5,6 +5,15 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Data page sections collapse; one resizable side-panel width
+- **File sources, Database sources and Databricks collapse** to their header (click the
+  ▾ header). A collapsed card keeps only its header, the File/Database splitter hides
+  meanwhile, and the choice is remembered in the browser.
+- **The left column of every page is resizable, and they move together.** Drag the
+  thin handle on its right edge (Builder's Assistant, the Dashboards list, Data, Settings);
+  the width is one shared `--cxd-left-w` (240 px to half the window, default 320 px —
+  Data's column was 300 px), remembered in the browser; double-click the handle to reset.
+
 ### Fixed: comments, Ask history and dashboard deletion on the SQL (Postgres) store
 - `SqlDashboardStore` now has the comments and Ask-history methods `DashboardStore` has
   (`cxd_comments` / `cxd_asks` tables, created on start), so every comments/Ask route works
