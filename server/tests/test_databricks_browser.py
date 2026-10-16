@@ -119,9 +119,10 @@ def test_each_tree_level_returns_names_and_flags_truncation(tmp_path):
     sql = calls.sql[-1][1][0]
     assert "`main`.information_schema.tables" in sql[0] and sql[1]["schema"] == "sales"
     d = c.get(Q + "table" + w + "&catalog=main&schema=sales&table=orders", headers=_h()).json()
-    assert d["columns"] == [{"name": "id", "type": "bigint"}, {"name": "amt", "type": "decimal(10,2)"}]
-    assert d["preview"] == {"columns": ["id", "amt"], "rows": [[1, "2.50"]]}
-    preview_sql = calls.sql[-1][1][1][0]
+    assert d["columns"] == ["id", "amt"] and d["rows"] == 1
+    assert d["data"]["y"]["smps"] == ["1"] and d["data"]["y"]["vars"] == ["amt"]   # a CanvasXpress table
+    assert len(calls.sql[-1][1]) == 1                    # one query: no separate columns lookup
+    preview_sql = calls.sql[-1][1][0][0]
     assert preview_sql == "SELECT * FROM `main`.`sales`.`orders` LIMIT 50"
 
 

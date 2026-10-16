@@ -316,24 +316,20 @@ def install_databricks(app: Any, store: Any, env: Optional[dict] = None,
                        extra=lambda r: {"name": r[0], "kind": "view" if "VIEW" in str(r[1] or "").upper() else "table"})
 
     def table(request: Request):
+        from cx_connectors.reshape import rows_to_cx
+
         qp = request.query_params
         catalog, schema, name = qp.get("catalog", ""), qp.get("schema", ""), qp.get("table", "")
         names = {"catalog": catalog, "schema": schema, "table": name}
-        if all(valid_name(v) for v in names.values()):
-            queries = [
-                ("SELECT column_name, data_type FROM %s.information_schema.columns "
-                 "WHERE table_schema = :schema AND table_name = :table ORDER BY ordinal_position" % quote(catalog),
-                 {"schema": schema, "table": name}, LIST_CAP),
-                (table_sql(catalog, schema, name) + " LIMIT %d" % PREVIEW_ROWS, {}, PREVIEW_ROWS)]
-        else:
-            queries = []
+        queries = [(table_sql(catalog, schema, name) + " LIMIT %d" % PREVIEW_ROWS, {}, PREVIEW_ROWS)] \
+            if all(valid_name(v) for v in names.values()) else []
         res, error = query(request, qp.get("warehouse", ""), queries, "table %s.%s.%s" % (catalog, schema, name), names)
         if error is not None:
             return error
-        (_, cols, cols_truncated), (header, rows, _) = res
-        return {"catalog": catalog, "schema": schema, "table": name,
-                "columns": [{"name": c[0], "type": c[1]} for c in cols], "columns_truncated": cols_truncated,
-                "preview": {"columns": header, "rows": [[_plain(v) for v in r] for r in rows]}}
+        header, rows, _ = res[0]
+        rows = [[_plain(v) for v in r] for r in rows]
+        return {"catalog": catalog, "schema": schema, "table": name, "columns": header, "rows": len(rows),
+                "data": rows_to_cx(header, rows) if rows else None}
 
     async def save_source(request: Request):
         user, token, error = begin(request)

@@ -282,6 +282,28 @@
     .cxd-dbwizard-fields { flex: 0 0 300px; min-width: 0; }
     .cxd-dbwizard-preview { flex: 1 1 auto; min-width: 0; min-height: 420px; }
     @media (max-width: 800px) { .cxd-dbwizard-cols { flex-direction: column; } .cxd-dbwizard-fields { flex-basis: auto; width: 100%; } }
+    /* Databricks browser (Data page): same controls as the rest of the app, a quiet tree. */
+    .cxd-dbx-top { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .cxd-dbx-top select { width: 100%; text-overflow: ellipsis; }
+    .cxd-dbx-state { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); min-height: 16px; }
+    .cxd-dbx-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+    .cxd-dbx-dot--on { background: var(--cx-ui-success); }
+    .cxd-dbx-filter { width: 100%; height: 32px; margin: 6px 0 2px; font-size: 13px; }
+    .cxd-dbx-count { font-size: 12px; color: var(--muted); margin: 0 2px 4px; }
+    .cxd-dbx-row { display: flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: var(--cx-radius-md);
+      cursor: pointer; font-size: 14px; min-width: 0; }
+    .cxd-dbx-row:hover { background: var(--cx-ui-surface-sunken); }
+    .cxd-dbx-row.active { background: var(--cx-ui-accent-tint-subtle); color: var(--accent); font-weight: 600; }
+    .cxd-dbx-row svg { flex: none; width: 15px; height: 15px; color: var(--muted); fill: none; stroke: currentColor;
+      stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .cxd-dbx-row.active svg { color: inherit; }
+    .cxd-dbx-chev { flex: none; width: 10px; font-size: 9px; color: var(--muted); transition: transform .12s; }
+    .cxd-dbx-row.open > .cxd-dbx-chev { transform: rotate(90deg); }
+    .cxd-dbx-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cxd-dbx-tag { flex: none; font-size: 11px; font-weight: 400; color: var(--muted); border: 1px solid var(--rail-border);
+      border-radius: 999px; padding: 0 7px; }
+    .cxd-dbx-kids { margin-left: 13px; padding-left: 4px; border-left: 1px solid var(--rail-border); }
+    .cxd-dbx-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; align-items: center; }
     .cxd-db-card-btn { flex: 1; padding: 4px 10px; font-size: 14px; background: transparent; border: 1px solid var(--rail-border); color: var(--accent); }
     /* Dashboards page: search box + "what a dashboard uses" filter chips (tokens, no inline styles) */
     .cxb-dash-search-wrap { position: relative; flex: none; margin-bottom: 8px; }
@@ -685,7 +707,10 @@
             '</div>' +
             '<div class="data-list" id="dbx-sources" style="display:none;flex:none;height:380px;width:auto;align-self:stretch;margin-top:12px;padding:10px;flex-direction:column;overflow:hidden">' +
               '<div style="font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:6px">Databricks</div>' +
-              '<select id="dbx-warehouse" aria-label="SQL warehouse" style="flex:none;width:100%;box-sizing:border-box;height:34px;margin-bottom:6px"></select>' +
+              '<div class="cxd-dbx-top">' +
+                '<select id="dbx-warehouse" class="cxd-control" aria-label="SQL warehouse"></select>' +
+                '<div id="dbx-state" class="cxd-dbx-state"></div>' +
+              '</div>' +
               '<div id="dbx-tree" style="flex:1;min-height:0;overflow-y:auto"></div>' +
             '</div>' +
           '</div>' +
@@ -1802,16 +1827,27 @@
           list.forEach(function (w) {
             var o = document.createElement('option');
             o.value = w.id;
-            o.textContent = w.name + ' — ' + w.state.toLowerCase() + (w.state === 'RUNNING' ? '' : ' ⏸');
+            o.textContent = w.name;
             pick.appendChild(o);
           });
+          function showState() {
+            var w = list.filter(function (x) { return x.id === pick.value; })[0];
+            var stateEl = document.getElementById('dbx-state');
+            if (!w || !stateEl) return;
+            var on = w.state === 'RUNNING';
+            stateEl.innerHTML = '<span class="cxd-dbx-dot' + (on ? ' cxd-dbx-dot--on' : '') + '"></span>' +
+              esc(on ? 'Running' : w.state.charAt(0) + w.state.slice(1).toLowerCase() + ' — starts on first query');
+            pick.title = w.name;
+          }
           if (!list.length) { tree.innerHTML = '<div class="placeholder">No SQL warehouses available to you.</div>'; return; }
           var saved = ''; try { saved = localStorage.getItem(storeKey) || ''; } catch (e) { /* storage blocked */ }
           if (saved && list.some(function (w) { return w.id === saved; })) pick.value = saved;
           pick.onchange = function () {
             try { localStorage.setItem(storeKey, pick.value); } catch (e) { /* storage blocked */ }
+            showState();
             drawCatalogs();
           };
+          showState();
           drawCatalogs();
         });
       }).catch(function (e) {
@@ -1833,6 +1869,13 @@
       }
     }
 
+    var DBX_ICONS = {
+      catalog: '<svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg>',
+      schema: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5a1 1 0 0 1 1-1h3.2l1.5 1.7h6.3a1 1 0 0 1 1 1v6.3a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/></svg>',
+      table: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.8" y="2.5" width="12.4" height="11" rx="1.5"/><path d="M1.8 6.2h12.4M1.8 9.8h12.4M6 6.2v7.3"/></svg>',
+      view: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8s2.6-4.5 7-4.5S15 8 15 8s-2.6 4.5-7 4.5S1 8 1 8z"/><circle cx="8" cy="8" r="2"/></svg>'
+    };
+
     /**
      * One lazily-loaded level of the catalog tree with its own filter box and count.
      * The filter is instant over the loaded names; when the list was capped (or a
@@ -1845,11 +1888,13 @@
      * @param {function} [onLeaf] - (item) for a row that has no deeper level.
      */
     function dbxLevel(host, route, params, onExpand, onLeaf) {
+      var singular = route.slice(0, -1);
       var filter = document.createElement('input');
-      filter.type = 'search'; filter.placeholder = 'Filter ' + route + '…';
-      filter.style.cssText = 'width:100%;box-sizing:border-box;margin:2px 0;padding:4px 8px;font:inherit;font-size:13px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)';
+      filter.type = 'search'; filter.className = 'cxd-control cxd-dbx-filter';
+      filter.placeholder = 'Filter ' + route + '…';
+      filter.setAttribute('aria-label', 'Filter ' + route);
       var info = document.createElement('div');
-      info.className = 'cxd-wizard-note'; info.style.margin = '0 0 2px';
+      info.className = 'cxd-dbx-count';
       var list = document.createElement('div');
       host.appendChild(filter); host.appendChild(info); host.appendChild(list);
       var items = [], truncated = false, serverQ = '', timer = null;
@@ -1860,22 +1905,33 @@
         list.innerHTML = '';
         shown.forEach(function (it) {
           var row = document.createElement('div');
-          row.style.cssText = 'cursor:pointer;padding:2px 4px;border-radius:var(--cx-radius-md);white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+          row.className = 'cxd-dbx-row';
+          row.title = it.name;
+          row.innerHTML = (onExpand ? '<span class="cxd-dbx-chev">▶</span>' : '') +
+            (DBX_ICONS[it.kind === 'view' ? 'view' : singular] || '') +
+            '<span class="cxd-dbx-name">' + esc(it.name) + '</span>' +
+            (it.kind === 'view' ? '<span class="cxd-dbx-tag">view</span>' : '');
           var kids = document.createElement('div');
-          kids.style.cssText = 'display:none;margin-left:14px';
-          var icon = route === 'catalogs' ? '📚' : route === 'schemas' ? '🗂' : it.kind === 'view' ? '👁' : '▦';
-          row.textContent = (onExpand ? '▸ ' : '') + icon + ' ' + it.name + (it.kind === 'view' ? ' (view)' : '');
+          kids.className = 'cxd-dbx-kids';
+          kids.style.display = 'none';
           row.onclick = function () {
-            if (!onExpand) { if (onLeaf) onLeaf(it); return; }
+            if (!onExpand) {
+              var tree = document.getElementById('dbx-tree');
+              if (tree) [].forEach.call(tree.querySelectorAll('.cxd-dbx-row.active'), function (r) { r.classList.remove('active'); });
+              row.classList.add('active');
+              if (onLeaf) onLeaf(it);
+              return;
+            }
             var open = kids.style.display === 'none';
             kids.style.display = open ? '' : 'none';
-            row.textContent = (open ? '▾ ' : '▸ ') + icon + ' ' + it.name;
+            row.classList.toggle('open', open);
             if (open && !kids.firstChild) onExpand(it, kids);
           };
           list.appendChild(row); list.appendChild(kids);
         });
-        info.textContent = (q && !serverQ ? shown.length + ' of ' + items.length : items.length) + ' ' + route +
-          (truncated ? ' — truncated at 1000; type to search them all' : '');
+        var n = q && !serverQ ? shown.length + ' of ' + items.length : String(items.length);
+        info.textContent = n + ' ' + (items.length === 1 && !q ? singular : route) +
+          (truncated ? ' · showing the first 1000, type to search all' : '');
       }
       function load(q) {
         info.textContent = 'Loading…';
@@ -1896,48 +1952,61 @@
       load('');
     }
 
-    // The right-hand pane for a selected table: columns, first 50 rows, actions.
+    // The right-hand pane for a selected table: the two actions, then the first rows
+    // in a CanvasXpress data table, the same as any other database source.
     function showDbxTable(ref) {
       var titleEl = document.getElementById('data-title');
       var host = document.getElementById('data-canvas-host');
       if (!host) return;
-      if (titleEl) { titleEl.style.display = ''; titleEl.textContent = ref.catalog + '.' + ref.schema + '.' + ref.table + '  ·  Databricks'; }
+      var label = ref.catalog + '.' + ref.schema + '.' + ref.table;
+      if (titleEl) { titleEl.style.display = ''; titleEl.textContent = label + '  ·  Databricks'; }
       destroyDataPreview();
-      host.innerHTML = '<div class="placeholder">Loading…</div>';
-      dbxApi('table', ref).then(function (d) {
-        if (!document.getElementById('data-canvas-host')) return;
-        function table(head, rows) {
-          return '<table class="cxd-wizard-profile"><thead><tr>' + head.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') +
-            '</tr></thead><tbody>' + rows.map(function (r) {
-              return '<tr>' + r.map(function (v) { return '<td>' + (v === null ? '<i>null</i>' : esc(String(v))) + '</td>'; }).join('') + '</tr>';
-            }).join('') + '</tbody></table>';
-        }
-        host.innerHTML = '<div class="cxd-wizard-actions" style="justify-content:flex-start;margin:0 0 10px"></div>' +
-          '<div id="dbx-msg" class="cxd-wizard-msg"></div>' +
-          '<h4 style="margin:6px 0">Columns (' + d.columns.length + ')</h4>' +
-          table(['Name', 'Type'], d.columns.map(function (c) { return [c.name, c.type]; })) +
-          '<h4 style="margin:12px 0 6px">Preview — first ' + d.preview.rows.length + ' rows</h4>' +
-          '<div style="overflow:auto">' + table(d.preview.columns, d.preview.rows) + '</div>';
-        var bar = host.firstChild, msg = document.getElementById('dbx-msg');
-        function save(then) {
-          msg.textContent = '';
-          return dbxApi('save-source', {}, ref).then(function (s) { loadDbSources(); return then(s); },
-            function (e) { msg.textContent = e.message; });
-        }
-        bar.appendChild(smallButton('Save as source', function () {
-          // The new source opens in the normal editor so its SELECT (and, off Posit Connect, its token) can be edited.
-          save(function (s) { editDbSource(s.name); });
-        }));
-        if (dbxViewerOauth) bar.appendChild(smallButton('Dashboard from this table', function () {
+      host.innerHTML = '<div class="cxd-dbx-bar"></div><div id="dbx-msg" class="cxd-wizard-msg"></div>' +
+        '<div id="dbx-grid"><div class="placeholder">Loading…</div></div>';
+      var bar = host.firstChild, msg = document.getElementById('dbx-msg'), grid = document.getElementById('dbx-grid');
+      function save(then) {
+        msg.textContent = '';
+        return dbxApi('save-source', {}, ref).then(function (s) { loadDbSources(); return then(s); },
+          function (e) { msg.textContent = e.message; });
+      }
+      bar.appendChild(smallButton('Save as source', function () {
+        // The new source opens in the normal editor so its SELECT (and, off Posit Connect, its token) can be edited.
+        save(function (s) { editDbSource(s.name); });
+      }));
+      if (dbxViewerOauth) {
+        var dash = smallButton('Dashboard from this table', function () {
           save(function (s) { showDbWizard({ source: s.name, table: ref.table }); });
-        }));
-        else {
-          var note = document.createElement('span');
-          note.className = 'cxd-wizard-note';
-          note.textContent = 'Not on Posit Connect: save the source, put your token in its URL, then use + Dashboard.';
-          bar.appendChild(note);
-        }
-      }, function (e) { host.innerHTML = '<div class="placeholder">' + esc(e.message) + '</div>'; });
+        });
+        dash.className = 'cX-Button cX-Button--primary';
+        bar.appendChild(dash);
+      } else {
+        var note = document.createElement('span');
+        note.className = 'cxd-wizard-note';
+        note.textContent = 'Not on Posit Connect: save the source, put your token in its URL, then use + Dashboard.';
+        bar.appendChild(note);
+      }
+      dbxApi('table', ref).then(function (d) {
+        if (document.getElementById('dbx-grid') !== grid) return;   // navigated away
+        if (!d.data) { grid.innerHTML = '<div class="placeholder">This table has no rows.</div>'; return; }
+        if (titleEl) titleEl.textContent = label + '  ·  Databricks (first ' + d.rows + ' rows)';
+        grid.innerHTML = '';
+        requestAnimationFrame(function () {
+          if (document.getElementById('dbx-grid') !== grid) return;
+          // Size from the preview pane: the canvas shrink-wraps its direct parent, so the grid itself is no guide.
+          var pane = document.getElementById('data-preview');
+          var width = Math.max(320, (pane ? pane.clientWidth - 30 : 0) || previewWidth || 640);
+          var height = Math.max(420, window.innerHeight - 330);
+          var canvas = document.createElement('canvas');
+          canvas.id = 'dbx-preview-' + Date.now();
+          canvas.setAttribute('width', width);
+          canvas.setAttribute('height', height);
+          canvas.style.width = width + 'px';
+          canvas.style.height = height + 'px';
+          grid.appendChild(canvas);
+          dataPreviewInstance = new window.CanvasXpress(canvas.id, d.data,
+            { view: 'table', title: label, resizable: false }, {});
+        });
+      }, function (e) { grid.innerHTML = '<div class="placeholder">' + esc(e.message) + '</div>'; });
     }
 
     // Add/edit a database source: the connection, a table browser (tables →
