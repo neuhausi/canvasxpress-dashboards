@@ -33,7 +33,7 @@ import json
 import os
 import re
 import urllib.request
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 LIST_CAP = 1000
 PREVIEW_ROWS = 50
@@ -91,7 +91,11 @@ def source_url(host: str, warehouse_id: str, catalog: str, schema: str, viewer_o
 def connect_token(headers: Any, client_factory: Optional[Callable[[], Any]] = None) -> str:
     """The viewer's Databricks token via Posit Connect."""
     from cx_connectors.databricks_oauth import (
-        AUDIENCE_ENV, OAuthExchangeFailed, exchange_viewer_token, session_token_from_headers)
+        AUDIENCE_ENV,
+        OAuthExchangeFailed,
+        exchange_viewer_token,
+        session_token_from_headers,
+    )
 
     session = session_token_from_headers(headers)
     if not session:
