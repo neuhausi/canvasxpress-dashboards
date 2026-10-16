@@ -23,14 +23,17 @@ def _sql_store(tmp_path):
 
 
 def _pg_store(tmp_path):
-    # Real Postgres. The dashboard store uses fixed table names, so drop them
-    # first for per-test isolation on the shared server DB; create_all rebuilds.
+    # Real Postgres. The stores use fixed table names, and the app tests also create
+    # governance/grants, identities and audit tables on the same engine, so drop EVERY
+    # cxd_ table first (a throwaway test database) or state leaks between tests;
+    # create_all rebuilds them.
     import sqlalchemy as sa
 
     engine = sa.create_engine(_PG_URL, future=True)
     with engine.begin() as conn:
-        for tbl in ("cxd_dashboards", "cxd_users", "cxd_comments", "cxd_asks"):
-            conn.execute(sa.text("DROP TABLE IF EXISTS " + tbl))
+        for tbl in sa.inspect(conn).get_table_names():
+            if tbl.startswith("cxd_"):
+                conn.execute(sa.text('DROP TABLE IF EXISTS "%s" CASCADE' % tbl))
     return SqlDashboardStore(_PG_URL, engine=engine)
 
 
@@ -39,11 +42,6 @@ def _pg_store(tmp_path):
 _PARAMS = [(_stdlib_store, "stdlib"), (_sql_store, "sql")]
 if _PG_URL:
     _PARAMS.append((_pg_store, "pg"))
-
-
-@pytest.fixture(params=[p[0] for p in _PARAMS], ids=[p[1] for p in _PARAMS])
-def store(request, tmp_path):
-    return request.param(tmp_path)
 
 
 def backend_params():
