@@ -662,7 +662,7 @@
         '<div class="data-view">' +
           // Pinned to the viewport like the Builder's Assistant column: the
           // column never grows past the window; each card scrolls internally.
-          '<div id="data-left-col" style="flex:0 0 300px;display:flex;flex-direction:column;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px">' +
+          '<div id="data-left-col" style="flex:0 0 300px;display:flex;flex-direction:column;position:sticky;top:8px;height:calc(100vh - 150px);min-height:560px;overflow-y:auto">' +
             '<div class="data-dropzone" id="data-dropzone" style="margin:0 0 12px">' +
               '<span class="dz-icon">📥</span>' +
               '<strong>Drop files here</strong> to upload a dataset:<br>' +
@@ -682,6 +682,11 @@
                 '<button class="cta cxd-db-card-btn" id="db-source-add">+ Database</button>' +
                 '<button class="cta cxd-db-card-btn" id="db-dashboard-add" title="Build a dashboard whose Control queries your database">+ Dashboard</button>' +
               '</div>' +
+            '</div>' +
+            '<div class="data-list" id="dbx-sources" style="display:none;flex:none;height:380px;width:auto;align-self:stretch;margin-top:12px;padding:10px;flex-direction:column;overflow:hidden">' +
+              '<div style="font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:6px">Databricks</div>' +
+              '<select id="dbx-warehouse" aria-label="SQL warehouse" style="flex:none;width:100%;box-sizing:border-box;height:34px;margin-bottom:6px"></select>' +
+              '<div id="dbx-tree" style="flex:1;min-height:0;overflow-y:auto"></div>' +
             '</div>' +
           '</div>' +
           '<div class="data-preview" id="data-preview">' +
@@ -703,6 +708,7 @@
       wireDataSplitter();
       wireDbSourceForm();
       loadDbSources();
+      setupDatabricks();
     }
 
     // Dialog to import a dataset into the store from a file, pasted text, or an
@@ -1765,6 +1771,175 @@
       });
     }
 
+    // --- Databricks catalog browser (Data page). Hidden unless the server has
+    // CXD_DATABRICKS_HOST. Every call runs as the viewer (Posit Connect) or the
+    // shared token, decided server-side; nothing about the token reaches here.
+    var DBX = '/api/connectors/databricks/';
+    var dbxViewerOauth = true;   // false off Posit Connect: saved sources carry a token placeholder
+    function dbxApi(path, params, body) {
+      var qs = Object.keys(params || {}).map(function (k) { return k + '=' + encodeURIComponent(params[k]); }).join('&');
+      return ensureConnectorsSession().then(function () {
+        return fetch(API_BASE + DBX + path + (qs ? '?' + qs : ''), body === undefined ? { credentials: 'include' } : {
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      }).then(function (r) {
+        return r.json().then(function (b) { if (!r.ok) throw new Error(b && b.detail || ('HTTP ' + r.status)); return b; });
+      });
+    }
+
+    function setupDatabricks() {
+      var card = document.getElementById('dbx-sources');
+      var pick = document.getElementById('dbx-warehouse');
+      var tree = document.getElementById('dbx-tree');
+      if (!card) return;
+      var storeKey = 'cxd-dbx-warehouse:' + (currentUser || '');
+      dbxApi('config').then(function (cfg) {
+        if (!cfg.enabled) return;
+        dbxViewerOauth = !!cfg.viewer_oauth;
+        card.style.display = 'flex';
+        return dbxApi('warehouses').then(function (res) {
+          var list = res.warehouses || [];
+          pick.innerHTML = '';
+          list.forEach(function (w) {
+            var o = document.createElement('option');
+            o.value = w.id;
+            o.textContent = w.name + ' — ' + w.state.toLowerCase() + (w.state === 'RUNNING' ? '' : ' ⏸');
+            pick.appendChild(o);
+          });
+          if (!list.length) { tree.innerHTML = '<div class="placeholder">No SQL warehouses available to you.</div>'; return; }
+          var saved = ''; try { saved = localStorage.getItem(storeKey) || ''; } catch (e) { /* storage blocked */ }
+          if (saved && list.some(function (w) { return w.id === saved; })) pick.value = saved;
+          pick.onchange = function () {
+            try { localStorage.setItem(storeKey, pick.value); } catch (e) { /* storage blocked */ }
+            drawCatalogs();
+          };
+          drawCatalogs();
+        });
+      }).catch(function (e) {
+        // Hidden only when not configured; an auth/Databricks problem is shown, not swallowed.
+        if (/not configured/i.test(e.message)) return;
+        card.style.display = 'flex';
+        tree.innerHTML = '<div class="placeholder">Databricks unavailable.<br><small>' + esc(e.message) + '</small></div>';
+      });
+
+      function drawCatalogs() {
+        tree.innerHTML = '';
+        dbxLevel(tree, 'catalogs', function () { return { warehouse: pick.value }; }, function (cat, kids) {
+          dbxLevel(kids, 'schemas', function () { return { warehouse: pick.value, catalog: cat.name }; }, function (sch, kids2) {
+            dbxLevel(kids2, 'tables', function () { return { warehouse: pick.value, catalog: cat.name, schema: sch.name }; }, null, function (tbl) {
+              showDbxTable({ warehouse: pick.value, catalog: cat.name, schema: sch.name, table: tbl.name });
+            });
+          });
+        });
+      }
+    }
+
+    /**
+     * One lazily-loaded level of the catalog tree with its own filter box and count.
+     * The filter is instant over the loaded names; when the list was capped (or a
+     * server-side filter is active) it re-queries the server so a name past the cap
+     * can still be found.
+     * @param {Element} host - Container to draw into.
+     * @param {string} route - 'catalogs' | 'schemas' | 'tables'.
+     * @param {function} params - Returns the route's query params.
+     * @param {function|null} onExpand - (item, childHost) for a row that opens a deeper level.
+     * @param {function} [onLeaf] - (item) for a row that has no deeper level.
+     */
+    function dbxLevel(host, route, params, onExpand, onLeaf) {
+      var filter = document.createElement('input');
+      filter.type = 'search'; filter.placeholder = 'Filter ' + route + '…';
+      filter.style.cssText = 'width:100%;box-sizing:border-box;margin:2px 0;padding:4px 8px;font:inherit;font-size:13px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)';
+      var info = document.createElement('div');
+      info.className = 'cxd-wizard-note'; info.style.margin = '0 0 2px';
+      var list = document.createElement('div');
+      host.appendChild(filter); host.appendChild(info); host.appendChild(list);
+      var items = [], truncated = false, serverQ = '', timer = null;
+
+      function paint() {
+        var q = filter.value.trim().toLowerCase();
+        var shown = items.filter(function (it) { return !q || it.name.toLowerCase().indexOf(q) !== -1; });
+        list.innerHTML = '';
+        shown.forEach(function (it) {
+          var row = document.createElement('div');
+          row.style.cssText = 'cursor:pointer;padding:2px 4px;border-radius:var(--cx-radius-md);white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+          var kids = document.createElement('div');
+          kids.style.cssText = 'display:none;margin-left:14px';
+          var icon = route === 'catalogs' ? '📚' : route === 'schemas' ? '🗂' : it.kind === 'view' ? '👁' : '▦';
+          row.textContent = (onExpand ? '▸ ' : '') + icon + ' ' + it.name + (it.kind === 'view' ? ' (view)' : '');
+          row.onclick = function () {
+            if (!onExpand) { if (onLeaf) onLeaf(it); return; }
+            var open = kids.style.display === 'none';
+            kids.style.display = open ? '' : 'none';
+            row.textContent = (open ? '▾ ' : '▸ ') + icon + ' ' + it.name;
+            if (open && !kids.firstChild) onExpand(it, kids);
+          };
+          list.appendChild(row); list.appendChild(kids);
+        });
+        info.textContent = (q && !serverQ ? shown.length + ' of ' + items.length : items.length) + ' ' + route +
+          (truncated ? ' — truncated at 1000; type to search them all' : '');
+      }
+      function load(q) {
+        info.textContent = 'Loading…';
+        var p = params(); p.q = q;
+        dbxApi(route, p).then(function (res) {
+          if (filter.value.trim() !== q) return;   // superseded by more typing
+          serverQ = q;
+          items = (res[route] || []).map(function (x) { return typeof x === 'string' ? { name: x } : x; });
+          truncated = !!res.truncated;
+          paint();
+        }, function (e) { info.textContent = e.message; });
+      }
+      filter.oninput = function () {
+        paint();
+        var q = filter.value.trim();
+        if (truncated || serverQ) { clearTimeout(timer); timer = setTimeout(function () { load(q); }, 350); }
+      };
+      load('');
+    }
+
+    // The right-hand pane for a selected table: columns, first 50 rows, actions.
+    function showDbxTable(ref) {
+      var titleEl = document.getElementById('data-title');
+      var host = document.getElementById('data-canvas-host');
+      if (!host) return;
+      if (titleEl) { titleEl.style.display = ''; titleEl.textContent = ref.catalog + '.' + ref.schema + '.' + ref.table + '  ·  Databricks'; }
+      destroyDataPreview();
+      host.innerHTML = '<div class="placeholder">Loading…</div>';
+      dbxApi('table', ref).then(function (d) {
+        if (!document.getElementById('data-canvas-host')) return;
+        function table(head, rows) {
+          return '<table class="cxd-wizard-profile"><thead><tr>' + head.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') +
+            '</tr></thead><tbody>' + rows.map(function (r) {
+              return '<tr>' + r.map(function (v) { return '<td>' + (v === null ? '<i>null</i>' : esc(String(v))) + '</td>'; }).join('') + '</tr>';
+            }).join('') + '</tbody></table>';
+        }
+        host.innerHTML = '<div class="cxd-wizard-actions" style="justify-content:flex-start;margin:0 0 10px"></div>' +
+          '<div id="dbx-msg" class="cxd-wizard-msg"></div>' +
+          '<h4 style="margin:6px 0">Columns (' + d.columns.length + ')</h4>' +
+          table(['Name', 'Type'], d.columns.map(function (c) { return [c.name, c.type]; })) +
+          '<h4 style="margin:12px 0 6px">Preview — first ' + d.preview.rows.length + ' rows</h4>' +
+          '<div style="overflow:auto">' + table(d.preview.columns, d.preview.rows) + '</div>';
+        var bar = host.firstChild, msg = document.getElementById('dbx-msg');
+        function save(then) {
+          msg.textContent = '';
+          return dbxApi('save-source', {}, ref).then(function (s) { loadDbSources(); return then(s); },
+            function (e) { msg.textContent = e.message; });
+        }
+        bar.appendChild(smallButton('Save as source', function () {
+          // The new source opens in the normal editor so its SELECT (and, off Posit Connect, its token) can be edited.
+          save(function (s) { editDbSource(s.name); });
+        }));
+        if (dbxViewerOauth) bar.appendChild(smallButton('Dashboard from this table', function () {
+          save(function (s) { showDbWizard({ source: s.name, table: ref.table }); });
+        }));
+        else {
+          var note = document.createElement('span');
+          note.className = 'cxd-wizard-note';
+          note.textContent = 'Not on Posit Connect: save the source, put your token in its URL, then use + Dashboard.';
+          bar.appendChild(note);
+        }
+      }, function (e) { host.innerHTML = '<div class="placeholder">' + esc(e.message) + '</div>'; });
+    }
+
     // Add/edit a database source: the connection, a table browser (tables →
     // columns, click a column to insert it), query templates (all rows /
     // values for a Control / rows for a :param), the SQL with its :params
@@ -1960,6 +2135,10 @@
             o.value = t.name;
             tableSel.appendChild(o);
           });
+          if (opts.table && !tableSel.value && (res.tables || []).some(function (t) { return t.name === opts.table; })) {
+            tableSel.value = opts.table;    // a table picked elsewhere (Databricks browser)
+            fillColumns(opts.table);
+          }
         }, function (e) { tableSel.innerHTML = '<option value="">Tables unavailable</option>'; colList.textContent = e.message; });
       }
       tableSel.onchange = function () { fillColumns(tableSel.value); };
@@ -3776,7 +3955,8 @@
     // the Builder's + Control ("Query a source") and + Panel dialogs on a new
     // dashboard. Nothing here is wizard-only: each step is the same dialog the
     // user meets later, so the dashboard stays editable with the same tools.
-    function showDbWizard() {
+    function showDbWizard(prefill) {
+      prefill = prefill || {};
       var created = [];
       function dropCreated() {
         created.forEach(function (n) {
@@ -3827,6 +4007,7 @@
         var choices = null;
         openDbSourceDialog(null, {
           title: 'Step 1 of 4 — The values to pick from', name: slug + '-choices', template: 'choices',
+          fromSource: prefill.source || '', table: prefill.table || '',
           saveLabel: 'Save and continue',
           intro: 'Pick the <b>database</b>, the <b>table</b>, then click the <b>column</b> whose values the Control will list: ' +
             'the query is written for you. <b>Test</b> it, then continue.'
