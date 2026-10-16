@@ -79,14 +79,16 @@ export var dashboardCss = [
   '  border-radius: var(--cx-radius-md); background: var(--cxd-panel-bg); color: var(--cxd-muted); font-size: 12px; cursor: pointer; }',
   /* Floating "Reset cross-filter" control, shown only while a filter-mode
      selection is narrowing the dashboard (markingMode:"filter"). */
-  '.cxd-xfilter-reset { position: fixed; right: 16px; bottom: 16px; z-index: var(--cx-z-modal);',
+  '.cxd-xfilter-reset { position: fixed; right: 16px; bottom: var(--cxd-pill-bottom, 16px); z-index: var(--cx-z-modal);',
   '  padding: 7px 14px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-pill);',
   '  background: var(--cxd-panel-bg); color: inherit; font: 600 12.5px/1.3 var(--cxd-font);',
   '  cursor: pointer; box-shadow: var(--cx-shadow-2); }',
   '.cxd-xfilter-reset:hover { background: var(--cxd-title-bg); }',
   '.cxd-xfilter-reset:focus { outline: 2px solid var(--cx-ui-focus); outline-offset: 2px; }',
+  /* The bottom-strip controls (Comments, Ask, Reset cross-filter) share --cxd-pill-bottom
+     (default 16px) so a host page can center them in its own bottom strip. */
   /* Collaboration: comments toggle + slide-in rail (hosted app only). */
-  '.cxd-comments-toggle { position: fixed; left: 16px; bottom: 16px; z-index: var(--cx-z-modal);',
+  '.cxd-comments-toggle { position: fixed; left: 16px; bottom: var(--cxd-pill-bottom, 16px); z-index: var(--cx-z-modal);',
   '  display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px;',
   '  border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-pill);',
   '  background: var(--cxd-panel-bg); color: inherit; font: 600 12.5px/1.3 var(--cxd-font);',
@@ -141,7 +143,7 @@ export var dashboardCss = [
   '  background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent); font: 600 12.5px/1.4 var(--cxd-font); cursor: pointer; }',
   '.cxd-comments-send:disabled { opacity: .5; cursor: default; }',
   /* View-time Q&A: the "Ask" toggle + popover. */
-  '.cxd-ask-toggle { position: fixed; left: 150px; bottom: 16px; z-index: var(--cx-z-modal);',
+  '.cxd-ask-toggle { position: fixed; left: 150px; bottom: var(--cxd-pill-bottom, 16px); z-index: var(--cx-z-modal);',
   '  display: inline-flex; align-items: center; gap: 7px;',
   '  padding: 7px 14px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-pill);',
   '  background: var(--cxd-panel-bg); color: inherit; font: 600 12.5px/1.3 var(--cxd-font);',
@@ -152,7 +154,7 @@ export var dashboardCss = [
   '.cxd-ask-count { min-width: 18px; padding: 0 5px; border-radius: var(--cx-radius-pill);',
   '  background: var(--cx-ui-accent); color: var(--cx-ui-on-accent); font-size: 11px; text-align: center; }',
   '.cxd-ask-toggle.cxd-ask-open .cxd-ask-count { background: var(--cx-ui-on-accent); color: var(--cx-ui-accent); }',
-  '.cxd-ask-panel { position: fixed; left: 16px; bottom: 58px; width: 360px; max-width: 92vw; max-height: 72vh;',
+  '.cxd-ask-panel { position: fixed; left: 16px; bottom: calc(var(--cxd-pill-bottom, 16px) + 42px); width: 360px; max-width: 92vw; max-height: 72vh;',
   '  z-index: var(--cx-z-modal); display: flex; flex-direction: column; gap: 8px; padding: 12px 14px;',
   '  background: var(--cxd-panel-bg); border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-lg);',
   '  box-shadow: var(--cx-shadow-3); font: 13px/1.5 var(--cxd-font); color: inherit; }',

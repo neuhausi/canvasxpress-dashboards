@@ -258,6 +258,7 @@ export function createBuilder(target, options) {
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
   var availableConnectors = []; // connector sources ({name, url}) from options.listConnectorSources
   var ownStore = null;          // the dialogs' data store before the first render (pickStore)
+  var stageFitTimer = null;     // debounces onStageResize
 
   /**
    * Whether two connector URLs name the same source. The host lists sources
@@ -414,6 +415,7 @@ export function createBuilder(target, options) {
 
   rebuild();
   loadDatasets();
+  if (typeof window !== 'undefined') window.addEventListener('resize', onStageResize);
 
   // ---------------------------------------------------------------- actions
   /**
@@ -3064,6 +3066,34 @@ export function createBuilder(target, options) {
   }
 
   /**
+   * After the stage changes width (the app's side-panel handle, or the window),
+   * re-fit only the graphs that no longer match their cell — an unchanged graph
+   * is never redrawn. Debounced; the listener is removed in destroy().
+   * @returns {void}
+   * @private
+   */
+  function onStageResize() {
+    if (stageFitTimer) clearTimeout(stageFitTimer);
+    stageFitTimer = setTimeout(fitStaleGraphs, 200);
+  }
+  function fitStaleGraphs() {
+    stageFitTimer = null;
+    var inset = typeof spec.canvasInset === 'number' ? spec.canvasInset : 0;
+    Object.keys(instByPanel).forEach(function (panelId) {
+      var inst = instByPanel[panelId];
+      var cell = cellEls[panelId];
+      var canvas = inst && inst.target ? document.getElementById(inst.target) : null;
+      if (!cell || !canvas) return;
+      var body = cell.querySelector('.cxd-panel-body') || cell;
+      var box = body.getBoundingClientRect();
+      var have = canvas.getBoundingClientRect();
+      var w = Math.floor(box.width) - inset;
+      var h = Math.floor(box.height) - inset;
+      if (Math.abs(have.width - w) > 2 || Math.abs(have.height - h) > 2) resizePanelGraph(panelId);
+    });
+  }
+
+  /**
    * Fit a panel's graph to its (just-resized) cell once the drag ends, by
    * calling CanvasXpress `setDimensions` (via resizeInstance) at the cell size.
    * @param {string} panelId - Panel to fit.
@@ -3612,6 +3642,8 @@ export function createBuilder(target, options) {
      * @returns {void}
      */
     destroy: function () {
+      if (typeof window !== 'undefined') window.removeEventListener('resize', onStageResize);
+      if (stageFitTimer) { clearTimeout(stageFitTimer); stageFitTimer = null; }
       teardownLive();
       container.innerHTML = '';
       if (externalToolbar) externalToolbar.innerHTML = '';

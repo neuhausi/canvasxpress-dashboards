@@ -13,6 +13,28 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
   thin handle on its right edge (Builder's Assistant, the Dashboards list, Data, Settings);
   the width is one shared `--cxd-left-w` (240 px to half the window, default 320 px —
   Data's column was 300 px), remembered in the browser; double-click the handle to reset.
+- The section chevrons are a proper line chevron (18 px, text colour) with a hover
+  highlight on the header.
+
+### Fixed: charts re-fit when their area changes width
+- **Dashboards never re-fitted a chart to its cell on resize.** The per-cell observer
+  required `setDimensions` when it attached, but the CanvasXpress constructor attaches its
+  methods asynchronously, so no observer was ever installed. It now attaches and checks
+  `setDimensions` when a resize applies; a chart is redrawn only when its cell size really
+  changed. Fixes dashboards in the viewer, the Dashboards View pane and Settings preview
+  after a window or side-panel resize.
+- **Builder:** after the stage changes width, graphs that no longer match their cell are
+  re-fitted (only those); the listener is removed when the builder is destroyed.
+- **Data page:** the preview table is redrawn on every resize (debounced), at the width its
+  card now has — measured from the card, since a CanvasXpress table shrink-wraps its host
+  and the host alone would never let it grow (a table view also ignores `setDimensions`).
+  Later previews reuse the new width.
+- `resizeInstance(instance, w, h)` is exported.
+
+### Comments / Ask / Reset cross-filter: centered in the View pane's bottom strip
+- The bottom-strip controls share `--cxd-pill-bottom` (default 16 px). The Dashboards View
+  pane centers them vertically between the preview and the window's bottom, re-placing them
+  (and their left edge) on resize, so they follow the side-panel width.
 
 ### Fixed: comments, Ask history and dashboard deletion on the SQL (Postgres) store
 - `SqlDashboardStore` now has the comments and Ask-history methods `DashboardStore` has

@@ -93,14 +93,16 @@ var dashboardCss = [
   '  border-radius: var(--cx-radius-md); background: var(--cxd-panel-bg); color: var(--cxd-muted); font-size: 12px; cursor: pointer; }',
   /* Floating "Reset cross-filter" control, shown only while a filter-mode
      selection is narrowing the dashboard (markingMode:"filter"). */
-  '.cxd-xfilter-reset { position: fixed; right: 16px; bottom: 16px; z-index: var(--cx-z-modal);',
+  '.cxd-xfilter-reset { position: fixed; right: 16px; bottom: var(--cxd-pill-bottom, 16px); z-index: var(--cx-z-modal);',
   '  padding: 7px 14px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-pill);',
   '  background: var(--cxd-panel-bg); color: inherit; font: 600 12.5px/1.3 var(--cxd-font);',
   '  cursor: pointer; box-shadow: var(--cx-shadow-2); }',
   '.cxd-xfilter-reset:hover { background: var(--cxd-title-bg); }',
   '.cxd-xfilter-reset:focus { outline: 2px solid var(--cx-ui-focus); outline-offset: 2px; }',
+  /* The bottom-strip controls (Comments, Ask, Reset cross-filter) share --cxd-pill-bottom
+     (default 16px) so a host page can center them in its own bottom strip. */
   /* Collaboration: comments toggle + slide-in rail (hosted app only). */
-  '.cxd-comments-toggle { position: fixed; left: 16px; bottom: 16px; z-index: var(--cx-z-modal);',
+  '.cxd-comments-toggle { position: fixed; left: 16px; bottom: var(--cxd-pill-bottom, 16px); z-index: var(--cx-z-modal);',
   '  display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px;',
   '  border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-pill);',
   '  background: var(--cxd-panel-bg); color: inherit; font: 600 12.5px/1.3 var(--cxd-font);',
@@ -155,7 +157,7 @@ var dashboardCss = [
   '  background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent); font: 600 12.5px/1.4 var(--cxd-font); cursor: pointer; }',
   '.cxd-comments-send:disabled { opacity: .5; cursor: default; }',
   /* View-time Q&A: the "Ask" toggle + popover. */
-  '.cxd-ask-toggle { position: fixed; left: 150px; bottom: 16px; z-index: var(--cx-z-modal);',
+  '.cxd-ask-toggle { position: fixed; left: 150px; bottom: var(--cxd-pill-bottom, 16px); z-index: var(--cx-z-modal);',
   '  display: inline-flex; align-items: center; gap: 7px;',
   '  padding: 7px 14px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-pill);',
   '  background: var(--cxd-panel-bg); color: inherit; font: 600 12.5px/1.3 var(--cxd-font);',
@@ -166,7 +168,7 @@ var dashboardCss = [
   '.cxd-ask-count { min-width: 18px; padding: 0 5px; border-radius: var(--cx-radius-pill);',
   '  background: var(--cx-ui-accent); color: var(--cx-ui-on-accent); font-size: 11px; text-align: center; }',
   '.cxd-ask-toggle.cxd-ask-open .cxd-ask-count { background: var(--cx-ui-on-accent); color: var(--cx-ui-accent); }',
-  '.cxd-ask-panel { position: fixed; left: 16px; bottom: 58px; width: 360px; max-width: 92vw; max-height: 72vh;',
+  '.cxd-ask-panel { position: fixed; left: 16px; bottom: calc(var(--cxd-pill-bottom, 16px) + 42px); width: 360px; max-width: 92vw; max-height: 72vh;',
   '  z-index: var(--cx-z-modal); display: flex; flex-direction: column; gap: 8px; padding: 12px 14px;',
   '  background: var(--cxd-panel-bg); border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-lg);',
   '  box-shadow: var(--cx-shadow-3); font: 13px/1.5 var(--cxd-font); color: inherit; }',
@@ -8394,7 +8396,11 @@ function sizeCanvasToCell(cell, inset) {
  */
 function observeResize(cell, instance, observers, inset) {
   if (typeof ResizeObserver === 'undefined') return;
-  if (typeof instance.setDimensions !== 'function') return;
+  // No setDimensions check here: the CanvasXpress constructor is asynchronous
+  // (its methods attach just after it returns), so requiring it at this point
+  // skipped every observer and no chart ever re-fitted its cell. resizeInstance
+  // checks for setDimensions when a resize actually applies.
+  if (!instance) return;
   inset = inset || 0;
   var last = { w: cell.canvas.width, h: cell.canvas.height };
   var timer = null;
@@ -11363,6 +11369,7 @@ function createBuilder(target, options) {
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
   var availableConnectors = []; // connector sources ({name, url}) from options.listConnectorSources
   var ownStore = null;          // the dialogs' data store before the first render (pickStore)
+  var stageFitTimer = null;     // debounces onStageResize
 
   /**
    * Whether two connector URLs name the same source. The host lists sources
@@ -11519,6 +11526,7 @@ function createBuilder(target, options) {
 
   rebuild();
   loadDatasets();
+  if (typeof window !== 'undefined') window.addEventListener('resize', onStageResize);
 
   // ---------------------------------------------------------------- actions
   /**
@@ -14169,6 +14177,34 @@ function createBuilder(target, options) {
   }
 
   /**
+   * After the stage changes width (the app's side-panel handle, or the window),
+   * re-fit only the graphs that no longer match their cell — an unchanged graph
+   * is never redrawn. Debounced; the listener is removed in destroy().
+   * @returns {void}
+   * @private
+   */
+  function onStageResize() {
+    if (stageFitTimer) clearTimeout(stageFitTimer);
+    stageFitTimer = setTimeout(fitStaleGraphs, 200);
+  }
+  function fitStaleGraphs() {
+    stageFitTimer = null;
+    var inset = typeof spec.canvasInset === 'number' ? spec.canvasInset : 0;
+    Object.keys(instByPanel).forEach(function (panelId) {
+      var inst = instByPanel[panelId];
+      var cell = cellEls[panelId];
+      var canvas = inst && inst.target ? document.getElementById(inst.target) : null;
+      if (!cell || !canvas) return;
+      var body = cell.querySelector('.cxd-panel-body') || cell;
+      var box = body.getBoundingClientRect();
+      var have = canvas.getBoundingClientRect();
+      var w = Math.floor(box.width) - inset;
+      var h = Math.floor(box.height) - inset;
+      if (Math.abs(have.width - w) > 2 || Math.abs(have.height - h) > 2) resizePanelGraph(panelId);
+    });
+  }
+
+  /**
    * Fit a panel's graph to its (just-resized) cell once the drag ends, by
    * calling CanvasXpress `setDimensions` (via resizeInstance) at the cell size.
    * @param {string} panelId - Panel to fit.
@@ -14717,6 +14753,8 @@ function createBuilder(target, options) {
      * @returns {void}
      */
     destroy: function () {
+      if (typeof window !== 'undefined') window.removeEventListener('resize', onStageResize);
+      if (stageFitTimer) { clearTimeout(stageFitTimer); stageFitTimer = null; }
       teardownLive();
       container.innerHTML = '';
       if (externalToolbar) externalToolbar.innerHTML = '';
@@ -16847,5 +16885,5 @@ function withQueryParam(url, key, value) {
 }
 
 var version = "0.13.0";
-export { renderDashboard, validateSpec, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, parseSchemaVersion, DASHBOARD_SCHEMA_VERSION, DASHBOARD_SCHEMA_URL, MIGRATIONS, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuery, joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES, resolveFields, summarizeField, rowsPassing, normalizeState, hasRelationships, relationGraph, translateMarks, mountComments, mountAsk, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES, setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, addQueryControl, runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS, tableFromData, profileColumns, applyDecimalComma, wizardSpec, sqlParamNames, paramNameFor, choicesSql, detailSql, connectorSourceUrl, databaseExplorerSpec, orientConfig, WIZARD_CHART_TYPES, chartFieldsFor, buildChartConfig, chartColumns, transposeCxData, version };
-export default { renderDashboard, validateSpec, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, parseSchemaVersion, DASHBOARD_SCHEMA_VERSION, DASHBOARD_SCHEMA_URL, MIGRATIONS, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuery, joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES, resolveFields, summarizeField, rowsPassing, normalizeState, hasRelationships, relationGraph, translateMarks, mountComments, mountAsk, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES, setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, addQueryControl, runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS, tableFromData, profileColumns, applyDecimalComma, wizardSpec, sqlParamNames, paramNameFor, choicesSql, detailSql, connectorSourceUrl, databaseExplorerSpec, orientConfig, WIZARD_CHART_TYPES, chartFieldsFor, buildChartConfig, chartColumns, transposeCxData, version };
+export { renderDashboard, resizeInstance, validateSpec, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, parseSchemaVersion, DASHBOARD_SCHEMA_VERSION, DASHBOARD_SCHEMA_URL, MIGRATIONS, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuery, joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES, resolveFields, summarizeField, rowsPassing, normalizeState, hasRelationships, relationGraph, translateMarks, mountComments, mountAsk, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES, setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, addQueryControl, runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS, tableFromData, profileColumns, applyDecimalComma, wizardSpec, sqlParamNames, paramNameFor, choicesSql, detailSql, connectorSourceUrl, databaseExplorerSpec, orientConfig, WIZARD_CHART_TYPES, chartFieldsFor, buildChartConfig, chartColumns, transposeCxData, version };
+export default { renderDashboard, resizeInstance, validateSpec, migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility, parseSchemaVersion, DASHBOARD_SCHEMA_VERSION, DASHBOARD_SCHEMA_URL, MIGRATIONS, dashboardCss, injectStyles, createDataStore, isEmptyData, DataError, clearSharedCache, pushdownQuery, joinData, joinCycle, derivedCycle, sourceInputs, joinProvenance, matchIds, sourceAxis, tableFields, tableColumn, JOIN_TYPES, resolveFields, summarizeField, rowsPassing, normalizeState, hasRelationships, relationGraph, translateMarks, mountComments, mountAsk, exportSpec, importSpecFromFile, parseAndValidate, createDashboardClient, inlineSpecData, buildDashboardHtml, exportDashboardHtml, dashboardToPng, exportDashboardPng, exportDashboardPdf, createBuilder, pointerToCell, csvToCx, buildDataSource, addPanel, removePanel, movePanel, resizePanel, resolveCollisions, updatePanel, setDataSource, updateSettings, blankSpec, DEFAULT_COLS, addRelationship, removeRelationship, setMarkingMode, buildJoinSource, encodeKeys, describeLink, MARKING_MODES, setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, addQueryControl, runPushdown, rowsToCx, PUSHDOWN_FUNCTIONS, tableFromData, profileColumns, applyDecimalComma, wizardSpec, sqlParamNames, paramNameFor, choicesSql, detailSql, connectorSourceUrl, databaseExplorerSpec, orientConfig, WIZARD_CHART_TYPES, chartFieldsFor, buildChartConfig, chartColumns, transposeCxData, version };

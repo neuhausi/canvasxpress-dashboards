@@ -3381,7 +3381,11 @@ function sizeCanvasToCell(cell, inset) {
  */
 function observeResize(cell, instance, observers, inset) {
   if (typeof ResizeObserver === 'undefined') return;
-  if (typeof instance.setDimensions !== 'function') return;
+  // No setDimensions check here: the CanvasXpress constructor is asynchronous
+  // (its methods attach just after it returns), so requiring it at this point
+  // skipped every observer and no chart ever re-fitted its cell. resizeInstance
+  // checks for setDimensions when a resize actually applies.
+  if (!instance) return;
   inset = inset || 0;
   var last = { w: cell.canvas.width, h: cell.canvas.height };
   var timer = null;

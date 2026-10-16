@@ -5,7 +5,7 @@
  * @module canvasxpress-dashboards
  */
 
-export { renderDashboard } from './renderDashboard.js';
+export { renderDashboard, resizeInstance } from './renderDashboard.js';
 export { validateSpec } from './validateSpec.js';
 export {
   migrateSpec, dashboardDiff, dashboardsEqual, serializeSpec, canonicalSpec, specCompatibility,
