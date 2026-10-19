@@ -633,7 +633,7 @@ export function scientificFieldsFor(graphType) {
  * Heatmap clusters both axes (dendrograms) with a diverging spectrum; Manhattan
  * points its marker keys at the chosen columns; Volcano is the native alias
  * (Scatter2D) over fold-change vs p — auto significance thresholds are
- * deliberately left to the stat-inference work (`stat-inference-plan.md`), so
+ * deliberately left to the engine's statistical-inference layer, so
  * no threshold-line coordinates are fabricated here.
  *
  * @param {string} graphType - A member of {@link WIZARD_SCIENCE_TYPES}.

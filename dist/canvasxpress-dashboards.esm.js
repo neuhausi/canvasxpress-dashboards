@@ -6124,7 +6124,7 @@ function hasOwn(obj, key) {
 /* ==== src/statInference.js ==== */
 /**
  * Statistics as first-class dashboard objects — the dashboards-layer glue for
- * the engine's renderer-first significance layer (stat-inference-plan).
+ * the engine's renderer-first significance layer.
  *
  * The engine (CanvasXpress) RENDERS significance brackets from a per-panel
  * `statInference` config block; the test statistics themselves are computed
@@ -13362,7 +13362,7 @@ function scientificFieldsFor(graphType) {
  * Heatmap clusters both axes (dendrograms) with a diverging spectrum; Manhattan
  * points its marker keys at the chosen columns; Volcano is the native alias
  * (Scatter2D) over fold-change vs p — auto significance thresholds are
- * deliberately left to the stat-inference work (`stat-inference-plan.md`), so
+ * deliberately left to the engine's statistical-inference layer, so
  * no threshold-line coordinates are fabricated here.
  *
  * @param {string} graphType - A member of {@link WIZARD_SCIENCE_TYPES}.
@@ -13419,7 +13419,7 @@ function buildScientificConfig(graphType, fields, extra, data) {
  * Benjamini-Hochberg FDR.
  *
  * This keeps enrichment self-contained in the dashboards layer. When the
- * engine's shared multiple-testing correction lands (stat-inference-plan), the
+ * engine's shared multiple-testing correction lands, the
  * BH step here can delegate to it; the hypergeometric core stays.
  *
  * @module enrichment
