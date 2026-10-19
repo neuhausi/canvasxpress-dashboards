@@ -330,6 +330,17 @@
           "type": "array",
           "items": { "type": "string" },
           "description": "Param names this source depends on beyond those named in query (so a param change triggers a refetch)."
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Optional reproducibility metadata for this source (schemaVersion 1.5). Describes where the data came from and the snapshot captured at export time; the reproducible-bundle export (exportDashboard) stamps asOf/params, and a method line is auto-derived from the source's own operations (pushdown, join, calculatedFields, function language) — author-supplied fields are never overwritten.",
+          "properties": {
+            "method": { "type": "string", "description": "A human-readable one-line description of how this source's data was produced (auto-derived when absent; see P2)." },
+            "dataVersion": { "type": "string", "description": "An author- or server-assigned version tag for the underlying dataset." },
+            "asOf": { "type": "string", "description": "ISO 8601 timestamp at which the data snapshot was captured (set by the bundle export)." },
+            "params": { "type": "object", "description": "The resolved parameter values in effect when the snapshot was taken.", "additionalProperties": true }
+          }
         }
       },
       "allOf": [
@@ -588,6 +599,17 @@
               },
               "focusPanel": { "type": "string" }
             }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Graph panels: optional reproducibility metadata (schemaVersion 1.5). A human method line describing how this panel's numbers were computed (pushdown fn+groupBy, join, calculatedField formula, function source language, stat/CI options), auto-derived in P2 from the operations the panel performs; rendered as a figure-legend footer when 'show' is true. The reproducible-bundle export reads it per panel.",
+          "properties": {
+            "method": { "type": "string", "description": "The one-line method description (auto-derived when absent/auto; an author value is kept as-is)." },
+            "auto": { "type": "boolean", "default": true, "description": "Whether 'method' is auto-derived (true) or author-pinned (false, left untouched by derivation)." },
+            "show": { "type": "boolean", "default": false, "description": "Render the method line as a figure-legend footer beneath the panel." },
+            "notes": { "type": "string", "description": "Optional author caveat appended after the auto-derived method line." }
           }
         }
       }

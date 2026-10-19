@@ -26,7 +26,7 @@ var outOverride = process.env.CXD_BUILD_OUT || '';
 var distDir = outOverride || join(root, 'dist');
 
 // Dependency order — leaves first, entry last-ish. index.js only re-exports.
-var MODULES = ['uiTokens.js', 'styles.js', 'spec.js', 'join.js', 'pushdown.js', 'marking.js', 'filters.js', 'comments.js', 'ask.js', 'dataStore.js', 'exportDashboard.js', 'gridLayout.js', 'validateSpec.js', 'renderDashboard.js', 'persistence.js', 'builderModel.js', 'wizard.js', 'builder.js'];
+var MODULES = ['uiTokens.js', 'styles.js', 'spec.js', 'join.js', 'pushdown.js', 'marking.js', 'filters.js', 'comments.js', 'ask.js', 'dataStore.js', 'hash.js', 'zip.js', 'provenance.js', 'exportDashboard.js', 'gridLayout.js', 'validateSpec.js', 'statInference.js', 'transforms.js', 'analysisControls.js', 'renderDashboard.js', 'persistence.js', 'builderModel.js', 'wizard.js', 'enrichment.js', 'vcf.js', 'figureComposer.js', 'builder.js'];
 
 // Public API exposed by both bundles: exactly what src/index.js exports (the
 // single source of truth; a hand-kept list drifted from it more than once).

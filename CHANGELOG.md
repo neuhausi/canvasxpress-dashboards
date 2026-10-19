@@ -5,6 +5,66 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Fixes
+- **Significance brackets no longer collapse a multi-variable panel.** Bracket heights and
+  the value-axis headroom were computed over the panel's *entire* bound matrix, so a Boxplot
+  that plots one variable from a wide source (e.g. one gene from an expression matrix) took
+  its extent from unrelated rows — pushing the brackets and the forced axis maximum far above
+  the boxes and collapsing them. The extent is now taken from only the plotted variables
+  (`config.xAxis`).
+- **Removing significance restores the axis.** The brackets forced a value-axis maximum
+  (`setMaxX`) for headroom; **Remove brackets** now clears it too, so the panel auto-ranges
+  back to its data instead of staying expanded.
+- **Significance brackets can be removed.** The ✴ Significance dialog only let you
+  delete individual comparison rows (and Apply still required ≥1), so there was no way
+  to take significance off a panel once added. The dialog now shows a **Remove brackets**
+  button when the panel already has significance; it clears `showStatInference` /
+  `statInference` from the panel config and re-renders.
+- **Transform control honours its widget style.** A `mode:"transform"` control ignored
+  `style` and always rendered a dropdown, so picking **Radio** or **Buttons** in the
+  builder had no effect. It now builds radios/segmented buttons/dropdown (matching
+  annotation filters; `auto` = buttons for ≤4 methods, dropdown above), each preselecting
+  the current method and applying the transform on change.
+
+### Publication figure composer (multi-panel vector export)
+- **Compose panels into one figure.** `composeFigureSvg(handle, opts)` /
+  `exportFigureSvg(...)` stitch the chosen graph panels into a single **true-vector**
+  multi-panel SVG — each panel is the engine's own `getSVGString()` output, re-rooted
+  with a `viewBox` and placed on the dashboard grid (no rasterization). Auto **A/B/C**
+  subplot labels (`labelStyle` `A`/`a`/`1`/`none`), an optional shared caption, explicit
+  panel selection/order, and a `cols` override. Viewer toolbar **Download → Publication
+  figure**.
+- **Journal sizing + DPI.** `JOURNAL_PRESETS` (Nature/Cell/Science/PLOS/generic one- &
+  two-column widths in mm), `figureDimensions({preset, columns, dpi, aspect})` and
+  `mmToPx` size the figure to a journal column at print DPI.
+- **PDF.** `composeFigurePdf` / `exportFigurePdf` flatten the composite to a single-page
+  PDF — true-vector with an injected `svg2pdf`, high-DPI raster fallback otherwise.
+- Engine requirement: the per-panel SVG seam needs the engine's `getSVGString()` preserved
+  through `--secure` obfuscation (engine ≥ 71.9; the live CDN engine obfuscates it until 71.9
+  is built and shipped).
+
+### Reproducibility: provenance method lines + reproducible bundle export
+- **Panel method footers.** A graph panel with `provenance.show` renders a one-line,
+  auto-derived method line (figure-legend footer) describing what it computed — source
+  origin, join, `pushdown` aggregate/filter/sort/limit, `calculatedFields`, data-function
+  language, and chart stat overlays (loess/regression/forecast + CI). Author-pinnable
+  (`auto:false` + `method`). Builder: select a panel → **Method** toggle.
+- **Reproducible bundle export.** `exportReproducibleBundle(handle)` (viewer toolbar
+  **Download → Reproducible bundle**) downloads a `.zip`: self-contained `spec.json`,
+  per-source `data/` snapshots, per-panel `code/<panel>.R` + `.py` (from the engine's
+  own emitters) plus data-function source snippets, a `methods.md`, and a `manifest.json`
+  with capture time, dashboard/engine version, and a SHA-256 content hash (a stable
+  figure fingerprint). Dependency-free (own ZIP + SHA-256 writers).
+- **Spec 1.5.** Optional `panel.provenance` and `source.provenance`; additive migration.
+- New [reproducibility guide](docs/reproducibility.md) and **Reproducible Provenance**
+  example.
+
+### Fixed: PNG/PDF export no longer paints the screen-reader data table over charts
+- **The "Data table for chart" a11y overlay leaked into exports.** CanvasXpress's
+  screen-reader-only data table (and live region) hide with `clip:rect(0 0 0 0)`, which
+  html2canvas does not honour, so they rasterized on top of every chart in PNG/PDF.
+  `dashboardToPng` now skips those nodes via `ignoreElements` (PDF inherits the fix).
+
 ### Data page sections collapse; one resizable side-panel width
 - **File sources, Database sources and Databricks collapse** to their header (click the
   ▾ header). A collapsed card keeps only its header, the File/Database splitter hides

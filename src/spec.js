@@ -27,12 +27,15 @@
  *  - `1.3` — source `calculatedFields`.
  *  - `1.4` — per-panel `actions` (drill-through): `setParam` / `setFilter` /
  *    `focusPanel` on a mark event, generalizing `clickParam` / `clickField`.
+ *  - `1.5` — reproducibility metadata: optional `panel.provenance`
+ *    (auto-derived method line, figure-legend footer) and `source.provenance`
+ *    (method / dataVersion / asOf / params snapshot).
  *
  * @module spec
  */
 
 /** @type {string} The format version this library writes. */
-export var DASHBOARD_SCHEMA_VERSION = '1.4';
+export var DASHBOARD_SCHEMA_VERSION = '1.5';
 
 /** @type {string} The URL of the published JSON Schema. */
 export var DASHBOARD_SCHEMA_URL = 'https://canvasxpress.org/schema/dashboard.schema.json';
@@ -67,6 +70,12 @@ export var MIGRATIONS = [
     from: '1.3',
     to: '1.4',
     description: 'Additive: per-panel actions (drill-through) (no rewrite)',
+    up: function (spec) { return spec; }
+  },
+  {
+    from: '1.4',
+    to: '1.5',
+    description: 'Additive: panel / source provenance (reproducibility metadata) (no rewrite)',
     up: function (spec) { return spec; }
   }
 ];

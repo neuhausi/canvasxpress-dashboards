@@ -211,6 +211,10 @@ export var dashboardCss = [
   // inline flex alignment (applyAlignment), which overrides this.
   '.cxd-panel-body { position: relative; flex: 1 1 auto; min-height: 0;',
   '  display: flex; align-items: center; justify-content: center; }',
+  // Provenance figure-legend footer: the auto-derived method line beneath a panel.
+  '.cxd-panel-footer { flex: 0 0 auto; padding: 4px 10px; font: 400 11.5px/1.4 var(--cxd-font);',
+  '  color: var(--cxd-muted); border-top: 1px solid var(--cxd-border); background: var(--cxd-title-bg);',
+  '  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
   '.cxd-text { width: 100%; height: 100%; padding: 5px 12px; overflow: auto;',
   '  font: 16px/1.35 var(--cxd-font); color: var(--cxd-title); white-space: pre-wrap; word-break: break-word; }',
   // Text elements are chrome-free by default (no border/background) so they sit
@@ -399,6 +403,19 @@ export var dashboardCss = [
   // Builder buttons are .cX-Button (+ --primary) from canvasXpress.css (the shared UI primitive);
   // .cxb-btn only keeps the builder toolbar's size (so the builder layout does not move).
   '.cxb-btn { padding: 6px 13px; font-size: 16px; line-height: normal; }',
+  /* Toolbar buttons are colour-coded by kind with a left-edge accent (set in
+     builder.js), using the three primary colours of the CanvasXpress logo: add
+     content = brand blue, add interaction = brand orange, data tools = brand red.
+     These hues are design tokens (--cx-color-brand-*, the same on light and dark
+     toolbars) so they live in the token layer, not as literals here. A thick left
+     border carries the accent and hovering lifts a matching lighter tint; the
+     button fill otherwise stays the shared .cX-Button. */
+  '.cxb-bt-add { border-left: 4px solid var(--cx-color-brand-add); }',
+  '.cxb-bt-interact { border-left: 4px solid var(--cx-color-brand-interact); }',
+  '.cxb-bt-data { border-left: 4px solid var(--cx-color-brand-data); }',
+  '.cxb-bt-add:hover:not(:disabled) { background: var(--cx-color-brand-add-a14); }',
+  '.cxb-bt-interact:hover:not(:disabled) { background: var(--cx-color-brand-interact-a18); }',
+  '.cxb-bt-data:hover:not(:disabled) { background: var(--cx-color-brand-data-a12); }',
   // Toolbar inputs on the roles (dark follows the page's data-cx-ui-theme, not the OS)
   '.cxb-title-input, .cxb-tinput, .cxb-props select { background: var(--cx-ui-surface); color: var(--cx-ui-text); }',
   '.cxb-stage { width: 100%; min-width: 0; }',

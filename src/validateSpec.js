@@ -127,8 +127,13 @@ export function validateSpec(spec) {
       // A config control drives a target panel's config from its own static
       // option list, so it too needs no data of its own.
       var isConfigControl = panel.type === 'control' && panel.mode === 'config';
+      // Analysis controls need no data of their own: a transform control drives a
+      // target panel via updateData; an FDR-threshold range slider drives a param
+      // and recomputes across panels.
+      var isTransformControl = panel.type === 'control' && panel.mode === 'transform';
+      var isRangeParam = panel.type === 'control' && panel.mode === 'param' && panel.style === 'range';
       if (panel.type !== 'text' && panel.type !== 'image' && panel.type !== 'filters' &&
-          !paramWithOptions && !isConfigControl &&
+          !paramWithOptions && !isConfigControl && !isTransformControl && !isRangeParam &&
           panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
@@ -152,11 +157,23 @@ export function validateSpec(spec) {
           errors.push(at + '.compartment must be "x" (samples) or "z" (variables)');
         }
         if (panel.style != null &&
-            ['auto', 'dropdown', 'radio', 'buttons', 'search', 'slider'].indexOf(panel.style) === -1) {
-          errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", "search", or "slider"');
+            ['auto', 'dropdown', 'radio', 'buttons', 'search', 'slider', 'range'].indexOf(panel.style) === -1) {
+          errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", "search", "slider", or "range"');
         }
-        if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param' && panel.mode !== 'config') {
-          errors.push(at + '.mode must be "filter", "param", or "config"');
+        if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param' && panel.mode !== 'config' && panel.mode !== 'transform') {
+          errors.push(at + '.mode must be "filter", "param", "config", or "transform"');
+        }
+        // A transform control (analysis control) drives a target panel's data via
+        // updateData — it needs a target panel id and a non-empty options list.
+        if (panel.mode === 'transform') {
+          if (typeof panel.target !== 'string' || panel.target.length === 0) {
+            errors.push(at + ' of mode "transform" requires a target panel id string');
+          } else if (spec.panels == null || !hasOwn(spec.panels, panel.target)) {
+            errors.push(at + '.target "' + panel.target + '" has no matching entry in spec.panels');
+          }
+          if (!Array.isArray(panel.options) || panel.options.length === 0) {
+            errors.push(at + ' of mode "transform" requires a non-empty options array');
+          }
         }
         if (panel.mode === 'config') {
           if (typeof panel.target !== 'string' || panel.target.length === 0) {

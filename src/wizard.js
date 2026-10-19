@@ -404,3 +404,277 @@ export function chartColumns(data) {
   }
   return { numbers: (y.smps || []).slice(), texts: Object.keys((data && data.z) || {}) };
 }
+
+// ---- Scientific data-shape detection (P1) ---------------------------------
+// Given a bound source, recognise the common scientific data shapes so the
+// wizard can SUGGEST the matching scientific panel (never a silent rewrite —
+// see the plan's risk note). Pure functions over the CanvasXpress data object
+// and its column profile; no DOM, no engine.
+
+// Column-name hints, matched case-insensitively against the whole header.
+var SURVIVAL_TIME_RE = /^(time|t|surv(ival)?|os|pfs|dfs|efs|tte|duration|follow[\s._-]?up|fu|days?|months?|weeks?|years?)$/i;
+var SURVIVAL_EVENT_RE = /(event|status|dead|death|censor|vital|outcome|relapse|progress|recur)/i;
+var GENOME_CHR_RE = /^(chr(om(osome)?)?)$/i;
+var GENOME_POS_RE = /^(pos(ition)?|bp|loc(ation)?|coord(inate)?|start)$/i;
+var PVALUE_RE = /^(p|pval(ue)?|p[\s._-]?val(ue)?|padj|adj[\s._-]?p(val(ue)?)?|fdr|q(val(ue)?)?)$/i;
+var LOGFC_RE = /(log2?[\s._-]?(fold[\s._-]?)?change|log2?fc|logfc|l2fc|fold[\s._-]?change)/i;
+
+// Oncoprint alteration tokens (engine `arrayToCXOncoprint`): a cell is one or
+// more of these, optionally delimited by `;`, `,` or `|`.
+var ALTERATION_TOKEN_RE = /^(mut(ation)?|amp(lification)?|del(etion)?|homdel|hetloss|homdel_rec|gain|loss|fusion|trunc(ating)?|inframe|missense|splice|promoter|up|down|wt)$/i;
+
+/**
+ * Column-name match against a header list.
+ * @param {Array<string>} headers - Column names.
+ * @param {RegExp} re - Hint pattern.
+ * @returns {number} The matching column index, or -1.
+ * @private
+ */
+function findHeader(headers, re) {
+  for (var i = 0; i < headers.length; i++) {
+    if (re.test(String(headers[i]).trim())) return i;
+  }
+  return -1;
+}
+
+/**
+ * The non-missing values of one table column (rows only, header dropped).
+ * @param {Array<Array>} rows - Table rows (no header).
+ * @param {number} col - Column index.
+ * @returns {Array} The non-missing cells.
+ * @private
+ */
+function columnCells(rows, col) {
+  var out = [];
+  for (var r = 0; r < rows.length; r++) {
+    var value = rows[r][col];
+    if (!isMissing(value)) out.push(value);
+  }
+  return out;
+}
+
+/**
+ * Does a column read as a survival EVENT indicator — binary 0/1, or a small
+ * set of alive/dead-style status strings?
+ * @param {Array} cells - Non-missing cells of the column.
+ * @returns {boolean}
+ * @private
+ */
+function looksLikeEvent(cells) {
+  if (!cells.length) return false;
+  var binary = cells.every(function (value) {
+    var s = String(value).trim();
+    return s === '0' || s === '1' || s === 'true' || s === 'false';
+  });
+  if (binary) return true;
+  var seen = {};
+  cells.forEach(function (value) { seen[String(value).trim().toLowerCase()] = true; });
+  var levels = Object.keys(seen);
+  if (levels.length > 3) return false;
+  return levels.every(function (level) {
+    return /^(dead|alive|death|censor(ed)?|event|no[\s._-]?event|yes|no|deceased|living|1|0|relapse|progression|cr|pd)$/i.test(level);
+  });
+}
+
+/**
+ * Detect the scientific shape(s) of a bound data source and suggest the
+ * matching scientific panel type(s). A *suggestion* only — ranked by
+ * confidence (0–1); the wizard offers them, it never rewrites silently.
+ *
+ * Recognises, by column name and value shape:
+ *  - survival table → `KaplanMeier` (a time measure + a binary/status event,
+ *    optional grouping factor);
+ *  - GWAS summary → `Manhattan` (chromosome + position + p-value);
+ *  - differential-expression table → `Volcano` (log-fold-change + p-value);
+ *  - alteration matrix → `Oncoprint` (matrix cells are alteration tokens);
+ *  - numeric gene×sample matrix → `Heatmap` (clustered expression matrix).
+ *
+ * @param {object} data - CanvasXpress data object.
+ * @returns {Array<{graphType: string, reason: string, confidence: number}>}
+ *   Suggestions, highest confidence first ([] when nothing scientific fits).
+ * @public
+ */
+export function detectDataShapes(data) {
+  var table = tableFromData(data);
+  var headers = (table[0] || []).slice(1);        // drop the row-id column
+  var rows = table.slice(1).map(function (row) { return row.slice(1); });
+  if (!headers.length || !rows.length) return [];
+  var profile = profileColumns(table).slice(1);   // aligned to `headers`
+  var numericCols = [];
+  var textCols = [];
+  profile.forEach(function (p, i) {
+    if (p.type === 'numeric') numericCols.push(i);
+    else textCols.push(i);
+  });
+  var suggestions = [];
+
+  // Survival: a time-like numeric column + an event-like column.
+  var timeCol = findHeader(headers, SURVIVAL_TIME_RE);
+  var eventCol = findHeader(headers, SURVIVAL_EVENT_RE);
+  if (timeCol !== -1 && profile[timeCol].type === 'numeric' && eventCol !== -1 &&
+      eventCol !== timeCol && looksLikeEvent(columnCells(rows, eventCol))) {
+    suggestions.push({ graphType: 'KaplanMeier', confidence: 0.9,
+      reason: 'Survival table: time column "' + headers[timeCol] + '" + event column "' +
+        headers[eventCol] + '".' });
+  }
+
+  // GWAS / Manhattan: chromosome + position + p-value.
+  var chrCol = findHeader(headers, GENOME_CHR_RE);
+  var posCol = findHeader(headers, GENOME_POS_RE);
+  var pCol = findHeader(headers, PVALUE_RE);
+  if (chrCol !== -1 && posCol !== -1 && pCol !== -1 &&
+      profile[posCol].type === 'numeric' && profile[pCol].type === 'numeric') {
+    suggestions.push({ graphType: 'Manhattan', confidence: 0.9,
+      reason: 'GWAS summary: chromosome "' + headers[chrCol] + '", position "' +
+        headers[posCol] + '", p-value "' + headers[pCol] + '".' });
+  }
+
+  // Volcano: a log-fold-change column + a p-value column.
+  var fcCol = findHeader(headers, LOGFC_RE);
+  if (fcCol !== -1 && pCol !== -1 && fcCol !== pCol &&
+      profile[fcCol].type === 'numeric' && profile[pCol].type === 'numeric') {
+    suggestions.push({ graphType: 'Volcano', confidence: 0.8,
+      reason: 'Differential expression: fold-change "' + headers[fcCol] + '" + p-value "' +
+        headers[pCol] + '".' });
+  }
+
+  // Oncoprint: the matrix cells are alteration tokens (text, from the vocabulary).
+  if (textCols.length >= 2) {
+    var tokenCells = 0, nonMissing = 0;
+    textCols.forEach(function (col) {
+      columnCells(rows, col).forEach(function (value) {
+        nonMissing++;
+        var ok = String(value).trim().split(/[;,|]/).every(function (part) {
+          return part.trim() !== '' && ALTERATION_TOKEN_RE.test(part.trim());
+        });
+        if (ok) tokenCells++;
+      });
+    });
+    if (nonMissing && tokenCells / nonMissing > 0.6) {
+      suggestions.push({ graphType: 'Oncoprint', confidence: 0.85,
+        reason: 'Alteration matrix: ' + textCols.length + ' columns of mutation/CNA tokens.' });
+    }
+  }
+
+  // Expression matrix: a wide, mostly-numeric matrix (gene×sample). Low/medium
+  // confidence — it is the generic numeric-matrix fallback, so rank it last.
+  if (numericCols.length >= 3 && rows.length >= 3 &&
+      numericCols.length >= headers.length * 0.6) {
+    suggestions.push({ graphType: 'Heatmap', confidence: 0.6,
+      reason: 'Numeric matrix: ' + rows.length + '×' + numericCols.length +
+        ' — a clustered heatmap suits an expression matrix.' });
+  }
+
+  suggestions.sort(function (a, b) { return b.confidence - a.confidence; });
+  return suggestions;
+}
+
+/**
+ * The single best scientific-panel suggestion for a bound source, if any.
+ * @param {object} data - CanvasXpress data object.
+ * @returns {{graphType: string, reason: string, confidence: number}|null}
+ * @public
+ */
+export function suggestPanelType(data) {
+  var shapes = detectDataShapes(data);
+  return shapes.length ? shapes[0] : null;
+}
+
+// ---- Scientific panel presets (P2) ----------------------------------------
+// Wizard entries for the panel types the engine already renders but the
+// generic chart selector does not surface. Kept SEPARATE from
+// WIZARD_CHART_TYPES (whose contract is "a measure split by groups, Pie and
+// Heatmap left out") — these map their own fields and carry panel-specific
+// sane defaults, so they do not fit that list's generic X + Group model.
+
+/**
+ * The scientific panel presets the wizard offers in addition to
+ * {@link WIZARD_CHART_TYPES}. Pair with {@link detectDataShapes} (suggest) and
+ * {@link buildScientificConfig} (build).
+ * @type {Array<string>}
+ * @public
+ */
+export var WIZARD_SCIENCE_TYPES = ['KaplanMeier', 'Oncoprint', 'Heatmap', 'Manhattan', 'Volcano'];
+
+/**
+ * Which Configure fields a scientific preset collects. Matrix panels
+ * (Oncoprint/Heatmap) take no field mapping — they draw the bound matrix as-is.
+ * @param {string} graphType - A scientific preset graph type.
+ * @returns {Array<{key: string, label: string, numeric?: boolean}>} The fields
+ *   to collect (empty for matrix panels).
+ * @public
+ */
+export function scientificFieldsFor(graphType) {
+  if (graphType === 'KaplanMeier') {
+    return [{ key: 'time', label: 'Time', numeric: true },
+      { key: 'event', label: 'Event / censor' },
+      { key: 'group', label: 'Group (optional)' }];
+  }
+  if (graphType === 'Manhattan') {
+    return [{ key: 'chr', label: 'Chromosome' },
+      { key: 'pos', label: 'Position', numeric: true },
+      { key: 'p', label: 'p-value', numeric: true }];
+  }
+  if (graphType === 'Volcano') {
+    return [{ key: 'fc', label: 'Fold change (log2)', numeric: true },
+      { key: 'p', label: 'p-value', numeric: true },
+      { key: 'label', label: 'Label / colour (optional)' }];
+  }
+  return [];   // Oncoprint, Heatmap: the matrix is the data
+}
+
+/**
+ * Build a CanvasXpress config for a scientific preset: the chosen fields mapped
+ * to the panel's real engine keys, panel-specific sane defaults, then the
+ * user's extra config on top, oriented to the data ({@link orientConfig}).
+ *
+ * Defaults are grounded in the shipping engine params (verified 2026-10-16):
+ * Kaplan-Meier shows CI + log-rank p (`kmPvalue`) + at-risk table + censor rug;
+ * Heatmap clusters both axes (dendrograms) with a diverging spectrum; Manhattan
+ * points its marker keys at the chosen columns; Volcano is the native alias
+ * (Scatter2D) over fold-change vs p — auto significance thresholds are
+ * deliberately left to the stat-inference work (`stat-inference-plan.md`), so
+ * no threshold-line coordinates are fabricated here.
+ *
+ * @param {string} graphType - A member of {@link WIZARD_SCIENCE_TYPES}.
+ * @param {object} [fields] - Field map (keys from {@link scientificFieldsFor}).
+ * @param {object} [extra] - Extra CanvasXpress config, merged last (it wins).
+ * @param {object} data - The data the panel draws (for orientation).
+ * @returns {object} A CanvasXpress config.
+ * @public
+ */
+export function buildScientificConfig(graphType, fields, extra, data) {
+  var f = fields || {};
+  var config;
+  if (graphType === 'KaplanMeier') {
+    // The engine KM reads time from xAxis, event from yAxis (geomKaplanMeier
+    // computeKMForPair: [xAxisIndex=time, yAxisIndex=event]).
+    config = { graphType: 'KaplanMeier',
+      showKMConfidenceIntervals: true, kmPvalue: true, kmRiskTable: true, kmCensoredRug: true };
+    if (f.time) config.xAxis = [f.time];
+    if (f.event) config.yAxis = [f.event];
+    if (f.group) config.colorBy = f.group;
+  } else if (graphType === 'Oncoprint') {
+    config = { graphType: 'Oncoprint' };
+  } else if (graphType === 'Heatmap') {
+    config = { graphType: 'Heatmap', samplesClustered: true, variablesClustered: true,
+      colorSpectrum: ['navy', 'white', 'firebrick3'] };
+  } else if (graphType === 'Manhattan') {
+    config = { graphType: 'Manhattan' };
+    if (f.chr) config.manhattanMarkerChromosomeNumber = f.chr;
+    if (f.pos) config.manhattanMarkerPosition = f.pos;
+    if (f.p) config.manhattanMarkerLogPValue = f.p;
+  } else if (graphType === 'Volcano') {
+    config = { graphType: 'Volcano' };
+    if (f.fc) config.xAxis = [f.fc];
+    if (f.p) config.yAxis = [f.p];
+    if (f.label) config.colorBy = f.label;
+  } else {
+    config = { graphType: graphType };
+  }
+  var more = extra || {};
+  for (var k in more) {
+    if (Object.prototype.hasOwnProperty.call(more, k)) config[k] = more[k];
+  }
+  return orientConfig(config, data);
+}

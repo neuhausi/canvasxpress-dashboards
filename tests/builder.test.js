@@ -122,6 +122,31 @@ test('adding a panel renders a live cell with a ⚙ customize icon', async funct
   assert.ok(tools.indexOf('×') !== -1, 'delete icon present');
 });
 
+test('the panel "Method" toggle sets provenance.show and renders the footer', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var builder = createBuilder(container, {
+    spec: setDataSource(blankSpec('d1'), 'sample', DATA),
+    CanvasXpress: makeCX([])
+  });
+  builder.addPanel({ id: 'p1', title: 'Bar', dataRef: 'sample', config: { graphType: 'Bar' } });
+  await builder.whenReady();
+
+  // Find the "Method" checkbox in the selected panel's props and toggle it on
+  // (match on the toggle's own label span — the stub doesn't aggregate text).
+  var methodCheck = [].filter.call(container.querySelectorAll('.cxb-check'), function (lab) {
+    return [].some.call(lab.querySelectorAll('span'), function (s) { return s.textContent === 'Method'; });
+  })[0];
+  assert.ok(methodCheck, 'Method toggle present for a graph panel');
+  var box = methodCheck.querySelector('input');
+  box.checked = true;
+  box.dispatchEvent('change');
+  await builder.whenReady();
+
+  assert.equal(builder.getSpec().panels.p1.provenance.show, true, 'provenance.show set');
+  assert.ok(container.querySelector('.cxd-panel-footer'), 'footer rendered after toggle');
+});
+
 test('adding an image element renders a placeholder cell (no ⚙) and image props', async function () {
   installDom();
   var container = document.createElement('div');

@@ -2,8 +2,7 @@
 
 This is the hands-on runbook for standing up the **CanvasXpress Cloud** paywall (Pro
 subscription + prepaid AI credits over PayPal) — on a **new development computer** or on the
-**production server**. It's the practical companion to the strategy/design docs in the
-`canvas-ai` repo (`docs/plans/monetization/`).
+**production server**.
 
 > **The paywall is OFF by default.** None of this affects anyone self-hosting the MIT-licensed
 > dashboards: every gate is disabled unless you explicitly set `CXD_PAYWALL=on` (and AI metering

@@ -53,7 +53,7 @@ test('migrateSpec stamps the current version without touching the input', functi
   var out = migrateSpec(input);
   assert.equal(out.from, '1.0');
   assert.equal(out.to, DASHBOARD_SCHEMA_VERSION);
-  assert.deepEqual(out.applied, ['1.0 -> 1.1', '1.1 -> 1.2', '1.2 -> 1.3', '1.3 -> 1.4']);
+  assert.deepEqual(out.applied, ['1.0 -> 1.1', '1.1 -> 1.2', '1.2 -> 1.3', '1.3 -> 1.4', '1.4 -> 1.5']);
   assert.equal(out.spec.schemaVersion, DASHBOARD_SCHEMA_VERSION);
   assert.equal('schemaVersion' in input, false, 'input not modified');
   assert.deepEqual(migrateSpec(out.spec).applied, [], 'idempotent on a current spec');
@@ -94,6 +94,30 @@ test('markingMode:"filter" (cross-filter) survives migrate + canonical serialize
   assert.equal(roundtripped.markingMode, 'filter', 'the filter mode is preserved');
   assert.deepEqual(canonicalSpec(roundtripped), canonicalSpec(migrated), 'no key is added, dropped or reordered');
   assert.deepEqual(migrateSpec(migrated).applied, [], 'a filter spec needs no migration (no format-version bump)');
+});
+
+test('provenance (1.5): panel + source provenance survive migrate + canonical serialize + parse', function () {
+  var spec = {
+    schemaVersion: '1.4', id: 'prov', title: 'prov', layout: SPEC.layout,
+    data: {
+      s: {
+        kind: 'inline',
+        value: { y: { vars: ['R'], smps: ['A'], data: [[1]] } },
+        provenance: { method: 'Sum of Revenue grouped by Region', dataVersion: 'q3-2026', asOf: '2026-10-16T00:00:00Z', params: { region: 'West' } }
+      }
+    },
+    panels: {
+      bar: { dataRef: 's', config: { graphType: 'Bar' }, provenance: { method: 'count by Region', auto: true, show: true, notes: 'excludes returns' } },
+      pie: { dataRef: 's', config: { graphType: 'Pie' } }
+    }
+  };
+  var migrated = migrateSpec(spec).spec;
+  assert.equal(migrated.schemaVersion, DASHBOARD_SCHEMA_VERSION, 'stamped to current');
+  var roundtripped = JSON.parse(serializeSpec(migrated));
+  assert.deepEqual(roundtripped.panels.bar.provenance, spec.panels.bar.provenance, 'panel provenance preserved verbatim');
+  assert.deepEqual(roundtripped.data.s.provenance, spec.data.s.provenance, 'source provenance preserved verbatim');
+  assert.deepEqual(canonicalSpec(roundtripped), canonicalSpec(migrated), 'no key is added, dropped or reordered');
+  assert.deepEqual(migrateSpec(migrated).applied, [], 'a 1.5 spec needs no further migration');
 });
 
 test('dashboardDiff: equal specs, and layout items matched by panel id', function () {

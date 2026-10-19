@@ -8,7 +8,9 @@
 
   <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
   <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
-  <script src="./canvasxpress-dashboards.umd.js"></script>
+  <!-- Cache-bust the bundle (same pattern as the app shell) so a rebuilt bundle is
+       always picked up — avoids a stale cached copy missing newer exports. -->
+  <script>document.write('<script src="./canvasxpress-dashboards.umd.js?v=' + Date.now() + '"><\/script>');</script>
   <!-- Export deps (PNG/PDF rasterization). Local to the dashboards repo only. -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -49,6 +51,10 @@
         <button type="button" class="cxd-tb-item" data-act="pdf">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 12h1.5a1.5 1.5 0 0 0 0-3H9v7"/></svg>
           <span><b>PDF</b><small>Print-ready</small></span>
+        </button>
+        <button type="button" class="cxd-tb-item" data-act="bundle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
+          <span><b>Reproducible bundle</b><small>Spec + data + R/Python + methods</small></span>
         </button>
       </div>
     </div>
@@ -164,6 +170,8 @@
             task = X.exportDashboardPng(handle.container, { filename: slug + '.png' });
           } else if (act === 'pdf') {
             task = X.exportDashboardPdf(handle.container, { filename: slug + '.pdf' });
+          } else if (act === 'bundle') {
+            task = X.exportReproducibleBundle(handle, { baseUrl: base, filename: slug + '-bundle.zip' });
           }
           Promise.resolve(task).then(done, oops);
         } catch (err) {

@@ -14,7 +14,8 @@
 
 import { injectStyles } from './styles.js';
 import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames, annotationValues, sourceLineage, showCodeDialog } from './renderDashboard.js';
-import { sqlParamNames, WIZARD_CHART_TYPES, chartFieldsFor, chartColumns, buildChartConfig } from './wizard.js';
+import { sqlParamNames, WIZARD_CHART_TYPES, chartFieldsFor, chartColumns, buildChartConfig,
+  WIZARD_SCIENCE_TYPES, scientificFieldsFor, buildScientificConfig, suggestPanelType } from './wizard.js';
 import { sourceUsesParam } from './spec.js';
 import { validateSpec } from './validateSpec.js';
 import { migrateSpec, DASHBOARD_SCHEMA_VERSION } from './spec.js';
@@ -24,6 +25,8 @@ import { addPanel, removePanel, movePanel, resizePanel, resolveCollisions, resol
   setCalculatedField, removeCalculatedField, describeCalculatedField, setSourcePushdown, addQueryControl }
   from './builderModel.js';
 import { createDataStore } from './dataStore.js';
+import { buildTransformControl, buildFdrSliderControl } from './analysisControls.js';
+import { buildPanelStatInference } from './statInference.js';
 import { tableFields, sourceAxis, JOIN_TYPES } from './join.js';
 import { runPushdown, PUSHDOWN_FUNCTIONS } from './pushdown.js';
 
@@ -321,9 +324,13 @@ export function createBuilder(target, options) {
     // Row 1: "create" actions (dashboard title + add panel/text/control/data)
     // and Save, always on one line.
     var row1 = el('div', 'cxb-trow');
-    addPanelBtn = button('+ Panel', function () { doAddPanel(); });
-    addControlBtn = button('+ Control', function () { doAddControl(); });
-    addFiltersBtn = button('+ Filters', function () { doAddFilters(); });
+    // Toolbar buttons fall into three kinds, each flagged with a left-edge accent
+    // colour (see .cxb-bt-add / -interact / -data in styles.js): "add content"
+    // (green), "add interaction" (blue) and "data tools" (amber). Meta controls
+    // (title, edit-JSON, undo/redo), + Data and the primary Save stay neutral.
+    addPanelBtn = button('+ Panel', function () { doAddPanel(); }, 'cxb-bt-add');
+    addControlBtn = button('+ Control', function () { doAddControl(); }, 'cxb-bt-interact');
+    addFiltersBtn = button('+ Filters', function () { doAddFilters(); }, 'cxb-bt-interact');
     var editJsonBtn = button('✎', function () { doEditJson(); });
     editJsonBtn.setAttribute('title', 'Edit dashboard JSON');
     editJsonBtn.setAttribute('aria-label', 'Edit dashboard JSON');
@@ -336,7 +343,7 @@ export function createBuilder(target, options) {
     updateHistoryButtons();
     // "+ Function" appears only once the server says it runs data functions
     // for this user (the check is async; hidden until then).
-    addFunctionBtn = button('+ Function', function () { doAddFunction(); });
+    addFunctionBtn = button('+ Function', function () { doAddFunction(); }, 'cxb-bt-data');
     addFunctionBtn.setAttribute('title', 'Add a panel computed by an R / Python data function');
     addFunctionBtn.style.display = 'none';
     functionStatus().then(function (status) {
@@ -345,17 +352,28 @@ export function createBuilder(target, options) {
     });
     // "Links": how a selection in one panel marks the related rows of panels
     // built on other sources (spec.relationships + spec.markingMode).
-    linksBtn = button('🔗 Links', function () { doEditLinks(); });
+    linksBtn = button('🔗 Links', function () { doEditLinks(); }, 'cxb-bt-data');
     // "ƒx Fields": calculated fields computed once on a source, so every panel,
     // filter, join and link on it can use them (data.<ref>.calculatedFields).
-    fieldsBtn = button('ƒx Fields', function () { doEditFields(); });
+    fieldsBtn = button('ƒx Fields', function () { doEditFields(); }, 'cxb-bt-data');
     // "Shape data": filter, keep columns or summarize, sort and limit a
     // source's rows (its `pushdown` query; in its database when it has one).
-    shapeBtn = button('▦ Shape data', function () { doShapeData(); });
+    shapeBtn = button('▦ Shape data', function () { doShapeData(); }, 'cxb-bt-data');
+    // Analysis controls (not display filters): a transform toggle that re-expresses
+    // a panel's data (log/z-score/normalize), and an FDR threshold slider that
+    // recorrects and re-filters every significance panel at once.
+    var addTransformBtn = button('∿ Transform', function () { doAddTransform(); }, 'cxb-bt-interact');
+    addTransformBtn.setAttribute('title', 'Add a transform control (log / z-score / normalize) for a panel');
+    var addFdrBtn = button('FDR slider', function () { doAddFdr(); }, 'cxb-bt-interact');
+    addFdrBtn.setAttribute('title', 'Add an FDR threshold slider that re-filters every significance panel');
+    // Significance brackets: author pairwise comparisons (group A vs B + p-value) and a
+    // correction method on a graph panel; writes its statInference config.
+    var addSignificanceBtn = button('✴ Significance', function () { doAddSignificance(); }, 'cxb-bt-interact');
+    addSignificanceBtn.setAttribute('title', 'Add significance brackets (pairwise comparisons + correction) to a graph panel');
     var createActions = [titleInput, editJsonBtn, undoBtn, redoBtn, addPanelBtn,
-      button('+ Text', function () { doAddText(); }),
-      button('+ Image', function () { doAddImage(); }),
-      addControlBtn, addFiltersBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
+      button('+ Text', function () { doAddText(); }, 'cxb-bt-add'),
+      button('+ Image', function () { doAddImage(); }, 'cxb-bt-add'),
+      addControlBtn, addFiltersBtn, addTransformBtn, addFdrBtn, addSignificanceBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
     append(row1, createActions);
@@ -623,6 +641,175 @@ export function createBuilder(target, options) {
     } else {
       rebuild();
     }
+  }
+
+  /**
+   * The first graph panel's id (a panel with no `type` — not a control/text/
+   * image/filters element), preferring the current selection when it is one.
+   * @returns {?string}
+   * @private
+   */
+  function firstGraphPanelId() {
+    var panels = spec.panels || {};
+    if (selectedId && panels[selectedId] && !panels[selectedId].type) return selectedId;
+    var ids = Object.keys(panels);
+    for (var i = 0; i < ids.length; i++) {
+      if (!panels[ids[i]].type) return ids[i];
+    }
+    return null;
+  }
+
+  /**
+   * "∿ Transform": add a transform control (analysis control) bound to a target
+   * graph panel; changing it re-expresses that panel's data (log/z-score/
+   * normalize) via updateData. Edited further in the properties bar.
+   * @returns {void}
+   * @private
+   */
+  function doAddTransform() {
+    var target = firstGraphPanelId();
+    if (!target) { setMsg('Add a graph panel first — a transform control needs a panel to transform.'); return; }
+    var id = uniquePanelId(spec);
+    var ctl = buildTransformControl({ target: target, title: 'Transform' });
+    commit(addPanel(spec, {
+      id: id, type: 'control', title: ctl.title, mode: 'transform', target: target,
+      options: ctl.options, value: ctl.value, w: 4, h: 2
+    }), false);
+    selectedId = id;
+    if (liveHandle && liveHandle.addPanel && gridEl) {
+      lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
+    } else {
+      rebuild();
+    }
+    setMsg('Transform control added for panel “' + target + '”.');
+  }
+
+  /**
+   * "FDR slider": add an FDR threshold slider (analysis control). It declares an
+   * `fdr` param and, on slide, recorrects dashboard-scope and re-filters every
+   * significance (statInference) panel at the chosen cut-off.
+   * @returns {void}
+   * @private
+   */
+  function doAddFdr() {
+    var ctl = buildFdrSliderControl({ param: 'fdr', value: 0.05 });
+    var withParam = setParam(spec, ctl.param, ctl.value);
+    var id = uniquePanelId(withParam);
+    commit(addPanel(withParam, {
+      id: id, type: 'control', title: ctl.title, mode: 'param', style: 'range', param: ctl.param,
+      analysis: 'fdr', method: ctl.method, min: ctl.min, max: ctl.max, step: ctl.step, value: ctl.value, w: 4, h: 2
+    }), false);
+    selectedId = id;
+    rebuild();   // a new param + the FDR binding re-resolve the dashboard
+    setMsg('FDR threshold slider added (param $' + ctl.param + ', ' + ctl.method + ' correction).');
+  }
+
+  /**
+   * "✴ Significance": author significance brackets on a graph panel. Resolves the
+   * panel's group values, opens the picker (pairwise comparisons + correction +
+   * annotate), and writes showStatInference + statInference into the panel config.
+   * Brackets render on a vertical orientation, so it is set when absent.
+   * @returns {void}
+   * @private
+   */
+  function doAddSignificance() {
+    // Target a 1D group chart (Boxplot/Violin/Bar) — the only charts brackets render
+    // on. Prefer the selected panel when it is one; otherwise auto-pick the first such
+    // panel so clicking "Significance" opens the picker without a manual selection step
+    // (it must not silently target a KaplanMeier/Scatter panel, where it is a no-op).
+    var panels = spec.panels || {};
+    function isGroupChart(p) {
+      return !!(p && p.config && /^(Boxplot|Violin|Bar)$/.test(p.config.graphType || ''));
+    }
+    var id = selectedId && isGroupChart(panels[selectedId]) ? selectedId : null;
+    if (!id) {
+      var groupIds = Object.keys(panels);
+      for (var gi = 0; gi < groupIds.length; gi++) {
+        if (isGroupChart(panels[groupIds[gi]])) { id = groupIds[gi]; break; }
+      }
+    }
+    if (!id) {
+      setMsg('Significance brackets need a grouped Boxplot, Violin or Bar panel — add or select one first.');
+      return;
+    }
+    selectedId = id;   // reflect which panel the brackets target
+    syncLiveConfigs();
+    var doc = container.ownerDocument || document;
+    var cfg = (spec.panels[id] && spec.panels[id].config) || {};
+    var inst = instByPanel[id];
+    var data = inst && inst.data;
+    if (!data || !data.y) { setMsg('This panel has no data yet.'); return; }
+    // The grouping factor name, flattened (the engine may nest it, e.g. [["group"]]).
+    var grouping = cfg.groupingFactors != null ? cfg.groupingFactors : inst.groupingFactors;
+    while (Array.isArray(grouping)) { grouping = grouping[0]; }
+    var groupingName = typeof grouping === 'string' ? grouping : null;
+    // Distinct group values, in first-appearance order: the grouping annotation
+    // when present, otherwise the sample-axis categories.
+    var groups = [];
+    var seen = {};
+    var labels = groupingName && data.x && Array.isArray(data.x[groupingName]) ? data.x[groupingName] : data.y.smps;
+    (labels || []).forEach(function (v) {
+      // The engine may wrap each annotation value in a single-element array.
+      var label = Array.isArray(v) ? v[0] : v;
+      var key = String(label);
+      if (!seen[key]) { seen[key] = true; groups.push(label); }
+    });
+    if (groups.length < 2) { setMsg('This panel needs at least two groups to compare.'); return; }
+    // Value range (for auto bracket heights + headroom) from ONLY the variables the
+    // chart actually plots on the value axis (cfg.xAxis), not the whole bound matrix.
+    // A multi-variable source (e.g. an expression matrix where the Boxplot shows one
+    // gene) would otherwise take its extent from unrelated rows, pushing the brackets —
+    // and the forced axis maximum — far above the boxes and collapsing them.
+    var plotted = cfg.xAxis != null ? cfg.xAxis : inst.xAxis;
+    while (Array.isArray(plotted) && plotted.length === 1 && Array.isArray(plotted[0])) { plotted = plotted[0]; }
+    var plottedSet = null;
+    if (Array.isArray(plotted) && plotted.length) {
+      plottedSet = {};
+      plotted.forEach(function (name) { plottedSet[String(name)] = true; });
+    }
+    var vars = (data.y && data.y.vars) || [];
+    var minValue = Infinity, maxValue = -Infinity;
+    (data.y.data || []).forEach(function (row, rowIndex) {
+      if (plottedSet && !plottedSet[String(vars[rowIndex])]) { return; }
+      (row || []).forEach(function (v) {
+        var n = typeof v === 'number' ? v : parseFloat(v);
+        if (isFinite(n)) { if (n < minValue) minValue = n; if (n > maxValue) maxValue = n; }
+      });
+    });
+    if (!isFinite(minValue)) { minValue = 0; maxValue = 1; }
+    openSignificanceDialog(doc, { groups: groups, minValue: minValue, maxValue: maxValue, prefill: cfg })
+      .then(function (result) {
+        if (!result) return;
+        if (result.remove) {
+          var cleared = Object.assign({}, cfg);
+          cleared.showStatInference = false;
+          delete cleared.statInference;
+          // The brackets forced a value-axis maximum for headroom; drop it (both
+          // orientations) so the axis auto-ranges back to the data instead of
+          // staying expanded/collapsed.
+          delete cleared.setMaxX;
+          delete cleared.setMaxY;
+          commit(updatePanel(spec, id, { config: cleared }), false);
+          rebuild();
+          setMsg('Significance brackets removed from panel “' + id + '”.');
+          return;
+        }
+        var merged = Object.assign({}, cfg, {
+          showStatInference: true,
+          statInference: result.statInference
+        });
+        if (!merged.graphOrientation) merged.graphOrientation = 'vertical';
+        // Reserve bracket headroom on the VALUE axis, which follows orientation:
+        // Y for vertical (the default), X for horizontal. (Before this, headroom was
+        // always written to setMaxX — wrong axis once vertical became the default.)
+        if (result.setMaxX != null) {
+          if (merged.graphOrientation === 'horizontal') { merged.setMaxX = result.setMaxX; delete merged.setMaxY; }
+          else { merged.setMaxY = result.setMaxX; delete merged.setMaxX; }
+        }
+        commit(updatePanel(spec, id, { config: merged }), false);
+        rebuild();
+        setMsg('Significance brackets added to panel “' + id + '”.');
+      });
   }
 
   /**
@@ -1890,8 +2077,29 @@ export function createBuilder(target, options) {
     var previewBtn = button(isTableView(selectedId) ? '◧ Chart' : '▦ Table', function (ev) { toggleDataView(selectedId, ev); });
     previewBtn.setAttribute('title', 'Switch this chart between its canvas and its data table');
 
+    // A checkbox to show the auto-derived provenance method line as a figure
+    // footer beneath this panel (sets panel.provenance.show; see provenance.js).
+    var methodToggle = el('label', 'cxb-check');
+    var methodBox = el('input');
+    methodBox.type = 'checkbox';
+    methodBox.checked = !!(panel.provenance && panel.provenance.show);
+    methodBox.setAttribute('title', 'Show how this panel was computed (method line) as a figure footer');
+    on(methodBox, 'change', function () {
+      var prov = {};
+      for (var k in (panel.provenance || {})) {
+        if (Object.prototype.hasOwnProperty.call(panel.provenance, k)) prov[k] = panel.provenance[k];
+      }
+      prov.show = methodBox.checked;
+      commit(updatePanel(spec, selectedId, { provenance: prov }), false);
+      rerenderPanel(selectedId);   // adding/removing the footer changes the DOM
+    });
+    var methodText = el('span');
+    methodText.textContent = 'Method';
+    methodToggle.appendChild(methodBox);
+    methodToggle.appendChild(methodText);
+
     // No Delete here — the panel frame already carries a × delete control.
-    append(propsGroup, [titleLabel, titleField, dataLabel, dsField, previewBtn].concat(liveFields, crossFilter, [titleToggle]));
+    append(propsGroup, [titleLabel, titleField, dataLabel, dsField, previewBtn].concat(liveFields, crossFilter, [titleToggle, methodToggle]));
   }
 
   /**
@@ -4897,6 +5105,123 @@ function openFieldsDialog(doc, spec, rawDataOf, CX) {
   });
 }
 
+/**
+ * The significance-brackets picker (stat-inference). Lets the author add pairwise
+ * comparison rows (group A vs group B + a p-value computed upstream), choose a
+ * multiple-testing correction and what each bracket prints, then returns a
+ * statInference config block (via buildPanelStatInference) plus a suggested
+ * setMaxX headroom. Bracket heights are auto-stacked above the data.
+ *
+ * @param {Document} doc - The owning document.
+ * @param {object} ctx - {groups:[names], minValue, maxValue, prefill:config}.
+ * @returns {Promise<?{statInference:object, setMaxX:number}>} The block, or null.
+ */
+function openSignificanceDialog(doc, ctx) {
+  var groups = ctx.groups || [];
+  var prefill = ctx.prefill || {};
+  var prior = prefill.statInference || {};
+  // Seed rows from an existing statInference block, else one default comparison.
+  var rows = Array.isArray(prior.comparisons) && prior.comparisons.length
+    ? prior.comparisons.map(function (c) {
+        return { a: (c.groups || [])[0], b: (c.groups || [])[1], p: c.p != null ? c.p : 0.01 };
+      })
+    : [{ a: groups[0], b: groups[1], p: 0.01 }];
+  return new Promise(function (resolve) {
+    var overlay = modalOverlay();
+    var modal = el('div', 'cxb-modal');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Significance brackets';
+    var intro = el('p', 'cxb-links-intro');
+    intro.textContent = 'Compare pairs of groups. Each p-value is computed upstream (R / Python / your ' +
+      'server); the dashboard draws the bracket and applies the correction. Stars reflect the adjusted p.';
+
+    var methodSel = selectField(['BH', 'bonferroni', 'BY', 'holm', 'hochberg', 'none'],
+      (prior.correction && prior.correction.method) || 'BH', function () {});
+    labelOptions(methodSel, { BH: 'Benjamini-Hochberg (FDR)', bonferroni: 'Bonferroni', BY: 'Benjamini-Yekutieli',
+      holm: 'Holm', hochberg: 'Hochberg', none: 'No correction' });
+    var annotateSel = selectField(['stars', 'padj', 'p'], prior.annotate || 'stars', function () {});
+    labelOptions(annotateSel, { stars: 'Stars (**)', padj: 'Adjusted p', p: 'Raw p' });
+
+    var list = el('div', 'cxb-links-list');
+    var errEl = el('div', 'cxb-modal-err');
+
+    function groupSelect(selected) {
+      var sel = selectField(groups, groups.indexOf(selected) >= 0 ? selected : groups[0], function () {});
+      return sel;
+    }
+    function renderRows() {
+      list.innerHTML = '';
+      rows.forEach(function (rowDef, i) {
+        var row = el('div', 'cxb-links-row');
+        var aSel = groupSelect(rowDef.a);
+        on(aSel, 'change', function () { rows[i].a = aSel.value; });
+        var vs = el('span'); vs.textContent = 'vs';
+        var bSel = groupSelect(rowDef.b);
+        on(bSel, 'change', function () { rows[i].b = bSel.value; });
+        var pIn = el('input');
+        pIn.type = 'number'; pIn.step = 'any'; pIn.min = '0'; pIn.max = '1';
+        pIn.value = String(rowDef.p);
+        pIn.setAttribute('placeholder', 'p-value');
+        on(pIn, 'input', function () { rows[i].p = parseFloat(pIn.value); });
+        var remove = button('×', function () { rows.splice(i, 1); renderRows(); });
+        remove.setAttribute('title', 'Remove this comparison');
+        append(row, [aSel, vs, bSel, pIn, remove]);
+        list.appendChild(row);
+      });
+      if (!rows.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = 'No comparisons yet — add one.';
+        list.appendChild(none);
+      }
+    }
+    var addBtn = button('+ Add comparison', function () {
+      rows.push({ a: groups[0], b: groups[1], p: 0.01 });
+      renderRows();
+    });
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    // Offered only when the panel already carries significance brackets, so the
+    // author can take them off entirely (the Apply path always keeps ≥1 bracket).
+    var hasExisting = Array.isArray(prior.comparisons) && prior.comparisons.length > 0;
+    var removeBtn = hasExisting ? button('Remove brackets', function () { close({ remove: true }); }) : null;
+    if (removeBtn) removeBtn.setAttribute('title', 'Remove all significance brackets from this panel');
+    var applyBtn = button('Apply', function () {
+      var comparisons = [];
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        if (r.a == null || r.b == null || r.a === r.b) { errEl.textContent = 'Each comparison needs two different groups.'; return; }
+        if (!(typeof r.p === 'number' && isFinite(r.p) && r.p >= 0 && r.p <= 1)) { errEl.textContent = 'Each comparison needs a p-value between 0 and 1.'; return; }
+        comparisons.push({ groups: [r.a, r.b], p: r.p });
+      }
+      if (!comparisons.length) { errEl.textContent = 'Add at least one comparison.'; return; }
+      // Auto-stack bracket heights above the data and reserve headroom.
+      var span = (ctx.maxValue - ctx.minValue) || Math.abs(ctx.maxValue) || 1;
+      var step = span * 0.08;
+      for (var j = 0; j < comparisons.length; j++) {
+        comparisons[j].value = ctx.maxValue + step * (j + 1);
+      }
+      var block = buildPanelStatInference({
+        comparisons: comparisons, method: methodSel.value, scope: 'dashboard', annotate: annotateSel.value
+      });
+      close({ statInference: block, setMaxX: ctx.maxValue + step * (comparisons.length + 1) });
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, removeBtn ? [removeBtn, cancelBtn, applyBtn] : [cancelBtn, applyBtn]);
+
+    append(modal, [heading, intro, field('Correction', methodSel), field('Show', annotateSel),
+      field('Comparisons', list), addBtn, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    renderRows();
+
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
 /** @type {Object<string, string>} Readable labels for the pushdown filter operators. */
 var SHAPE_OPS = {
   '=': 'is', '!=': 'is not', '<': 'is less than', '<=': 'is at most', '>': 'is more than', '>=': 'is at least',
@@ -5498,9 +5823,21 @@ function openPanelDialog(doc, ctx) {
     var first = pre.source && byKey[pre.source] ? pre.source : (queried ? queried.key : keys[0] || '');
     var sourceSel = selectField(keys, first, function () { fields = {}; load(); });
     labelOptions(sourceSel, sources.reduce(function (m, s) { m[s.key] = s.label; return m; }, {}));
-    var typeSel = selectField(WIZARD_CHART_TYPES, WIZARD_CHART_TYPES.indexOf(pre.graphType) !== -1 ? pre.graphType : 'Boxplot',
+    // The generic charts plus the scientific presets (Kaplan-Meier, Oncoprint,
+    // Heatmap, Manhattan, Volcano) — these carry their own field maps + defaults.
+    var SCIENCE_LABELS = { KaplanMeier: 'Kaplan–Meier (survival)', Oncoprint: 'Oncoprint (mutations)',
+      Heatmap: 'Heatmap + dendrogram', Manhattan: 'Manhattan (GWAS)', Volcano: 'Volcano (differential)' };
+    var allTypes = WIZARD_CHART_TYPES.concat(WIZARD_SCIENCE_TYPES);
+    function isScience(type) { return WIZARD_SCIENCE_TYPES.indexOf(type) !== -1; }
+    var typeSel = selectField(allTypes, allTypes.indexOf(pre.graphType) !== -1 ? pre.graphType : 'Boxplot',
       function () { drawFields(); refresh(); });
-    labelOptions(typeSel, { Scatter2D: 'Scatter plot' });
+    var typeLabels = { Scatter2D: 'Scatter plot' };
+    for (var sk in SCIENCE_LABELS) { if (Object.prototype.hasOwnProperty.call(SCIENCE_LABELS, sk)) typeLabels[sk] = SCIENCE_LABELS[sk]; }
+    labelOptions(typeSel, typeLabels);
+    // Auto-detect suggestion: a clickable hint that sets the chart type to the
+    // scientific panel the bound data looks like.
+    var suggestEl = el('div', 'cxb-links-none');
+    suggestEl.style.display = 'none';
     var titleInput = el('input');
     titleInput.type = 'text';
     titleInput.value = pre.title || '';
@@ -5514,7 +5851,7 @@ function openPanelDialog(doc, ctx) {
     extraHelp.textContent = 'Any CanvasXpress option, applied over the fields. Keep editing with ⚙ after adding.';
     var errEl = el('div', 'cxb-modal-err');
     var left = el('div', 'cxb-panel-fields');
-    append(left, [field('Data source', sourceSel), field('Chart type', typeSel), fieldsBox,
+    append(left, [field('Data source', sourceSel), field('Chart type', typeSel), suggestEl, fieldsBox,
       field('Extra config (JSON)', extra), extraHelp, field('Title', titleInput)]);
     var previewHost = el('div', 'cxb-panel-preview');
     var status = el('div', 'cxb-links-none');
@@ -5537,8 +5874,24 @@ function openPanelDialog(doc, ctx) {
       fieldsBox.innerHTML = '';
       selects = {};
       var columns = data ? chartColumns(data) : { numbers: [], texts: [] };
-      var which = chartFieldsFor(typeSel.value);
       if (!data) { fieldsBox.appendChild(el('div', 'cxb-links-none')).textContent = 'Loading the data…'; return; }
+      // Scientific presets map their own fields (matrix panels take none).
+      if (isScience(typeSel.value)) {
+        var sciFields = scientificFieldsFor(typeSel.value);
+        if (!sciFields.length) {
+          fieldsBox.appendChild(el('div', 'cxb-links-none')).textContent =
+            'This panel draws the whole matrix — no field mapping needed.';
+          return;
+        }
+        sciFields.forEach(function (sf) {
+          var optional = /optional/i.test(sf.label);
+          var list = sf.numeric ? columns.numbers : columns.texts.concat(columns.numbers);
+          if (fields[sf.key] == null && !optional) fields[sf.key] = list[0] || '';
+          fieldsBox.appendChild(field(sf.label, columnSelect(sf.key, list, optional)));
+        });
+        return;
+      }
+      var which = chartFieldsFor(typeSel.value);
       fieldsBox.appendChild(field(which.y ? 'X axis' : 'X axis (measure)', columnSelect('x', columns.numbers, false)));
       if (which.y) {
         if (fields.y == null && columns.numbers[1]) fields.y = columns.numbers[1];
@@ -5567,12 +5920,13 @@ function openPanelDialog(doc, ctx) {
         try { more = JSON.parse(text); } catch (e) { errEl.textContent = 'Extra config is not valid JSON: ' + e.message; return null; }
         if (!more || typeof more !== 'object' || Array.isArray(more)) { errEl.textContent = 'Extra config must be a JSON object: { … }'; return null; }
       }
+      if (isScience(typeSel.value)) return buildScientificConfig(typeSel.value, fields, more, data);
       return buildChartConfig(typeSel.value, fields, more, data);
     }
     function refresh() {
       if (instance) { try { instance.destroy(); } catch (e) { /* gone */ } instance = null; }
       previewHost.innerHTML = '';
-      if (!data || !chartColumns(data).numbers.length) return;
+      if (!data || (!chartColumns(data).numbers.length && !isScience(typeSel.value))) return;
       var c = config();
       if (!c) return;
       var CXlib = ctx.CanvasXpress;
@@ -5586,10 +5940,31 @@ function openPanelDialog(doc, ctx) {
         instance = new CXlib(canvas.id, data, Object.assign(JSON.parse(JSON.stringify(c)), { resizable: false }), {});
       } catch (e) { previewHost.textContent = 'Preview unavailable: ' + (e && e.message || e); }
     }
+    /** Show a clickable "this looks like …" hint from the data shape, if any. */
+    function showSuggestion() {
+      suggestEl.innerHTML = '';
+      var hit = data ? suggestPanelType(data) : null;
+      if (!hit || hit.graphType === typeSel.value) { suggestEl.style.display = 'none'; return; }
+      suggestEl.style.display = '';
+      suggestEl.appendChild(doc.createTextNode(hit.reason + ' '));
+      var link = el('a', 'cxb-link');
+      link.href = '#';
+      link.textContent = 'Use ' + (SCIENCE_LABELS[hit.graphType] || hit.graphType);
+      on(link, 'click', function (ev) {
+        ev.preventDefault();
+        typeSel.value = hit.graphType;
+        fields = {};
+        showSuggestion();
+        drawFields();
+        refresh();
+      });
+      suggestEl.appendChild(link);
+    }
     function load() {
       var mine = ++token;
       data = null;
       status.textContent = '';
+      suggestEl.style.display = 'none';
       drawFields();
       refresh();
       var pick = byKey[sourceSel.value];
@@ -5602,6 +5977,7 @@ function openPanelDialog(doc, ctx) {
         data = d;
         var rows = d && d.y ? Math.max((d.y.smps || []).length, (d.y.vars || []).length) : 0;
         status.textContent = d ? 'Preview on ' + rows + ' rows of ' + (pick ? pick.label : '') + '.' : 'This source returned no data.';
+        showSuggestion();
         drawFields();
         refresh();
       });
@@ -5612,7 +5988,7 @@ function openPanelDialog(doc, ctx) {
 
     var cancelBtn = button('Cancel', function () { close(null); });
     var addBtn = button('Add panel', function () {
-      if (!data || !chartColumns(data).numbers.length) { errEl.textContent = 'Pick a source with a number column (or wait for its data).'; return; }
+      if (!data || (!chartColumns(data).numbers.length && !isScience(typeSel.value))) { errEl.textContent = 'Pick a source with a number column (or wait for its data).'; return; }
       var c = config();
       if (!c) return;
       close({ pick: byKey[sourceSel.value], config: c, title: titleInput.value.trim() });

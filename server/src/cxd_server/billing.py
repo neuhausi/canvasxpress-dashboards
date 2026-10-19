@@ -1,8 +1,8 @@
 """Billing & entitlements for CanvasXpress Cloud.
 
 Implements the hosted-platform paywall (Pro subscription + prepaid AI credit
-packs) on top of PayPal, keeping the open engine entirely free. See the plan at
-``docs/plans/monetization/monetization-paywall-plan.md`` in the canvas-ai repo.
+packs) on top of PayPal, keeping the open engine entirely free. See
+``CLOUD-BILLING.md`` for the setup runbook.
 
 Three pieces live here, all self-contained and framework-agnostic so they can be
 unit-tested without a running server:

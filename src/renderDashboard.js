@@ -18,7 +18,10 @@ import { createDataStore, isEmptyData } from './dataStore.js';
 import { gridTemplate, cellArea, stackedTemplate } from './gridLayout.js';
 import { hasRelationships, relationGraph, translateMarks } from './marking.js';
 import { sourceAxis, sourceInputs, tableColumn, transposeCxData } from './join.js';
+import { transformData } from './transforms.js';
+import { applyFdrThreshold } from './analysisControls.js';
 import { resolveFields, rowsPassing, normalizeState, isActive, fieldKey } from './filters.js';
+import { panelProvenanceText } from './provenance.js';
 
 /**
  * A row name no data object carries: marking a related panel with only this
@@ -1270,6 +1273,7 @@ export function renderDashboard(spec, target, options) {
           buildRemote(data);
           bind(panel && panel.dataRef, remoteInstance, cell, buildRemote);
           cell.setState('ready');
+          attachProvenanceFooter(cell, spec, item.panel, panel);
           notify(remoteInstance, 'ready');
           return remoteInstance;
         }
@@ -1290,6 +1294,7 @@ export function renderDashboard(spec, target, options) {
           bind(panel && panel.dataRef, instance, cell, undefined, prepare);
           if (autoResize) observeResize(cell, instance, observers, canvasInset);
           cell.setState('ready');
+          attachProvenanceFooter(cell, spec, item.panel, panel);
           notify(instance, 'ready');
           return instance;
         }
@@ -2044,6 +2049,19 @@ export function renderDashboard(spec, target, options) {
       return Promise.resolve(buildConfigControl(cell, item, panel, notify));
     }
 
+    // A transform control (analysis control) re-expresses a target panel's data
+    // through transforms.transformData (log/z-score/normalize) — client-side,
+    // instant — by calling updateData on the target's live instance.
+    if (panel.mode === 'transform') {
+      return Promise.resolve(buildTransformControl(cell, item, panel, notify));
+    }
+
+    // An FDR threshold slider (numeric range param control): slides one cut-off
+    // that recorrects (dashboard-scope) and re-filters every statInference panel.
+    if (isParam && panel.style === 'range') {
+      return Promise.resolve(buildRangeControl(cell, item, panel, notify));
+    }
+
     /**
      * Build the control's DOM from a list of choices and wire its change handler
      * (param mode → applyParamChange; filter mode → applyControlFilters).
@@ -2357,6 +2375,192 @@ export function renderDashboard(spec, target, options) {
     return null;
   }
 
+  /**
+   * Render a transform control (`mode:"transform"`): a dropdown/buttons of
+   * transform methods (none/log2/log10/zscore/medianCenter/quantileNormalize)
+   * that re-expresses the TARGET panel's data by calling `updateData` with the
+   * client-side transform. The pristine data is captured on first change so
+   * switching methods always transforms from the original, never a prior result.
+   *
+   * @param {object} cell @param {object} item @param {object} panel @param {function} notify
+   * @returns {null} Always null (a control renders no CanvasXpress instance).
+   * @private
+   */
+  function buildTransformControl(cell, item, panel, notify) {
+    var options = panel.options || [];
+    var target = panel.target;
+    var original = { data: null };
+    function apply(method) {
+      var slot = cellByPanel[target];
+      var inst = slot && slot.instance;
+      if (!inst || typeof inst.updateData !== 'function') return;
+      if (!original.data) { original.data = inst.data; }
+      inst.updateData(transformData(original.data, method));
+    }
+    var widget = document.createElement('div');
+    widget.className = 'cxd-annctl';
+    applyAlignment(cell.body, panel);
+    if (panel.title && !panel.hideTitle) {
+      var label = document.createElement('span');
+      label.className = 'cxd-annctl-label';
+      label.textContent = panel.title;
+      widget.appendChild(label);
+    }
+    widget.appendChild(buildTransformInput(panel, options, apply));
+    cell.body.appendChild(widget);
+    cell.setState('ready');
+    notify('ready');
+    return null;
+  }
+
+  /**
+   * Build the input element for a transform control, honouring `panel.style`
+   * (auto | dropdown | radio | buttons) the same way {@link buildAnnotationInput}
+   * does for annotation filters. `auto` picks segmented buttons for up to 4
+   * methods and a dropdown above that. Each variant preselects `panel.value`.
+   *
+   * @param {object} panel - The control panel (reads `style`, `value`).
+   * @param {Array} options - Transform options ({value,label}).
+   * @param {function(string): void} apply - Called with the chosen method value.
+   * @returns {HTMLElement} The input element.
+   * @private
+   */
+  function buildTransformInput(panel, options, apply) {
+    var style = panel.style || 'auto';
+    if (style === 'auto') style = options.length <= 4 ? 'buttons' : 'dropdown';
+
+    if (style === 'radio') {
+      var group = document.createElement('span');
+      group.className = 'cxd-annctl-radios';
+      // Radios group by name; scope it to this control so two transform
+      // controls stay independent (mirrors buildAnnotationInput).
+      var name = 'cxd-xfctl-' + Math.random().toString(36).slice(2, 8);
+      options.forEach(function (opt) {
+        var label = document.createElement('label');
+        label.className = 'cxd-annctl-radio';
+        var input = document.createElement('input');
+        input.type = 'radio';
+        input.name = name;
+        if (opt.value === panel.value) input.checked = true;
+        listen(input, 'change', function () { if (input.checked) apply(opt.value); });
+        var text = document.createElement('span');
+        text.textContent = String(opt.label);
+        label.appendChild(input);
+        label.appendChild(text);
+        group.appendChild(label);
+      });
+      return group;
+    }
+
+    if (style === 'buttons') {
+      var seg = document.createElement('span');
+      seg.className = 'cxd-annctl-seg';
+      var buttons = [];
+      options.forEach(function (opt) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cxd-annctl-segbtn' + (opt.value === panel.value ? ' cxd-annctl-on' : '');
+        btn.textContent = String(opt.label);
+        listen(btn, 'click', function () {
+          buttons.forEach(function (b) { b.classList.remove('cxd-annctl-on'); });
+          btn.classList.add('cxd-annctl-on');
+          apply(opt.value);
+        });
+        buttons.push(btn);
+        seg.appendChild(btn);
+      });
+      return seg;
+    }
+
+    var select = document.createElement('select');
+    select.className = 'cxd-annctl-select';
+    options.forEach(function (opt) {
+      var o = document.createElement('option');
+      o.value = String(opt.value);
+      o.textContent = String(opt.label);
+      if (opt.value === panel.value) o.selected = true;
+      select.appendChild(o);
+    });
+    listen(select, 'change', function () { apply(select.value); });
+    return select;
+  }
+
+  /**
+   * Re-run dashboard-scope FDR correction at a threshold and re-render every
+   * statInference panel so non-significant brackets drop out. Collects each live
+   * instance's `statInference`, corrects once across all comparisons, then pushes
+   * the updated block back with `updateConfig`.
+   *
+   * @param {number} threshold - FDR cut-off on the adjusted-p scale.
+   * @param {string} [method] - Correction method (default BH).
+   * @returns {void}
+   * @private
+   */
+  function applyFdrAcrossPanels(threshold, method) {
+    var wrappers = [];
+    var instances = [];
+    for (var id in cellByPanel) {
+      if (!Object.prototype.hasOwnProperty.call(cellByPanel, id)) continue;
+      var inst = cellByPanel[id] && cellByPanel[id].instance;
+      if (inst && inst.statInference && Array.isArray(inst.statInference.comparisons)) {
+        wrappers.push({ statInference: inst.statInference });
+        instances.push(inst);
+      }
+    }
+    if (!wrappers.length) return;
+    applyFdrThreshold(wrappers, { threshold: threshold, method: method || 'BH' });
+    for (var i = 0; i < instances.length; i++) {
+      if (typeof instances[i].updateConfig === 'function') {
+        instances[i].updateConfig({ showStatInference: true, statInference: instances[i].statInference });
+      }
+    }
+  }
+
+  /**
+   * Render a numeric range slider param control (`style:"range"`). Writes the
+   * numeric value into the param (so `function` sources with `$param` recompute)
+   * and, when `analysis:"fdr"`, re-filters every statInference panel at the new
+   * threshold via {@link applyFdrAcrossPanels}.
+   *
+   * @param {object} cell @param {object} item @param {object} panel @param {function} notify
+   * @returns {null} Always null (a control renders no CanvasXpress instance).
+   * @private
+   */
+  function buildRangeControl(cell, item, panel, notify) {
+    var widget = document.createElement('div');
+    widget.className = 'cxd-annctl';
+    applyAlignment(cell.body, panel);
+    if (panel.title && !panel.hideTitle) {
+      var label = document.createElement('span');
+      label.className = 'cxd-annctl-label';
+      label.textContent = panel.title;
+      widget.appendChild(label);
+    }
+    var slider = document.createElement('input');
+    slider.type = 'range';
+    slider.className = 'cxd-slider';
+    slider.min = String(panel.min != null ? panel.min : 0);
+    slider.max = String(panel.max != null ? panel.max : 1);
+    slider.step = String(panel.step != null ? panel.step : 0.001);
+    slider.value = String(panel.value != null ? panel.value : panel.min || 0);
+    var readout = document.createElement('span');
+    readout.className = 'cxd-slider-readout';
+    readout.textContent = slider.value;
+    listen(slider, 'input', function () {
+      var num = parseFloat(slider.value);
+      readout.textContent = slider.value;
+      if (panel.disabled) return;
+      if (panel.param) applyParamChange(panel.param, num);
+      if (panel.analysis === 'fdr') applyFdrAcrossPanels(num, panel.method);
+    });
+    widget.appendChild(slider);
+    widget.appendChild(readout);
+    cell.body.appendChild(widget);
+    cell.setState('ready');
+    notify('ready');
+    return null;
+  }
+
   items.forEach(function (item) {
     pending.push(renderPanelItem(item, spec.panels[item.panel]));
   });
@@ -2446,6 +2650,22 @@ export function renderDashboard(spec, target, options) {
     instances: instances,
     broadcastGroup: broadcastGroup,
     store: store,
+    /**
+     * The live CanvasXpress instance for each graph panel, keyed by panel id
+     * (panels with no chart — text / image / filters — are omitted). The
+     * reproducible-bundle export reads these to emit per-panel R / Python
+     * regeneration code from the engine's own code-emitters.
+     * @returns {object} panelId -> CanvasXpress instance.
+     */
+    panelInstances: function () {
+      var out = {};
+      for (var id in cellByPanel) {
+        if (Object.prototype.hasOwnProperty.call(cellByPanel, id) && cellByPanel[id].instance) {
+          out[id] = cellByPanel[id].instance;
+        }
+      }
+      return out;
+    },
     /**
      * The live dashboard parameter values (name -> value), reflecting the
      * current mode:"param" control selections. Pass to the HTML export so the
@@ -3722,6 +3942,49 @@ export function showCodeDialog(container, title, panel, lineage, sources, opts) 
  *   The cell parts.
  * @private
  */
+/**
+ * Append (or refresh) the provenance figure-legend footer beneath a graph
+ * panel's body when `panel.provenance.show` is set, with the auto-derived (or
+ * author-pinned) method line. A no-op when the panel opts out or there is
+ * nothing to say; replaces any footer already attached (so a re-render / live
+ * update keeps a single footer).
+ * @param {object} cell - The panel cell (from {@link buildCell}).
+ * @param {object} spec - The dashboard spec (its `data` supplies the source
+ *   chain for the method line).
+ * @param {string} panelId - The panel's id (key in spec.panels).
+ * @param {object} [panel] - The live panel definition; used instead of a
+ *   `spec.panels[panelId]` lookup so the builder's incremental re-render (which
+ *   does not update the renderer's spec copy) reflects the current provenance.
+ * @returns {void}
+ * @private
+ */
+function attachProvenanceFooter(cell, spec, panelId, panel) {
+  panel = panel || (spec && spec.panels && spec.panels[panelId]);
+  if (cell.footer && cell.footer.parentNode) cell.footer.parentNode.removeChild(cell.footer);
+  cell.footer = null;
+  if (!panel || !panel.provenance || !panel.provenance.show) return;
+  // Derive against a spec view that carries this live panel, so the method line
+  // uses the current panel even on the builder's incremental path.
+  var panels = {};
+  for (var id in (spec && spec.panels) || {}) {
+    if (Object.prototype.hasOwnProperty.call(spec.panels, id)) panels[id] = spec.panels[id];
+  }
+  panels[panelId] = panel;
+  var specView = {};
+  for (var key in spec) {
+    if (Object.prototype.hasOwnProperty.call(spec, key)) specView[key] = spec[key];
+  }
+  specView.panels = panels;
+  var text = panelProvenanceText(specView, panelId);
+  if (!text) return;
+  var footer = document.createElement('div');
+  footer.className = 'cxd-panel-footer';
+  footer.textContent = text;
+  footer.title = text;
+  cell.root.appendChild(footer);
+  cell.footer = footer;
+}
+
 function buildCell(title) {
   var root = document.createElement('div');
   root.className = 'cxd-panel';

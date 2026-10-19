@@ -155,3 +155,119 @@ test('buildChartConfig: fields, then extra config on top, oriented to the data',
 test('chartColumns: measures and annotations on the column axis', function () {
   assert.deepEqual(chartColumns(DATA), { numbers: ['GDP', 'LifeExp'], texts: ['Region'] });
 });
+
+// ---- Scientific data-shape detection (P1) ---------------------------------
+
+import { detectDataShapes, suggestPanelType } from '../src/wizard.js';
+
+test('detectDataShapes: survival table (time + binary event) suggests KaplanMeier', function () {
+  var surv = {
+    y: { vars: ['time', 'status'], smps: ['p1', 'p2', 'p3', 'p4'],
+      data: [[5, 12, 3, 20], [1, 0, 1, 0]] },
+    x: { arm: ['A', 'B', 'A', 'B'] }
+  };
+  var top = suggestPanelType(surv);
+  assert.equal(top.graphType, 'KaplanMeier');
+  assert.ok(top.confidence >= 0.8);
+});
+
+test('detectDataShapes: GWAS summary (chr + pos + p) suggests Manhattan', function () {
+  var gwas = {
+    y: { vars: ['pos', 'p'], smps: ['rs1', 'rs2', 'rs3'],
+      data: [[1000, 2000, 3000], [0.01, 0.0004, 0.2]] },
+    x: { chr: ['1', '1', '2'] }
+  };
+  assert.equal(suggestPanelType(gwas).graphType, 'Manhattan');
+});
+
+test('detectDataShapes: differential expression (log2FC + pvalue) suggests Volcano', function () {
+  var de = {
+    y: { vars: ['log2FC', 'pvalue'], smps: ['g1', 'g2', 'g3'],
+      data: [[-2.1, 1.5, 0.2], [0.001, 0.04, 0.6]] }
+  };
+  var shapes = detectDataShapes(de);
+  assert.ok(shapes.some(function (s) { return s.graphType === 'Volcano'; }));
+});
+
+test('detectDataShapes: alteration-token matrix suggests Oncoprint', function () {
+  var onco = {
+    y: { vars: ['S1', 'S2', 'S3'], smps: ['TP53', 'KRAS'],
+      data: [['MUT', 'AMP;MUT', ''], ['', 'HOMDEL', 'MUT']] }
+  };
+  assert.equal(suggestPanelType(onco).graphType, 'Oncoprint');
+});
+
+test('detectDataShapes: wide numeric matrix suggests Heatmap (expression)', function () {
+  var expr = {
+    y: { vars: ['S1', 'S2', 'S3', 'S4'], smps: ['g1', 'g2', 'g3', 'g4', 'g5'],
+      data: [[1, 2, 3, 4], [2, 3, 4, 5], [5, 4, 3, 2], [1, 1, 1, 1], [9, 8, 7, 6]] }
+  };
+  assert.equal(suggestPanelType(expr).graphType, 'Heatmap');
+});
+
+test('detectDataShapes: an ordinary business table suggests nothing scientific', function () {
+  assert.deepEqual(detectDataShapes(DATA), []);
+});
+
+// ---- Scientific panel presets (P2) ----------------------------------------
+
+import { WIZARD_SCIENCE_TYPES, scientificFieldsFor, buildScientificConfig } from '../src/wizard.js';
+
+test('WIZARD_SCIENCE_TYPES: the five presets, kept out of WIZARD_CHART_TYPES', function () {
+  ['KaplanMeier', 'Oncoprint', 'Heatmap', 'Manhattan', 'Volcano'].forEach(function (t) {
+    assert.ok(WIZARD_SCIENCE_TYPES.indexOf(t) !== -1, t);
+    assert.equal(WIZARD_CHART_TYPES.indexOf(t), -1, t + ' must not be in WIZARD_CHART_TYPES');
+  });
+});
+
+test('buildScientificConfig: KaplanMeier puts time on X, event on Y, group on colorBy, CI/log-rank/risk defaults', function () {
+  var surv = {
+    y: { vars: ['time', 'status'], smps: ['p1', 'p2'], data: [[5, 12], [1, 0]] },
+    x: { arm: ['A', 'B'] }
+  };
+  var cfg = buildScientificConfig('KaplanMeier', { time: 'time', event: 'status', group: 'arm' }, null, surv);
+  assert.equal(cfg.graphType, 'KaplanMeier');
+  assert.deepEqual(cfg.xAxis, ['time']);     // time on X
+  assert.deepEqual(cfg.yAxis, ['status']);   // event on Y (geomKaplanMeier pairs [time, event])
+  assert.equal(cfg.colorBy, 'arm');
+  assert.equal(cfg.showKMConfidenceIntervals, true);
+  assert.equal(cfg.kmPvalue, true);
+  assert.equal(cfg.kmRiskTable, true);
+});
+
+test('buildScientificConfig: Heatmap clusters both axes (dendrograms) with a spectrum', function () {
+  var cfg = buildScientificConfig('Heatmap', {}, null, { y: { vars: ['a'], smps: ['x'], data: [[1]] } });
+  assert.equal(cfg.graphType, 'Heatmap');
+  assert.equal(cfg.samplesClustered, true);
+  assert.equal(cfg.variablesClustered, true);
+  assert.ok(Array.isArray(cfg.colorSpectrum));
+});
+
+test('buildScientificConfig: Manhattan points its marker keys at the chosen columns', function () {
+  var cfg = buildScientificConfig('Manhattan', { chr: 'chr', pos: 'pos', p: 'p' }, null,
+    { y: { vars: ['pos', 'p'], smps: ['rs1'], data: [[1000], [0.01]] }, x: { chr: ['1'] } });
+  assert.equal(cfg.graphType, 'Manhattan');
+  assert.equal(cfg.manhattanMarkerChromosomeNumber, 'chr');
+  assert.equal(cfg.manhattanMarkerPosition, 'pos');
+  assert.equal(cfg.manhattanMarkerLogPValue, 'p');
+});
+
+test('buildScientificConfig: Volcano (native alias) maps fold-change to X, p to Y; no fabricated thresholds', function () {
+  var cfg = buildScientificConfig('Volcano', { fc: 'log2FC', p: 'pvalue' }, null,
+    { y: { vars: ['log2FC', 'pvalue'], smps: ['g1'], data: [[-2], [0.001]] } });
+  assert.equal(cfg.graphType, 'Volcano');
+  assert.deepEqual(cfg.xAxis, ['log2FC']);
+  assert.deepEqual(cfg.yAxis, ['pvalue']);
+  assert.equal(cfg.decorations, undefined);
+});
+
+test('buildScientificConfig: extra config wins over preset defaults', function () {
+  var cfg = buildScientificConfig('Heatmap', {}, { samplesClustered: false }, { y: { vars: ['a'], smps: ['x'], data: [[1]] } });
+  assert.equal(cfg.samplesClustered, false);
+});
+
+test('scientificFieldsFor: matrix panels take no fields; KM takes time/event/group', function () {
+  assert.deepEqual(scientificFieldsFor('Oncoprint'), []);
+  assert.deepEqual(scientificFieldsFor('Heatmap'), []);
+  assert.deepEqual(scientificFieldsFor('KaplanMeier').map(function (f) { return f.key; }), ['time', 'event', 'group']);
+});

@@ -17,7 +17,7 @@
  */
 
 /** @type {string} */
-var uiTokenCss = ":where(:root) { --cx-color-white: #ffffff; --cx-color-black: #000000; --cx-color-gray-25: #f7f8fa; --cx-color-gray-50: #f2f4f7; --cx-color-gray-100: #e6e8ec; --cx-color-gray-200: #d0d4da; --cx-color-gray-300: #b9c0cb; --cx-color-gray-400: #8a9099; --cx-color-gray-500: #6b7280; --cx-color-gray-600: #57606a; --cx-color-gray-700: #3a414c; --cx-color-gray-800: #2a2f36; --cx-color-gray-850: #23262d; --cx-color-gray-900: #1b1e24; --cx-color-gray-950: #0e1013; --cx-color-indigo-100: #dce2ff; --cx-color-indigo-300: #8a99ff; --cx-color-indigo-400: #7b8cff; --cx-color-indigo-500: #5369ff; --cx-color-indigo-600: #3d58ff; --cx-color-indigo-700: #2f44d6; --cx-color-indigo-a10: rgba(83, 105, 255, 0.1); --cx-color-indigo-a20: rgba(83, 105, 255, 0.2); --cx-color-indigo-dark-a20: rgba(123, 140, 255, 0.2); --cx-color-blue-300: #8cc4f2; --cx-color-blue-400: #4c9fe0; --cx-color-blue-500: #087ad1; --cx-color-blue-700: #065fa3; --cx-color-blue-a15: rgba(8, 122, 209, 0.15); --cx-color-red-50: #fce8e6; --cx-color-red-400: #f07167; --cx-color-red-600: #c0392b; --cx-color-green-50: #e6f4ea; --cx-color-green-400: #4caf50; --cx-color-green-700: #2e7d32; --cx-color-amber-50: #fff7e0; --cx-color-amber-300: #fcd34d; --cx-color-amber-500: #b26a00; --cx-color-amber-800: #92400e; --cx-color-black-a35: rgba(0, 0, 0, 0.35); --cx-color-black-a55: rgba(0, 0, 0, 0.55); --cx-radius-none: 0; --cx-radius-sm: 4px; --cx-radius-md: 6px; --cx-radius-lg: 10px; --cx-radius-pill: 999px; --cx-radius-round: 50%; --cx-space-0: 0; --cx-space-1: 2px; --cx-space-2: 4px; --cx-space-3: 6px; --cx-space-4: 8px; --cx-space-5: 10px; --cx-space-6: 12px; --cx-space-7: 16px; --cx-space-8: 20px; --cx-space-9: 24px; --cx-space-10: 32px; --cx-font-sans: system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", \"Liberation Sans\", Arial, sans-serif; --cx-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, \"Liberation Mono\", monospace; --cx-font-size-xs: 11px; --cx-font-size-sm: 12px; --cx-font-size-md: 13px; --cx-font-size-lg: 14px; --cx-font-size-xl: 16px; --cx-font-size-2xl: 20px; --cx-font-weight-regular: 400; --cx-font-weight-medium: 500; --cx-font-weight-bold: 700; --cx-line-height-tight: 1.2; --cx-line-height-base: 1.45; --cx-line-height-loose: 1.6; --cx-shadow-1: 0 2px 8px rgba(0, 0, 0, 0.12); --cx-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.18); --cx-shadow-3: 0 4px 20px rgba(0, 0, 0, 0.3); --cx-duration-fast: 0.15s; --cx-duration-base: 0.3s; --cx-duration-slow: 0.5s; --cx-z-behind: -1; --cx-z-base: 1; --cx-z-raised: 10; --cx-z-toolbar: 1000; --cx-z-toolbar-edge: 1001; --cx-z-footer-link: 1002; --cx-z-resizer: 2000; --cx-z-fullscreen: 9999; --cx-z-panel: 10000; --cx-z-panel-active: 10001; --cx-z-popover: 10002; --cx-z-popover-high: 10006; --cx-z-modal: 100000; --cx-z-modal-popover: 100001; --cx-z-tooltip: 1000000; --cx-ui-surface: var(--cx-color-white); --cx-ui-surface-alt: var(--cx-color-gray-25); --cx-ui-surface-sunken: var(--cx-color-gray-50); --cx-ui-surface-raised: var(--cx-color-white); --cx-ui-chrome: var(--cx-color-white); --cx-ui-chrome-border: var(--cx-color-gray-100); --cx-ui-on-chrome: var(--cx-color-gray-900); --cx-ui-chrome-strong: var(--cx-color-white); --cx-ui-on-chrome-strong: var(--cx-color-gray-900); --cx-ui-text: var(--cx-color-gray-900); --cx-ui-text-muted: var(--cx-color-gray-600); --cx-ui-text-subtle: var(--cx-color-gray-400); --cx-ui-border: var(--cx-color-gray-200); --cx-ui-border-subtle: var(--cx-color-gray-100); --cx-ui-divider: var(--cx-color-gray-100); --cx-ui-border-accent: var(--cx-color-indigo-500); --cx-ui-accent: var(--cx-color-indigo-500); --cx-ui-accent-strong: var(--cx-color-indigo-600); --cx-ui-accent-hover: var(--cx-color-indigo-700); --cx-ui-accent-tint: var(--cx-color-indigo-a20); --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10); --cx-ui-on-accent: var(--cx-color-white); --cx-ui-focus: var(--cx-color-indigo-600); --cx-ui-info: var(--cx-color-blue-500); --cx-ui-info-strong: var(--cx-color-blue-700); --cx-ui-info-tint: var(--cx-color-blue-a15); --cx-ui-danger: var(--cx-color-red-600); --cx-ui-danger-tint: var(--cx-color-red-50); --cx-ui-success: var(--cx-color-green-700); --cx-ui-success-tint: var(--cx-color-green-50); --cx-ui-warning: var(--cx-color-amber-500); --cx-ui-warning-strong: var(--cx-color-amber-800); --cx-ui-warning-tint: var(--cx-color-amber-50); --cx-ui-backdrop: var(--cx-color-black-a35); --cx-ui-scrollbar-track: var(--cx-color-white); --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50); --cx-ui-scrollbar-thumb: var(--cx-color-gray-200); --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400); --cx-ui-control-on: var(--cx-color-indigo-500); --cx-ui-active-cell: var(--cx-color-indigo-100); --cx-ui-code-key: rgb(215, 48, 39); --cx-ui-code-value: rgb(69, 117, 180); --cx-ui-code-string: rgb(168, 82, 2); --cx-ui-code-boolean: rgb(102, 102, 0); --cx-ui-code-comment: rgb(58, 115, 0); }\n:root {\n  --cx-ui-dark-ref-surface: var(--cx-color-gray-900);\n  --cx-ui-dark-ref-accent: var(--cx-color-indigo-400);\n  --cx-ui-dark-ref-accent-strong: var(--cx-color-indigo-300);\n  --cx-ui-dark-ref-accent-tint: var(--cx-color-indigo-dark-a20);\n}\n:where([data-cx-ui-theme=\"light\"]) {\n  color-scheme: light;\n  --cx-ui-surface: var(--cx-color-white);\n  --cx-ui-surface-alt: var(--cx-color-gray-25);\n  --cx-ui-surface-sunken: var(--cx-color-gray-50);\n  --cx-ui-surface-raised: var(--cx-color-white);\n  --cx-ui-chrome: var(--cx-color-white);\n  --cx-ui-chrome-border: var(--cx-color-gray-100);\n  --cx-ui-on-chrome: var(--cx-color-gray-900);\n  --cx-ui-chrome-strong: var(--cx-color-white);\n  --cx-ui-on-chrome-strong: var(--cx-color-gray-900);\n  --cx-ui-text: var(--cx-color-gray-900);\n  --cx-ui-text-muted: var(--cx-color-gray-600);\n  --cx-ui-text-subtle: var(--cx-color-gray-400);\n  --cx-ui-border: var(--cx-color-gray-200);\n  --cx-ui-border-subtle: var(--cx-color-gray-100);\n  --cx-ui-divider: var(--cx-color-gray-100);\n  --cx-ui-border-accent: var(--cx-color-indigo-500);\n  --cx-ui-accent: var(--cx-color-indigo-500);\n  --cx-ui-accent-strong: var(--cx-color-indigo-600);\n  --cx-ui-accent-hover: var(--cx-color-indigo-700);\n  --cx-ui-accent-tint: var(--cx-color-indigo-a20);\n  --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10);\n  --cx-ui-on-accent: var(--cx-color-white);\n  --cx-ui-focus: var(--cx-color-indigo-600);\n  --cx-ui-info: var(--cx-color-blue-500);\n  --cx-ui-info-strong: var(--cx-color-blue-700);\n  --cx-ui-info-tint: var(--cx-color-blue-a15);\n  --cx-ui-danger: var(--cx-color-red-600);\n  --cx-ui-danger-tint: var(--cx-color-red-50);\n  --cx-ui-success: var(--cx-color-green-700);\n  --cx-ui-success-tint: var(--cx-color-green-50);\n  --cx-ui-warning: var(--cx-color-amber-500);\n  --cx-ui-warning-strong: var(--cx-color-amber-800);\n  --cx-ui-warning-tint: var(--cx-color-amber-50);\n  --cx-ui-backdrop: var(--cx-color-black-a35);\n  --cx-ui-scrollbar-track: var(--cx-color-white);\n  --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50);\n  --cx-ui-scrollbar-thumb: var(--cx-color-gray-200);\n  --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400);\n  --cx-ui-control-on: var(--cx-color-indigo-500);\n  --cx-ui-active-cell: var(--cx-color-indigo-100);\n  --cx-ui-code-key: rgb(215, 48, 39);\n  --cx-ui-code-value: rgb(69, 117, 180);\n  --cx-ui-code-string: rgb(168, 82, 2);\n  --cx-ui-code-boolean: rgb(102, 102, 0);\n  --cx-ui-code-comment: rgb(58, 115, 0);\n}\n@media (prefers-color-scheme: light) {\n  :where([data-cx-ui-theme=\"auto\"]) {\n    color-scheme: light;\n    --cx-ui-surface: var(--cx-color-white);\n    --cx-ui-surface-alt: var(--cx-color-gray-25);\n    --cx-ui-surface-sunken: var(--cx-color-gray-50);\n    --cx-ui-surface-raised: var(--cx-color-white);\n    --cx-ui-chrome: var(--cx-color-white);\n    --cx-ui-chrome-border: var(--cx-color-gray-100);\n    --cx-ui-on-chrome: var(--cx-color-gray-900);\n    --cx-ui-chrome-strong: var(--cx-color-white);\n    --cx-ui-on-chrome-strong: var(--cx-color-gray-900);\n    --cx-ui-text: var(--cx-color-gray-900);\n    --cx-ui-text-muted: var(--cx-color-gray-600);\n    --cx-ui-text-subtle: var(--cx-color-gray-400);\n    --cx-ui-border: var(--cx-color-gray-200);\n    --cx-ui-border-subtle: var(--cx-color-gray-100);\n    --cx-ui-divider: var(--cx-color-gray-100);\n    --cx-ui-border-accent: var(--cx-color-indigo-500);\n    --cx-ui-accent: var(--cx-color-indigo-500);\n    --cx-ui-accent-strong: var(--cx-color-indigo-600);\n    --cx-ui-accent-hover: var(--cx-color-indigo-700);\n    --cx-ui-accent-tint: var(--cx-color-indigo-a20);\n    --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10);\n    --cx-ui-on-accent: var(--cx-color-white);\n    --cx-ui-focus: var(--cx-color-indigo-600);\n    --cx-ui-info: var(--cx-color-blue-500);\n    --cx-ui-info-strong: var(--cx-color-blue-700);\n    --cx-ui-info-tint: var(--cx-color-blue-a15);\n    --cx-ui-danger: var(--cx-color-red-600);\n    --cx-ui-danger-tint: var(--cx-color-red-50);\n    --cx-ui-success: var(--cx-color-green-700);\n    --cx-ui-success-tint: var(--cx-color-green-50);\n    --cx-ui-warning: var(--cx-color-amber-500);\n    --cx-ui-warning-strong: var(--cx-color-amber-800);\n    --cx-ui-warning-tint: var(--cx-color-amber-50);\n    --cx-ui-backdrop: var(--cx-color-black-a35);\n    --cx-ui-scrollbar-track: var(--cx-color-white);\n    --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50);\n    --cx-ui-scrollbar-thumb: var(--cx-color-gray-200);\n    --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400);\n    --cx-ui-control-on: var(--cx-color-indigo-500);\n    --cx-ui-active-cell: var(--cx-color-indigo-100);\n    --cx-ui-code-key: rgb(215, 48, 39);\n    --cx-ui-code-value: rgb(69, 117, 180);\n    --cx-ui-code-string: rgb(168, 82, 2);\n    --cx-ui-code-boolean: rgb(102, 102, 0);\n    --cx-ui-code-comment: rgb(58, 115, 0);\n  }\n}\n:where([data-cx-ui-theme=\"dark\"],\n  [data-cx-ui-theme=\"dark\"] [data-cx-ui-scope]:not([data-cx-ui-theme=\"light\"]):not([data-cx-ui-theme=\"auto\"])) {\n  color-scheme: dark;\n  --cx-ui-surface: var(--cx-color-gray-900) !important;\n  --cx-ui-surface-alt: var(--cx-color-gray-850) !important;\n  --cx-ui-surface-sunken: var(--cx-color-gray-950) !important;\n  --cx-ui-surface-raised: var(--cx-color-gray-850) !important;\n  --cx-ui-chrome: var(--cx-color-gray-850) !important;\n  --cx-ui-chrome-border: var(--cx-color-gray-800) !important;\n  --cx-ui-on-chrome: var(--cx-color-gray-100) !important;\n  --cx-ui-chrome-strong: var(--cx-color-gray-850) !important;\n  --cx-ui-on-chrome-strong: var(--cx-color-gray-100) !important;\n  --cx-ui-text: var(--cx-color-gray-100) !important;\n  --cx-ui-text-muted: var(--cx-color-gray-400) !important;\n  --cx-ui-text-subtle: var(--cx-color-gray-500) !important;\n  --cx-ui-border: var(--cx-color-gray-700) !important;\n  --cx-ui-border-subtle: var(--cx-color-gray-800) !important;\n  --cx-ui-divider: var(--cx-color-gray-800) !important;\n  --cx-ui-border-accent: var(--cx-ui-dark-border-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n  --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent-tint: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n  --cx-ui-accent-tint-subtle: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n  --cx-ui-on-accent: var(--cx-color-gray-950) !important;\n  --cx-ui-focus: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n  --cx-ui-info: var(--cx-color-blue-400) !important;\n  --cx-ui-info-strong: var(--cx-color-blue-300) !important;\n  --cx-ui-info-tint: var(--cx-color-blue-a15) !important;\n  --cx-ui-danger: var(--cx-color-red-400) !important;\n  --cx-ui-danger-tint: rgba(240, 113, 103, 0.15) !important;\n  --cx-ui-success: var(--cx-color-green-400) !important;\n  --cx-ui-success-tint: rgba(76, 175, 80, 0.15) !important;\n  --cx-ui-warning: var(--cx-color-amber-300) !important;\n  --cx-ui-warning-strong: var(--cx-color-amber-300) !important;\n  --cx-ui-warning-tint: rgba(252, 211, 77, 0.12) !important;\n  --cx-ui-backdrop: var(--cx-color-black-a55) !important;\n  --cx-ui-scrollbar-track: var(--cx-color-gray-900) !important;\n  --cx-ui-scrollbar-track-alt: var(--cx-color-gray-850) !important;\n  --cx-ui-scrollbar-thumb: var(--cx-color-gray-700) !important;\n  --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-500) !important;\n  --cx-ui-control-on: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-active-cell: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-code-key: #ff7b72 !important;\n  --cx-ui-code-value: #79c0ff !important;\n  --cx-ui-code-string: #ffa657 !important;\n  --cx-ui-code-boolean: #e3d26f !important;\n  --cx-ui-code-comment: #7ee787 !important;\n}\n@media (prefers-color-scheme: dark) {\n  :where([data-cx-ui-theme=\"auto\"],\n    [data-cx-ui-theme=\"auto\"] [data-cx-ui-scope]:not([data-cx-ui-theme=\"light\"]):not([data-cx-ui-theme=\"dark\"])) {\n    color-scheme: dark;\n    --cx-ui-surface: var(--cx-color-gray-900) !important;\n    --cx-ui-surface-alt: var(--cx-color-gray-850) !important;\n    --cx-ui-surface-sunken: var(--cx-color-gray-950) !important;\n    --cx-ui-surface-raised: var(--cx-color-gray-850) !important;\n    --cx-ui-chrome: var(--cx-color-gray-850) !important;\n    --cx-ui-chrome-border: var(--cx-color-gray-800) !important;\n    --cx-ui-on-chrome: var(--cx-color-gray-100) !important;\n    --cx-ui-chrome-strong: var(--cx-color-gray-850) !important;\n    --cx-ui-on-chrome-strong: var(--cx-color-gray-100) !important;\n    --cx-ui-text: var(--cx-color-gray-100) !important;\n    --cx-ui-text-muted: var(--cx-color-gray-400) !important;\n    --cx-ui-text-subtle: var(--cx-color-gray-500) !important;\n    --cx-ui-border: var(--cx-color-gray-700) !important;\n    --cx-ui-border-subtle: var(--cx-color-gray-800) !important;\n    --cx-ui-divider: var(--cx-color-gray-800) !important;\n    --cx-ui-border-accent: var(--cx-ui-dark-border-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n    --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent-tint: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n    --cx-ui-accent-tint-subtle: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n    --cx-ui-on-accent: var(--cx-color-gray-950) !important;\n    --cx-ui-focus: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n    --cx-ui-info: var(--cx-color-blue-400) !important;\n    --cx-ui-info-strong: var(--cx-color-blue-300) !important;\n    --cx-ui-info-tint: var(--cx-color-blue-a15) !important;\n    --cx-ui-danger: var(--cx-color-red-400) !important;\n    --cx-ui-danger-tint: rgba(240, 113, 103, 0.15) !important;\n    --cx-ui-success: var(--cx-color-green-400) !important;\n    --cx-ui-success-tint: rgba(76, 175, 80, 0.15) !important;\n    --cx-ui-warning: var(--cx-color-amber-300) !important;\n    --cx-ui-warning-strong: var(--cx-color-amber-300) !important;\n    --cx-ui-warning-tint: rgba(252, 211, 77, 0.12) !important;\n    --cx-ui-backdrop: var(--cx-color-black-a55) !important;\n    --cx-ui-scrollbar-track: var(--cx-color-gray-900) !important;\n    --cx-ui-scrollbar-track-alt: var(--cx-color-gray-850) !important;\n    --cx-ui-scrollbar-thumb: var(--cx-color-gray-700) !important;\n    --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-500) !important;\n    --cx-ui-control-on: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-active-cell: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-code-key: #ff7b72 !important;\n    --cx-ui-code-value: #79c0ff !important;\n    --cx-ui-code-string: #ffa657 !important;\n    --cx-ui-code-boolean: #e3d26f !important;\n    --cx-ui-code-comment: #7ee787 !important;\n  }\n}";
+var uiTokenCss = ":where(:root) { --cx-color-white: #ffffff; --cx-color-black: #000000; --cx-color-gray-25: #f7f8fa; --cx-color-gray-50: #f2f4f7; --cx-color-gray-100: #e6e8ec; --cx-color-gray-200: #d0d4da; --cx-color-gray-300: #b9c0cb; --cx-color-gray-400: #8a9099; --cx-color-gray-500: #6b7280; --cx-color-gray-600: #57606a; --cx-color-gray-700: #3a414c; --cx-color-gray-800: #2a2f36; --cx-color-gray-850: #23262d; --cx-color-gray-900: #1b1e24; --cx-color-gray-950: #0e1013; --cx-color-indigo-100: #dce2ff; --cx-color-indigo-300: #8a99ff; --cx-color-indigo-400: #7b8cff; --cx-color-indigo-500: #5369ff; --cx-color-indigo-600: #3d58ff; --cx-color-indigo-700: #2f44d6; --cx-color-indigo-a10: rgba(83, 105, 255, 0.1); --cx-color-indigo-a20: rgba(83, 105, 255, 0.2); --cx-color-indigo-dark-a20: rgba(123, 140, 255, 0.2); --cx-color-blue-300: #8cc4f2; --cx-color-blue-400: #4c9fe0; --cx-color-blue-500: #087ad1; --cx-color-blue-700: #065fa3; --cx-color-blue-a15: rgba(8, 122, 209, 0.15); --cx-color-red-50: #fce8e6; --cx-color-red-400: #f07167; --cx-color-red-600: #c0392b; --cx-color-green-50: #e6f4ea; --cx-color-green-400: #4caf50; --cx-color-green-700: #2e7d32; --cx-color-amber-50: #fff7e0; --cx-color-amber-300: #fcd34d; --cx-color-amber-500: #b26a00; --cx-color-amber-800: #92400e; --cx-color-black-a35: rgba(0, 0, 0, 0.35); --cx-color-black-a55: rgba(0, 0, 0, 0.55); --cx-color-brand-add: #00b4df; --cx-color-brand-interact: #ffaa4f; --cx-color-brand-data: #eb0000; --cx-color-brand-add-a14: rgba(0, 180, 223, 0.14); --cx-color-brand-interact-a18: rgba(255, 170, 79, 0.18); --cx-color-brand-data-a12: rgba(235, 0, 0, 0.12); --cx-radius-none: 0; --cx-radius-sm: 4px; --cx-radius-md: 6px; --cx-radius-lg: 10px; --cx-radius-pill: 999px; --cx-radius-round: 50%; --cx-space-0: 0; --cx-space-1: 2px; --cx-space-2: 4px; --cx-space-3: 6px; --cx-space-4: 8px; --cx-space-5: 10px; --cx-space-6: 12px; --cx-space-7: 16px; --cx-space-8: 20px; --cx-space-9: 24px; --cx-space-10: 32px; --cx-font-sans: system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", \"Liberation Sans\", Arial, sans-serif; --cx-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, \"Liberation Mono\", monospace; --cx-font-size-xs: 11px; --cx-font-size-sm: 12px; --cx-font-size-md: 13px; --cx-font-size-lg: 14px; --cx-font-size-xl: 16px; --cx-font-size-2xl: 20px; --cx-font-weight-regular: 400; --cx-font-weight-medium: 500; --cx-font-weight-bold: 700; --cx-line-height-tight: 1.2; --cx-line-height-base: 1.45; --cx-line-height-loose: 1.6; --cx-shadow-1: 0 2px 8px rgba(0, 0, 0, 0.12); --cx-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.18); --cx-shadow-3: 0 4px 20px rgba(0, 0, 0, 0.3); --cx-duration-fast: 0.15s; --cx-duration-base: 0.3s; --cx-duration-slow: 0.5s; --cx-z-behind: -1; --cx-z-base: 1; --cx-z-raised: 10; --cx-z-toolbar: 1000; --cx-z-toolbar-edge: 1001; --cx-z-footer-link: 1002; --cx-z-resizer: 2000; --cx-z-fullscreen: 9999; --cx-z-panel: 10000; --cx-z-panel-active: 10001; --cx-z-popover: 10002; --cx-z-popover-high: 10006; --cx-z-modal: 100000; --cx-z-modal-popover: 100001; --cx-z-tooltip: 1000000; --cx-ui-surface: var(--cx-color-white); --cx-ui-surface-alt: var(--cx-color-gray-25); --cx-ui-surface-sunken: var(--cx-color-gray-50); --cx-ui-surface-raised: var(--cx-color-white); --cx-ui-chrome: var(--cx-color-white); --cx-ui-chrome-border: var(--cx-color-gray-100); --cx-ui-on-chrome: var(--cx-color-gray-900); --cx-ui-chrome-strong: var(--cx-color-white); --cx-ui-on-chrome-strong: var(--cx-color-gray-900); --cx-ui-text: var(--cx-color-gray-900); --cx-ui-text-muted: var(--cx-color-gray-600); --cx-ui-text-subtle: var(--cx-color-gray-400); --cx-ui-border: var(--cx-color-gray-200); --cx-ui-border-subtle: var(--cx-color-gray-100); --cx-ui-divider: var(--cx-color-gray-100); --cx-ui-border-accent: var(--cx-color-indigo-500); --cx-ui-accent: var(--cx-color-indigo-500); --cx-ui-accent-strong: var(--cx-color-indigo-600); --cx-ui-accent-hover: var(--cx-color-indigo-700); --cx-ui-accent-tint: var(--cx-color-indigo-a20); --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10); --cx-ui-on-accent: var(--cx-color-white); --cx-ui-focus: var(--cx-color-indigo-600); --cx-ui-info: var(--cx-color-blue-500); --cx-ui-info-strong: var(--cx-color-blue-700); --cx-ui-info-tint: var(--cx-color-blue-a15); --cx-ui-danger: var(--cx-color-red-600); --cx-ui-danger-tint: var(--cx-color-red-50); --cx-ui-success: var(--cx-color-green-700); --cx-ui-success-tint: var(--cx-color-green-50); --cx-ui-warning: var(--cx-color-amber-500); --cx-ui-warning-strong: var(--cx-color-amber-800); --cx-ui-warning-tint: var(--cx-color-amber-50); --cx-ui-backdrop: var(--cx-color-black-a35); --cx-ui-scrollbar-track: var(--cx-color-white); --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50); --cx-ui-scrollbar-thumb: var(--cx-color-gray-200); --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400); --cx-ui-control-on: var(--cx-color-indigo-500); --cx-ui-active-cell: var(--cx-color-indigo-100); --cx-ui-code-key: rgb(215, 48, 39); --cx-ui-code-value: rgb(69, 117, 180); --cx-ui-code-string: rgb(168, 82, 2); --cx-ui-code-boolean: rgb(102, 102, 0); --cx-ui-code-comment: rgb(58, 115, 0); }\n:root {\n  --cx-ui-dark-ref-surface: var(--cx-color-gray-900);\n  --cx-ui-dark-ref-accent: var(--cx-color-indigo-400);\n  --cx-ui-dark-ref-accent-strong: var(--cx-color-indigo-300);\n  --cx-ui-dark-ref-accent-tint: var(--cx-color-indigo-dark-a20);\n}\n:where([data-cx-ui-theme=\"light\"]) {\n  color-scheme: light;\n  --cx-ui-surface: var(--cx-color-white);\n  --cx-ui-surface-alt: var(--cx-color-gray-25);\n  --cx-ui-surface-sunken: var(--cx-color-gray-50);\n  --cx-ui-surface-raised: var(--cx-color-white);\n  --cx-ui-chrome: var(--cx-color-white);\n  --cx-ui-chrome-border: var(--cx-color-gray-100);\n  --cx-ui-on-chrome: var(--cx-color-gray-900);\n  --cx-ui-chrome-strong: var(--cx-color-white);\n  --cx-ui-on-chrome-strong: var(--cx-color-gray-900);\n  --cx-ui-text: var(--cx-color-gray-900);\n  --cx-ui-text-muted: var(--cx-color-gray-600);\n  --cx-ui-text-subtle: var(--cx-color-gray-400);\n  --cx-ui-border: var(--cx-color-gray-200);\n  --cx-ui-border-subtle: var(--cx-color-gray-100);\n  --cx-ui-divider: var(--cx-color-gray-100);\n  --cx-ui-border-accent: var(--cx-color-indigo-500);\n  --cx-ui-accent: var(--cx-color-indigo-500);\n  --cx-ui-accent-strong: var(--cx-color-indigo-600);\n  --cx-ui-accent-hover: var(--cx-color-indigo-700);\n  --cx-ui-accent-tint: var(--cx-color-indigo-a20);\n  --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10);\n  --cx-ui-on-accent: var(--cx-color-white);\n  --cx-ui-focus: var(--cx-color-indigo-600);\n  --cx-ui-info: var(--cx-color-blue-500);\n  --cx-ui-info-strong: var(--cx-color-blue-700);\n  --cx-ui-info-tint: var(--cx-color-blue-a15);\n  --cx-ui-danger: var(--cx-color-red-600);\n  --cx-ui-danger-tint: var(--cx-color-red-50);\n  --cx-ui-success: var(--cx-color-green-700);\n  --cx-ui-success-tint: var(--cx-color-green-50);\n  --cx-ui-warning: var(--cx-color-amber-500);\n  --cx-ui-warning-strong: var(--cx-color-amber-800);\n  --cx-ui-warning-tint: var(--cx-color-amber-50);\n  --cx-ui-backdrop: var(--cx-color-black-a35);\n  --cx-ui-scrollbar-track: var(--cx-color-white);\n  --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50);\n  --cx-ui-scrollbar-thumb: var(--cx-color-gray-200);\n  --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400);\n  --cx-ui-control-on: var(--cx-color-indigo-500);\n  --cx-ui-active-cell: var(--cx-color-indigo-100);\n  --cx-ui-code-key: rgb(215, 48, 39);\n  --cx-ui-code-value: rgb(69, 117, 180);\n  --cx-ui-code-string: rgb(168, 82, 2);\n  --cx-ui-code-boolean: rgb(102, 102, 0);\n  --cx-ui-code-comment: rgb(58, 115, 0);\n}\n@media (prefers-color-scheme: light) {\n  :where([data-cx-ui-theme=\"auto\"]) {\n    color-scheme: light;\n    --cx-ui-surface: var(--cx-color-white);\n    --cx-ui-surface-alt: var(--cx-color-gray-25);\n    --cx-ui-surface-sunken: var(--cx-color-gray-50);\n    --cx-ui-surface-raised: var(--cx-color-white);\n    --cx-ui-chrome: var(--cx-color-white);\n    --cx-ui-chrome-border: var(--cx-color-gray-100);\n    --cx-ui-on-chrome: var(--cx-color-gray-900);\n    --cx-ui-chrome-strong: var(--cx-color-white);\n    --cx-ui-on-chrome-strong: var(--cx-color-gray-900);\n    --cx-ui-text: var(--cx-color-gray-900);\n    --cx-ui-text-muted: var(--cx-color-gray-600);\n    --cx-ui-text-subtle: var(--cx-color-gray-400);\n    --cx-ui-border: var(--cx-color-gray-200);\n    --cx-ui-border-subtle: var(--cx-color-gray-100);\n    --cx-ui-divider: var(--cx-color-gray-100);\n    --cx-ui-border-accent: var(--cx-color-indigo-500);\n    --cx-ui-accent: var(--cx-color-indigo-500);\n    --cx-ui-accent-strong: var(--cx-color-indigo-600);\n    --cx-ui-accent-hover: var(--cx-color-indigo-700);\n    --cx-ui-accent-tint: var(--cx-color-indigo-a20);\n    --cx-ui-accent-tint-subtle: var(--cx-color-indigo-a10);\n    --cx-ui-on-accent: var(--cx-color-white);\n    --cx-ui-focus: var(--cx-color-indigo-600);\n    --cx-ui-info: var(--cx-color-blue-500);\n    --cx-ui-info-strong: var(--cx-color-blue-700);\n    --cx-ui-info-tint: var(--cx-color-blue-a15);\n    --cx-ui-danger: var(--cx-color-red-600);\n    --cx-ui-danger-tint: var(--cx-color-red-50);\n    --cx-ui-success: var(--cx-color-green-700);\n    --cx-ui-success-tint: var(--cx-color-green-50);\n    --cx-ui-warning: var(--cx-color-amber-500);\n    --cx-ui-warning-strong: var(--cx-color-amber-800);\n    --cx-ui-warning-tint: var(--cx-color-amber-50);\n    --cx-ui-backdrop: var(--cx-color-black-a35);\n    --cx-ui-scrollbar-track: var(--cx-color-white);\n    --cx-ui-scrollbar-track-alt: var(--cx-color-gray-50);\n    --cx-ui-scrollbar-thumb: var(--cx-color-gray-200);\n    --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-400);\n    --cx-ui-control-on: var(--cx-color-indigo-500);\n    --cx-ui-active-cell: var(--cx-color-indigo-100);\n    --cx-ui-code-key: rgb(215, 48, 39);\n    --cx-ui-code-value: rgb(69, 117, 180);\n    --cx-ui-code-string: rgb(168, 82, 2);\n    --cx-ui-code-boolean: rgb(102, 102, 0);\n    --cx-ui-code-comment: rgb(58, 115, 0);\n  }\n}\n:where([data-cx-ui-theme=\"dark\"],\n  [data-cx-ui-theme=\"dark\"] [data-cx-ui-scope]:not([data-cx-ui-theme=\"light\"]):not([data-cx-ui-theme=\"auto\"])) {\n  color-scheme: dark;\n  --cx-ui-surface: var(--cx-color-gray-900) !important;\n  --cx-ui-surface-alt: var(--cx-color-gray-850) !important;\n  --cx-ui-surface-sunken: var(--cx-color-gray-950) !important;\n  --cx-ui-surface-raised: var(--cx-color-gray-850) !important;\n  --cx-ui-chrome: var(--cx-color-gray-850) !important;\n  --cx-ui-chrome-border: var(--cx-color-gray-800) !important;\n  --cx-ui-on-chrome: var(--cx-color-gray-100) !important;\n  --cx-ui-chrome-strong: var(--cx-color-gray-850) !important;\n  --cx-ui-on-chrome-strong: var(--cx-color-gray-100) !important;\n  --cx-ui-text: var(--cx-color-gray-100) !important;\n  --cx-ui-text-muted: var(--cx-color-gray-400) !important;\n  --cx-ui-text-subtle: var(--cx-color-gray-500) !important;\n  --cx-ui-border: var(--cx-color-gray-700) !important;\n  --cx-ui-border-subtle: var(--cx-color-gray-800) !important;\n  --cx-ui-divider: var(--cx-color-gray-800) !important;\n  --cx-ui-border-accent: var(--cx-ui-dark-border-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n  --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-accent-tint: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n  --cx-ui-accent-tint-subtle: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n  --cx-ui-on-accent: var(--cx-color-gray-950) !important;\n  --cx-ui-focus: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n  --cx-ui-info: var(--cx-color-blue-400) !important;\n  --cx-ui-info-strong: var(--cx-color-blue-300) !important;\n  --cx-ui-info-tint: var(--cx-color-blue-a15) !important;\n  --cx-ui-danger: var(--cx-color-red-400) !important;\n  --cx-ui-danger-tint: rgba(240, 113, 103, 0.15) !important;\n  --cx-ui-success: var(--cx-color-green-400) !important;\n  --cx-ui-success-tint: rgba(76, 175, 80, 0.15) !important;\n  --cx-ui-warning: var(--cx-color-amber-300) !important;\n  --cx-ui-warning-strong: var(--cx-color-amber-300) !important;\n  --cx-ui-warning-tint: rgba(252, 211, 77, 0.12) !important;\n  --cx-ui-backdrop: var(--cx-color-black-a55) !important;\n  --cx-ui-scrollbar-track: var(--cx-color-gray-900) !important;\n  --cx-ui-scrollbar-track-alt: var(--cx-color-gray-850) !important;\n  --cx-ui-scrollbar-thumb: var(--cx-color-gray-700) !important;\n  --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-500) !important;\n  --cx-ui-control-on: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-active-cell: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n  --cx-ui-code-key: #ff7b72 !important;\n  --cx-ui-code-value: #79c0ff !important;\n  --cx-ui-code-string: #ffa657 !important;\n  --cx-ui-code-boolean: #e3d26f !important;\n  --cx-ui-code-comment: #7ee787 !important;\n}\n@media (prefers-color-scheme: dark) {\n  :where([data-cx-ui-theme=\"auto\"],\n    [data-cx-ui-theme=\"auto\"] [data-cx-ui-scope]:not([data-cx-ui-theme=\"light\"]):not([data-cx-ui-theme=\"dark\"])) {\n    color-scheme: dark;\n    --cx-ui-surface: var(--cx-color-gray-900) !important;\n    --cx-ui-surface-alt: var(--cx-color-gray-850) !important;\n    --cx-ui-surface-sunken: var(--cx-color-gray-950) !important;\n    --cx-ui-surface-raised: var(--cx-color-gray-850) !important;\n    --cx-ui-chrome: var(--cx-color-gray-850) !important;\n    --cx-ui-chrome-border: var(--cx-color-gray-800) !important;\n    --cx-ui-on-chrome: var(--cx-color-gray-100) !important;\n    --cx-ui-chrome-strong: var(--cx-color-gray-850) !important;\n    --cx-ui-on-chrome-strong: var(--cx-color-gray-100) !important;\n    --cx-ui-text: var(--cx-color-gray-100) !important;\n    --cx-ui-text-muted: var(--cx-color-gray-400) !important;\n    --cx-ui-text-subtle: var(--cx-color-gray-500) !important;\n    --cx-ui-border: var(--cx-color-gray-700) !important;\n    --cx-ui-border-subtle: var(--cx-color-gray-800) !important;\n    --cx-ui-divider: var(--cx-color-gray-800) !important;\n    --cx-ui-border-accent: var(--cx-ui-dark-border-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent-strong: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n    --cx-ui-accent-hover: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-accent-tint: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n    --cx-ui-accent-tint-subtle: var(--cx-ui-dark-accent-tint, var(--cx-color-indigo-dark-a20)) !important;\n    --cx-ui-on-accent: var(--cx-color-gray-950) !important;\n    --cx-ui-focus: var(--cx-ui-dark-accent-strong, var(--cx-color-indigo-300)) !important;\n    --cx-ui-info: var(--cx-color-blue-400) !important;\n    --cx-ui-info-strong: var(--cx-color-blue-300) !important;\n    --cx-ui-info-tint: var(--cx-color-blue-a15) !important;\n    --cx-ui-danger: var(--cx-color-red-400) !important;\n    --cx-ui-danger-tint: rgba(240, 113, 103, 0.15) !important;\n    --cx-ui-success: var(--cx-color-green-400) !important;\n    --cx-ui-success-tint: rgba(76, 175, 80, 0.15) !important;\n    --cx-ui-warning: var(--cx-color-amber-300) !important;\n    --cx-ui-warning-strong: var(--cx-color-amber-300) !important;\n    --cx-ui-warning-tint: rgba(252, 211, 77, 0.12) !important;\n    --cx-ui-backdrop: var(--cx-color-black-a55) !important;\n    --cx-ui-scrollbar-track: var(--cx-color-gray-900) !important;\n    --cx-ui-scrollbar-track-alt: var(--cx-color-gray-850) !important;\n    --cx-ui-scrollbar-thumb: var(--cx-color-gray-700) !important;\n    --cx-ui-scrollbar-thumb-hover: var(--cx-color-gray-500) !important;\n    --cx-ui-control-on: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-active-cell: var(--cx-ui-dark-accent, var(--cx-color-indigo-400)) !important;\n    --cx-ui-code-key: #ff7b72 !important;\n    --cx-ui-code-value: #79c0ff !important;\n    --cx-ui-code-string: #ffa657 !important;\n    --cx-ui-code-boolean: #e3d26f !important;\n    --cx-ui-code-comment: #7ee787 !important;\n  }\n}";
 
 /* ==== src/styles.js ==== */
 /**
@@ -231,6 +231,10 @@ var dashboardCss = [
   // inline flex alignment (applyAlignment), which overrides this.
   '.cxd-panel-body { position: relative; flex: 1 1 auto; min-height: 0;',
   '  display: flex; align-items: center; justify-content: center; }',
+  // Provenance figure-legend footer: the auto-derived method line beneath a panel.
+  '.cxd-panel-footer { flex: 0 0 auto; padding: 4px 10px; font: 400 11.5px/1.4 var(--cxd-font);',
+  '  color: var(--cxd-muted); border-top: 1px solid var(--cxd-border); background: var(--cxd-title-bg);',
+  '  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
   '.cxd-text { width: 100%; height: 100%; padding: 5px 12px; overflow: auto;',
   '  font: 16px/1.35 var(--cxd-font); color: var(--cxd-title); white-space: pre-wrap; word-break: break-word; }',
   // Text elements are chrome-free by default (no border/background) so they sit
@@ -419,6 +423,19 @@ var dashboardCss = [
   // Builder buttons are .cX-Button (+ --primary) from canvasXpress.css (the shared UI primitive);
   // .cxb-btn only keeps the builder toolbar's size (so the builder layout does not move).
   '.cxb-btn { padding: 6px 13px; font-size: 16px; line-height: normal; }',
+  /* Toolbar buttons are colour-coded by kind with a left-edge accent (set in
+     builder.js), using the three primary colours of the CanvasXpress logo: add
+     content = brand blue, add interaction = brand orange, data tools = brand red.
+     These hues are design tokens (--cx-color-brand-*, the same on light and dark
+     toolbars) so they live in the token layer, not as literals here. A thick left
+     border carries the accent and hovering lifts a matching lighter tint; the
+     button fill otherwise stays the shared .cX-Button. */
+  '.cxb-bt-add { border-left: 4px solid var(--cx-color-brand-add); }',
+  '.cxb-bt-interact { border-left: 4px solid var(--cx-color-brand-interact); }',
+  '.cxb-bt-data { border-left: 4px solid var(--cx-color-brand-data); }',
+  '.cxb-bt-add:hover:not(:disabled) { background: var(--cx-color-brand-add-a14); }',
+  '.cxb-bt-interact:hover:not(:disabled) { background: var(--cx-color-brand-interact-a18); }',
+  '.cxb-bt-data:hover:not(:disabled) { background: var(--cx-color-brand-data-a12); }',
   // Toolbar inputs on the roles (dark follows the page's data-cx-ui-theme, not the OS)
   '.cxb-title-input, .cxb-tinput, .cxb-props select { background: var(--cx-ui-surface); color: var(--cx-ui-text); }',
   '.cxb-stage { width: 100%; min-width: 0; }',
@@ -657,12 +674,15 @@ function injectStyles(doc) {
  *  - `1.3` — source `calculatedFields`.
  *  - `1.4` — per-panel `actions` (drill-through): `setParam` / `setFilter` /
  *    `focusPanel` on a mark event, generalizing `clickParam` / `clickField`.
+ *  - `1.5` — reproducibility metadata: optional `panel.provenance`
+ *    (auto-derived method line, figure-legend footer) and `source.provenance`
+ *    (method / dataVersion / asOf / params snapshot).
  *
  * @module spec
  */
 
 /** @type {string} The format version this library writes. */
-var DASHBOARD_SCHEMA_VERSION = '1.4';
+var DASHBOARD_SCHEMA_VERSION = '1.5';
 
 /** @type {string} The URL of the published JSON Schema. */
 var DASHBOARD_SCHEMA_URL = 'https://canvasxpress.org/schema/dashboard.schema.json';
@@ -697,6 +717,12 @@ var MIGRATIONS = [
     from: '1.3',
     to: '1.4',
     description: 'Additive: per-panel actions (drill-through) (no rewrite)',
+    up: function (spec) { return spec; }
+  },
+  {
+    from: '1.4',
+    to: '1.5',
+    description: 'Additive: panel / source provenance (reproducibility metadata) (no rewrite)',
     up: function (spec) { return spec; }
   }
 ];
@@ -3811,6 +3837,623 @@ function pushdownQuery(pushdown, params, extraWhere) {
   return JSON.stringify(q);
 }
 
+/* ==== src/hash.js ==== */
+/**
+ * A small, dependency-free SHA-256 for content hashing — enough to stamp a
+ * reproducible bundle with a stable digest so a reviewer can tell two figures
+ * apart (same bytes in → same hex out, in Node and the browser alike). Not a
+ * security primitive; it is a content fingerprint.
+ *
+ * Standard FIPS 180-4 SHA-256 over UTF-8 bytes.
+ *
+ * @module hash
+ */
+
+/** @type {number[]} Round constants (first 32 bits of the cube roots of the first 64 primes). */
+var K = [
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+];
+
+/**
+ * Right-rotate a 32-bit value.
+ * @param {number} x - The value.
+ * @param {number} n - Bits to rotate.
+ * @returns {number} The rotated value.
+ * @private
+ */
+function rotr(x, n) {
+  return (x >>> n) | (x << (32 - n));
+}
+
+/**
+ * Encode a string as UTF-8 bytes (TextEncoder where present, else a manual
+ * fallback so the hash also runs outside a browser without polyfills).
+ * @param {string} str - The text.
+ * @returns {number[]} UTF-8 byte values.
+ * @private
+ */
+function utf8Bytes(str) {
+  if (typeof TextEncoder !== 'undefined') return Array.prototype.slice.call(new TextEncoder().encode(str));
+  var bytes = [];
+  for (var i = 0; i < str.length; i++) {
+    var code = str.charCodeAt(i);
+    if (code < 0x80) {
+      bytes.push(code);
+    } else if (code < 0x800) {
+      bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
+    } else {
+      bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+    }
+  }
+  return bytes;
+}
+
+/**
+ * Compute the SHA-256 of a string, as lower-case hex.
+ * @param {string} str - The input text.
+ * @returns {string} 64-character hex digest.
+ * @public
+ */
+function sha256Hex(str) {
+  var h = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  var bytes = utf8Bytes(str == null ? '' : String(str));
+  var bitLen = bytes.length * 8;
+
+  bytes.push(0x80);
+  while (bytes.length % 64 !== 56) bytes.push(0);
+  // 64-bit big-endian length (high word is 0 for our sizes).
+  var hi = Math.floor(bitLen / 0x100000000);
+  var lo = bitLen >>> 0;
+  bytes.push((hi >>> 24) & 0xff, (hi >>> 16) & 0xff, (hi >>> 8) & 0xff, hi & 0xff);
+  bytes.push((lo >>> 24) & 0xff, (lo >>> 16) & 0xff, (lo >>> 8) & 0xff, lo & 0xff);
+
+  var w = new Array(64);
+  for (var off = 0; off < bytes.length; off += 64) {
+    for (var i = 0; i < 16; i++) {
+      w[i] = (bytes[off + i * 4] << 24) | (bytes[off + i * 4 + 1] << 16) |
+        (bytes[off + i * 4 + 2] << 8) | (bytes[off + i * 4 + 3]);
+    }
+    for (var t = 16; t < 64; t++) {
+      var s0 = rotr(w[t - 15], 7) ^ rotr(w[t - 15], 18) ^ (w[t - 15] >>> 3);
+      var s1 = rotr(w[t - 2], 17) ^ rotr(w[t - 2], 19) ^ (w[t - 2] >>> 10);
+      w[t] = (w[t - 16] + s0 + w[t - 7] + s1) | 0;
+    }
+    var a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7];
+    for (var j = 0; j < 64; j++) {
+      var S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      var ch = (e & f) ^ (~e & g);
+      var temp1 = (hh + S1 + ch + K[j] + w[j]) | 0;
+      var S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      var maj = (a & b) ^ (a & c) ^ (b & c);
+      var temp2 = (S0 + maj) | 0;
+      hh = g; g = f; f = e; e = (d + temp1) | 0; d = c; c = b; b = a; a = (temp1 + temp2) | 0;
+    }
+    h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
+    h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
+  }
+
+  var hex = '';
+  for (var k = 0; k < 8; k++) {
+    hex += ('00000000' + (h[k] >>> 0).toString(16)).slice(-8);
+  }
+  return hex;
+}
+
+/* ==== src/zip.js ==== */
+/**
+ * A tiny, dependency-free ZIP writer (STORED / no compression). Enough to pack
+ * a handful of small text files — the reproducible-science bundle (spec, data
+ * snapshots, R / Python regeneration code, methods.md) — into one valid `.zip`
+ * without pulling in a compression library, matching the rest of this package's
+ * dependency-free, self-inlining approach.
+ *
+ * Produces a standard archive (local file headers + central directory + EOCD)
+ * that every unzip tool reads. Entry names use forward slashes; contents are
+ * UTF-8. DOS date/time is stamped at a fixed epoch so the bytes are
+ * reproducible (two exports of the same content are byte-identical).
+ *
+ * @module zip
+ */
+
+/** @type {number[]} Lazily-built CRC-32 lookup table (IEEE polynomial). */
+var CRC_TABLE = null;
+
+/**
+ * Build (once) and return the CRC-32 lookup table.
+ * @returns {number[]} 256 precomputed CRC values.
+ * @private
+ */
+function crcTable() {
+  if (CRC_TABLE) return CRC_TABLE;
+  var table = [];
+  for (var n = 0; n < 256; n++) {
+    var c = n;
+    for (var k = 0; k < 8; k++) {
+      c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+    }
+    table[n] = c >>> 0;
+  }
+  CRC_TABLE = table;
+  return table;
+}
+
+/**
+ * Compute the CRC-32 of a byte array (as ZIP requires).
+ * @param {Uint8Array} bytes - The data.
+ * @returns {number} The unsigned 32-bit CRC.
+ * @private
+ */
+function crc32(bytes) {
+  var table = crcTable();
+  var crc = 0xffffffff;
+  for (var i = 0; i < bytes.length; i++) {
+    crc = table[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+/**
+ * Encode a string as UTF-8 bytes (TextEncoder where present, else a manual
+ * fallback so the writer also runs outside a browser without polyfills).
+ * @param {string} str - The text.
+ * @returns {Uint8Array} UTF-8 bytes.
+ * @private
+ */
+function utf8(str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var bytes = [];
+  for (var i = 0; i < str.length; i++) {
+    var code = str.charCodeAt(i);
+    if (code < 0x80) {
+      bytes.push(code);
+    } else if (code < 0x800) {
+      bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
+    } else {
+      bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+    }
+  }
+  return new Uint8Array(bytes);
+}
+
+/**
+ * Write a 32-bit little-endian value into a byte array at an offset.
+ * @param {Uint8Array} arr - Target.
+ * @param {number} offset - Byte offset.
+ * @param {number} value - Unsigned 32-bit value.
+ * @returns {void}
+ * @private
+ */
+function writeU32(arr, offset, value) {
+  arr[offset] = value & 0xff;
+  arr[offset + 1] = (value >>> 8) & 0xff;
+  arr[offset + 2] = (value >>> 16) & 0xff;
+  arr[offset + 3] = (value >>> 24) & 0xff;
+}
+
+/**
+ * Write a 16-bit little-endian value into a byte array at an offset.
+ * @param {Uint8Array} arr - Target.
+ * @param {number} offset - Byte offset.
+ * @param {number} value - Unsigned 16-bit value.
+ * @returns {void}
+ * @private
+ */
+function writeU16(arr, offset, value) {
+  arr[offset] = value & 0xff;
+  arr[offset + 1] = (value >>> 8) & 0xff;
+}
+
+/**
+ * Pack a set of text files into a STORED ZIP archive.
+ * @param {Array<{name: string, content: string}>} files - The entries; each
+ *   `name` is the archive path (forward slashes) and `content` is UTF-8 text.
+ * @returns {Uint8Array} The complete `.zip` bytes.
+ * @public
+ */
+function zipSync(files) {
+  files = files || [];
+  var chunks = [];           // all byte chunks, in output order
+  var central = [];          // central-directory records
+  var offset = 0;            // running local-header offset
+  // Fixed DOS date/time (1980-01-01 00:00:00) for reproducible bytes.
+  var dosTime = 0;
+  var dosDate = 0x21;
+
+  files.forEach(function (file) {
+    var nameBytes = utf8(file.name);
+    var dataBytes = utf8(file.content != null ? String(file.content) : '');
+    var crc = crc32(dataBytes);
+
+    var local = new Uint8Array(30 + nameBytes.length);
+    writeU32(local, 0, 0x04034b50);
+    writeU16(local, 4, 20);            // version needed
+    writeU16(local, 6, 0);             // flags
+    writeU16(local, 8, 0);             // method: stored
+    writeU16(local, 10, dosTime);
+    writeU16(local, 12, dosDate);
+    writeU32(local, 14, crc);
+    writeU32(local, 18, dataBytes.length);   // compressed size (= uncompressed)
+    writeU32(local, 22, dataBytes.length);   // uncompressed size
+    writeU16(local, 26, nameBytes.length);
+    writeU16(local, 28, 0);            // extra length
+    local.set(nameBytes, 30);
+
+    chunks.push(local);
+    chunks.push(dataBytes);
+
+    var cd = new Uint8Array(46 + nameBytes.length);
+    writeU32(cd, 0, 0x02014b50);
+    writeU16(cd, 4, 20);               // version made by
+    writeU16(cd, 6, 20);               // version needed
+    writeU16(cd, 8, 0);                // flags
+    writeU16(cd, 10, 0);               // method: stored
+    writeU16(cd, 12, dosTime);
+    writeU16(cd, 14, dosDate);
+    writeU32(cd, 16, crc);
+    writeU32(cd, 20, dataBytes.length);
+    writeU32(cd, 24, dataBytes.length);
+    writeU16(cd, 28, nameBytes.length);
+    writeU16(cd, 30, 0);               // extra length
+    writeU16(cd, 32, 0);               // comment length
+    writeU16(cd, 34, 0);               // disk number start
+    writeU16(cd, 36, 0);               // internal attrs
+    writeU32(cd, 38, 0);               // external attrs
+    writeU32(cd, 42, offset);          // local header offset
+    cd.set(nameBytes, 46);
+    central.push(cd);
+
+    offset += local.length + dataBytes.length;
+  });
+
+  var centralSize = 0;
+  central.forEach(function (cd) { centralSize += cd.length; });
+  var centralOffset = offset;
+
+  var eocd = new Uint8Array(22);
+  writeU32(eocd, 0, 0x06054b50);
+  writeU16(eocd, 4, 0);                // this disk
+  writeU16(eocd, 6, 0);                // disk with central dir
+  writeU16(eocd, 8, central.length);   // entries on this disk
+  writeU16(eocd, 10, central.length);  // total entries
+  writeU32(eocd, 12, centralSize);
+  writeU32(eocd, 16, centralOffset);
+  writeU16(eocd, 20, 0);               // comment length
+
+  var total = offset + centralSize + eocd.length;
+  var out = new Uint8Array(total);
+  var pos = 0;
+  chunks.forEach(function (chunk) { out.set(chunk, pos); pos += chunk.length; });
+  central.forEach(function (cd) { out.set(cd, pos); pos += cd.length; });
+  out.set(eocd, pos);
+  return out;
+}
+
+/* ==== src/provenance.js ==== */
+/**
+ * Auto-derive an **honest** method line for a panel or data source — a one-line
+ * human description of how the numbers were actually produced, read from the
+ * operations already declared in the spec (never free text that can drift):
+ *
+ *  - the base source origin (inline / dataset / connector / live);
+ *  - a `kind:"join"` (how + inputs + key), recursively through nested joins;
+ *  - a `kind:"function"` source's language;
+ *  - a source's `pushdown` aggregate / filter / sort / limit;
+ *  - a source's `calculatedFields` (formula and binning);
+ *  - the panel's chart type and its statistical overlays (loess / regression /
+ *    forecast, with confidence intervals) read from the chart `config`.
+ *
+ * Every clause is emitted only when the corresponding operation is present, so
+ * the line can always be defended against the spec. This module is pure (no DOM,
+ * no engine) so it unit-tests directly and runs in the bundle writer (P3) as
+ * well as the live footer (renderDashboard).
+ *
+ * @module provenance
+ */
+
+/** @type {object} Chart-config stat overlays → how each reads in the method line. */
+var STAT_OVERLAYS = [
+  { key: 'showLoessFit', label: 'a loess fit' },
+  { key: 'showRegressionFit', label: 'a regression fit' },
+  { key: 'showForecast', label: 'a forecast' }
+];
+
+/**
+ * Join a list of clauses into one sentence-like line (clauses separated by
+ * "; "), dropping empties.
+ * @param {string[]} clauses - The clause strings (some may be empty/null).
+ * @returns {string} The joined line (empty when nothing to say).
+ * @private
+ */
+function joinClauses(clauses) {
+  var kept = [];
+  for (var i = 0; i < clauses.length; i++) {
+    if (clauses[i]) kept.push(clauses[i]);
+  }
+  return kept.join('; ');
+}
+
+/**
+ * Describe one aggregate measure (`{fn, column, as}`) in words.
+ * @param {object} m - A pushdown measure.
+ * @returns {string} e.g. "sum of Revenue", "distinct count of Id", "count".
+ * @private
+ */
+function describeMeasure(m) {
+  if (!m || !m.fn) return '';
+  var fn = m.fn === 'mean' ? 'avg' : m.fn;
+  var names = { count: 'count', count_distinct: 'distinct count', sum: 'sum', avg: 'average', min: 'minimum', max: 'maximum' };
+  var word = names[fn] || fn;
+  if (fn === 'count' && !m.column) return 'count';
+  return word + (m.column ? ' of ' + m.column : '');
+}
+
+/**
+ * Describe a `pushdown` query (aggregate / rows / filter / sort / limit) as a
+ * method clause. Reads only what is present.
+ * @param {(object|boolean)} pushdown - The source's `pushdown`.
+ * @returns {string} The clause (empty when there is no pushdown or it is `true`).
+ * @public
+ */
+function describePushdown(pushdown) {
+  if (!pushdown || pushdown === true || typeof pushdown !== 'object') return '';
+  var clauses = [];
+  var measures = Array.isArray(pushdown.measures) ? pushdown.measures : [];
+  var groupBy = Array.isArray(pushdown.groupBy) ? pushdown.groupBy : [];
+  if (measures.length || groupBy.length) {
+    var agg = 'aggregated';
+    if (measures.length) {
+      var parts = [];
+      for (var i = 0; i < measures.length; i++) {
+        var d = describeMeasure(measures[i]);
+        if (d) parts.push(d);
+      }
+      if (parts.length) agg += ' (' + parts.join(', ') + ')';
+    }
+    if (groupBy.length) agg += ' grouped by ' + groupBy.join(', ');
+    clauses.push(agg);
+  } else if (Array.isArray(pushdown.columns) && pushdown.columns.length) {
+    clauses.push('selected columns ' + pushdown.columns.join(', '));
+  }
+  var where = Array.isArray(pushdown.where) ? pushdown.where : [];
+  if (where.length) {
+    var conds = [];
+    for (var w = 0; w < where.length; w++) {
+      var c = where[w];
+      if (c && c.column) conds.push(c.column + ' ' + (c.op || '=') + ' ' + formatValue(c.value));
+    }
+    if (conds.length) clauses.push('filtered where ' + conds.join(' and '));
+  }
+  if (Array.isArray(pushdown.orderBy) && pushdown.orderBy.length) {
+    clauses.push('sorted by ' + pushdown.orderBy.map(orderByName).join(', '));
+  }
+  if (typeof pushdown.limit === 'number') {
+    clauses.push('limited to ' + pushdown.limit + ' rows');
+  }
+  return joinClauses(clauses);
+}
+
+/**
+ * Name an orderBy entry (string or `{column, desc}`).
+ * @param {(string|object)} o - The orderBy entry.
+ * @returns {string} The column (with " desc" when descending).
+ * @private
+ */
+function orderByName(o) {
+  if (typeof o === 'string') return o;
+  if (o && o.column) return o.column + (o.desc ? ' desc' : '');
+  return '';
+}
+
+/**
+ * Render a where-clause value for display: a list joins with ", " in brackets,
+ * an unresolved "$param" token shows as the parameter name, else the literal.
+ * @param {*} value - The clause value.
+ * @returns {string} A short display string.
+ * @private
+ */
+function formatValue(value) {
+  if (Array.isArray(value)) return '[' + value.join(', ') + ']';
+  if (value == null) return '';
+  return String(value);
+}
+
+/**
+ * Describe a source's `calculatedFields` (formula fields and binning) as a clause.
+ * @param {object[]} fields - The `calculatedFields` array.
+ * @returns {string} e.g. "computed Margin = Revenue / Units; binned Age into 4 quantile bins".
+ * @public
+ */
+function describeCalculatedFields(fields) {
+  if (!Array.isArray(fields) || !fields.length) return '';
+  var parts = [];
+  for (var i = 0; i < fields.length; i++) {
+    var f = fields[i];
+    if (!f || !f.name) continue;
+    if (f.formula != null) {
+      parts.push('computed ' + f.name + ' = ' + f.formula);
+    } else if (f.bin && f.bin.field) {
+      var method = f.bin.method || 'equalWidth';
+      var methodWord = { equalWidth: 'equal-width', quantile: 'quantile', percentile: 'percentile', custom: 'custom' }[method] || method;
+      var count = method === 'custom'
+        ? (Array.isArray(f.bin.breaks) ? Math.max(f.bin.breaks.length - 1, 1) : '')
+        : (f.bin.bins || 4);
+      parts.push('binned ' + f.bin.field + ' into ' + (count ? count + ' ' : '') + methodWord + ' bins as ' + f.name);
+    }
+  }
+  return joinClauses(parts);
+}
+
+/**
+ * Describe a chart config's statistical overlays (loess / regression / forecast)
+ * and whether confidence intervals are shown.
+ * @param {object} config - The panel's CanvasXpress chart `config`.
+ * @returns {string} e.g. "with a regression fit (linear) and 95% confidence
+ *   interval", or empty when the chart carries no stat overlay.
+ * @public
+ */
+function describeStatOptions(config) {
+  if (!config || typeof config !== 'object') return '';
+  var overlays = [];
+  for (var i = 0; i < STAT_OVERLAYS.length; i++) {
+    var ov = STAT_OVERLAYS[i];
+    if (config[ov.key]) {
+      var label = ov.label;
+      if (ov.key === 'showRegressionFit' && config.regressionType) {
+        label += ' (' + config.regressionType + ')';
+      }
+      overlays.push(label);
+    }
+  }
+  if (!overlays.length) return '';
+  var line = 'with ' + humanList(overlays);
+  var showsCI = config.showConfidenceIntervals;
+  if (showsCI) {
+    var level = typeof config.confidenceInterval === 'number'
+      ? Math.round(config.confidenceInterval * (config.confidenceInterval <= 1 ? 100 : 1)) + '%'
+      : '';
+    line += ' and ' + (level ? level + ' ' : '') + 'confidence interval';
+  }
+  return line;
+}
+
+/**
+ * Join a list with commas and a trailing "and" ("a, b and c").
+ * @param {string[]} items - The items.
+ * @returns {string} The human list.
+ * @private
+ */
+function humanList(items) {
+  if (items.length <= 1) return items[0] || '';
+  return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+}
+
+/**
+ * Describe a data source's origin and its transformations, recursing through a
+ * join's inputs. Returns a method clause for that source alone.
+ * @param {string} ref - The source ref (key in `spec.data`).
+ * @param {object} spec - The dashboard spec.
+ * @param {object} [seen] - Internal: refs already visited (cycle guard).
+ * @returns {string} The source's method clause (empty when the ref is unknown).
+ * @public
+ */
+function describeSource(ref, spec, seen) {
+  var sources = (spec && spec.data) || {};
+  var src = sources[ref];
+  if (!src) return '';
+  seen = seen || {};
+  if (seen[ref]) return ref;    // cycle guard: name it, don't recurse again
+  seen[ref] = true;
+
+  var origin = '';
+  if (src.kind === 'join') {
+    var how = src.how || 'inner';
+    var left = wrapInput(describeSource(src.left, spec, seen) || src.left);
+    var right = wrapInput(describeSource(src.right, spec, seen) || src.right);
+    origin = how + ' join of ' + left + ' and ' + right + (src.on ? ' on ' + describeJoinKey(src.on) : '');
+  } else if (src.kind === 'function') {
+    var lang = src.language === 'r' ? 'R' : (src.language === 'python' ? 'Python' : (src.language || 'a data'));
+    origin = 'transformed by ' + (lang === 'a data' ? 'a data function' : 'a ' + lang + ' function');
+  } else if (src.kind === 'dataset') {
+    origin = 'dataset ' + (src.id || '');
+  } else if (src.kind === 'connector') {
+    origin = 'connector data';
+  } else if (src.kind === 'live') {
+    origin = 'a live stream';
+  } else if (src.kind === 'inline') {
+    origin = 'inline data';
+  } else if (src.kind) {
+    origin = src.kind + ' data';
+  }
+
+  return joinClauses([origin, describeCalculatedFields(src.calculatedFields), describePushdown(src.pushdown)]).trim();
+}
+
+/**
+ * Parenthesize a join input's description when it carries more than one clause,
+ * so the join line stays readable ("left join of (connector data; aggregated …)
+ * and dataset r1").
+ * @param {string} s - A source description.
+ * @returns {string} Wrapped in parentheses when multi-clause, else unchanged.
+ * @private
+ */
+function wrapInput(s) {
+  return s && s.indexOf('; ') !== -1 ? '(' + s + ')' : s;
+}
+
+/**
+ * Render a join key (the row id by default, a shared column, a {left,right}
+ * mapping, or an array of those) for the method line.
+ * @param {*} on - The join `on` value.
+ * @returns {string} A short key description.
+ * @private
+ */
+function describeJoinKey(on) {
+  if (Array.isArray(on)) return on.map(describeJoinKey).join(' + ');
+  if (on && typeof on === 'object') return (on.left || '') + '=' + (on.right || '');
+  return String(on);
+}
+
+/**
+ * Derive the full method line for a graph panel: the source's origin and
+ * transformations followed by the chart type and any statistical overlays.
+ * @param {object} spec - The dashboard spec.
+ * @param {string} panelId - The panel's id (key in `spec.panels`).
+ * @returns {string} The auto-derived method line (empty when nothing is known).
+ * @public
+ */
+function derivePanelMethod(spec, panelId) {
+  var panel = spec && spec.panels && spec.panels[panelId];
+  if (!panel) return '';
+  var clauses = [];
+  if (panel.dataRef) {
+    var sourceLine = describeSource(panel.dataRef, spec);
+    if (sourceLine) clauses.push(sourceLine);
+  }
+  var config = panel.config || {};
+  var graphType = config.graphType;
+  if (graphType) {
+    var stat = describeStatOptions(config);
+    clauses.push('plotted as ' + graphType + (stat ? ' ' + stat : ''));
+  } else {
+    var statOnly = describeStatOptions(config);
+    if (statOnly) clauses.push(statOnly);
+  }
+  return joinClauses(clauses);
+}
+
+/**
+ * The method line to display for a panel, honouring its `provenance`:
+ *  - an author-pinned method (`provenance.auto === false` with a `method`) is
+ *    used verbatim;
+ *  - otherwise the method is auto-derived ({@link derivePanelMethod});
+ *  - a `provenance.notes` string is appended after an em-dash.
+ * @param {object} spec - The dashboard spec.
+ * @param {string} panelId - The panel's id.
+ * @returns {string} The display line (empty when there is nothing to show).
+ * @public
+ */
+function panelProvenanceText(spec, panelId) {
+  var panel = spec && spec.panels && spec.panels[panelId];
+  var prov = panel && panel.provenance;
+  var method;
+  if (prov && prov.auto === false && prov.method) {
+    method = prov.method;
+  } else {
+    method = derivePanelMethod(spec, panelId);
+  }
+  if (prov && prov.notes) {
+    method = method ? method + ' — ' + prov.notes : prov.notes;
+  }
+  return method || '';
+}
+
 /* ==== src/exportDashboard.js ==== */
 /**
  * Export a rendered dashboard as a self-contained HTML file, a PNG image, or a
@@ -3828,6 +4471,9 @@ function pushdownQuery(pushdown, params, extraWhere) {
  *
  * @module exportDashboard
  */
+
+
+
 
 /**
  * Inline SVG favicon (a bar-chart glyph in the accent-strong role colour; a data URI cannot use
@@ -3903,8 +4549,12 @@ function inlineSpecData(spec, opts) {
     var src = sources[ref];
     if (!src || src.kind === 'inline') return null;
     return resolveInput(ref).then(function (data) {
-      // Drop the now-meaningless query template — the data is baked inline.
-      sources[ref] = { kind: 'inline', value: data };
+      // Drop the now-meaningless query template — the data is baked inline — but
+      // carry forward any provenance metadata (method / dataVersion) so it is
+      // not lost when the source is replaced.
+      var inlineSrc = { kind: 'inline', value: data };
+      if (src.provenance) inlineSrc.provenance = src.provenance;
+      sources[ref] = inlineSrc;
     });
   })).then(function () {
     freezeParamControls(out, params);
@@ -4103,6 +4753,321 @@ function exportDashboardHtml(spec, opts, doc) {
 }
 
 /**
+ * Strip the syntax-highlight markup the engine's code-emitters (`dataToR`,
+ * `dataToPython`, `dataToCxplot`) wrap around their output: they return HTML
+ * with `<span class=cX-Code-*>` tokens for the on-screen code modal, which the
+ * engine's own UI recovers as plain text via `.innerText`. The bundle writer
+ * has no DOM to lean on, so it removes the tags and decodes the handful of HTML
+ * entities the emitters can introduce.
+ * @param {string} html - The emitter's highlighted output.
+ * @returns {string} Plain source text.
+ * @private
+ */
+function stripCodeHtml(html) {
+  return String(html == null ? '' : html)
+    .replace(/<[^>]*>/g, '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
+/**
+ * Sanitize a panel id / source ref for use as a file name inside the bundle.
+ * @param {string} name - The id or ref.
+ * @returns {string} A safe `[A-Za-z0-9._-]` name.
+ * @private
+ */
+function safeName(name) {
+  return String(name == null ? 'item' : name).replace(/[^A-Za-z0-9._-]+/g, '_') || 'item';
+}
+
+/**
+ * Call an engine code-emitter on a live instance, returning plain source text
+ * (or '' when the instance lacks the method or it throws). `dataToCxplot`
+ * returns a stub for non-cxplot charts, which this reports as empty.
+ * @param {object} instance - A live CanvasXpress instance.
+ * @param {string} method - 'dataToR' | 'dataToPython' | 'dataToCxplot'.
+ * @param {Array} [args] - Arguments for the emitter.
+ * @returns {string} The plain code (empty when unavailable).
+ * @private
+ */
+function emitCode(instance, method, args) {
+  if (!instance || typeof instance[method] !== 'function') return '';
+  try {
+    var code = stripCodeHtml(instance[method].apply(instance, args || []));
+    if (method === 'dataToCxplot' && /No cxplot spec available/.test(code)) return '';
+    return code;
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
+ * Build the files of a reproducible-science bundle from a LIVE dashboard handle
+ * (from {@link renderDashboard}): the engine code-emitters it reuses read each
+ * panel's rendered instance, so a bare spec is not enough.
+ *
+ * The bundle contains:
+ *  - `spec.json` — the self-contained spec (every source inlined; see
+ *    {@link inlineSpecData}), so the dashboard re-renders offline;
+ *  - `data/<ref>.json` — a snapshot of each source's resolved data;
+ *  - `code/<panel>.R` and `code/<panel>.py` — per-panel regeneration code from
+ *    the engine's `dataToR`/`dataToPython` (plus `code/<panel>-cxplot.R` for a
+ *    ggplot/cxplot chart);
+ *  - `methods.md` — a human methods note: the auto-derived method line per panel
+ *    and the provenance of each data source.
+ *
+ * @param {object} handle - A live dashboard handle (`spec`, `panelInstances()`,
+ *   `getParams()`).
+ * @param {object} [opts] - Options (also passed to {@link inlineSpecData}).
+ * @param {string} [opts.baseUrl] - Base URL for source resolution.
+ * @param {function} [opts.fetch] - fetch implementation.
+ * @param {string} [opts.engineVersion] - CanvasXpress engine version, recorded
+ *   in methods.md when known (formal version/asOf stamping lands in P4).
+ * @param {function} [opts.now] - Clock returning the capture time (ISO string
+ *   or Date); defaults to the system clock. Injectable for deterministic tests.
+ * @returns {Promise<Array<{name: string, content: string}>>} The bundle files.
+ * @public
+ */
+function buildBundleFiles(handle, opts) {
+  opts = opts || {};
+  if (!handle || !handle.spec) return Promise.reject(new Error('no dashboard handle to export'));
+  var spec = handle.spec;
+  var params = typeof handle.getParams === 'function' ? handle.getParams() : (opts.params || {});
+  var instances = typeof handle.panelInstances === 'function' ? handle.panelInstances() : {};
+  var asOf = toIso(typeof opts.now === 'function' ? opts.now() : new Date());
+
+  return inlineSpecData(spec, { baseUrl: opts.baseUrl, fetch: opts.fetch, params: params }).then(function (inlined) {
+    // P4: stamp each inlined source's provenance with the capture time and the
+    // params the snapshot was taken at (author-set method/dataVersion kept).
+    stampSourceProvenance(inlined, asOf, params);
+
+    var files = [];
+    files.push({ name: 'spec.json', content: JSON.stringify(inlined, null, 2) + '\n' });
+
+    // Data snapshot per source (from the now-inlined spec).
+    var sources = inlined.data || {};
+    Object.keys(sources).forEach(function (ref) {
+      var src = sources[ref];
+      var value = src && src.kind === 'inline' ? src.value : src;
+      files.push({ name: 'data/' + safeName(ref) + '.json', content: JSON.stringify(value, null, 2) + '\n' });
+    });
+
+    // Per-panel regeneration code from the live instances.
+    Object.keys(instances).forEach(function (panelId) {
+      var instance = instances[panelId];
+      var rCode = emitCode(instance, 'dataToR');
+      var pyCode = emitCode(instance, 'dataToPython');
+      var cxplot = emitCode(instance, 'dataToCxplot');
+      if (rCode) files.push({ name: 'code/' + safeName(panelId) + '.R', content: rCode + '\n' });
+      if (pyCode) files.push({ name: 'code/' + safeName(panelId) + '.py', content: pyCode + '\n' });
+      if (cxplot) files.push({ name: 'code/' + safeName(panelId) + '-cxplot.R', content: cxplot + '\n' });
+    });
+
+    // Read function-source code from the ORIGINAL spec (inlining bakes it to
+    // data, dropping the snippet), so the bundle can regenerate it too.
+    var originalSources = spec.data || {};
+    Object.keys(originalSources).forEach(function (ref) {
+      var src = originalSources[ref];
+      if (src && src.kind === 'function' && src.code) {
+        var ext = src.language === 'python' ? '.py' : (src.language === 'r' ? '.R' : '.txt');
+        files.push({ name: 'code/source-' + safeName(ref) + ext, content: String(src.code) + '\n' });
+      }
+    });
+
+    // P4: version/asOf/engine stamping + a content hash so a reviewer can tell
+    // two figures apart. Per-file hashes cover the actual files. The overall
+    // contentHash is a stable FIGURE FINGERPRINT over the reproducible inputs
+    // (spec + data + code), excluding the timestamped methods.md / manifest.json
+    // and the volatile `provenance` metadata (asOf/params) — so re-exporting the
+    // same figure at a different time yields the same hash, while different data
+    // or config yields a different one.
+    var perFile = {};
+    var sorted = files.slice().sort(function (a, b) { return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0); });
+    sorted.forEach(function (f) { perFile[f.name] = 'sha256:' + sha256Hex(f.content); });
+    var hashInput = sorted.map(function (f) {
+      return f.name + '\u0000' + (f.name === 'spec.json' ? fingerprintSpecJson(f.content) : f.content);
+    }).join('\n');
+    var contentHash = 'sha256:' + sha256Hex(hashInput);
+
+    var manifest = {
+      generated: asOf,
+      schemaVersion: inlined.schemaVersion || null,
+      engineVersion: opts.engineVersion || null,
+      dashboard: { id: spec.id || null, title: spec.title || null, version: spec.version != null ? spec.version : null },
+      params: params,
+      contentHash: contentHash,
+      files: perFile
+    };
+
+    files.push({ name: 'methods.md', content: buildMethodsMd(spec, instances, asOf, opts.engineVersion, contentHash) });
+    files.push({ name: 'manifest.json', content: JSON.stringify(manifest, null, 2) + '\n' });
+    return files;
+  });
+}
+
+/**
+ * Produce a provenance-free view of `spec.json` for the figure fingerprint:
+ * drop each source's `provenance` (its `asOf`/`params` are volatile metadata, and
+ * a param change already shows up as different data). Config, layout, panels and
+ * panel provenance are kept, so two genuinely different figures still differ.
+ * @param {string} specJson - The serialized inlined spec.
+ * @returns {string} A canonical provenance-free JSON string.
+ * @private
+ */
+function fingerprintSpecJson(specJson) {
+  var clone = JSON.parse(specJson);
+  var sources = clone.data || {};
+  Object.keys(sources).forEach(function (ref) {
+    if (sources[ref] && typeof sources[ref] === 'object') delete sources[ref].provenance;
+  });
+  return JSON.stringify(clone);
+}
+
+/**
+ * Stamp each inlined source's `provenance.asOf` and `provenance.params` with the
+ * export capture time and the params it was taken at, preserving any author-set
+ * `method` / `dataVersion`. Mutates `inlined` in place.
+ * @param {object} inlined - The data-inlined spec.
+ * @param {string} asOf - Capture time (ISO).
+ * @param {object} params - The params the snapshot was taken at.
+ * @returns {void}
+ * @private
+ */
+function stampSourceProvenance(inlined, asOf, params) {
+  var sources = inlined.data || {};
+  Object.keys(sources).forEach(function (ref) {
+    var src = sources[ref];
+    if (!src || typeof src !== 'object') return;
+    var prov = src.provenance && typeof src.provenance === 'object' ? src.provenance : {};
+    prov.asOf = asOf;
+    prov.params = params;
+    src.provenance = prov;
+  });
+}
+
+/**
+ * Build a reproducible-science bundle as a `.zip` byte array.
+ * @param {object} handle - A live dashboard handle (see {@link buildBundleFiles}).
+ * @param {object} [opts] - Options (see {@link buildBundleFiles}).
+ * @returns {Promise<Uint8Array>} The `.zip` bytes.
+ * @public
+ */
+function buildReproducibleBundle(handle, opts) {
+  return buildBundleFiles(handle, opts).then(function (files) { return zipSync(files); });
+}
+
+/**
+ * Export a reproducible-science bundle as a `.zip` file (downloads it).
+ * @param {object} handle - A live dashboard handle (see {@link buildBundleFiles}).
+ * @param {object} [opts] - Options (see {@link buildBundleFiles}) plus `filename`.
+ * @param {string} [opts.filename] - Download name; defaults to `<id>-bundle.zip`.
+ * @param {Document} [doc] - Document to use; defaults to global.
+ * @returns {Promise<void>} Resolves once the download has been triggered.
+ * @public
+ */
+function exportReproducibleBundle(handle, opts, doc) {
+  opts = opts || {};
+  return buildReproducibleBundle(handle, opts).then(function (bytes) {
+    var id = handle && handle.spec && handle.spec.id ? handle.spec.id : 'dashboard';
+    var name = opts.filename || (id + '-bundle.zip');
+    downloadBlob(new Blob([bytes], { type: 'application/zip' }), name, doc);
+  });
+}
+
+/**
+ * Normalize a time value to an ISO 8601 string.
+ * @param {(Date|string|number)} t - The time.
+ * @returns {string} ISO string.
+ * @private
+ */
+function toIso(t) {
+  if (t instanceof Date) return t.toISOString();
+  if (typeof t === 'number') return new Date(t).toISOString();
+  return String(t);
+}
+
+/**
+ * Build the `methods.md` text: a per-panel method line (auto-derived) and the
+ * provenance of each data source.
+ * @param {object} spec - The dashboard spec.
+ * @param {object} instances - panelId -> live instance (which panels have code).
+ * @param {string} asOf - Capture time (ISO).
+ * @param {string} [engineVersion] - Engine version, when known.
+ * @param {string} [contentHash] - The bundle's content hash (P4), when computed.
+ * @returns {string} The Markdown document.
+ * @private
+ */
+function buildMethodsMd(spec, instances, asOf, engineVersion, contentHash) {
+  var title = spec.title || spec.id || 'Dashboard';
+  var lines = [];
+  lines.push('# ' + title + ' — reproducible bundle');
+  lines.push('');
+  lines.push('Generated ' + asOf + ' with CanvasXpress Dashboards' +
+    (engineVersion ? ' (engine ' + engineVersion + ')' : '') + '.');
+  lines.push('');
+  lines.push('| | |');
+  lines.push('|---|---|');
+  lines.push('| Dashboard | ' + title + (spec.id ? ' (`' + spec.id + '`)' : '') + ' |');
+  if (spec.version != null) lines.push('| Version | ' + spec.version + ' |');
+  lines.push('| Captured | ' + asOf + ' |');
+  if (engineVersion) lines.push('| Engine | ' + engineVersion + ' |');
+  if (contentHash) lines.push('| Content hash | `' + contentHash + '` |');
+  lines.push('');
+  lines.push('This bundle reproduces the figures offline:');
+  lines.push('');
+  lines.push('- `spec.json` — the self-contained dashboard spec (all data inlined).');
+  lines.push('- `data/` — a snapshot of each data source.');
+  lines.push('- `code/` — per-panel R and Python code that regenerates each chart.');
+  lines.push('');
+
+  var panels = spec.panels || {};
+  var panelIds = Object.keys(panels).filter(function (id) {
+    var p = panels[id];
+    return !p || !p.type;   // graph panels only (text/control/image/filters have no type===undefined)
+  });
+  if (panelIds.length) {
+    lines.push('## Panels');
+    lines.push('');
+    panelIds.forEach(function (id) {
+      var panel = panels[id];
+      lines.push('### ' + (panel.title || id) + ' (`' + id + '`)');
+      var method = panelProvenanceText(spec, id);
+      lines.push('');
+      lines.push(method || '_No method information._');
+      lines.push('');
+      var bits = [];
+      if (panel.dataRef) bits.push('Data source: `' + panel.dataRef + '`.');
+      if (instances[id]) bits.push('Regenerate: `code/' + safeName(id) + '.R`, `code/' + safeName(id) + '.py`.');
+      if (bits.length) { lines.push(bits.join(' ')); lines.push(''); }
+    });
+  }
+
+  var sources = spec.data || {};
+  var refs = Object.keys(sources);
+  if (refs.length) {
+    lines.push('## Data sources');
+    lines.push('');
+    refs.forEach(function (ref) {
+      var src = sources[ref];
+      lines.push('### `' + ref + '` (' + (src.kind || 'inline') + ')');
+      lines.push('');
+      var line = describeSource(ref, spec) || '_No provenance._';
+      var prov = src.provenance || {};
+      var meta = [];
+      if (prov.dataVersion) meta.push('version ' + prov.dataVersion);
+      if (prov.asOf) meta.push('as of ' + prov.asOf);
+      lines.push(line + (meta.length ? ' (' + meta.join('; ') + ')' : ''));
+      lines.push('');
+    });
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Rasterize the rendered dashboard container to a PNG data URL via html2canvas.
  * @param {HTMLElement} container - `handle.container` from renderDashboard.
  * @param {object} [opts] - Options.
@@ -4119,8 +5084,28 @@ function dashboardToPng(container, opts) {
   return h2c(container, {
     scale: opts.scale || 2,
     backgroundColor: opts.background || '#ffffff',
-    useCORS: true
+    useCORS: true,
+    // Skip CanvasXpress's screen-reader-only nodes (the "Data table for chart"
+    // a11y table + the live region): they hide with clip:rect(0 0 0 0), which
+    // html2canvas ignores, so they would otherwise paint over the chart.
+    ignoreElements: opts.ignoreElements || isScreenReaderOnly
   }).then(function (canvas) { return canvas.toDataURL('image/png'); });
+}
+
+/**
+ * Whether an element is a CanvasXpress screen-reader-only node that must not be
+ * rasterized (the a11y data table `#…-cX-a11y-table` or the live region
+ * `.cX-a11y-live`). These are visually hidden with `clip:rect(0 0 0 0)`, which
+ * html2canvas does not honour.
+ * @param {Element} el - A candidate element.
+ * @returns {boolean} True to skip it during rasterization.
+ * @private
+ */
+function isScreenReaderOnly(el) {
+  if (!el || el.nodeType !== 1) return false;
+  if (typeof el.id === 'string' && /-cX-a11y-table$/.test(el.id)) return true;
+  var cls = el.getAttribute ? (el.getAttribute('class') || '') : '';
+  return /(^|\s)cX-a11y-live(\s|$)/.test(cls);
 }
 
 /**
@@ -4167,6 +5152,111 @@ function exportDashboardPdf(container, opts, doc) {
     });
     pdf.addImage(dataUrl, 'PNG', 0, 0, width, height);
     pdf.save(opts.filename || 'dashboard.pdf');
+  });
+}
+
+/* ------------------------------------------------------------------------- *
+ * Per-panel TRUE VECTOR export (figure composer P1).
+ *
+ * Unlike the whole-container raster path above (html2canvas/jsPDF), these read
+ * a single live panel's CanvasXpress instance and emit the engine's own vector
+ * output: `getSVGString()` (a complete, standalone `<svg>` document with the
+ * chart's a11y description) and `getPDFBytes()` (a vector PDF Blob). Both are
+ * public engine methods preserved through `--secure` obfuscation, so they work
+ * against the production (minified) engine, not only the debug build.
+ *
+ * P4 composes the per-panel SVG strings these return into one multi-panel
+ * figure; P1 exposes the single-panel seam and its download helpers.
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Resolve one live panel instance from a dashboard handle, by panel id.
+ * @param {object} handle - A live dashboard handle (needs `panelInstances()`).
+ * @param {string} panelId - The panel's id in the spec.
+ * @returns {object} The live CanvasXpress instance for that panel.
+ * @throws {Error} When the handle has no such rendered graph panel.
+ * @private
+ */
+function resolvePanelInstance(handle, panelId) {
+  var instances = handle && typeof handle.panelInstances === 'function'
+    ? handle.panelInstances() : null;
+  var instance = instances && Object.prototype.hasOwnProperty.call(instances, panelId)
+    ? instances[panelId] : null;
+  if (!instance) {
+    throw new Error('no rendered graph panel "' + panelId + '" to export');
+  }
+  return instance;
+}
+
+/**
+ * Serialize one dashboard panel to a true-vector SVG string via the engine's
+ * `getSVGString()` (the whole chart as a standalone `<svg>` document, including
+ * its author a11y description) — NOT an html2canvas raster.
+ * @param {object} handle - A live dashboard handle (from renderDashboard).
+ * @param {string} panelId - The panel to export.
+ * @returns {string} The SVG document.
+ * @throws {Error} When the panel is missing or the engine lacks getSVGString
+ *   (a pre-71.3 or externally-renamed engine).
+ * @public
+ */
+function panelToSvg(handle, panelId) {
+  var instance = resolvePanelInstance(handle, panelId);
+  if (typeof instance.getSVGString !== 'function') {
+    throw new Error('this CanvasXpress engine has no getSVGString() ' +
+      '(needs engine >= 71.3 with the method preserved through obfuscation)');
+  }
+  return instance.getSVGString();
+}
+
+/**
+ * Export one dashboard panel as a `.svg` file (downloads it), true vector.
+ * @param {object} handle - A live dashboard handle (from renderDashboard).
+ * @param {string} panelId - The panel to export.
+ * @param {object} [opts] - Options.
+ * @param {string} [opts.filename] - Download name; defaults to `<panelId>.svg`.
+ * @param {Document} [doc] - Document to use; defaults to global.
+ * @returns {void}
+ * @public
+ */
+function exportPanelSvg(handle, panelId, opts, doc) {
+  opts = opts || {};
+  var svg = panelToSvg(handle, panelId);
+  var blob = new Blob([svg], { type: 'image/svg+xml' });
+  downloadBlob(blob, opts.filename || safeName(panelId) + '.svg', doc);
+}
+
+/**
+ * Serialize one dashboard panel to a true-vector PDF Blob via the engine's
+ * `getPDFBytes()` — NOT an html2canvas raster.
+ * @param {object} handle - A live dashboard handle (from renderDashboard).
+ * @param {string} panelId - The panel to export.
+ * @returns {Promise<Blob>} The vector PDF.
+ * @throws {Error} When the panel is missing or the engine lacks getPDFBytes.
+ * @public
+ */
+function panelToPdf(handle, panelId) {
+  var instance = resolvePanelInstance(handle, panelId);
+  if (typeof instance.getPDFBytes !== 'function') {
+    return Promise.reject(new Error('this CanvasXpress engine has no getPDFBytes()'));
+  }
+  return Promise.resolve(instance.getPDFBytes());
+}
+
+/**
+ * Export one dashboard panel as a `.pdf` file (downloads it), true vector.
+ * @param {object} handle - A live dashboard handle (from renderDashboard).
+ * @param {string} panelId - The panel to export.
+ * @param {object} [opts] - Options.
+ * @param {string} [opts.filename] - Download name; defaults to `<panelId>.pdf`.
+ * @param {Document} [doc] - Document to use; defaults to global.
+ * @returns {Promise<void>} Resolves once the download has been triggered.
+ * @public
+ */
+function exportPanelPdf(handle, panelId, opts, doc) {
+  opts = opts || {};
+  return panelToPdf(handle, panelId).then(function (bytes) {
+    var blob = bytes instanceof Blob ? bytes : new Blob([bytes], { type: 'application/pdf' });
+    downloadBlob(blob, opts.filename || safeName(panelId) + '.pdf', doc);
   });
 }
 
@@ -4384,8 +5474,13 @@ function validateSpec(spec) {
       // A config control drives a target panel's config from its own static
       // option list, so it too needs no data of its own.
       var isConfigControl = panel.type === 'control' && panel.mode === 'config';
+      // Analysis controls need no data of their own: a transform control drives a
+      // target panel via updateData; an FDR-threshold range slider drives a param
+      // and recomputes across panels.
+      var isTransformControl = panel.type === 'control' && panel.mode === 'transform';
+      var isRangeParam = panel.type === 'control' && panel.mode === 'param' && panel.style === 'range';
       if (panel.type !== 'text' && panel.type !== 'image' && panel.type !== 'filters' &&
-          !paramWithOptions && !isConfigControl &&
+          !paramWithOptions && !isConfigControl && !isTransformControl && !isRangeParam &&
           panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
@@ -4409,11 +5504,23 @@ function validateSpec(spec) {
           errors.push(at + '.compartment must be "x" (samples) or "z" (variables)');
         }
         if (panel.style != null &&
-            ['auto', 'dropdown', 'radio', 'buttons', 'search', 'slider'].indexOf(panel.style) === -1) {
-          errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", "search", or "slider"');
+            ['auto', 'dropdown', 'radio', 'buttons', 'search', 'slider', 'range'].indexOf(panel.style) === -1) {
+          errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", "search", "slider", or "range"');
         }
-        if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param' && panel.mode !== 'config') {
-          errors.push(at + '.mode must be "filter", "param", or "config"');
+        if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param' && panel.mode !== 'config' && panel.mode !== 'transform') {
+          errors.push(at + '.mode must be "filter", "param", "config", or "transform"');
+        }
+        // A transform control (analysis control) drives a target panel's data via
+        // updateData — it needs a target panel id and a non-empty options list.
+        if (panel.mode === 'transform') {
+          if (typeof panel.target !== 'string' || panel.target.length === 0) {
+            errors.push(at + ' of mode "transform" requires a target panel id string');
+          } else if (spec.panels == null || !hasOwn(spec.panels, panel.target)) {
+            errors.push(at + '.target "' + panel.target + '" has no matching entry in spec.panels');
+          }
+          if (!Array.isArray(panel.options) || panel.options.length === 0) {
+            errors.push(at + ' of mode "transform" requires a non-empty options array');
+          }
         }
         if (panel.mode === 'config') {
           if (typeof panel.target !== 'string' || panel.target.length === 0) {
@@ -5020,6 +6127,638 @@ function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
+/* ==== src/statInference.js ==== */
+/**
+ * Statistics as first-class dashboard objects — the dashboards-layer glue for
+ * the engine's renderer-first significance layer (stat-inference-plan).
+ *
+ * The engine (CanvasXpress) RENDERS significance brackets from a per-panel
+ * `statInference` config block; the test statistics themselves are computed
+ * upstream (R / Python / the dashboards server). The only computation that
+ * belongs client-side is multiple-testing correction, because the FDR control
+ * must recorrect instantly across panels as the viewer filters — without a
+ * server round-trip. This module owns that cross-panel correction and the
+ * helpers that assemble the per-panel config.
+ *
+ * `pAdjust` here matches R's stats::p.adjust() to full double precision for
+ * BH, bonferroni, BY, holm, hochberg and none (validated in statInference.test.js)
+ * and mirrors the engine's this.pAdjust so both sides agree. The existing
+ * enrichment.js benjaminiHochberg stays for the hypergeometric path.
+ *
+ * @module statInference
+ */
+
+/**
+ * Adjust a set of p-values for multiple testing. ES-module port that matches R's
+ * stats::p.adjust() to full double precision. NA handling is not reproduced:
+ * callers pass finite p-values only.
+ *
+ * @param {number[]} pValues - Finite raw p-values.
+ * @param {string} [method='BH'] - "BH" (default), "bonferroni", "BY", "holm",
+ *   "hochberg", "none" ("fdr" is accepted as an alias for BH; case-insensitive).
+ * @returns {number[]} Adjusted p-values, in the same order as the input.
+ */
+function pAdjust(pValues, method) {
+  var n = pValues.length;
+  var adjusted = new Array(n);
+  var i;
+  if (n === 0) {
+    return adjusted;
+  }
+  method = method ? String(method) : 'BH';
+  if (method.toLowerCase() === 'fdr') {
+    method = 'BH';
+  }
+  if (method === 'none') {
+    for (i = 0; i < n; i++) {
+      adjusted[i] = pValues[i];
+    }
+    return adjusted;
+  }
+  if (method === 'bonferroni') {
+    for (i = 0; i < n; i++) {
+      adjusted[i] = Math.min(1, pValues[i] * n);
+    }
+    return adjusted;
+  }
+  var order = new Array(n);
+  for (i = 0; i < n; i++) {
+    order[i] = i;
+  }
+  if (method === 'holm') {
+    // Step-down: ascending order, running max of (n - i) * p.
+    order.sort(function (a, b) { return pValues[a] - pValues[b]; });
+    var runningMax = 0;
+    var holmValue;
+    for (i = 0; i < n; i++) {
+      holmValue = (n - i) * pValues[order[i]];
+      if (holmValue > runningMax) {
+        runningMax = holmValue;
+      }
+      adjusted[order[i]] = Math.min(1, runningMax);
+    }
+    return adjusted;
+  }
+  // BH, BY and hochberg: descending order, running min of a rank factor * p.
+  order.sort(function (a, b) { return pValues[b] - pValues[a]; });
+  var byConstant = 1;
+  if (method === 'BY') {
+    byConstant = 0;
+    for (i = 1; i <= n; i++) {
+      byConstant += 1 / i;
+    }
+  }
+  var runningMin = Infinity;
+  var rankFactor;
+  var candidate;
+  for (i = 0; i < n; i++) {
+    var descendingRank = n - i;
+    if (method === 'hochberg') {
+      rankFactor = (n - descendingRank + 1);
+    } else {
+      rankFactor = byConstant * n / descendingRank;
+    }
+    candidate = rankFactor * pValues[order[i]];
+    if (candidate < runningMin) {
+      runningMin = candidate;
+    }
+    adjusted[order[i]] = Math.min(1, runningMin);
+  }
+  return adjusted;
+}
+
+/**
+ * Significance stars following the ggsignif / GraphPad convention.
+ * @param {number} p - A p-value (raw or adjusted).
+ * @returns {string} "****" (<1e-4), "***" (<1e-3), "**" (<1e-2), "*" (<0.05), "ns".
+ */
+function significanceStars(p) {
+  if (p == null) { return 'ns'; }
+  if (p < 0.0001) { return '****'; }
+  if (p < 0.001) { return '***'; }
+  if (p < 0.01) { return '**'; }
+  if (p < 0.05) { return '*'; }
+  return 'ns';
+}
+
+/**
+ * Apply dashboard-scope multiple-testing correction. The honest FDR unit for a
+ * dashboard is the whole set of comparisons the viewer is looking at, not one
+ * panel: this pools every comparison across the given panels, corrects once, and
+ * writes the adjusted p-value back onto each comparison (`padj`). Mutates and
+ * returns the panels so callers can re-render in place.
+ *
+ * @param {object[]} panels - Panels, each optionally carrying
+ *   `statInference.comparisons` (array of {p, ...}).
+ * @param {string} [method='BH'] - Correction method (see pAdjust).
+ * @returns {object[]} The same panels, with each comparison's `padj` set.
+ */
+function applyDashboardCorrection(panels, method) {
+  var pooled = [];
+  var backRefs = [];
+  var i, j;
+  for (i = 0; i < panels.length; i++) {
+    var si = panels[i] && panels[i].statInference;
+    if (si && Array.isArray(si.comparisons)) {
+      for (j = 0; j < si.comparisons.length; j++) {
+        if (typeof si.comparisons[j].p === 'number') {
+          pooled.push(si.comparisons[j].p);
+          backRefs.push(si.comparisons[j]);
+        }
+      }
+    }
+  }
+  if (!pooled.length) {
+    return panels;
+  }
+  var adjusted = pAdjust(pooled, method || 'BH');
+  for (i = 0; i < backRefs.length; i++) {
+    backRefs[i].padj = adjusted[i];
+  }
+  return panels;
+}
+
+/**
+ * Assemble a per-panel `statInference` config block for the engine, applying
+ * within-panel correction up front so the block is self-describing. For
+ * dashboard-scope correction, call applyDashboardCorrection across panels
+ * instead and leave `correction.scope` as "dashboard".
+ *
+ * @param {object} options
+ * @param {object[]} options.comparisons - [{groups:[a,b], p, value?, label?}, ...].
+ * @param {string} [options.method='BH'] - Correction method.
+ * @param {string} [options.scope='dashboard'] - "dashboard" or "panel".
+ * @param {string} [options.annotate='padj'] - "p" | "padj" | "stars".
+ * @returns {object} A statInference block ready to assign on a panel config.
+ */
+function buildPanelStatInference(options) {
+  options = options || {};
+  var comparisons = (options.comparisons || []).map(function (c) {
+    var copy = {};
+    for (var k in c) { if (Object.prototype.hasOwnProperty.call(c, k)) { copy[k] = c[k]; } }
+    return copy;
+  });
+  var method = options.method || 'BH';
+  var scope = options.scope || 'dashboard';
+  if (scope === 'panel' && method !== 'none') {
+    var pooled = comparisons.map(function (c) { return c.p; });
+    var adjusted = pAdjust(pooled, method);
+    for (var i = 0; i < comparisons.length; i++) {
+      comparisons[i].padj = adjusted[i];
+    }
+  }
+  return {
+    comparisons: comparisons,
+    correction: { method: method, scope: scope },
+    annotate: options.annotate || 'padj'
+  };
+}
+
+/**
+ * Build an effect-size / forest tile: a point estimate with a confidence interval
+ * per row, instead of a bare KPI number. Renderer-first — it assembles a
+ * CanvasXpress Dotplot config that draws each estimate as a point with a vertical
+ * CI segment (reusing the engine's proven category-segment + point decoration
+ * primitives) and a reference line (default 0, e.g. "no effect" / log2FC 0).
+ *
+ * @param {object} options
+ * @param {object[]} options.effects - [{label, estimate, ciLow, ciHigh}, ...].
+ * @param {number} [options.reference=0] - Reference line on the value axis.
+ * @param {string} [options.valueLabel='estimate'] - Value-axis / series name.
+ * @param {string} [options.color] - CI line color (default: engine foreground).
+ * @param {string} [options.referenceColor] - Reference-line color (default: engine foreground).
+ * @param {number} [options.pad=0.2] - Fractional axis padding beyond the CIs.
+ * @returns {{data: object, config: object}} A CanvasXpress {data, config} spec.
+ */
+function buildEffectSizeTile(options) {
+  options = options || {};
+  var effects = options.effects || [];
+  var reference = options.reference != null ? options.reference : 0;
+  var valueLabel = options.valueLabel || 'estimate';
+  // Colors are left to the engine's foreground/decoration defaults unless the
+  // caller supplies them, so the tile follows the active theme.
+  var color = options.color;
+  var referenceColor = options.referenceColor;
+  var labels = effects.map(function (e) { return e.label; });
+  var estimates = effects.map(function (e) { return e.estimate; });
+  var lo = effects.map(function (e) { return e.ciLow; });
+  var hi = effects.map(function (e) { return e.ciHigh; });
+  var lowest = Math.min(reference, lo.length ? Math.min.apply(null, lo) : reference);
+  var highest = Math.max(reference, hi.length ? Math.max.apply(null, hi) : reference);
+  var span = (highest - lowest) || 1;
+  var pad = (options.pad != null ? options.pad : 0.2) * span;
+  var lines = effects.map(function (e, i) {
+    var seg = { catX: i + 1, valueMin: e.ciLow, valueMax: e.ciHigh, width: 2 };
+    if (color) { seg.color = color; }
+    return seg;
+  });
+  var refLine = { value: reference, type: 'dash', width: 1 };
+  if (referenceColor) { refLine.color = referenceColor; }
+  lines.push(refLine);
+  return {
+    data: { y: { vars: [valueLabel], smps: labels, data: [estimates] } },
+    config: {
+      graphType: 'Dotplot',
+      graphOrientation: 'vertical',
+      setMinX: lowest - pad,
+      setMaxX: highest + pad,
+      decorations: { line: lines }
+    }
+  };
+}
+
+/* ==== src/transforms.js ==== */
+/**
+ * Analysis transforms — client-side, dependency-free, deterministic.
+ *
+ * These are *analysis* controls, not display filters: a scientist toggles a
+ * transform and every bound panel recomputes. Light, deterministic transforms
+ * (log, z-score, median-center, quantile normalization) run here in the browser
+ * so the control is instant and offline; heavy batch correction (ComBat / limma)
+ * stays a server-side `function` source (see analysisControls.batchCorrectionSource).
+ *
+ * Each row-wise transform matches its R reference to double precision (validated
+ * in transforms.test.js): log2/log10 = base change, zscore = R `scale()` (sample
+ * sd, n-1), medianCenter = `x - median(x)`, quantileNormalize = the
+ * preprocessCore rank→mean-of-sorted interpolation.
+ *
+ * @module transforms
+ */
+
+/** Transform ids this module understands, in menu order. */
+var TRANSFORM_METHODS = ['none', 'log2', 'log10', 'zscore', 'medianCenter', 'quantileNormalize'];
+
+/** Human labels for the control UI. */
+var TRANSFORM_LABELS = {
+  none: 'None',
+  log2: 'log2',
+  log10: 'log10',
+  zscore: 'Z-score',
+  medianCenter: 'Median-center',
+  quantileNormalize: 'Quantile normalize'
+};
+
+function median(values) {
+  var sorted = values.slice().sort(function (a, b) { return a - b; });
+  var n = sorted.length;
+  if (!n) { return 0; }
+  return n % 2 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+}
+
+/** log base-2 of each value. @param {number[]} row @returns {number[]} */
+function log2Row(row) { return row.map(function (v) { return Math.log(v) / Math.LN2; }); }
+
+/** log base-10 of each value. @param {number[]} row @returns {number[]} */
+function log10Row(row) { return row.map(function (v) { return Math.log(v) / Math.LN10; }); }
+
+/**
+ * Z-score (R `scale()`): subtract the mean, divide by the sample sd (n-1).
+ * A zero-variance row returns all zeros rather than NaN.
+ * @param {number[]} row @returns {number[]}
+ */
+function zscoreRow(row) {
+  var n = row.length;
+  if (!n) { return []; }
+  var mean = row.reduce(function (a, b) { return a + b; }, 0) / n;
+  var ss = row.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0);
+  var sd = n > 1 ? Math.sqrt(ss / (n - 1)) : 0;
+  if (!sd) { return row.map(function () { return 0; }); }
+  return row.map(function (v) { return (v - mean) / sd; });
+}
+
+/** Median-center: subtract the row median. @param {number[]} row @returns {number[]} */
+function medianCenterRow(row) {
+  var med = median(row);
+  return row.map(function (v) { return v - med; });
+}
+
+/**
+ * Average ranks (ties.method="average"), 1-based, as R's rank().
+ * @param {number[]} column @returns {number[]}
+ * @private
+ */
+function averageRanks(column) {
+  var order = column.map(function (_, i) { return i; })
+    .sort(function (a, b) { return column[a] - column[b]; });
+  var ranks = new Array(column.length);
+  var i = 0;
+  while (i < order.length) {
+    var j = i;
+    while (j + 1 < order.length && column[order[j + 1]] === column[order[i]]) { j++; }
+    var avg = (i + j) / 2 + 1;
+    for (var k = i; k <= j; k++) { ranks[order[k]] = avg; }
+    i = j + 1;
+  }
+  return ranks;
+}
+
+/**
+ * Quantile-normalize a matrix given as an array of columns (each column an array
+ * of equal length). Matches preprocessCore::normalize.quantiles: mean of the
+ * sorted values per rank, then map each column's average ranks back through that
+ * reference by linear interpolation (so tied/fractional ranks interpolate).
+ * @param {number[][]} columns @returns {number[][]} normalized columns
+ */
+function quantileNormalize(columns) {
+  if (!columns.length) { return []; }
+  var nrow = columns[0].length;
+  var ncol = columns.length;
+  var sortedColumns = columns.map(function (c) { return c.slice().sort(function (a, b) { return a - b; }); });
+  var referenceMeans = [];
+  for (var r = 0; r < nrow; r++) {
+    var sum = 0;
+    for (var c = 0; c < ncol; c++) { sum += sortedColumns[c][r]; }
+    referenceMeans.push(sum / ncol);
+  }
+  var interpolate = function (rank) {
+    var low = Math.floor(rank) - 1;
+    var high = Math.ceil(rank) - 1;
+    var frac = rank - Math.floor(rank);
+    if (low < 0) { low = 0; }
+    if (high >= nrow) { high = nrow - 1; }
+    return referenceMeans[low] + frac * (referenceMeans[high] - referenceMeans[low]);
+  };
+  return columns.map(function (column) {
+    var ranks = averageRanks(column);
+    return ranks.map(interpolate);
+  });
+}
+
+/**
+ * Apply a transform to a CanvasXpress data object, returning a NEW object (the
+ * source is left untouched so the control can re-transform or reset). `data.y.data`
+ * is a rows (vars) x columns (smps) matrix. Row-wise transforms (log/zscore/
+ * medianCenter) map each variable's row; quantileNormalize works across samples
+ * (columns). `none` returns a shallow copy unchanged.
+ *
+ * @param {object} cxData - A CanvasXpress data object with `y.data`.
+ * @param {string} method - A TRANSFORM_METHODS id.
+ * @returns {object} A new CanvasXpress data object with the transform applied.
+ */
+function transformData(cxData, method) {
+  if (!cxData || !cxData.y || !Array.isArray(cxData.y.data)) { return cxData; }
+  if (!method || method === 'none' || TRANSFORM_METHODS.indexOf(method) < 0) {
+    return shallowCloneData(cxData);
+  }
+  var matrix = cxData.y.data;
+  var out;
+  if (method === 'quantileNormalize') {
+    // Columns = samples. Transpose, normalize, transpose back.
+    var nrow = matrix.length;
+    var ncol = nrow ? matrix[0].length : 0;
+    var columns = [];
+    for (var c = 0; c < ncol; c++) {
+      var col = [];
+      for (var r = 0; r < nrow; r++) { col.push(matrix[r][c]); }
+      columns.push(col);
+    }
+    var normalized = quantileNormalize(columns);
+    out = [];
+    for (var ri = 0; ri < nrow; ri++) {
+      var newRow = [];
+      for (var ci = 0; ci < ncol; ci++) { newRow.push(normalized[ci][ri]); }
+      out.push(newRow);
+    }
+  } else {
+    var rowFn = method === 'log2' ? log2Row
+      : method === 'log10' ? log10Row
+      : method === 'zscore' ? zscoreRow
+      : medianCenterRow;
+    out = matrix.map(function (row) { return rowFn(row); });
+  }
+  var clone = shallowCloneData(cxData);
+  clone.y = {};
+  for (var key in cxData.y) { if (Object.prototype.hasOwnProperty.call(cxData.y, key)) { clone.y[key] = cxData.y[key]; } }
+  clone.y.data = out;
+  return clone;
+}
+
+/** Shallow clone of a CX data object (top level + y container). @private */
+function shallowCloneData(cxData) {
+  var clone = {};
+  for (var key in cxData) { if (Object.prototype.hasOwnProperty.call(cxData, key)) { clone[key] = cxData[key]; } }
+  return clone;
+}
+
+/* ==== src/analysisControls.js ==== */
+/**
+ * Dashboard-level analysis controls — the FDR threshold slider, the transform
+ * control contract, and the batch-correction hook. These are *analysis* controls:
+ * one scientific parameter re-runs the analysis across every bound panel, not a
+ * display filter. Built on the shipped substrate — `applyDashboardCorrection`
+ * (statInference.js) for honest dashboard-scope FDR, `transforms.js` for the
+ * client-side transforms, and `function` sources for the heavy server-side work.
+ *
+ * @module analysisControls
+ */
+
+
+/**
+ * Re-filter every panel by a single FDR threshold. Corrects once across all
+ * comparisons (dashboard scope — the honest FDR unit), then marks each comparison
+ * `hidden` when its adjusted p exceeds the threshold, and reports the −log10
+ * cut-off a bound volcano should draw. One scientific parameter, whole-dashboard
+ * reaction.
+ *
+ * Mutates each comparison (`padj`, `hidden`) and returns a summary so the renderer
+ * can update bound panels (hide non-significant brackets, move the volcano FDR
+ * line, re-run enrichment selection).
+ *
+ * @param {object[]} panels - Panels carrying `statInference.comparisons` (each {p}).
+ * @param {object} options
+ * @param {number} options.threshold - FDR cut-off on the adjusted-p scale (e.g. 0.05).
+ * @param {string} [options.method='BH'] - Correction method (pAdjust).
+ * @returns {{threshold:number, method:string, volcanoY:number, kept:number, total:number}}
+ */
+function applyFdrThreshold(panels, options) {
+  options = options || {};
+  var threshold = options.threshold != null ? options.threshold : 0.05;
+  var method = options.method || 'BH';
+  applyDashboardCorrection(panels, method);
+  var kept = 0;
+  var total = 0;
+  for (var i = 0; i < panels.length; i++) {
+    var si = panels[i] && panels[i].statInference;
+    if (si && Array.isArray(si.comparisons)) {
+      for (var j = 0; j < si.comparisons.length; j++) {
+        var cmp = si.comparisons[j];
+        total++;
+        cmp.hidden = !(cmp.padj != null && cmp.padj <= threshold);
+        if (!cmp.hidden) { kept++; }
+      }
+      si.fdrThreshold = threshold;
+    }
+  }
+  return {
+    threshold: threshold,
+    method: method,
+    volcanoY: threshold > 0 ? (-Math.log(threshold) / Math.LN10) : 0,
+    kept: kept,
+    total: total
+  };
+}
+
+/**
+ * Significance verdict for a single feature at a threshold — the test an
+ * enrichment/volcano panel applies per gene when the slider moves.
+ * @param {number} padj - Adjusted p-value.
+ * @param {number} threshold - FDR cut-off.
+ * @returns {{significant:boolean, stars:string}}
+ */
+function fdrVerdict(padj, threshold) {
+  return { significant: padj != null && padj <= threshold, stars: significanceStars(padj) };
+}
+
+/**
+ * Build an FDR threshold slider control spec (a param-mode range control). The
+ * renderer wires the param to applyFdrThreshold across the dashboard's panels.
+ *
+ * @param {object} options
+ * @param {string} [options.param='fdr'] - Dashboard param the slider sets.
+ * @param {number} [options.value=0.05] - Initial threshold.
+ * @param {number} [options.min=0.001] @param {number} [options.max=0.25]
+ * @param {number} [options.step=0.001] @param {string} [options.method='BH']
+ * @param {string} [options.title='FDR threshold']
+ * @returns {object} A control-panel spec.
+ */
+function buildFdrSliderControl(options) {
+  options = options || {};
+  return {
+    type: 'control',
+    mode: 'param',
+    style: 'range',
+    param: options.param || 'fdr',
+    title: options.title || 'FDR threshold',
+    analysis: 'fdr',
+    method: options.method || 'BH',
+    min: options.min != null ? options.min : 0.001,
+    max: options.max != null ? options.max : 0.25,
+    step: options.step != null ? options.step : 0.001,
+    value: options.value != null ? options.value : 0.05
+  };
+}
+
+/**
+ * Build a transform control spec (a config-style control that re-expresses a
+ * target panel's data through transforms.transformData). On change the renderer
+ * calls `inst.updateData(transformData(original, method))`.
+ *
+ * @param {object} options
+ * @param {string} options.target - Target panel id.
+ * @param {string[]} [options.methods] - Subset of TRANSFORM_METHODS to offer.
+ * @param {string} [options.value='none'] - Initial method.
+ * @param {string} [options.title='Transform'] @param {string} [options.style='dropdown']
+ * @returns {object} A control-panel spec.
+ */
+function buildTransformControl(options) {
+  options = options || {};
+  var methods = options.methods || TRANSFORM_METHODS;
+  return {
+    type: 'control',
+    mode: 'transform',
+    style: options.style || 'dropdown',
+    target: options.target,
+    title: options.title || 'Transform',
+    analysis: 'transform',
+    value: options.value || 'none',
+    options: methods.map(function (m) { return { label: TRANSFORM_LABELS[m] || m, value: m }; })
+  };
+}
+
+/**
+ * Build an opt-in batch-correction `function` source spec (the hook). Heavy
+ * correction (limma removeBatchEffect / ComBat) runs server-side and stays OFF by
+ * default; the body here is a documented stub for the host's functions runtime to
+ * implement. The applied correction is recorded in provenance (see
+ * describeAnalysisControl).
+ *
+ * @param {object} options
+ * @param {string} options.input - Ref of the expression source to correct.
+ * @param {string} options.batch - Sample annotation naming the batch factor.
+ * @param {string} [options.method='combat'] - 'combat' | 'limma'.
+ * @param {string} [options.language='R'] @param {string} [options.enabledParam='batchCorrect']
+ * @returns {object} A `kind:'function'` source spec (disabled unless the param is truthy).
+ */
+function batchCorrectionSource(options) {
+  options = options || {};
+  var method = options.method || 'combat';
+  var language = options.language || 'R';
+  var stub = language === 'R'
+    ? '# Batch correction (opt-in, off by default). Host functions runtime should\n' +
+      '# implement this, e.g. sva::ComBat or limma::removeBatchEffect, keyed on the\n' +
+      '# `batch` sample annotation. Return the corrected CanvasXpress data object.\n' +
+      'function(inputs, params) { inputs$expr }'
+    : '# Batch correction stub (off by default) — implement ComBat/limma server-side.\n' +
+      'def run(inputs, params):\n    return inputs["expr"]';
+  return {
+    kind: 'function',
+    language: language,
+    enabled: '$' + (options.enabledParam || 'batchCorrect'),
+    inputs: { expr: options.input },
+    args: { batch: options.batch, method: method },
+    code: stub,
+    analysis: 'batchCorrection',
+    provenance: { kind: 'batchCorrection', method: method, batch: options.batch }
+  };
+}
+
+/**
+ * One-line provenance clause for an applied analysis control, so a silently
+ * transformed/thresholded panel is never a reproducibility hazard (plan §4).
+ *
+ * @param {object} control - A control spec (transform/fdr) or {kind:'batchCorrection', ...}.
+ * @param {*} [value] - The applied value (transform method or threshold).
+ * @returns {string} A human-readable clause, or '' if nothing to record.
+ */
+function describeAnalysisControl(control, value) {
+  if (!control) { return ''; }
+  var analysis = control.analysis || control.kind;
+  if (analysis === 'transform') {
+    var method = value != null ? value : control.value;
+    if (!method || method === 'none') { return ''; }
+    return 'values ' + (TRANSFORM_LABELS[method] || method) + '-transformed';
+  }
+  if (analysis === 'fdr') {
+    var threshold = value != null ? value : control.value;
+    return 'filtered at FDR ≤ ' + threshold + ' (' + (control.method || 'BH') + ' correction, dashboard-scope)';
+  }
+  if (analysis === 'batchCorrection') {
+    return 'batch-corrected (' + (control.method || 'combat') + ', by ' + (control.batch || 'batch') + ')';
+  }
+  return '';
+}
+
+/**
+ * Provenance clauses for every analysis control declared on a dashboard — the
+ * transforms, FDR thresholds and batch corrections a reader needs to know were
+ * applied (plan §4: a silently transformed/thresholded panel is a reproducibility
+ * hazard). Scans spec.panels for control panels carrying an `analysis` tag and any
+ * `analysis` function sources.
+ *
+ * @param {object} spec - A dashboard spec.
+ * @returns {string[]} Non-empty provenance clauses, in panel order.
+ */
+function describeAnalysisControls(spec) {
+  var clauses = [];
+  var panels = (spec && spec.panels) || {};
+  Object.keys(panels).forEach(function (id) {
+    var panel = panels[id];
+    if (panel && panel.type === 'control' && panel.analysis) {
+      var text = describeAnalysisControl(panel);
+      if (text) { clauses.push(text); }
+    }
+  });
+  var sources = (spec && spec.data) || {};
+  Object.keys(sources).forEach(function (ref) {
+    var src = sources[ref];
+    if (src && src.analysis === 'batchCorrection' && src.provenance) {
+      var text = describeAnalysisControl(src.provenance);
+      if (text) { clauses.push(text); }
+    }
+  });
+  return clauses;
+}
+
 /* ==== src/renderDashboard.js ==== */
 /**
  * Client renderer: turn a dashboard spec into a responsive CSS-grid of
@@ -5033,6 +6772,9 @@ function hasOwn(obj, key) {
  *
  * @module renderDashboard
  */
+
+
+
 
 
 
@@ -6291,6 +8033,7 @@ function renderDashboard(spec, target, options) {
           buildRemote(data);
           bind(panel && panel.dataRef, remoteInstance, cell, buildRemote);
           cell.setState('ready');
+          attachProvenanceFooter(cell, spec, item.panel, panel);
           notify(remoteInstance, 'ready');
           return remoteInstance;
         }
@@ -6311,6 +8054,7 @@ function renderDashboard(spec, target, options) {
           bind(panel && panel.dataRef, instance, cell, undefined, prepare);
           if (autoResize) observeResize(cell, instance, observers, canvasInset);
           cell.setState('ready');
+          attachProvenanceFooter(cell, spec, item.panel, panel);
           notify(instance, 'ready');
           return instance;
         }
@@ -7065,6 +8809,19 @@ function renderDashboard(spec, target, options) {
       return Promise.resolve(buildConfigControl(cell, item, panel, notify));
     }
 
+    // A transform control (analysis control) re-expresses a target panel's data
+    // through transforms.transformData (log/z-score/normalize) — client-side,
+    // instant — by calling updateData on the target's live instance.
+    if (panel.mode === 'transform') {
+      return Promise.resolve(buildTransformControl(cell, item, panel, notify));
+    }
+
+    // An FDR threshold slider (numeric range param control): slides one cut-off
+    // that recorrects (dashboard-scope) and re-filters every statInference panel.
+    if (isParam && panel.style === 'range') {
+      return Promise.resolve(buildRangeControl(cell, item, panel, notify));
+    }
+
     /**
      * Build the control's DOM from a list of choices and wire its change handler
      * (param mode → applyParamChange; filter mode → applyControlFilters).
@@ -7378,6 +9135,192 @@ function renderDashboard(spec, target, options) {
     return null;
   }
 
+  /**
+   * Render a transform control (`mode:"transform"`): a dropdown/buttons of
+   * transform methods (none/log2/log10/zscore/medianCenter/quantileNormalize)
+   * that re-expresses the TARGET panel's data by calling `updateData` with the
+   * client-side transform. The pristine data is captured on first change so
+   * switching methods always transforms from the original, never a prior result.
+   *
+   * @param {object} cell @param {object} item @param {object} panel @param {function} notify
+   * @returns {null} Always null (a control renders no CanvasXpress instance).
+   * @private
+   */
+  function buildTransformControl(cell, item, panel, notify) {
+    var options = panel.options || [];
+    var target = panel.target;
+    var original = { data: null };
+    function apply(method) {
+      var slot = cellByPanel[target];
+      var inst = slot && slot.instance;
+      if (!inst || typeof inst.updateData !== 'function') return;
+      if (!original.data) { original.data = inst.data; }
+      inst.updateData(transformData(original.data, method));
+    }
+    var widget = document.createElement('div');
+    widget.className = 'cxd-annctl';
+    applyAlignment(cell.body, panel);
+    if (panel.title && !panel.hideTitle) {
+      var label = document.createElement('span');
+      label.className = 'cxd-annctl-label';
+      label.textContent = panel.title;
+      widget.appendChild(label);
+    }
+    widget.appendChild(buildTransformInput(panel, options, apply));
+    cell.body.appendChild(widget);
+    cell.setState('ready');
+    notify('ready');
+    return null;
+  }
+
+  /**
+   * Build the input element for a transform control, honouring `panel.style`
+   * (auto | dropdown | radio | buttons) the same way {@link buildAnnotationInput}
+   * does for annotation filters. `auto` picks segmented buttons for up to 4
+   * methods and a dropdown above that. Each variant preselects `panel.value`.
+   *
+   * @param {object} panel - The control panel (reads `style`, `value`).
+   * @param {Array} options - Transform options ({value,label}).
+   * @param {function(string): void} apply - Called with the chosen method value.
+   * @returns {HTMLElement} The input element.
+   * @private
+   */
+  function buildTransformInput(panel, options, apply) {
+    var style = panel.style || 'auto';
+    if (style === 'auto') style = options.length <= 4 ? 'buttons' : 'dropdown';
+
+    if (style === 'radio') {
+      var group = document.createElement('span');
+      group.className = 'cxd-annctl-radios';
+      // Radios group by name; scope it to this control so two transform
+      // controls stay independent (mirrors buildAnnotationInput).
+      var name = 'cxd-xfctl-' + Math.random().toString(36).slice(2, 8);
+      options.forEach(function (opt) {
+        var label = document.createElement('label');
+        label.className = 'cxd-annctl-radio';
+        var input = document.createElement('input');
+        input.type = 'radio';
+        input.name = name;
+        if (opt.value === panel.value) input.checked = true;
+        listen(input, 'change', function () { if (input.checked) apply(opt.value); });
+        var text = document.createElement('span');
+        text.textContent = String(opt.label);
+        label.appendChild(input);
+        label.appendChild(text);
+        group.appendChild(label);
+      });
+      return group;
+    }
+
+    if (style === 'buttons') {
+      var seg = document.createElement('span');
+      seg.className = 'cxd-annctl-seg';
+      var buttons = [];
+      options.forEach(function (opt) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cxd-annctl-segbtn' + (opt.value === panel.value ? ' cxd-annctl-on' : '');
+        btn.textContent = String(opt.label);
+        listen(btn, 'click', function () {
+          buttons.forEach(function (b) { b.classList.remove('cxd-annctl-on'); });
+          btn.classList.add('cxd-annctl-on');
+          apply(opt.value);
+        });
+        buttons.push(btn);
+        seg.appendChild(btn);
+      });
+      return seg;
+    }
+
+    var select = document.createElement('select');
+    select.className = 'cxd-annctl-select';
+    options.forEach(function (opt) {
+      var o = document.createElement('option');
+      o.value = String(opt.value);
+      o.textContent = String(opt.label);
+      if (opt.value === panel.value) o.selected = true;
+      select.appendChild(o);
+    });
+    listen(select, 'change', function () { apply(select.value); });
+    return select;
+  }
+
+  /**
+   * Re-run dashboard-scope FDR correction at a threshold and re-render every
+   * statInference panel so non-significant brackets drop out. Collects each live
+   * instance's `statInference`, corrects once across all comparisons, then pushes
+   * the updated block back with `updateConfig`.
+   *
+   * @param {number} threshold - FDR cut-off on the adjusted-p scale.
+   * @param {string} [method] - Correction method (default BH).
+   * @returns {void}
+   * @private
+   */
+  function applyFdrAcrossPanels(threshold, method) {
+    var wrappers = [];
+    var instances = [];
+    for (var id in cellByPanel) {
+      if (!Object.prototype.hasOwnProperty.call(cellByPanel, id)) continue;
+      var inst = cellByPanel[id] && cellByPanel[id].instance;
+      if (inst && inst.statInference && Array.isArray(inst.statInference.comparisons)) {
+        wrappers.push({ statInference: inst.statInference });
+        instances.push(inst);
+      }
+    }
+    if (!wrappers.length) return;
+    applyFdrThreshold(wrappers, { threshold: threshold, method: method || 'BH' });
+    for (var i = 0; i < instances.length; i++) {
+      if (typeof instances[i].updateConfig === 'function') {
+        instances[i].updateConfig({ showStatInference: true, statInference: instances[i].statInference });
+      }
+    }
+  }
+
+  /**
+   * Render a numeric range slider param control (`style:"range"`). Writes the
+   * numeric value into the param (so `function` sources with `$param` recompute)
+   * and, when `analysis:"fdr"`, re-filters every statInference panel at the new
+   * threshold via {@link applyFdrAcrossPanels}.
+   *
+   * @param {object} cell @param {object} item @param {object} panel @param {function} notify
+   * @returns {null} Always null (a control renders no CanvasXpress instance).
+   * @private
+   */
+  function buildRangeControl(cell, item, panel, notify) {
+    var widget = document.createElement('div');
+    widget.className = 'cxd-annctl';
+    applyAlignment(cell.body, panel);
+    if (panel.title && !panel.hideTitle) {
+      var label = document.createElement('span');
+      label.className = 'cxd-annctl-label';
+      label.textContent = panel.title;
+      widget.appendChild(label);
+    }
+    var slider = document.createElement('input');
+    slider.type = 'range';
+    slider.className = 'cxd-slider';
+    slider.min = String(panel.min != null ? panel.min : 0);
+    slider.max = String(panel.max != null ? panel.max : 1);
+    slider.step = String(panel.step != null ? panel.step : 0.001);
+    slider.value = String(panel.value != null ? panel.value : panel.min || 0);
+    var readout = document.createElement('span');
+    readout.className = 'cxd-slider-readout';
+    readout.textContent = slider.value;
+    listen(slider, 'input', function () {
+      var num = parseFloat(slider.value);
+      readout.textContent = slider.value;
+      if (panel.disabled) return;
+      if (panel.param) applyParamChange(panel.param, num);
+      if (panel.analysis === 'fdr') applyFdrAcrossPanels(num, panel.method);
+    });
+    widget.appendChild(slider);
+    widget.appendChild(readout);
+    cell.body.appendChild(widget);
+    cell.setState('ready');
+    notify('ready');
+    return null;
+  }
+
   items.forEach(function (item) {
     pending.push(renderPanelItem(item, spec.panels[item.panel]));
   });
@@ -7467,6 +9410,22 @@ function renderDashboard(spec, target, options) {
     instances: instances,
     broadcastGroup: broadcastGroup,
     store: store,
+    /**
+     * The live CanvasXpress instance for each graph panel, keyed by panel id
+     * (panels with no chart — text / image / filters — are omitted). The
+     * reproducible-bundle export reads these to emit per-panel R / Python
+     * regeneration code from the engine's own code-emitters.
+     * @returns {object} panelId -> CanvasXpress instance.
+     */
+    panelInstances: function () {
+      var out = {};
+      for (var id in cellByPanel) {
+        if (Object.prototype.hasOwnProperty.call(cellByPanel, id) && cellByPanel[id].instance) {
+          out[id] = cellByPanel[id].instance;
+        }
+      }
+      return out;
+    },
     /**
      * The live dashboard parameter values (name -> value), reflecting the
      * current mode:"param" control selections. Pass to the HTML export so the
@@ -8743,6 +10702,49 @@ function showCodeDialog(container, title, panel, lineage, sources, opts) {
  *   The cell parts.
  * @private
  */
+/**
+ * Append (or refresh) the provenance figure-legend footer beneath a graph
+ * panel's body when `panel.provenance.show` is set, with the auto-derived (or
+ * author-pinned) method line. A no-op when the panel opts out or there is
+ * nothing to say; replaces any footer already attached (so a re-render / live
+ * update keeps a single footer).
+ * @param {object} cell - The panel cell (from {@link buildCell}).
+ * @param {object} spec - The dashboard spec (its `data` supplies the source
+ *   chain for the method line).
+ * @param {string} panelId - The panel's id (key in spec.panels).
+ * @param {object} [panel] - The live panel definition; used instead of a
+ *   `spec.panels[panelId]` lookup so the builder's incremental re-render (which
+ *   does not update the renderer's spec copy) reflects the current provenance.
+ * @returns {void}
+ * @private
+ */
+function attachProvenanceFooter(cell, spec, panelId, panel) {
+  panel = panel || (spec && spec.panels && spec.panels[panelId]);
+  if (cell.footer && cell.footer.parentNode) cell.footer.parentNode.removeChild(cell.footer);
+  cell.footer = null;
+  if (!panel || !panel.provenance || !panel.provenance.show) return;
+  // Derive against a spec view that carries this live panel, so the method line
+  // uses the current panel even on the builder's incremental path.
+  var panels = {};
+  for (var id in (spec && spec.panels) || {}) {
+    if (Object.prototype.hasOwnProperty.call(spec.panels, id)) panels[id] = spec.panels[id];
+  }
+  panels[panelId] = panel;
+  var specView = {};
+  for (var key in spec) {
+    if (Object.prototype.hasOwnProperty.call(spec, key)) specView[key] = spec[key];
+  }
+  specView.panels = panels;
+  var text = panelProvenanceText(specView, panelId);
+  if (!text) return;
+  var footer = document.createElement('div');
+  footer.className = 'cxd-panel-footer';
+  footer.textContent = text;
+  footer.title = text;
+  cell.root.appendChild(footer);
+  cell.footer = footer;
+}
+
 function buildCell(title) {
   var root = document.createElement('div');
   root.className = 'cxd-panel';
@@ -9944,6 +11946,19 @@ function addPanel(spec, panel) {
       control.param = panel.param || '';
       if (Array.isArray(panel.options)) control.options = panel.options;
       if (panel.optionsFrom) control.optionsFrom = panel.optionsFrom;
+      // An FDR threshold slider (analysis control) is a numeric range param.
+      if (panel.style === 'range') {
+        ['min', 'max', 'step', 'value', 'analysis', 'method'].forEach(function (k) {
+          if (panel[k] != null) control[k] = panel[k];
+        });
+      }
+    } else if (panel.mode === 'transform') {
+      // A transform control (analysis control) re-expresses a target panel's data.
+      control.mode = 'transform';
+      control.target = panel.target || '';
+      control.analysis = 'transform';
+      if (Array.isArray(panel.options)) control.options = panel.options;
+      if (panel.value != null) control.value = panel.value;
     }
     next.panels[panel.id] = control;
   } else if (panel.type === 'filters') {
@@ -10175,6 +12190,12 @@ function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'actions')) {
     if (Array.isArray(changes.actions) && changes.actions.length) panel.actions = changes.actions;
     else delete panel.actions;
+  }
+  // Provenance metadata (reproducibility): kept when it carries anything,
+  // dropped when empty so a cleared toggle leaves no residue.
+  if (Object.prototype.hasOwnProperty.call(changes, 'provenance')) {
+    if (changes.provenance && Object.keys(changes.provenance).length) panel.provenance = changes.provenance;
+    else delete panel.provenance;
   }
   return next;
 }
@@ -11119,6 +13140,1077 @@ function chartColumns(data) {
   return { numbers: (y.smps || []).slice(), texts: Object.keys((data && data.z) || {}) };
 }
 
+// ---- Scientific data-shape detection (P1) ---------------------------------
+// Given a bound source, recognise the common scientific data shapes so the
+// wizard can SUGGEST the matching scientific panel (never a silent rewrite —
+// see the plan's risk note). Pure functions over the CanvasXpress data object
+// and its column profile; no DOM, no engine.
+
+// Column-name hints, matched case-insensitively against the whole header.
+var SURVIVAL_TIME_RE = /^(time|t|surv(ival)?|os|pfs|dfs|efs|tte|duration|follow[\s._-]?up|fu|days?|months?|weeks?|years?)$/i;
+var SURVIVAL_EVENT_RE = /(event|status|dead|death|censor|vital|outcome|relapse|progress|recur)/i;
+var GENOME_CHR_RE = /^(chr(om(osome)?)?)$/i;
+var GENOME_POS_RE = /^(pos(ition)?|bp|loc(ation)?|coord(inate)?|start)$/i;
+var PVALUE_RE = /^(p|pval(ue)?|p[\s._-]?val(ue)?|padj|adj[\s._-]?p(val(ue)?)?|fdr|q(val(ue)?)?)$/i;
+var LOGFC_RE = /(log2?[\s._-]?(fold[\s._-]?)?change|log2?fc|logfc|l2fc|fold[\s._-]?change)/i;
+
+// Oncoprint alteration tokens (engine `arrayToCXOncoprint`): a cell is one or
+// more of these, optionally delimited by `;`, `,` or `|`.
+var ALTERATION_TOKEN_RE = /^(mut(ation)?|amp(lification)?|del(etion)?|homdel|hetloss|homdel_rec|gain|loss|fusion|trunc(ating)?|inframe|missense|splice|promoter|up|down|wt)$/i;
+
+/**
+ * Column-name match against a header list.
+ * @param {Array<string>} headers - Column names.
+ * @param {RegExp} re - Hint pattern.
+ * @returns {number} The matching column index, or -1.
+ * @private
+ */
+function findHeader(headers, re) {
+  for (var i = 0; i < headers.length; i++) {
+    if (re.test(String(headers[i]).trim())) return i;
+  }
+  return -1;
+}
+
+/**
+ * The non-missing values of one table column (rows only, header dropped).
+ * @param {Array<Array>} rows - Table rows (no header).
+ * @param {number} col - Column index.
+ * @returns {Array} The non-missing cells.
+ * @private
+ */
+function columnCells(rows, col) {
+  var out = [];
+  for (var r = 0; r < rows.length; r++) {
+    var value = rows[r][col];
+    if (!isMissing(value)) out.push(value);
+  }
+  return out;
+}
+
+/**
+ * Does a column read as a survival EVENT indicator — binary 0/1, or a small
+ * set of alive/dead-style status strings?
+ * @param {Array} cells - Non-missing cells of the column.
+ * @returns {boolean}
+ * @private
+ */
+function looksLikeEvent(cells) {
+  if (!cells.length) return false;
+  var binary = cells.every(function (value) {
+    var s = String(value).trim();
+    return s === '0' || s === '1' || s === 'true' || s === 'false';
+  });
+  if (binary) return true;
+  var seen = {};
+  cells.forEach(function (value) { seen[String(value).trim().toLowerCase()] = true; });
+  var levels = Object.keys(seen);
+  if (levels.length > 3) return false;
+  return levels.every(function (level) {
+    return /^(dead|alive|death|censor(ed)?|event|no[\s._-]?event|yes|no|deceased|living|1|0|relapse|progression|cr|pd)$/i.test(level);
+  });
+}
+
+/**
+ * Detect the scientific shape(s) of a bound data source and suggest the
+ * matching scientific panel type(s). A *suggestion* only — ranked by
+ * confidence (0–1); the wizard offers them, it never rewrites silently.
+ *
+ * Recognises, by column name and value shape:
+ *  - survival table → `KaplanMeier` (a time measure + a binary/status event,
+ *    optional grouping factor);
+ *  - GWAS summary → `Manhattan` (chromosome + position + p-value);
+ *  - differential-expression table → `Volcano` (log-fold-change + p-value);
+ *  - alteration matrix → `Oncoprint` (matrix cells are alteration tokens);
+ *  - numeric gene×sample matrix → `Heatmap` (clustered expression matrix).
+ *
+ * @param {object} data - CanvasXpress data object.
+ * @returns {Array<{graphType: string, reason: string, confidence: number}>}
+ *   Suggestions, highest confidence first ([] when nothing scientific fits).
+ * @public
+ */
+function detectDataShapes(data) {
+  var table = tableFromData(data);
+  var headers = (table[0] || []).slice(1);        // drop the row-id column
+  var rows = table.slice(1).map(function (row) { return row.slice(1); });
+  if (!headers.length || !rows.length) return [];
+  var profile = profileColumns(table).slice(1);   // aligned to `headers`
+  var numericCols = [];
+  var textCols = [];
+  profile.forEach(function (p, i) {
+    if (p.type === 'numeric') numericCols.push(i);
+    else textCols.push(i);
+  });
+  var suggestions = [];
+
+  // Survival: a time-like numeric column + an event-like column.
+  var timeCol = findHeader(headers, SURVIVAL_TIME_RE);
+  var eventCol = findHeader(headers, SURVIVAL_EVENT_RE);
+  if (timeCol !== -1 && profile[timeCol].type === 'numeric' && eventCol !== -1 &&
+      eventCol !== timeCol && looksLikeEvent(columnCells(rows, eventCol))) {
+    suggestions.push({ graphType: 'KaplanMeier', confidence: 0.9,
+      reason: 'Survival table: time column "' + headers[timeCol] + '" + event column "' +
+        headers[eventCol] + '".' });
+  }
+
+  // GWAS / Manhattan: chromosome + position + p-value.
+  var chrCol = findHeader(headers, GENOME_CHR_RE);
+  var posCol = findHeader(headers, GENOME_POS_RE);
+  var pCol = findHeader(headers, PVALUE_RE);
+  if (chrCol !== -1 && posCol !== -1 && pCol !== -1 &&
+      profile[posCol].type === 'numeric' && profile[pCol].type === 'numeric') {
+    suggestions.push({ graphType: 'Manhattan', confidence: 0.9,
+      reason: 'GWAS summary: chromosome "' + headers[chrCol] + '", position "' +
+        headers[posCol] + '", p-value "' + headers[pCol] + '".' });
+  }
+
+  // Volcano: a log-fold-change column + a p-value column.
+  var fcCol = findHeader(headers, LOGFC_RE);
+  if (fcCol !== -1 && pCol !== -1 && fcCol !== pCol &&
+      profile[fcCol].type === 'numeric' && profile[pCol].type === 'numeric') {
+    suggestions.push({ graphType: 'Volcano', confidence: 0.8,
+      reason: 'Differential expression: fold-change "' + headers[fcCol] + '" + p-value "' +
+        headers[pCol] + '".' });
+  }
+
+  // Oncoprint: the matrix cells are alteration tokens (text, from the vocabulary).
+  if (textCols.length >= 2) {
+    var tokenCells = 0, nonMissing = 0;
+    textCols.forEach(function (col) {
+      columnCells(rows, col).forEach(function (value) {
+        nonMissing++;
+        var ok = String(value).trim().split(/[;,|]/).every(function (part) {
+          return part.trim() !== '' && ALTERATION_TOKEN_RE.test(part.trim());
+        });
+        if (ok) tokenCells++;
+      });
+    });
+    if (nonMissing && tokenCells / nonMissing > 0.6) {
+      suggestions.push({ graphType: 'Oncoprint', confidence: 0.85,
+        reason: 'Alteration matrix: ' + textCols.length + ' columns of mutation/CNA tokens.' });
+    }
+  }
+
+  // Expression matrix: a wide, mostly-numeric matrix (gene×sample). Low/medium
+  // confidence — it is the generic numeric-matrix fallback, so rank it last.
+  if (numericCols.length >= 3 && rows.length >= 3 &&
+      numericCols.length >= headers.length * 0.6) {
+    suggestions.push({ graphType: 'Heatmap', confidence: 0.6,
+      reason: 'Numeric matrix: ' + rows.length + '×' + numericCols.length +
+        ' — a clustered heatmap suits an expression matrix.' });
+  }
+
+  suggestions.sort(function (a, b) { return b.confidence - a.confidence; });
+  return suggestions;
+}
+
+/**
+ * The single best scientific-panel suggestion for a bound source, if any.
+ * @param {object} data - CanvasXpress data object.
+ * @returns {{graphType: string, reason: string, confidence: number}|null}
+ * @public
+ */
+function suggestPanelType(data) {
+  var shapes = detectDataShapes(data);
+  return shapes.length ? shapes[0] : null;
+}
+
+// ---- Scientific panel presets (P2) ----------------------------------------
+// Wizard entries for the panel types the engine already renders but the
+// generic chart selector does not surface. Kept SEPARATE from
+// WIZARD_CHART_TYPES (whose contract is "a measure split by groups, Pie and
+// Heatmap left out") — these map their own fields and carry panel-specific
+// sane defaults, so they do not fit that list's generic X + Group model.
+
+/**
+ * The scientific panel presets the wizard offers in addition to
+ * {@link WIZARD_CHART_TYPES}. Pair with {@link detectDataShapes} (suggest) and
+ * {@link buildScientificConfig} (build).
+ * @type {Array<string>}
+ * @public
+ */
+var WIZARD_SCIENCE_TYPES = ['KaplanMeier', 'Oncoprint', 'Heatmap', 'Manhattan', 'Volcano'];
+
+/**
+ * Which Configure fields a scientific preset collects. Matrix panels
+ * (Oncoprint/Heatmap) take no field mapping — they draw the bound matrix as-is.
+ * @param {string} graphType - A scientific preset graph type.
+ * @returns {Array<{key: string, label: string, numeric?: boolean}>} The fields
+ *   to collect (empty for matrix panels).
+ * @public
+ */
+function scientificFieldsFor(graphType) {
+  if (graphType === 'KaplanMeier') {
+    return [{ key: 'time', label: 'Time', numeric: true },
+      { key: 'event', label: 'Event / censor' },
+      { key: 'group', label: 'Group (optional)' }];
+  }
+  if (graphType === 'Manhattan') {
+    return [{ key: 'chr', label: 'Chromosome' },
+      { key: 'pos', label: 'Position', numeric: true },
+      { key: 'p', label: 'p-value', numeric: true }];
+  }
+  if (graphType === 'Volcano') {
+    return [{ key: 'fc', label: 'Fold change (log2)', numeric: true },
+      { key: 'p', label: 'p-value', numeric: true },
+      { key: 'label', label: 'Label / colour (optional)' }];
+  }
+  return [];   // Oncoprint, Heatmap: the matrix is the data
+}
+
+/**
+ * Build a CanvasXpress config for a scientific preset: the chosen fields mapped
+ * to the panel's real engine keys, panel-specific sane defaults, then the
+ * user's extra config on top, oriented to the data ({@link orientConfig}).
+ *
+ * Defaults are grounded in the shipping engine params (verified 2026-10-16):
+ * Kaplan-Meier shows CI + log-rank p (`kmPvalue`) + at-risk table + censor rug;
+ * Heatmap clusters both axes (dendrograms) with a diverging spectrum; Manhattan
+ * points its marker keys at the chosen columns; Volcano is the native alias
+ * (Scatter2D) over fold-change vs p — auto significance thresholds are
+ * deliberately left to the stat-inference work (`stat-inference-plan.md`), so
+ * no threshold-line coordinates are fabricated here.
+ *
+ * @param {string} graphType - A member of {@link WIZARD_SCIENCE_TYPES}.
+ * @param {object} [fields] - Field map (keys from {@link scientificFieldsFor}).
+ * @param {object} [extra] - Extra CanvasXpress config, merged last (it wins).
+ * @param {object} data - The data the panel draws (for orientation).
+ * @returns {object} A CanvasXpress config.
+ * @public
+ */
+function buildScientificConfig(graphType, fields, extra, data) {
+  var f = fields || {};
+  var config;
+  if (graphType === 'KaplanMeier') {
+    // The engine KM reads time from xAxis, event from yAxis (geomKaplanMeier
+    // computeKMForPair: [xAxisIndex=time, yAxisIndex=event]).
+    config = { graphType: 'KaplanMeier',
+      showKMConfidenceIntervals: true, kmPvalue: true, kmRiskTable: true, kmCensoredRug: true };
+    if (f.time) config.xAxis = [f.time];
+    if (f.event) config.yAxis = [f.event];
+    if (f.group) config.colorBy = f.group;
+  } else if (graphType === 'Oncoprint') {
+    config = { graphType: 'Oncoprint' };
+  } else if (graphType === 'Heatmap') {
+    config = { graphType: 'Heatmap', samplesClustered: true, variablesClustered: true,
+      colorSpectrum: ['navy', 'white', 'firebrick3'] };
+  } else if (graphType === 'Manhattan') {
+    config = { graphType: 'Manhattan' };
+    if (f.chr) config.manhattanMarkerChromosomeNumber = f.chr;
+    if (f.pos) config.manhattanMarkerPosition = f.pos;
+    if (f.p) config.manhattanMarkerLogPValue = f.p;
+  } else if (graphType === 'Volcano') {
+    config = { graphType: 'Volcano' };
+    if (f.fc) config.xAxis = [f.fc];
+    if (f.p) config.yAxis = [f.p];
+    if (f.label) config.colorBy = f.label;
+  } else {
+    config = { graphType: graphType };
+  }
+  var more = extra || {};
+  for (var k in more) {
+    if (Object.prototype.hasOwnProperty.call(more, k)) config[k] = more[k];
+  }
+  return orientConfig(config, data);
+}
+
+/* ==== src/enrichment.js ==== */
+/**
+ * Over-representation (enrichment) analysis — dependency-free.
+ *
+ * Given a query set (e.g. the genes a scientist selected in a panel, the P4
+ * marked set) and a collection of annotated gene sets (pathways), score each
+ * pathway for over-representation with the hypergeometric test (equivalently
+ * the one-tailed Fisher exact test) and correct across pathways with
+ * Benjamini-Hochberg FDR.
+ *
+ * This keeps enrichment self-contained in the dashboards layer. When the
+ * engine's shared multiple-testing correction lands (stat-inference-plan), the
+ * BH step here can delegate to it; the hypergeometric core stays.
+ *
+ * @module enrichment
+ */
+
+/**
+ * Natural log of the gamma function (Lanczos approximation, g=7). Accurate to
+ * ~1e-13 for positive arguments — enough for log-factorials over gene-set sizes.
+ * @param {number} x - A positive number.
+ * @returns {number} ln(Γ(x)).
+ * @private
+ */
+function logGamma(x) {
+  var COF = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  var g = 7;
+  if (x < 0.5) {
+    // Reflection formula for completeness (not hit by factorial use).
+    return Math.log(Math.PI / Math.sin(Math.PI * x)) - logGamma(1 - x);
+  }
+  x -= 1;
+  var a = COF[0];
+  var t = x + g + 0.5;
+  for (var i = 1; i < g + 2; i++) a += COF[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+
+/**
+ * ln(n!).
+ * @param {number} n - A non-negative integer.
+ * @returns {number} ln(n!).
+ * @private
+ */
+function logFactorial(n) { return logGamma(n + 1); }
+
+/**
+ * ln of the binomial coefficient C(n, k).
+ * @param {number} n - Total.
+ * @param {number} k - Chosen.
+ * @returns {number} ln(C(n,k)), or -Infinity when out of range.
+ * @private
+ */
+function logChoose(n, k) {
+  if (k < 0 || k > n) return -Infinity;
+  return logFactorial(n) - logFactorial(k) - logFactorial(n - k);
+}
+
+/**
+ * Hypergeometric upper-tail p-value: the probability of drawing **at least**
+ * `overlap` members of a set of size `setSize` when drawing `querySize` items
+ * from a universe of `universeSize` — the over-representation p-value.
+ * @param {number} overlap - Observed hits (query ∩ set).
+ * @param {number} querySize - Query set size (draws).
+ * @param {number} setSize - Annotated set size (successes in the population).
+ * @param {number} universeSize - Background size (population).
+ * @returns {number} P(X ≥ overlap), clamped to [0, 1].
+ * @public
+ */
+function hypergeometricPValue(overlap, querySize, setSize, universeSize) {
+  var maxHits = Math.min(querySize, setSize);
+  if (overlap <= 0) return 1;
+  if (overlap > maxHits) return 0;
+  var denom = logChoose(universeSize, querySize);
+  var sum = 0;
+  for (var i = overlap; i <= maxHits; i++) {
+    var logP = logChoose(setSize, i) + logChoose(universeSize - setSize, querySize - i) - denom;
+    sum += Math.exp(logP);
+  }
+  return Math.max(0, Math.min(1, sum));
+}
+
+/**
+ * Benjamini-Hochberg FDR-adjusted p-values (step-up), preserving input order.
+ * @param {Array<number>} pValues - Raw p-values.
+ * @returns {Array<number>} Adjusted p-values (q-values), aligned to the input.
+ * @public
+ */
+function benjaminiHochberg(pValues) {
+  var m = pValues.length;
+  if (!m) return [];
+  var order = pValues.map(function (p, i) { return { p: p, i: i }; })
+    .sort(function (a, b) { return a.p - b.p; });
+  var adjusted = new Array(m);
+  var running = 1;
+  for (var rank = m - 1; rank >= 0; rank--) {
+    var q = order[rank].p * m / (rank + 1);
+    running = Math.min(running, q);
+    adjusted[order[rank].i] = Math.max(0, Math.min(1, running));
+  }
+  return adjusted;
+}
+
+/**
+ * Normalise a list of ids to a de-duplicated, trimmed, upper-cased set map
+ * (gene symbols are matched case-insensitively).
+ * @param {Array<string>} ids - Identifiers.
+ * @returns {object} A map id→true.
+ * @private
+ */
+function toSet(ids) {
+  var set = Object.create(null);
+  (ids || []).forEach(function (id) {
+    var key = String(id).trim().toUpperCase();
+    if (key) set[key] = true;
+  });
+  return set;
+}
+
+/**
+ * Run over-representation analysis of a query set against annotated gene sets.
+ *
+ * @param {Array<string>} query - The query identifiers (e.g. selected genes).
+ * @param {Array<{id: string, name?: string, genes: Array<string>}>} geneSets -
+ *   The annotated sets (pathways) to test.
+ * @param {object} [options] - Options.
+ * @param {Array<string>} [options.universe] - The background id list. Defaults
+ *   to the union of every gene set plus the query (a self-contained background).
+ * @param {number} [options.minSetSize=1] - Skip sets smaller than this.
+ * @param {number} [options.maxSetSize=Infinity] - Skip sets larger than this.
+ * @returns {Array<object>} One result per tested set, FDR-ascending:
+ *   `{id, name, setSize, overlap, genes, pValue, fdr, oddsRatio, enrichment}`.
+ * @public
+ */
+function enrich(query, geneSets, options) {
+  options = options || {};
+  var querySet = toSet(query);
+  var queryKeys = Object.keys(querySet);
+
+  // Background: the caller's universe, else the union of all sets + query.
+  var universe = Object.create(null);
+  if (options.universe && options.universe.length) {
+    universe = toSet(options.universe);
+  } else {
+    (geneSets || []).forEach(function (gs) {
+      (gs.genes || []).forEach(function (g) { universe[String(g).trim().toUpperCase()] = true; });
+    });
+    queryKeys.forEach(function (g) { universe[g] = true; });
+  }
+  var universeSize = Object.keys(universe).length;
+  // The query restricted to the background (hits outside it do not count).
+  var queryInUniverse = queryKeys.filter(function (g) { return universe[g]; });
+  var querySize = queryInUniverse.length;
+
+  var minSet = options.minSetSize == null ? 1 : options.minSetSize;
+  var maxSet = options.maxSetSize == null ? Infinity : options.maxSetSize;
+
+  var tested = [];
+  (geneSets || []).forEach(function (gs) {
+    var setKeys = Object.keys(toSet(gs.genes)).filter(function (g) { return universe[g]; });
+    var setSize = setKeys.length;
+    if (setSize < minSet || setSize > maxSet) return;
+    var setMap = toSet(setKeys);
+    var hits = queryInUniverse.filter(function (g) { return setMap[g]; });
+    var overlap = hits.length;
+    var pValue = hypergeometricPValue(overlap, querySize, setSize, universeSize);
+    // Odds ratio from the 2×2 table (query × set membership), Haldane-corrected.
+    var a = overlap, b = querySize - overlap, c = setSize - overlap,
+      d = universeSize - querySize - setSize + overlap;
+    var oddsRatio = ((a + 0.5) * (d + 0.5)) / ((b + 0.5) * (c + 0.5));
+    // Fold enrichment vs. the fraction expected by chance.
+    var expected = querySize * setSize / (universeSize || 1);
+    tested.push({ id: gs.id, name: gs.name || gs.id, setSize: setSize, overlap: overlap,
+      genes: hits.map(function (g) { return g; }), pValue: pValue, oddsRatio: oddsRatio,
+      enrichment: expected ? overlap / expected : 0 });
+  });
+
+  var fdr = benjaminiHochberg(tested.map(function (r) { return r.pValue; }));
+  tested.forEach(function (r, i) { r.fdr = fdr[i]; });
+  tested.sort(function (a, b) { return a.fdr - b.fdr || a.pValue - b.pValue || b.overlap - a.overlap; });
+  return tested;
+}
+
+/**
+ * Shape enrichment results as a CanvasXpress data object for a results panel:
+ * one row per pathway (sample), the significance score as the measure, with
+ * overlap / set-size / FDR as annotations.
+ * @param {Array<object>} results - Output of {@link enrich}.
+ * @param {number} [top=20] - Keep the most significant `top` pathways.
+ * @returns {object} A CanvasXpress data object (`y.smps` = pathways).
+ * @public
+ */
+function enrichmentToData(results, top) {
+  var rows = (results || []).slice(0, top == null ? 20 : top);
+  var smps = rows.map(function (r) { return r.name; });
+  var score = rows.map(function (r) {
+    return Math.round(1000 * (-Math.log(Math.max(r.fdr, 1e-300)) / Math.LN10)) / 1000;
+  });
+  return {
+    y: { vars: ['negLog10FDR'], smps: smps, data: [score] },
+    x: {
+      Overlap: rows.map(function (r) { return r.overlap; }),
+      SetSize: rows.map(function (r) { return r.setSize; }),
+      FDR: rows.map(function (r) { return Number(r.fdr.toExponential(2)); })
+    }
+  };
+}
+
+/* ==== src/vcf.js ==== */
+/**
+ * Minimal VCF (Variant Call Format) reader — dependency-free.
+ *
+ * Parses VCF 4.x text into plain records and into a CanvasXpress data object so
+ * a variant table / per-chromosome summary / Manhattan panel can bind it. This
+ * is a pragmatic reader for the common case (SNVs and small indels with the
+ * eight fixed columns, optional FORMAT + genotype samples); it does not
+ * implement the full structural-variant / breakend grammar.
+ *
+ * @module vcf
+ */
+
+var FIXED = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'];
+
+/**
+ * Parse the INFO column (`key=value;flag;key2=v2`) into an object. A bare flag
+ * becomes `true`; a comma list stays a string (callers split if they need to).
+ * @param {string} info - The INFO field.
+ * @returns {object} Parsed key/value pairs.
+ * @private
+ */
+function parseInfo(info) {
+  var out = {};
+  if (!info || info === '.') return out;
+  info.split(';').forEach(function (part) {
+    if (!part) return;
+    var eq = part.indexOf('=');
+    if (eq === -1) out[part] = true;
+    else out[part.slice(0, eq)] = part.slice(eq + 1);
+  });
+  return out;
+}
+
+/**
+ * Parse VCF text into records and metadata.
+ * @param {string} text - VCF file contents.
+ * @returns {{meta: Array<string>, samples: Array<string>,
+ *   records: Array<object>}} `meta` = `##` header lines; `samples` = genotype
+ *   column names; each record has `CHROM, POS (number), ID, REF, ALT, QUAL
+ *   (number|null), FILTER, INFO (object), info (raw), samples{name: genotype}`.
+ * @public
+ */
+function parseVcf(text) {
+  var lines = String(text == null ? '' : text).split(/\r?\n/);
+  var meta = [];
+  var sampleNames = [];
+  var records = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (line === '' ) continue;
+    if (line.charAt(0) === '#') {
+      if (line.charAt(1) === '#') { meta.push(line); continue; }
+      // The #CHROM header: columns 9+ are sample names.
+      var cols = line.replace(/^#/, '').split('\t');
+      sampleNames = cols.slice(9);
+      continue;
+    }
+    var f = line.split('\t');
+    if (f.length < 8) continue;
+    var qual = f[5];
+    var rec = {
+      CHROM: f[0], POS: Number(f[1]), ID: f[2], REF: f[3], ALT: f[4],
+      QUAL: (qual === '.' || qual === '' || qual == null) ? null : Number(qual),
+      FILTER: f[6], info: f[7], INFO: parseInfo(f[7]), samples: {}
+    };
+    if (f.length > 9 && sampleNames.length) {
+      var format = f[8].split(':');
+      for (var s = 0; s < sampleNames.length; s++) {
+        var vals = (f[9 + s] || '').split(':');
+        var gt = {};
+        for (var k = 0; k < format.length; k++) gt[format[k]] = vals[k];
+        rec.samples[sampleNames[s]] = gt;
+      }
+    }
+    records.push(rec);
+  }
+  return { meta: meta, samples: sampleNames, records: records };
+}
+
+/**
+ * Convert parsed VCF records into a CanvasXpress data object: one row per
+ * variant, `POS`/`QUAL` as measures, and `CHROM`/`REF`/`ALT`/`FILTER` (plus any
+ * requested INFO keys) as annotations.
+ * @param {{records: Array<object>}|Array<object>} parsed - {@link parseVcf}
+ *   output, or its `records` array.
+ * @param {object} [options] - Options.
+ * @param {Array<string>} [options.info] - INFO keys to lift into annotations.
+ * @returns {object} A CanvasXpress data object (`y.smps` = variant ids).
+ * @public
+ */
+function vcfToData(parsed, options) {
+  options = options || {};
+  var records = Array.isArray(parsed) ? parsed : (parsed && parsed.records) || [];
+  var infoKeys = options.info || [];
+  var smps = records.map(function (r, i) {
+    return (r.ID && r.ID !== '.') ? r.ID : (r.CHROM + ':' + r.POS);
+  });
+  var x = {
+    CHROM: records.map(function (r) { return r.CHROM; }),
+    REF: records.map(function (r) { return r.REF; }),
+    ALT: records.map(function (r) { return r.ALT; }),
+    FILTER: records.map(function (r) { return r.FILTER; })
+  };
+  infoKeys.forEach(function (key) {
+    x[key] = records.map(function (r) {
+      var v = r.INFO[key];
+      return v === undefined ? null : v;
+    });
+  });
+  return {
+    y: {
+      vars: ['POS', 'QUAL'], smps: smps,
+      data: records.map(function (r) { return [r.POS, r.QUAL]; })
+    },
+    x: x
+  };
+}
+
+/**
+ * Count variants per chromosome, in first-seen order — a quick VCF summary that
+ * binds straight to a Bar panel.
+ * @param {{records: Array<object>}|Array<object>} parsed - {@link parseVcf}
+ *   output, or its `records` array.
+ * @returns {object} A CanvasXpress data object (`y.smps` = chromosomes).
+ * @public
+ */
+function variantsPerChromosome(parsed) {
+  var records = Array.isArray(parsed) ? parsed : (parsed && parsed.records) || [];
+  var order = [];
+  var counts = Object.create(null);
+  records.forEach(function (r) {
+    if (!(r.CHROM in counts)) { counts[r.CHROM] = 0; order.push(r.CHROM); }
+    counts[r.CHROM]++;
+  });
+  return {
+    y: { vars: ['Variants'], smps: order, data: [order.map(function (c) { return counts[c]; })] }
+  };
+}
+
+/* ==== src/figureComposer.js ==== */
+/**
+ * Publication Figure Composer — turn a rendered dashboard into a submission-ready
+ * multi-panel figure: pick panels, auto-label them A/B/C/…, size to a journal
+ * column, and export ONE true-vector SVG (plus a flattened PDF) at publication
+ * DPI. This is the composition layer on top of the engine's per-chart vector
+ * output (`instance.getSVGString()` / `getPDFBytes()`); it adds no `build/js`
+ * graphType and does not rasterize.
+ *
+ * Pipeline:
+ *  - composeFigureModel — chosen panels + grid placement + subplot labels;
+ *  - JOURNAL_PRESETS / figureDimensions — journal column widths + DPI;
+ *  - composeFigureSvg / composeFigurePdf — stitch into one vector figure.
+ *
+ * @module figureComposer
+ */
+
+/* ========================================================================= *
+ * P3 — Journal presets + DPI
+ * ========================================================================= */
+
+/**
+ * Journal column-width presets, in millimetres. Single- and double-column
+ * widths follow each publisher's author guidelines (rounded to the published
+ * figure of 1/100 mm). `generic` is a neutral A4-derived pair.
+ * @type {Object<string, {label: string, oneCol: number, twoCol: number}>}
+ * @public
+ */
+var JOURNAL_PRESETS = {
+  nature: { label: 'Nature', oneCol: 89, twoCol: 183 },
+  cell: { label: 'Cell', oneCol: 85, twoCol: 174 },
+  science: { label: 'Science (AAAS)', oneCol: 55, twoCol: 120 },
+  plos: { label: 'PLOS', oneCol: 83, twoCol: 173 },
+  generic: { label: 'Generic', oneCol: 90, twoCol: 180 }
+};
+
+/** Millimetres per inch. @type {number} @private */
+var MM_PER_INCH = 25.4;
+
+/**
+ * Convert a millimetre length to pixels at a given DPI.
+ * @param {number} mm - Length in millimetres.
+ * @param {number} dpi - Dots per inch (e.g. 300 for print).
+ * @returns {number} The length in pixels (rounded).
+ * @public
+ */
+function mmToPx(mm, dpi) {
+  return Math.round((mm / MM_PER_INCH) * dpi);
+}
+
+/**
+ * Resolve a figure's pixel size from a journal preset, column span and DPI.
+ * @param {object} [opts] - Sizing options.
+ * @param {string} [opts.preset='generic'] - A key of {@link JOURNAL_PRESETS}.
+ * @param {('one'|'two')} [opts.columns='one'] - One- or two-column width.
+ * @param {number} [opts.dpi=300] - Target DPI.
+ * @param {number} [opts.aspect=0.75] - Figure height / width ratio.
+ * @param {number} [opts.widthMm] - Explicit width in mm (overrides the preset).
+ * @param {number} [opts.heightMm] - Explicit height in mm (overrides aspect).
+ * @returns {{widthPx:number, heightPx:number, widthMm:number, heightMm:number, dpi:number}}
+ * @public
+ */
+function figureDimensions(opts) {
+  opts = opts || {};
+  var dpi = opts.dpi || 300;
+  var preset = JOURNAL_PRESETS[opts.preset] || JOURNAL_PRESETS.generic;
+  var widthMm = opts.widthMm != null
+    ? opts.widthMm
+    : (opts.columns === 'two' ? preset.twoCol : preset.oneCol);
+  var aspect = opts.aspect != null ? opts.aspect : 0.75;
+  var heightMm = opts.heightMm != null ? opts.heightMm : widthMm * aspect;
+  return {
+    widthPx: mmToPx(widthMm, dpi),
+    heightPx: mmToPx(heightMm, dpi),
+    widthMm: widthMm,
+    heightMm: heightMm,
+    dpi: dpi
+  };
+}
+
+/* ========================================================================= *
+ * P2 — Figure composition model
+ * ========================================================================= */
+
+/**
+ * Whether a spec panel is a graph panel (as opposed to a control / text /
+ * image / filters panel). Graph panels are the ones with a live instance and
+ * `type === undefined`.
+ * @param {object} panel - A `spec.panels[id]` entry.
+ * @returns {boolean} True for a graph panel.
+ * @private
+ */
+function isGraphPanel(panel) {
+  return !!panel && !panel.type;
+}
+
+/**
+ * The subplot label for the n-th panel (0-based) in a given style.
+ * @param {number} index - 0-based panel index.
+ * @param {('A'|'a'|'1'|'none')} style - Label alphabet; 'none' yields ''.
+ * @returns {string} The label (e.g. 'A', 'c', '3').
+ * @private
+ */
+function subplotLabel(index, style) {
+  if (style === 'none') return '';
+  if (style === '1') return String(index + 1);
+  var base = style === 'a' ? 97 : 65;   // 'a' or 'A'
+  // Beyond 26 panels, wrap to AA, AB, … (rare for a figure, but defined).
+  var letters = '';
+  var n = index;
+  do {
+    letters = String.fromCharCode(base + (n % 26)) + letters;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return letters;
+}
+
+/**
+ * Build the composition model for a figure: which panels, in what order, where
+ * on the grid, and their subplot labels — WITHOUT rendering yet. Order and grid
+ * come from the dashboard's `layout.items` (reading order: top-to-bottom, then
+ * left-to-right) unless overridden.
+ *
+ * @param {object} handle - A live dashboard handle (needs `spec` and, for
+ *   rendering, `panelInstances()`).
+ * @param {object} [opts] - Composition options.
+ * @param {string[]} [opts.panels] - Explicit ordered panel ids (overrides the
+ *   layout-derived order; unknown / non-graph ids are dropped).
+ * @param {('A'|'a'|'1'|'none')} [opts.labelStyle='A'] - Subplot label alphabet.
+ * @param {number} [opts.cols] - Figure grid columns (defaults to the dashboard
+ *   `layout.cols`, or a near-square packing when the layout has no grid).
+ * @returns {{panels: Array<{id:string, label:string, x:number, y:number, w:number, h:number}>, cols: number, labelStyle: string}}
+ *   The model; `x/y/w/h` are in grid units.
+ * @public
+ */
+function composeFigureModel(handle, opts) {
+  opts = opts || {};
+  var spec = (handle && handle.spec) || {};
+  var panels = spec.panels || {};
+  var layout = spec.layout || {};
+  var items = layout.items || [];
+  var labelStyle = opts.labelStyle || 'A';
+
+  // Map panel id -> its layout item (for geometry), graph panels only.
+  var itemByPanel = {};
+  items.forEach(function (it) {
+    if (it && it.panel && isGraphPanel(panels[it.panel])) itemByPanel[it.panel] = it;
+  });
+
+  // Resolve the ordered list of panel ids.
+  var ordered;
+  if (opts.panels && opts.panels.length) {
+    ordered = opts.panels.filter(function (id) { return isGraphPanel(panels[id]); });
+  } else {
+    // Reading order from the layout; panels absent from the layout trail at the end.
+    var placed = items
+      .filter(function (it) { return it && isGraphPanel(panels[it.panel]); })
+      .slice()
+      .sort(function (a, b) { return (a.y - b.y) || (a.x - b.x); })
+      .map(function (it) { return it.panel; });
+    var seen = {};
+    ordered = [];
+    placed.forEach(function (id) { if (!seen[id]) { seen[id] = true; ordered.push(id); } });
+    Object.keys(panels).forEach(function (id) {
+      if (isGraphPanel(panels[id]) && !seen[id]) { seen[id] = true; ordered.push(id); }
+    });
+  }
+
+  var haveGrid = ordered.every(function (id) { return itemByPanel[id]; }) && ordered.length > 0;
+  var cols, modelPanels;
+
+  if (haveGrid && !opts.cols) {
+    // Reuse the dashboard's own grid geometry, re-based to the selection's
+    // bounding box so a sub-selection isn't marooned in whitespace.
+    cols = layout.cols || 12;
+    var minX = Infinity, minY = Infinity;
+    ordered.forEach(function (id) {
+      minX = Math.min(minX, itemByPanel[id].x);
+      minY = Math.min(minY, itemByPanel[id].y);
+    });
+    modelPanels = ordered.map(function (id, i) {
+      var it = itemByPanel[id];
+      return { id: id, label: subplotLabel(i, labelStyle), x: it.x - minX, y: it.y - minY, w: it.w, h: it.h };
+    });
+    // Tighten cols to the selection's actual width.
+    var maxRight = 0;
+    modelPanels.forEach(function (p) { maxRight = Math.max(maxRight, p.x + p.w); });
+    cols = Math.min(cols, maxRight) || maxRight;
+  } else {
+    // No usable grid (or explicit cols): pack into a near-square grid.
+    cols = opts.cols || Math.ceil(Math.sqrt(ordered.length));
+    modelPanels = ordered.map(function (id, i) {
+      return { id: id, label: subplotLabel(i, labelStyle), x: i % cols, y: Math.floor(i / cols), w: 1, h: 1 };
+    });
+  }
+
+  return { panels: modelPanels, cols: cols, labelStyle: labelStyle };
+}
+
+/* ========================================================================= *
+ * P4 — Composite vector export
+ * ========================================================================= */
+
+/**
+ * Read the intrinsic width/height from a panel's `<svg>` root tag.
+ * @param {string} svg - An SVG document string.
+ * @returns {{width:number, height:number}} Intrinsic size (defaults 680x440).
+ * @private
+ */
+function svgIntrinsicSize(svg) {
+  var open = (svg.match(/<svg\b[^>]*>/i) || [''])[0];
+  var w = /\bwidth\s*=\s*"?([\d.]+)/i.exec(open);
+  var h = /\bheight\s*=\s*"?([\d.]+)/i.exec(open);
+  return { width: w ? parseFloat(w[1]) : 680, height: h ? parseFloat(h[1]) : 440 };
+}
+
+/**
+ * Re-root a panel's SVG for placement inside a composite: give it a `viewBox`
+ * equal to its intrinsic size (so it SCALES, not clips) and set the placement
+ * `x`/`y`/`width`/`height`. The `<svg>` stays a valid nested element.
+ * @param {string} svg - The panel SVG document.
+ * @param {{x:number, y:number, width:number, height:number}} box - Placement.
+ * @returns {string} The re-rooted SVG string (still one `<svg>…</svg>`).
+ * @private
+ */
+function placePanelSvg(svg, box) {
+  var size = svgIntrinsicSize(svg);
+  var open = (svg.match(/<svg\b[^>]*>/i) || ['<svg>'])[0];
+  var rest = svg.slice(open.length);
+  // Strip any existing x/y/width/height/viewBox off the root, keep the rest
+  // (xmlns, version, desc…), then add our placement + a viewBox for scaling.
+  var attrs = open
+    .replace(/^<svg\b/i, '')
+    .replace(/>\s*$/, '')
+    .replace(/\s(?:x|y|width|height|viewBox)\s*=\s*"[^"]*"/gi, '')
+    .trim();
+  var placed = '<svg ' + attrs +
+    ' x="' + box.x + '" y="' + box.y + '"' +
+    ' width="' + box.width + '" height="' + box.height + '"' +
+    ' viewBox="0 0 ' + size.width + ' ' + size.height + '"' +
+    ' preserveAspectRatio="xMidYMid meet">';
+  return placed + rest;
+}
+
+/** XML-escape a caption / label string. @private */
+function xmlEscape(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/**
+ * Compose the chosen dashboard panels into ONE true-vector multi-panel SVG
+ * figure, sized to a journal column, with auto A/B/C labels and an optional
+ * shared caption. Each panel is the engine's own `getSVGString()` output,
+ * placed and scaled — no rasterization.
+ *
+ * @param {object} handle - A live dashboard handle (`spec`, `panelInstances()`).
+ * @param {object} [opts] - Composition + sizing options.
+ * @param {string[]} [opts.panels] - Ordered panel ids (see composeFigureModel).
+ * @param {('A'|'a'|'1'|'none')} [opts.labelStyle='A'] - Subplot label style.
+ * @param {number} [opts.cols] - Figure grid columns override.
+ * @param {string} [opts.preset] - Journal preset (see figureDimensions).
+ * @param {('one'|'two')} [opts.columns] - Column span for the preset.
+ * @param {number} [opts.dpi] - Target DPI.
+ * @param {number} [opts.aspect] - Figure height/width ratio.
+ * @param {number} [opts.widthMm] - Explicit figure width (mm).
+ * @param {number} [opts.heightMm] - Explicit figure height (mm).
+ * @param {number} [opts.gap=0.02] - Gutter between panels, as a fraction of the
+ *   figure width.
+ * @param {string} [opts.caption] - A shared caption drawn under the figure.
+ * @param {string} [opts.background='#ffffff'] - Figure backdrop.
+ * @param {function(string, object):string} [opts.panelSvg] - Override for
+ *   obtaining a panel's SVG (id, panel-model) -> svg; defaults to the engine.
+ * @returns {{svg:string, model:object, size:object}} The composite SVG plus the
+ *   model and resolved pixel size used.
+ * @public
+ */
+function composeFigureSvg(handle, opts) {
+  opts = opts || {};
+  var model = composeFigureModel(handle, opts);
+  var size = figureDimensions(opts);
+  if (!model.panels.length) throw new Error('figure has no graph panels to compose');
+
+  var rows = 0;
+  model.panels.forEach(function (p) { rows = Math.max(rows, p.y + p.h); });
+  var cols = model.cols || 1;
+
+  var gapFrac = opts.gap != null ? opts.gap : 0.02;
+  var gapPx = Math.round(size.widthPx * gapFrac);
+  var captionH = opts.caption ? Math.round(size.heightPx * 0.08) : 0;
+  var labelPx = model.labelStyle === 'none' ? 0 : Math.max(10, Math.round(size.widthPx * 0.035));
+
+  // Cell geometry in figure pixels (uniform-gap grid).
+  var gridW = size.widthPx - gapPx * (cols + 1);
+  var gridH = size.heightPx - captionH - gapPx * (rows + 1);
+  var cellW = gridW / cols;
+  var cellH = gridH / rows;
+
+  var parts = [];
+  parts.push('<?xml version="1.0" encoding="UTF-8"?>');
+  parts.push('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
+    'version="1.1" width="' + size.widthPx + '" height="' + size.heightPx + '" ' +
+    'viewBox="0 0 ' + size.widthPx + ' ' + size.heightPx + '">');
+  parts.push('<rect x="0" y="0" width="' + size.widthPx + '" height="' + size.heightPx +
+    '" fill="' + (opts.background || '#ffffff') + '"/>');
+
+  var getPanelSvg = opts.panelSvg || function (id) { return panelToSvg(handle, id); };
+
+  model.panels.forEach(function (p) {
+    var x = gapPx + p.x * (cellW + gapPx);
+    var y = gapPx + p.y * (cellH + gapPx);
+    var w = p.w * cellW + (p.w - 1) * gapPx;
+    var h = p.h * cellH + (p.h - 1) * gapPx;
+    var chartY = y + labelPx;
+    var chartH = Math.max(1, h - labelPx);
+
+    var panelSvg = getPanelSvg(p.id, p);
+    parts.push(placePanelSvg(panelSvg, { x: x, y: chartY, width: w, height: chartH }));
+
+    if (p.label) {
+      parts.push('<text x="' + x + '" y="' + (y + labelPx * 0.8) + '" ' +
+        'font-family="Arial, Helvetica, sans-serif" font-size="' + labelPx + '" ' +
+        'font-weight="bold" fill="#000000" text-anchor="start">' + xmlEscape(p.label) + '</text>');
+    }
+  });
+
+  if (opts.caption) {
+    var capSize = Math.max(9, Math.round(captionH * 0.3));
+    parts.push('<text x="' + gapPx + '" y="' + (size.heightPx - captionH + capSize * 1.2) + '" ' +
+      'font-family="Arial, Helvetica, sans-serif" font-size="' + capSize + '" fill="#333333" ' +
+      'text-anchor="start">' + xmlEscape(opts.caption) + '</text>');
+  }
+
+  parts.push('</svg>');
+  return { svg: parts.join('\n'), model: model, size: size };
+}
+
+/**
+ * Export the composed figure as a `.svg` file (downloads it), true vector.
+ * @param {object} handle - A live dashboard handle.
+ * @param {object} [opts] - See {@link composeFigureSvg}, plus `filename`.
+ * @param {Document} [doc] - Document to use; defaults to global.
+ * @returns {object} The composition result (`svg`, `model`, `size`).
+ * @public
+ */
+function exportFigureSvg(handle, opts, doc) {
+  opts = opts || {};
+  var result = composeFigureSvg(handle, opts);
+  doc = doc || (typeof document !== 'undefined' ? document : null);
+  if (doc) {
+    var blob = new Blob([result.svg], { type: 'image/svg+xml' });
+    var url = URL.createObjectURL(blob);
+    var a = doc.createElement('a');
+    a.href = url;
+    a.download = opts.filename || 'figure.svg';
+    doc.body.appendChild(a);
+    a.click();
+    doc.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  return result;
+}
+
+/**
+ * Flatten the composed figure to a single-page PDF at the chosen size/DPI.
+ * Prefers a TRUE-VECTOR path (an injected `svg2pdf` + `jsPDF`); otherwise falls
+ * back to a high-DPI raster of the composite SVG (`<img>` → canvas → jsPDF).
+ * Pure-browser (needs a DOM); the SVG composition itself is environment-free.
+ *
+ * @param {object} handle - A live dashboard handle.
+ * @param {object} [opts] - See {@link composeFigureSvg}, plus:
+ * @param {*} [opts.jsPDF] - jsPDF constructor; defaults to `window.jspdf.jsPDF`.
+ * @param {function} [opts.svg2pdf] - svg2pdf(element, pdf, options); when given,
+ *   the figure is embedded as vector. Defaults to `window.svg2pdf` if present.
+ * @returns {Promise<{blob:Blob, model:object, size:object}>} The PDF.
+ * @public
+ */
+function composeFigurePdf(handle, opts) {
+  opts = opts || {};
+  var result;
+  try { result = composeFigureSvg(handle, opts); }
+  catch (e) { return Promise.reject(e); }
+
+  var JsPDF = opts.jsPDF || (typeof window !== 'undefined' && window.jspdf ? window.jspdf.jsPDF : null);
+  if (typeof JsPDF !== 'function') return Promise.reject(new Error('jsPDF is not loaded'));
+  var svg2pdf = opts.svg2pdf || (typeof window !== 'undefined' ? window.svg2pdf : null);
+  var w = result.size.widthPx, h = result.size.heightPx;
+  var pdf = new JsPDF({ orientation: w >= h ? 'landscape' : 'portrait', unit: 'px', format: [w, h] });
+
+  if (typeof svg2pdf === 'function' && typeof document !== 'undefined') {
+    // True-vector embed.
+    var holder = document.createElement('div');
+    holder.innerHTML = result.svg.replace(/^<\?xml[^>]*>\s*/, '');
+    var el = holder.querySelector('svg');
+    return Promise.resolve(svg2pdf(el, pdf, { x: 0, y: 0, width: w, height: h }))
+      .then(function () { return { blob: pdf.output('blob'), model: result.model, size: result.size }; });
+  }
+
+  // Raster fallback: paint the composite SVG onto a canvas at full pixel size.
+  if (typeof document === 'undefined' || typeof Image === 'undefined') {
+    return Promise.reject(new Error('composeFigurePdf raster fallback needs a browser DOM'));
+  }
+  return new Promise(function (resolve, reject) {
+    var img = new Image();
+    var svgBlob = new Blob([result.svg], { type: 'image/svg+xml' });
+    var url = URL.createObjectURL(svgBlob);
+    img.onload = function () {
+      try {
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve({ blob: pdf.output('blob'), model: result.model, size: result.size });
+      } catch (e) { URL.revokeObjectURL(url); reject(e); }
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('failed to rasterize composite SVG')); };
+    img.src = url;
+  });
+}
+
+/**
+ * Export the composed figure as a `.pdf` file (downloads it).
+ * @param {object} handle - A live dashboard handle.
+ * @param {object} [opts] - See {@link composeFigurePdf}, plus `filename`.
+ * @param {Document} [doc] - Document to use; defaults to global.
+ * @returns {Promise<object>} The composition result.
+ * @public
+ */
+function exportFigurePdf(handle, opts, doc) {
+  opts = opts || {};
+  return composeFigurePdf(handle, opts).then(function (result) {
+    doc = doc || (typeof document !== 'undefined' ? document : null);
+    if (doc) {
+      var url = URL.createObjectURL(result.blob);
+      var a = doc.createElement('a');
+      a.href = url;
+      a.download = opts.filename || 'figure.pdf';
+      doc.body.appendChild(a);
+      a.click();
+      doc.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    return result;
+  });
+}
+
 /* ==== src/builder.js ==== */
 /**
  * No-code dashboard builder (Phase 4). The builder handles the things that are
@@ -11133,6 +14225,8 @@ function chartColumns(data) {
  *
  * @module builder
  */
+
+
 
 
 
@@ -11438,9 +14532,13 @@ function createBuilder(target, options) {
     // Row 1: "create" actions (dashboard title + add panel/text/control/data)
     // and Save, always on one line.
     var row1 = el('div', 'cxb-trow');
-    addPanelBtn = button('+ Panel', function () { doAddPanel(); });
-    addControlBtn = button('+ Control', function () { doAddControl(); });
-    addFiltersBtn = button('+ Filters', function () { doAddFilters(); });
+    // Toolbar buttons fall into three kinds, each flagged with a left-edge accent
+    // colour (see .cxb-bt-add / -interact / -data in styles.js): "add content"
+    // (green), "add interaction" (blue) and "data tools" (amber). Meta controls
+    // (title, edit-JSON, undo/redo), + Data and the primary Save stay neutral.
+    addPanelBtn = button('+ Panel', function () { doAddPanel(); }, 'cxb-bt-add');
+    addControlBtn = button('+ Control', function () { doAddControl(); }, 'cxb-bt-interact');
+    addFiltersBtn = button('+ Filters', function () { doAddFilters(); }, 'cxb-bt-interact');
     var editJsonBtn = button('✎', function () { doEditJson(); });
     editJsonBtn.setAttribute('title', 'Edit dashboard JSON');
     editJsonBtn.setAttribute('aria-label', 'Edit dashboard JSON');
@@ -11453,7 +14551,7 @@ function createBuilder(target, options) {
     updateHistoryButtons();
     // "+ Function" appears only once the server says it runs data functions
     // for this user (the check is async; hidden until then).
-    addFunctionBtn = button('+ Function', function () { doAddFunction(); });
+    addFunctionBtn = button('+ Function', function () { doAddFunction(); }, 'cxb-bt-data');
     addFunctionBtn.setAttribute('title', 'Add a panel computed by an R / Python data function');
     addFunctionBtn.style.display = 'none';
     functionStatus().then(function (status) {
@@ -11462,17 +14560,28 @@ function createBuilder(target, options) {
     });
     // "Links": how a selection in one panel marks the related rows of panels
     // built on other sources (spec.relationships + spec.markingMode).
-    linksBtn = button('🔗 Links', function () { doEditLinks(); });
+    linksBtn = button('🔗 Links', function () { doEditLinks(); }, 'cxb-bt-data');
     // "ƒx Fields": calculated fields computed once on a source, so every panel,
     // filter, join and link on it can use them (data.<ref>.calculatedFields).
-    fieldsBtn = button('ƒx Fields', function () { doEditFields(); });
+    fieldsBtn = button('ƒx Fields', function () { doEditFields(); }, 'cxb-bt-data');
     // "Shape data": filter, keep columns or summarize, sort and limit a
     // source's rows (its `pushdown` query; in its database when it has one).
-    shapeBtn = button('▦ Shape data', function () { doShapeData(); });
+    shapeBtn = button('▦ Shape data', function () { doShapeData(); }, 'cxb-bt-data');
+    // Analysis controls (not display filters): a transform toggle that re-expresses
+    // a panel's data (log/z-score/normalize), and an FDR threshold slider that
+    // recorrects and re-filters every significance panel at once.
+    var addTransformBtn = button('∿ Transform', function () { doAddTransform(); }, 'cxb-bt-interact');
+    addTransformBtn.setAttribute('title', 'Add a transform control (log / z-score / normalize) for a panel');
+    var addFdrBtn = button('FDR slider', function () { doAddFdr(); }, 'cxb-bt-interact');
+    addFdrBtn.setAttribute('title', 'Add an FDR threshold slider that re-filters every significance panel');
+    // Significance brackets: author pairwise comparisons (group A vs B + p-value) and a
+    // correction method on a graph panel; writes its statInference config.
+    var addSignificanceBtn = button('✴ Significance', function () { doAddSignificance(); }, 'cxb-bt-interact');
+    addSignificanceBtn.setAttribute('title', 'Add significance brackets (pairwise comparisons + correction) to a graph panel');
     var createActions = [titleInput, editJsonBtn, undoBtn, redoBtn, addPanelBtn,
-      button('+ Text', function () { doAddText(); }),
-      button('+ Image', function () { doAddImage(); }),
-      addControlBtn, addFiltersBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
+      button('+ Text', function () { doAddText(); }, 'cxb-bt-add'),
+      button('+ Image', function () { doAddImage(); }, 'cxb-bt-add'),
+      addControlBtn, addFiltersBtn, addTransformBtn, addFdrBtn, addSignificanceBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
     append(row1, createActions);
@@ -11740,6 +14849,175 @@ function createBuilder(target, options) {
     } else {
       rebuild();
     }
+  }
+
+  /**
+   * The first graph panel's id (a panel with no `type` — not a control/text/
+   * image/filters element), preferring the current selection when it is one.
+   * @returns {?string}
+   * @private
+   */
+  function firstGraphPanelId() {
+    var panels = spec.panels || {};
+    if (selectedId && panels[selectedId] && !panels[selectedId].type) return selectedId;
+    var ids = Object.keys(panels);
+    for (var i = 0; i < ids.length; i++) {
+      if (!panels[ids[i]].type) return ids[i];
+    }
+    return null;
+  }
+
+  /**
+   * "∿ Transform": add a transform control (analysis control) bound to a target
+   * graph panel; changing it re-expresses that panel's data (log/z-score/
+   * normalize) via updateData. Edited further in the properties bar.
+   * @returns {void}
+   * @private
+   */
+  function doAddTransform() {
+    var target = firstGraphPanelId();
+    if (!target) { setMsg('Add a graph panel first — a transform control needs a panel to transform.'); return; }
+    var id = uniquePanelId(spec);
+    var ctl = buildTransformControl({ target: target, title: 'Transform' });
+    commit(addPanel(spec, {
+      id: id, type: 'control', title: ctl.title, mode: 'transform', target: target,
+      options: ctl.options, value: ctl.value, w: 4, h: 2
+    }), false);
+    selectedId = id;
+    if (liveHandle && liveHandle.addPanel && gridEl) {
+      lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
+    } else {
+      rebuild();
+    }
+    setMsg('Transform control added for panel “' + target + '”.');
+  }
+
+  /**
+   * "FDR slider": add an FDR threshold slider (analysis control). It declares an
+   * `fdr` param and, on slide, recorrects dashboard-scope and re-filters every
+   * significance (statInference) panel at the chosen cut-off.
+   * @returns {void}
+   * @private
+   */
+  function doAddFdr() {
+    var ctl = buildFdrSliderControl({ param: 'fdr', value: 0.05 });
+    var withParam = setParam(spec, ctl.param, ctl.value);
+    var id = uniquePanelId(withParam);
+    commit(addPanel(withParam, {
+      id: id, type: 'control', title: ctl.title, mode: 'param', style: 'range', param: ctl.param,
+      analysis: 'fdr', method: ctl.method, min: ctl.min, max: ctl.max, step: ctl.step, value: ctl.value, w: 4, h: 2
+    }), false);
+    selectedId = id;
+    rebuild();   // a new param + the FDR binding re-resolve the dashboard
+    setMsg('FDR threshold slider added (param $' + ctl.param + ', ' + ctl.method + ' correction).');
+  }
+
+  /**
+   * "✴ Significance": author significance brackets on a graph panel. Resolves the
+   * panel's group values, opens the picker (pairwise comparisons + correction +
+   * annotate), and writes showStatInference + statInference into the panel config.
+   * Brackets render on a vertical orientation, so it is set when absent.
+   * @returns {void}
+   * @private
+   */
+  function doAddSignificance() {
+    // Target a 1D group chart (Boxplot/Violin/Bar) — the only charts brackets render
+    // on. Prefer the selected panel when it is one; otherwise auto-pick the first such
+    // panel so clicking "Significance" opens the picker without a manual selection step
+    // (it must not silently target a KaplanMeier/Scatter panel, where it is a no-op).
+    var panels = spec.panels || {};
+    function isGroupChart(p) {
+      return !!(p && p.config && /^(Boxplot|Violin|Bar)$/.test(p.config.graphType || ''));
+    }
+    var id = selectedId && isGroupChart(panels[selectedId]) ? selectedId : null;
+    if (!id) {
+      var groupIds = Object.keys(panels);
+      for (var gi = 0; gi < groupIds.length; gi++) {
+        if (isGroupChart(panels[groupIds[gi]])) { id = groupIds[gi]; break; }
+      }
+    }
+    if (!id) {
+      setMsg('Significance brackets need a grouped Boxplot, Violin or Bar panel — add or select one first.');
+      return;
+    }
+    selectedId = id;   // reflect which panel the brackets target
+    syncLiveConfigs();
+    var doc = container.ownerDocument || document;
+    var cfg = (spec.panels[id] && spec.panels[id].config) || {};
+    var inst = instByPanel[id];
+    var data = inst && inst.data;
+    if (!data || !data.y) { setMsg('This panel has no data yet.'); return; }
+    // The grouping factor name, flattened (the engine may nest it, e.g. [["group"]]).
+    var grouping = cfg.groupingFactors != null ? cfg.groupingFactors : inst.groupingFactors;
+    while (Array.isArray(grouping)) { grouping = grouping[0]; }
+    var groupingName = typeof grouping === 'string' ? grouping : null;
+    // Distinct group values, in first-appearance order: the grouping annotation
+    // when present, otherwise the sample-axis categories.
+    var groups = [];
+    var seen = {};
+    var labels = groupingName && data.x && Array.isArray(data.x[groupingName]) ? data.x[groupingName] : data.y.smps;
+    (labels || []).forEach(function (v) {
+      // The engine may wrap each annotation value in a single-element array.
+      var label = Array.isArray(v) ? v[0] : v;
+      var key = String(label);
+      if (!seen[key]) { seen[key] = true; groups.push(label); }
+    });
+    if (groups.length < 2) { setMsg('This panel needs at least two groups to compare.'); return; }
+    // Value range (for auto bracket heights + headroom) from ONLY the variables the
+    // chart actually plots on the value axis (cfg.xAxis), not the whole bound matrix.
+    // A multi-variable source (e.g. an expression matrix where the Boxplot shows one
+    // gene) would otherwise take its extent from unrelated rows, pushing the brackets —
+    // and the forced axis maximum — far above the boxes and collapsing them.
+    var plotted = cfg.xAxis != null ? cfg.xAxis : inst.xAxis;
+    while (Array.isArray(plotted) && plotted.length === 1 && Array.isArray(plotted[0])) { plotted = plotted[0]; }
+    var plottedSet = null;
+    if (Array.isArray(plotted) && plotted.length) {
+      plottedSet = {};
+      plotted.forEach(function (name) { plottedSet[String(name)] = true; });
+    }
+    var vars = (data.y && data.y.vars) || [];
+    var minValue = Infinity, maxValue = -Infinity;
+    (data.y.data || []).forEach(function (row, rowIndex) {
+      if (plottedSet && !plottedSet[String(vars[rowIndex])]) { return; }
+      (row || []).forEach(function (v) {
+        var n = typeof v === 'number' ? v : parseFloat(v);
+        if (isFinite(n)) { if (n < minValue) minValue = n; if (n > maxValue) maxValue = n; }
+      });
+    });
+    if (!isFinite(minValue)) { minValue = 0; maxValue = 1; }
+    openSignificanceDialog(doc, { groups: groups, minValue: minValue, maxValue: maxValue, prefill: cfg })
+      .then(function (result) {
+        if (!result) return;
+        if (result.remove) {
+          var cleared = Object.assign({}, cfg);
+          cleared.showStatInference = false;
+          delete cleared.statInference;
+          // The brackets forced a value-axis maximum for headroom; drop it (both
+          // orientations) so the axis auto-ranges back to the data instead of
+          // staying expanded/collapsed.
+          delete cleared.setMaxX;
+          delete cleared.setMaxY;
+          commit(updatePanel(spec, id, { config: cleared }), false);
+          rebuild();
+          setMsg('Significance brackets removed from panel “' + id + '”.');
+          return;
+        }
+        var merged = Object.assign({}, cfg, {
+          showStatInference: true,
+          statInference: result.statInference
+        });
+        if (!merged.graphOrientation) merged.graphOrientation = 'vertical';
+        // Reserve bracket headroom on the VALUE axis, which follows orientation:
+        // Y for vertical (the default), X for horizontal. (Before this, headroom was
+        // always written to setMaxX — wrong axis once vertical became the default.)
+        if (result.setMaxX != null) {
+          if (merged.graphOrientation === 'horizontal') { merged.setMaxX = result.setMaxX; delete merged.setMaxY; }
+          else { merged.setMaxY = result.setMaxX; delete merged.setMaxX; }
+        }
+        commit(updatePanel(spec, id, { config: merged }), false);
+        rebuild();
+        setMsg('Significance brackets added to panel “' + id + '”.');
+      });
   }
 
   /**
@@ -13007,8 +16285,29 @@ function createBuilder(target, options) {
     var previewBtn = button(isTableView(selectedId) ? '◧ Chart' : '▦ Table', function (ev) { toggleDataView(selectedId, ev); });
     previewBtn.setAttribute('title', 'Switch this chart between its canvas and its data table');
 
+    // A checkbox to show the auto-derived provenance method line as a figure
+    // footer beneath this panel (sets panel.provenance.show; see provenance.js).
+    var methodToggle = el('label', 'cxb-check');
+    var methodBox = el('input');
+    methodBox.type = 'checkbox';
+    methodBox.checked = !!(panel.provenance && panel.provenance.show);
+    methodBox.setAttribute('title', 'Show how this panel was computed (method line) as a figure footer');
+    on(methodBox, 'change', function () {
+      var prov = {};
+      for (var k in (panel.provenance || {})) {
+        if (Object.prototype.hasOwnProperty.call(panel.provenance, k)) prov[k] = panel.provenance[k];
+      }
+      prov.show = methodBox.checked;
+      commit(updatePanel(spec, selectedId, { provenance: prov }), false);
+      rerenderPanel(selectedId);   // adding/removing the footer changes the DOM
+    });
+    var methodText = el('span');
+    methodText.textContent = 'Method';
+    methodToggle.appendChild(methodBox);
+    methodToggle.appendChild(methodText);
+
     // No Delete here — the panel frame already carries a × delete control.
-    append(propsGroup, [titleLabel, titleField, dataLabel, dsField, previewBtn].concat(liveFields, crossFilter, [titleToggle]));
+    append(propsGroup, [titleLabel, titleField, dataLabel, dsField, previewBtn].concat(liveFields, crossFilter, [titleToggle, methodToggle]));
   }
 
   /**
@@ -16014,6 +19313,123 @@ function openFieldsDialog(doc, spec, rawDataOf, CX) {
   });
 }
 
+/**
+ * The significance-brackets picker (stat-inference). Lets the author add pairwise
+ * comparison rows (group A vs group B + a p-value computed upstream), choose a
+ * multiple-testing correction and what each bracket prints, then returns a
+ * statInference config block (via buildPanelStatInference) plus a suggested
+ * setMaxX headroom. Bracket heights are auto-stacked above the data.
+ *
+ * @param {Document} doc - The owning document.
+ * @param {object} ctx - {groups:[names], minValue, maxValue, prefill:config}.
+ * @returns {Promise<?{statInference:object, setMaxX:number}>} The block, or null.
+ */
+function openSignificanceDialog(doc, ctx) {
+  var groups = ctx.groups || [];
+  var prefill = ctx.prefill || {};
+  var prior = prefill.statInference || {};
+  // Seed rows from an existing statInference block, else one default comparison.
+  var rows = Array.isArray(prior.comparisons) && prior.comparisons.length
+    ? prior.comparisons.map(function (c) {
+        return { a: (c.groups || [])[0], b: (c.groups || [])[1], p: c.p != null ? c.p : 0.01 };
+      })
+    : [{ a: groups[0], b: groups[1], p: 0.01 }];
+  return new Promise(function (resolve) {
+    var overlay = modalOverlay();
+    var modal = el('div', 'cxb-modal');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Significance brackets';
+    var intro = el('p', 'cxb-links-intro');
+    intro.textContent = 'Compare pairs of groups. Each p-value is computed upstream (R / Python / your ' +
+      'server); the dashboard draws the bracket and applies the correction. Stars reflect the adjusted p.';
+
+    var methodSel = selectField(['BH', 'bonferroni', 'BY', 'holm', 'hochberg', 'none'],
+      (prior.correction && prior.correction.method) || 'BH', function () {});
+    labelOptions(methodSel, { BH: 'Benjamini-Hochberg (FDR)', bonferroni: 'Bonferroni', BY: 'Benjamini-Yekutieli',
+      holm: 'Holm', hochberg: 'Hochberg', none: 'No correction' });
+    var annotateSel = selectField(['stars', 'padj', 'p'], prior.annotate || 'stars', function () {});
+    labelOptions(annotateSel, { stars: 'Stars (**)', padj: 'Adjusted p', p: 'Raw p' });
+
+    var list = el('div', 'cxb-links-list');
+    var errEl = el('div', 'cxb-modal-err');
+
+    function groupSelect(selected) {
+      var sel = selectField(groups, groups.indexOf(selected) >= 0 ? selected : groups[0], function () {});
+      return sel;
+    }
+    function renderRows() {
+      list.innerHTML = '';
+      rows.forEach(function (rowDef, i) {
+        var row = el('div', 'cxb-links-row');
+        var aSel = groupSelect(rowDef.a);
+        on(aSel, 'change', function () { rows[i].a = aSel.value; });
+        var vs = el('span'); vs.textContent = 'vs';
+        var bSel = groupSelect(rowDef.b);
+        on(bSel, 'change', function () { rows[i].b = bSel.value; });
+        var pIn = el('input');
+        pIn.type = 'number'; pIn.step = 'any'; pIn.min = '0'; pIn.max = '1';
+        pIn.value = String(rowDef.p);
+        pIn.setAttribute('placeholder', 'p-value');
+        on(pIn, 'input', function () { rows[i].p = parseFloat(pIn.value); });
+        var remove = button('×', function () { rows.splice(i, 1); renderRows(); });
+        remove.setAttribute('title', 'Remove this comparison');
+        append(row, [aSel, vs, bSel, pIn, remove]);
+        list.appendChild(row);
+      });
+      if (!rows.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = 'No comparisons yet — add one.';
+        list.appendChild(none);
+      }
+    }
+    var addBtn = button('+ Add comparison', function () {
+      rows.push({ a: groups[0], b: groups[1], p: 0.01 });
+      renderRows();
+    });
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    // Offered only when the panel already carries significance brackets, so the
+    // author can take them off entirely (the Apply path always keeps ≥1 bracket).
+    var hasExisting = Array.isArray(prior.comparisons) && prior.comparisons.length > 0;
+    var removeBtn = hasExisting ? button('Remove brackets', function () { close({ remove: true }); }) : null;
+    if (removeBtn) removeBtn.setAttribute('title', 'Remove all significance brackets from this panel');
+    var applyBtn = button('Apply', function () {
+      var comparisons = [];
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        if (r.a == null || r.b == null || r.a === r.b) { errEl.textContent = 'Each comparison needs two different groups.'; return; }
+        if (!(typeof r.p === 'number' && isFinite(r.p) && r.p >= 0 && r.p <= 1)) { errEl.textContent = 'Each comparison needs a p-value between 0 and 1.'; return; }
+        comparisons.push({ groups: [r.a, r.b], p: r.p });
+      }
+      if (!comparisons.length) { errEl.textContent = 'Add at least one comparison.'; return; }
+      // Auto-stack bracket heights above the data and reserve headroom.
+      var span = (ctx.maxValue - ctx.minValue) || Math.abs(ctx.maxValue) || 1;
+      var step = span * 0.08;
+      for (var j = 0; j < comparisons.length; j++) {
+        comparisons[j].value = ctx.maxValue + step * (j + 1);
+      }
+      var block = buildPanelStatInference({
+        comparisons: comparisons, method: methodSel.value, scope: 'dashboard', annotate: annotateSel.value
+      });
+      close({ statInference: block, setMaxX: ctx.maxValue + step * (comparisons.length + 1) });
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, removeBtn ? [removeBtn, cancelBtn, applyBtn] : [cancelBtn, applyBtn]);
+
+    append(modal, [heading, intro, field('Correction', methodSel), field('Show', annotateSel),
+      field('Comparisons', list), addBtn, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    renderRows();
+
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
 /** @type {Object<string, string>} Readable labels for the pushdown filter operators. */
 var SHAPE_OPS = {
   '=': 'is', '!=': 'is not', '<': 'is less than', '<=': 'is at most', '>': 'is more than', '>=': 'is at least',
@@ -16615,9 +20031,21 @@ function openPanelDialog(doc, ctx) {
     var first = pre.source && byKey[pre.source] ? pre.source : (queried ? queried.key : keys[0] || '');
     var sourceSel = selectField(keys, first, function () { fields = {}; load(); });
     labelOptions(sourceSel, sources.reduce(function (m, s) { m[s.key] = s.label; return m; }, {}));
-    var typeSel = selectField(WIZARD_CHART_TYPES, WIZARD_CHART_TYPES.indexOf(pre.graphType) !== -1 ? pre.graphType : 'Boxplot',
+    // The generic charts plus the scientific presets (Kaplan-Meier, Oncoprint,
+    // Heatmap, Manhattan, Volcano) — these carry their own field maps + defaults.
+    var SCIENCE_LABELS = { KaplanMeier: 'Kaplan–Meier (survival)', Oncoprint: 'Oncoprint (mutations)',
+      Heatmap: 'Heatmap + dendrogram', Manhattan: 'Manhattan (GWAS)', Volcano: 'Volcano (differential)' };
+    var allTypes = WIZARD_CHART_TYPES.concat(WIZARD_SCIENCE_TYPES);
+    function isScience(type) { return WIZARD_SCIENCE_TYPES.indexOf(type) !== -1; }
+    var typeSel = selectField(allTypes, allTypes.indexOf(pre.graphType) !== -1 ? pre.graphType : 'Boxplot',
       function () { drawFields(); refresh(); });
-    labelOptions(typeSel, { Scatter2D: 'Scatter plot' });
+    var typeLabels = { Scatter2D: 'Scatter plot' };
+    for (var sk in SCIENCE_LABELS) { if (Object.prototype.hasOwnProperty.call(SCIENCE_LABELS, sk)) typeLabels[sk] = SCIENCE_LABELS[sk]; }
+    labelOptions(typeSel, typeLabels);
+    // Auto-detect suggestion: a clickable hint that sets the chart type to the
+    // scientific panel the bound data looks like.
+    var suggestEl = el('div', 'cxb-links-none');
+    suggestEl.style.display = 'none';
     var titleInput = el('input');
     titleInput.type = 'text';
     titleInput.value = pre.title || '';
@@ -16631,7 +20059,7 @@ function openPanelDialog(doc, ctx) {
     extraHelp.textContent = 'Any CanvasXpress option, applied over the fields. Keep editing with ⚙ after adding.';
     var errEl = el('div', 'cxb-modal-err');
     var left = el('div', 'cxb-panel-fields');
-    append(left, [field('Data source', sourceSel), field('Chart type', typeSel), fieldsBox,
+    append(left, [field('Data source', sourceSel), field('Chart type', typeSel), suggestEl, fieldsBox,
       field('Extra config (JSON)', extra), extraHelp, field('Title', titleInput)]);
     var previewHost = el('div', 'cxb-panel-preview');
     var status = el('div', 'cxb-links-none');
@@ -16654,8 +20082,24 @@ function openPanelDialog(doc, ctx) {
       fieldsBox.innerHTML = '';
       selects = {};
       var columns = data ? chartColumns(data) : { numbers: [], texts: [] };
-      var which = chartFieldsFor(typeSel.value);
       if (!data) { fieldsBox.appendChild(el('div', 'cxb-links-none')).textContent = 'Loading the data…'; return; }
+      // Scientific presets map their own fields (matrix panels take none).
+      if (isScience(typeSel.value)) {
+        var sciFields = scientificFieldsFor(typeSel.value);
+        if (!sciFields.length) {
+          fieldsBox.appendChild(el('div', 'cxb-links-none')).textContent =
+            'This panel draws the whole matrix — no field mapping needed.';
+          return;
+        }
+        sciFields.forEach(function (sf) {
+          var optional = /optional/i.test(sf.label);
+          var list = sf.numeric ? columns.numbers : columns.texts.concat(columns.numbers);
+          if (fields[sf.key] == null && !optional) fields[sf.key] = list[0] || '';
+          fieldsBox.appendChild(field(sf.label, columnSelect(sf.key, list, optional)));
+        });
+        return;
+      }
+      var which = chartFieldsFor(typeSel.value);
       fieldsBox.appendChild(field(which.y ? 'X axis' : 'X axis (measure)', columnSelect('x', columns.numbers, false)));
       if (which.y) {
         if (fields.y == null && columns.numbers[1]) fields.y = columns.numbers[1];
@@ -16684,12 +20128,13 @@ function openPanelDialog(doc, ctx) {
         try { more = JSON.parse(text); } catch (e) { errEl.textContent = 'Extra config is not valid JSON: ' + e.message; return null; }
         if (!more || typeof more !== 'object' || Array.isArray(more)) { errEl.textContent = 'Extra config must be a JSON object: { … }'; return null; }
       }
+      if (isScience(typeSel.value)) return buildScientificConfig(typeSel.value, fields, more, data);
       return buildChartConfig(typeSel.value, fields, more, data);
     }
     function refresh() {
       if (instance) { try { instance.destroy(); } catch (e) { /* gone */ } instance = null; }
       previewHost.innerHTML = '';
-      if (!data || !chartColumns(data).numbers.length) return;
+      if (!data || (!chartColumns(data).numbers.length && !isScience(typeSel.value))) return;
       var c = config();
       if (!c) return;
       var CXlib = ctx.CanvasXpress;
@@ -16703,10 +20148,31 @@ function openPanelDialog(doc, ctx) {
         instance = new CXlib(canvas.id, data, Object.assign(JSON.parse(JSON.stringify(c)), { resizable: false }), {});
       } catch (e) { previewHost.textContent = 'Preview unavailable: ' + (e && e.message || e); }
     }
+    /** Show a clickable "this looks like …" hint from the data shape, if any. */
+    function showSuggestion() {
+      suggestEl.innerHTML = '';
+      var hit = data ? suggestPanelType(data) : null;
+      if (!hit || hit.graphType === typeSel.value) { suggestEl.style.display = 'none'; return; }
+      suggestEl.style.display = '';
+      suggestEl.appendChild(doc.createTextNode(hit.reason + ' '));
+      var link = el('a', 'cxb-link');
+      link.href = '#';
+      link.textContent = 'Use ' + (SCIENCE_LABELS[hit.graphType] || hit.graphType);
+      on(link, 'click', function (ev) {
+        ev.preventDefault();
+        typeSel.value = hit.graphType;
+        fields = {};
+        showSuggestion();
+        drawFields();
+        refresh();
+      });
+      suggestEl.appendChild(link);
+    }
     function load() {
       var mine = ++token;
       data = null;
       status.textContent = '';
+      suggestEl.style.display = 'none';
       drawFields();
       refresh();
       var pick = byKey[sourceSel.value];
@@ -16719,6 +20185,7 @@ function openPanelDialog(doc, ctx) {
         data = d;
         var rows = d && d.y ? Math.max((d.y.smps || []).length, (d.y.vars || []).length) : 0;
         status.textContent = d ? 'Preview on ' + rows + ' rows of ' + (pick ? pick.label : '') + '.' : 'This source returned no data.';
+        showSuggestion();
         drawFields();
         refresh();
       });
@@ -16729,7 +20196,7 @@ function openPanelDialog(doc, ctx) {
 
     var cancelBtn = button('Cancel', function () { close(null); });
     var addBtn = button('Add panel', function () {
-      if (!data || !chartColumns(data).numbers.length) { errEl.textContent = 'Pick a source with a number column (or wait for its data).'; return; }
+      if (!data || (!chartColumns(data).numbers.length && !isScience(typeSel.value))) { errEl.textContent = 'Pick a source with a number column (or wait for its data).'; return; }
       var c = config();
       if (!c) return;
       close({ pick: byKey[sourceSel.value], config: c, title: titleInput.value.trim() });
@@ -16940,6 +20407,15 @@ var CanvasXpressDashboards = {
   dashboardToPng: dashboardToPng,
   exportDashboardPng: exportDashboardPng,
   exportDashboardPdf: exportDashboardPdf,
+  panelToSvg: panelToSvg,
+  exportPanelSvg: exportPanelSvg,
+  panelToPdf: panelToPdf,
+  exportPanelPdf: exportPanelPdf,
+  buildBundleFiles: buildBundleFiles,
+  buildReproducibleBundle: buildReproducibleBundle,
+  exportReproducibleBundle: exportReproducibleBundle,
+  zipSync: zipSync,
+  sha256Hex: sha256Hex,
   createBuilder: createBuilder,
   pointerToCell: pointerToCell,
   csvToCx: csvToCx,
@@ -16969,6 +20445,12 @@ var CanvasXpressDashboards = {
   runPushdown: runPushdown,
   rowsToCx: rowsToCx,
   PUSHDOWN_FUNCTIONS: PUSHDOWN_FUNCTIONS,
+  derivePanelMethod: derivePanelMethod,
+  panelProvenanceText: panelProvenanceText,
+  describeSource: describeSource,
+  describePushdown: describePushdown,
+  describeCalculatedFields: describeCalculatedFields,
+  describeStatOptions: describeStatOptions,
   tableFromData: tableFromData,
   profileColumns: profileColumns,
   applyDecimalComma: applyDecimalComma,
@@ -16984,7 +20466,47 @@ var CanvasXpressDashboards = {
   chartFieldsFor: chartFieldsFor,
   buildChartConfig: buildChartConfig,
   chartColumns: chartColumns,
+  detectDataShapes: detectDataShapes,
+  suggestPanelType: suggestPanelType,
+  WIZARD_SCIENCE_TYPES: WIZARD_SCIENCE_TYPES,
+  scientificFieldsFor: scientificFieldsFor,
+  buildScientificConfig: buildScientificConfig,
   transposeCxData: transposeCxData,
+  hypergeometricPValue: hypergeometricPValue,
+  benjaminiHochberg: benjaminiHochberg,
+  enrich: enrich,
+  enrichmentToData: enrichmentToData,
+  pAdjust: pAdjust,
+  significanceStars: significanceStars,
+  applyDashboardCorrection: applyDashboardCorrection,
+  buildPanelStatInference: buildPanelStatInference,
+  buildEffectSizeTile: buildEffectSizeTile,
+  TRANSFORM_METHODS: TRANSFORM_METHODS,
+  TRANSFORM_LABELS: TRANSFORM_LABELS,
+  log2Row: log2Row,
+  log10Row: log10Row,
+  zscoreRow: zscoreRow,
+  medianCenterRow: medianCenterRow,
+  quantileNormalize: quantileNormalize,
+  transformData: transformData,
+  applyFdrThreshold: applyFdrThreshold,
+  fdrVerdict: fdrVerdict,
+  buildFdrSliderControl: buildFdrSliderControl,
+  buildTransformControl: buildTransformControl,
+  batchCorrectionSource: batchCorrectionSource,
+  describeAnalysisControl: describeAnalysisControl,
+  describeAnalysisControls: describeAnalysisControls,
+  parseVcf: parseVcf,
+  vcfToData: vcfToData,
+  variantsPerChromosome: variantsPerChromosome,
+  JOURNAL_PRESETS: JOURNAL_PRESETS,
+  mmToPx: mmToPx,
+  figureDimensions: figureDimensions,
+  composeFigureModel: composeFigureModel,
+  composeFigureSvg: composeFigureSvg,
+  exportFigureSvg: exportFigureSvg,
+  composeFigurePdf: composeFigurePdf,
+  exportFigurePdf: exportFigurePdf,
   version: "0.13.0"
 };
 return CanvasXpressDashboards;

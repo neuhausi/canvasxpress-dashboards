@@ -971,6 +971,68 @@ def _site_theme_js():
     return FileResponse(os.path.join(HERE, "site-theme.js"), media_type="text/javascript")
 
 
+# ---------------------------------------------------------------------------
+# Dev engine override.
+#
+# Every example page (and builder.html) hardcodes the SHIPPED engine from the
+# CDN: https://www.canvasxpress.org/dist/canvasXpress.min.js. That is correct
+# for production, but it means the dashboards dev app silently runs the last
+# RELEASED engine even while you develop a dashboards feature that depends on an
+# unreleased one -- e.g. significance brackets (statInference), which exists only
+# in the local engine until it ships. The feature then appears to "do nothing":
+# the config is written correctly but the CDN engine does not know the option.
+#
+# Fix: when a LOCAL engine build is available, serve it at /engine and rewrite
+# the CDN <script>/<link> in served HTML to point at it, so the dev app runs the
+# engine you are actually developing. Opt in with CX_ENGINE_DIR=<dir containing
+# canvasXpress.min.js + canvasXpress.css>; a sibling canvas-ai checkout is also
+# auto-detected. Production is untouched: with no local engine dir the rewrite
+# never happens and the CDN build loads exactly as before.
+def _resolve_engine_dir():
+    candidates = []
+    env_dir = os.getenv("CX_ENGINE_DIR")
+    if env_dir:
+        candidates.append(env_dir)
+    home = os.path.expanduser("~")
+    candidates += [
+        os.path.join(home, "git", "canvas-ai", "2026", "dist"),
+        os.path.join(ROOT, os.pardir, "canvas-ai", "2026", "dist"),
+    ]
+    for d in candidates:
+        if d and os.path.isfile(os.path.join(d, "canvasXpress.min.js")) \
+                and os.path.isfile(os.path.join(d, "canvasXpress.css")):
+            return os.path.abspath(d)
+    return None
+
+
+_ENGINE_DIR = _resolve_engine_dir()
+if _ENGINE_DIR:
+    # Served at /engine and, via the mount-prefix wrapper below, at
+    # <prefix>/engine too. The rewrite always targets the prefixed path so it
+    # resolves both directly and behind the /dashboards reverse proxy.
+    app.mount("/engine", StaticFiles(directory=_ENGINE_DIR), name="local-engine")
+    _ENGINE_BASE = (os.getenv("CXD_MOUNT_PREFIX") or "").rstrip("/") + "/engine"
+    _CDN_PREFIX = "https://www.canvasxpress.org/dist/canvasXpress"
+
+    @app.middleware("http")
+    async def _local_engine_rewrite(request, call_next):
+        response = await call_next(request)
+        if "text/html" not in response.headers.get("content-type", ""):
+            return response
+        from starlette.responses import Response as _Response
+        body = b""
+        async for chunk in response.body_iterator:
+            body += chunk if isinstance(chunk, bytes) else chunk.encode("utf-8")
+        html = body.decode("utf-8", "replace").replace(_CDN_PREFIX, _ENGINE_BASE + "/canvasXpress")
+        headers = dict(response.headers)
+        headers.pop("content-length", None)
+        return _Response(content=html, status_code=response.status_code,
+                         headers=headers, media_type="text/html")
+
+    print("Dev engine override: serving LOCAL engine from %s at %s "
+          "(dashboards pages load it instead of the CDN build)" % (_ENGINE_DIR, _ENGINE_BASE))
+
+
 app.mount("/", StaticFiles(directory=ROOT, html=True), name="repo")
 
 

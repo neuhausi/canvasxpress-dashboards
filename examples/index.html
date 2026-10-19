@@ -226,6 +226,56 @@
         <div class="tags"><span class="tag">genomics</span><span class="tag">heatmap</span><span class="tag">volcano</span><span class="tag">kaplan-meier</span></div>
         <span class="open-builder" data-open="genomics-oncology">✏️ Open in Builder</span>
       </a>
+      <a class="card" href="./survival-cohort.html">
+        <div class="ic">📈</div>
+        <h3>Survival Cohort <span>→</span></h3>
+        <p>A synthetic immuno-oncology trial (n=160): drop a survival table
+           (time + 0/1 event) and get a Kaplan–Meier panel with 95% confidence
+           bands, censor rug, log-rank p-value and an at-risk table, split by
+           treatment arm, beside a PD-L1 expression box plot.</p>
+        <div class="tags"><span class="tag">survival</span><span class="tag">kaplan-meier</span><span class="tag">clinical</span></div>
+        <span class="open-builder" data-open="survival-cohort">✏️ Open in Builder</span>
+      </a>
+      <a class="card" href="./mutation-oncoprint.html">
+        <div class="ic">🧬</div>
+        <h3>Mutation Landscape <span>→</span></h3>
+        <p>A synthetic gene × sample alteration matrix (mutation + copy-number
+           tokens) rendered as a cBioPortal-style oncoprint — alterations
+           stacked per gene, samples ordered by burden — above a per-gene
+           alteration-frequency bar chart.</p>
+        <div class="tags"><span class="tag">genomics</span><span class="tag">oncoprint</span><span class="tag">mutation</span></div>
+        <span class="open-builder" data-open="mutation-oncoprint">✏️ Open in Builder</span>
+      </a>
+      <a class="card" href="./gene-set-linkage.html">
+        <div class="ic">🔗</div>
+        <h3>Gene-Set Linkage <span>→</span></h3>
+        <p>Select genes in an expression heatmap and the same genes highlight
+           in a differential-expression scatter — a cross-source gene set keyed
+           gene-to-gene across panels, the input a downstream enrichment panel
+           would consume.</p>
+        <div class="tags"><span class="tag">genomics</span><span class="tag">selection</span><span class="tag">cross-filter</span></div>
+        <span class="open-builder" data-open="gene-set-linkage">✏️ Open in Builder</span>
+      </a>
+      <a class="card" href="./enrichment-analysis.html">
+        <div class="ic">🧪</div>
+        <h3>Enrichment Analysis <span>→</span></h3>
+        <p>A selected gene set scored for over-representation against pathways
+           with the hypergeometric test and Benjamini–Hochberg FDR (p-values
+           match R's <code>phyper</code>/<code>p.adjust</code>) — the −log10 FDR
+           per pathway, the panel the Gene-Set Linkage selection feeds.</p>
+        <div class="tags"><span class="tag">genomics</span><span class="tag">enrichment</span><span class="tag">statistics</span></div>
+        <span class="open-builder" data-open="enrichment-analysis">✏️ Open in Builder</span>
+      </a>
+      <a class="card" href="./vcf-variants.html">
+        <div class="ic">🧫</div>
+        <h3>VCF Variants <span>→</span></h3>
+        <p>A Variant Call Format file (multi-sample, with INFO and genotype
+           fields) parsed to a CanvasXpress data object — variants per
+           chromosome and variant quality by position, ready for a Manhattan
+           or genome panel.</p>
+        <div class="tags"><span class="tag">genomics</span><span class="tag">vcf</span><span class="tag">ingestion</span></div>
+        <span class="open-builder" data-open="vcf-variants">✏️ Open in Builder</span>
+      </a>
       <a class="card" href="./sales-overview.html">
         <div class="ic">📊</div>
         <h3>Sales Overview <span>→</span></h3>
@@ -243,6 +293,16 @@
            bar chart, and a 24-month trend line.</p>
         <div class="tags"><span class="tag">inline data</span><span class="tag">meters</span></div>
         <span class="open-builder" data-open="kpi-overview">✏️ Open in Builder</span>
+      </a>
+      <a class="card" href="./reproducible-provenance.html">
+        <div class="ic">🔬</div>
+        <h3>Reproducible Provenance <span>→</span></h3>
+        <p>Every panel shows an auto-derived <b>method line</b> footer (an aggregate
+           pushdown, a trend line), and a button exports a <b>reproducible bundle</b>:
+           self-contained spec + data snapshot + per-panel R &amp; Python code +
+           methods.md + a content-hash manifest.</p>
+        <div class="tags"><span class="tag">provenance</span><span class="tag">reproducibility</span><span class="tag">export</span></div>
+        <span class="open-builder" data-open="reproducible-provenance">✏️ Open in Builder</span>
       </a>
       <a class="card" href="./heor-overview.html">
         <div class="ic">💊</div>

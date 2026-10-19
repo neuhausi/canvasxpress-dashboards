@@ -79,6 +79,19 @@ export function addPanel(spec, panel) {
       control.param = panel.param || '';
       if (Array.isArray(panel.options)) control.options = panel.options;
       if (panel.optionsFrom) control.optionsFrom = panel.optionsFrom;
+      // An FDR threshold slider (analysis control) is a numeric range param.
+      if (panel.style === 'range') {
+        ['min', 'max', 'step', 'value', 'analysis', 'method'].forEach(function (k) {
+          if (panel[k] != null) control[k] = panel[k];
+        });
+      }
+    } else if (panel.mode === 'transform') {
+      // A transform control (analysis control) re-expresses a target panel's data.
+      control.mode = 'transform';
+      control.target = panel.target || '';
+      control.analysis = 'transform';
+      if (Array.isArray(panel.options)) control.options = panel.options;
+      if (panel.value != null) control.value = panel.value;
     }
     next.panels[panel.id] = control;
   } else if (panel.type === 'filters') {
@@ -310,6 +323,12 @@ export function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'actions')) {
     if (Array.isArray(changes.actions) && changes.actions.length) panel.actions = changes.actions;
     else delete panel.actions;
+  }
+  // Provenance metadata (reproducibility): kept when it carries anything,
+  // dropped when empty so a cleared toggle leaves no residue.
+  if (Object.prototype.hasOwnProperty.call(changes, 'provenance')) {
+    if (changes.provenance && Object.keys(changes.provenance).length) panel.provenance = changes.provenance;
+    else delete panel.provenance;
   }
   return next;
 }

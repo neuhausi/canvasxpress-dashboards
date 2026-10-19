@@ -87,6 +87,18 @@ test('control table defaults to view:"table"', async function () {
   assert.equal(control.config.view, 'table');
 });
 
+test('provenance footer renders only when panel.provenance.show, with the auto method line', async function () {
+  var spec = JSON.parse(JSON.stringify(SPEC));
+  spec.controls = [];
+  spec.panels.bar.provenance = { show: true, notes: 'demo data' };   // footer expected
+  spec.panels.pie.provenance = { show: false };                      // opted out, no footer
+  var container = document.createElement('div');
+  await renderDashboard(spec, container, { CanvasXpress: CanvasXpressStub });
+  var footers = container.querySelectorAll('.cxd-panel-footer');
+  assert.equal(footers.length, 1, 'exactly one footer (bar only)');
+  assert.equal(footers[0].textContent, 'inline data; plotted as Bar — demo data');
+});
+
 test('throws on an invalid spec', async function () {
   var container = document.createElement('div');
   await assert.rejects(
