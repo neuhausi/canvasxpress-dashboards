@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" data-cx-ui-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — Survival Cohort</title>
+
+  <!-- CanvasXpress (peer dependency): rendering + broadcast coordination -->
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+
+  <!-- canvasxpress-dashboards renderer (UMD drop-in) -->
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    header { padding: 16px 24px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: var(--cx-ui-text-muted); font-size: 13px; }
+    #dashboard { padding: 16px 24px 32px; }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <a class="cxd-open" href="../?open=survival-cohort">✏️ Open in Builder</a>
+    <span class="cxd-here">🎯 Survival Cohort</span>
+  </nav>
+  <header>
+    <h1>Survival Cohort (Kaplan–Meier)</h1>
+    <p>A synthetic immuno-oncology trial (n=160). A survival table — a time
+       column plus a 0/1 event — renders as a Kaplan–Meier panel with 95%
+       confidence bands, a censor rug, the log-rank p-value and an at-risk
+       table, split by treatment arm, beside a PD-L1 expression box plot.</p>
+  </header>
+
+  <div id="dashboard"></div>
+
+  <script>
+    fetch('./survival-cohort.spec.json')
+      .then(function (res) { return res.json(); })
+      .then(function (spec) {
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard');
+      })
+      .then(function (handle) {
+        console.log('Dashboard rendered:', handle.instances.length, 'instances in group', handle.broadcastGroup);
+      })
+      .catch(function (err) {
+        document.getElementById('dashboard').textContent = 'Failed to render: ' + err.message;
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

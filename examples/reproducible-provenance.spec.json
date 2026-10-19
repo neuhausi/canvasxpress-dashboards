@@ -1,0 +1,247 @@
+{
+  "id": "reproducible-provenance",
+  "title": "Reproducible Provenance",
+  "version": 1,
+  "broadcastGroup": "reproducible-provenance",
+  "theme": "auto",
+  "layout": {
+    "cols": 12,
+    "rowHeight": 40,
+    "gap": 12,
+    "items": [
+      {
+        "panel": "intro",
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 2
+      },
+      {
+        "panel": "byRegion",
+        "x": 0,
+        "y": 2,
+        "w": 6,
+        "h": 6
+      },
+      {
+        "panel": "trend",
+        "x": 6,
+        "y": 2,
+        "w": 6,
+        "h": 6
+      }
+    ]
+  },
+  "data": {
+    "byRegion": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": [
+            "Revenue",
+            "Units"
+          ],
+          "smps": [
+            "r1",
+            "r2",
+            "r3",
+            "r4",
+            "r5",
+            "r6",
+            "r7",
+            "r8",
+            "r9",
+            "r10",
+            "r11",
+            "r12",
+            "r13",
+            "r14",
+            "r15",
+            "r16"
+          ],
+          "data": [
+            [
+              115,
+              127,
+              139,
+              140,
+              90,
+              108,
+              115,
+              133,
+              155,
+              150,
+              156,
+              151,
+              69,
+              93,
+              106,
+              130
+            ],
+            [
+              29,
+              25,
+              46,
+              35,
+              18,
+              36,
+              29,
+              27,
+              52,
+              38,
+              31,
+              50,
+              17,
+              19,
+              35,
+              33
+            ]
+          ]
+        },
+        "x": {
+          "Region": [
+            "East",
+            "East",
+            "East",
+            "East",
+            "West",
+            "West",
+            "West",
+            "West",
+            "Central",
+            "Central",
+            "Central",
+            "Central",
+            "Pacific",
+            "Pacific",
+            "Pacific",
+            "Pacific"
+          ],
+          "Quarter": [
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4",
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4",
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4",
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4"
+          ]
+        }
+      },
+      "pushdown": {
+        "groupBy": [
+          "Region"
+        ],
+        "measures": [
+          {
+            "fn": "sum",
+            "column": "Revenue",
+            "as": "Revenue"
+          }
+        ]
+      },
+      "provenance": {
+        "dataVersion": "fy2026-q4",
+        "method": "Quarterly sales records"
+      }
+    },
+    "trend": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": [
+            "East",
+            "West",
+            "Central",
+            "Pacific"
+          ],
+          "smps": [
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4"
+          ],
+          "data": [
+            [
+              116,
+              131,
+              137,
+              143
+            ],
+            [
+              90,
+              102,
+              114,
+              135
+            ],
+            [
+              154,
+              154,
+              154,
+              154
+            ],
+            [
+              69,
+              87,
+              114,
+              132
+            ]
+          ]
+        }
+      },
+      "provenance": {
+        "dataVersion": "fy2026-q4"
+      }
+    }
+  },
+  "panels": {
+    "intro": {
+      "type": "text",
+      "title": false,
+      "align": "left",
+      "valign": "middle",
+      "html": "<b>Reproducible provenance.</b> Each chart shows a <i>method line</i> (its figure footer) auto-derived from what it actually computed. Use the toolbar&rsquo;s <b>Download &rarr; Reproducible bundle</b> to export a zip with the self-contained spec, a data snapshot, per-panel R &amp; Python regeneration code, and a methods.md."
+    },
+    "byRegion": {
+      "title": "Revenue by region (aggregated)",
+      "dataRef": "byRegion",
+      "config": {
+        "graphType": "Bar",
+        "graphOrientation": "vertical",
+        "title": false
+      },
+      "provenance": {
+        "show": true,
+        "notes": "summed from quarterly records"
+      }
+    },
+    "trend": {
+      "title": "Revenue trend by quarter",
+      "dataRef": "trend",
+      "config": {
+        "graphType": "Line",
+        "graphOrientation": "vertical",
+        "title": false
+      },
+      "provenance": {
+        "show": true
+      }
+    }
+  },
+  "controls": [
+    {
+      "kind": "table",
+      "dataRef": "byRegion",
+      "title": "Aggregated data"
+    }
+  ]
+}

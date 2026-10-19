@@ -1,0 +1,990 @@
+{
+  "$schema": "https://canvasxpress.org/dashboard.schema.json",
+  "schemaVersion": "1.4",
+  "id": "analysis-controls",
+  "title": "Analysis controls — transform + FDR slider",
+  "params": {
+    "fdr": 0.05
+  },
+  "data": {
+    "box": {
+      "kind": "inline",
+      "value": {
+        "y": {
+          "vars": [
+            [
+              "value"
+            ]
+          ],
+          "smps": [
+            [
+              "Obs1"
+            ],
+            [
+              "Obs2"
+            ],
+            [
+              "Obs3"
+            ],
+            [
+              "Obs4"
+            ],
+            [
+              "Obs5"
+            ],
+            [
+              "Obs6"
+            ],
+            [
+              "Obs7"
+            ],
+            [
+              "Obs8"
+            ],
+            [
+              "Obs9"
+            ],
+            [
+              "Obs10"
+            ],
+            [
+              "Obs11"
+            ],
+            [
+              "Obs12"
+            ],
+            [
+              "Obs13"
+            ],
+            [
+              "Obs14"
+            ],
+            [
+              "Obs15"
+            ],
+            [
+              "Obs16"
+            ],
+            [
+              "Obs17"
+            ],
+            [
+              "Obs18"
+            ],
+            [
+              "Obs19"
+            ],
+            [
+              "Obs20"
+            ],
+            [
+              "Obs21"
+            ],
+            [
+              "Obs22"
+            ],
+            [
+              "Obs23"
+            ],
+            [
+              "Obs24"
+            ],
+            [
+              "Obs25"
+            ],
+            [
+              "Obs26"
+            ],
+            [
+              "Obs27"
+            ],
+            [
+              "Obs28"
+            ],
+            [
+              "Obs29"
+            ],
+            [
+              "Obs30"
+            ],
+            [
+              "Obs31"
+            ],
+            [
+              "Obs32"
+            ],
+            [
+              "Obs33"
+            ],
+            [
+              "Obs34"
+            ],
+            [
+              "Obs35"
+            ],
+            [
+              "Obs36"
+            ],
+            [
+              "Obs37"
+            ],
+            [
+              "Obs38"
+            ],
+            [
+              "Obs39"
+            ],
+            [
+              "Obs40"
+            ],
+            [
+              "Obs41"
+            ],
+            [
+              "Obs42"
+            ],
+            [
+              "Obs43"
+            ],
+            [
+              "Obs44"
+            ],
+            [
+              "Obs45"
+            ],
+            [
+              "Obs46"
+            ],
+            [
+              "Obs47"
+            ],
+            [
+              "Obs48"
+            ],
+            [
+              "Obs49"
+            ],
+            [
+              "Obs50"
+            ],
+            [
+              "Obs51"
+            ],
+            [
+              "Obs52"
+            ],
+            [
+              "Obs53"
+            ],
+            [
+              "Obs54"
+            ],
+            [
+              "Obs55"
+            ],
+            [
+              "Obs56"
+            ],
+            [
+              "Obs57"
+            ],
+            [
+              "Obs58"
+            ],
+            [
+              "Obs59"
+            ],
+            [
+              "Obs60"
+            ],
+            [
+              "Obs61"
+            ],
+            [
+              "Obs62"
+            ],
+            [
+              "Obs63"
+            ],
+            [
+              "Obs64"
+            ],
+            [
+              "Obs65"
+            ],
+            [
+              "Obs66"
+            ],
+            [
+              "Obs67"
+            ],
+            [
+              "Obs68"
+            ],
+            [
+              "Obs69"
+            ],
+            [
+              "Obs70"
+            ],
+            [
+              "Obs71"
+            ],
+            [
+              "Obs72"
+            ],
+            [
+              "Obs73"
+            ],
+            [
+              "Obs74"
+            ],
+            [
+              "Obs75"
+            ],
+            [
+              "Obs76"
+            ],
+            [
+              "Obs77"
+            ],
+            [
+              "Obs78"
+            ],
+            [
+              "Obs79"
+            ],
+            [
+              "Obs80"
+            ],
+            [
+              "Obs81"
+            ],
+            [
+              "Obs82"
+            ],
+            [
+              "Obs83"
+            ],
+            [
+              "Obs84"
+            ],
+            [
+              "Obs85"
+            ],
+            [
+              "Obs86"
+            ],
+            [
+              "Obs87"
+            ],
+            [
+              "Obs88"
+            ],
+            [
+              "Obs89"
+            ],
+            [
+              "Obs90"
+            ]
+          ],
+          "data": [
+            [
+              [
+                4.311
+              ],
+              [
+                5.202
+              ],
+              [
+                4.081
+              ],
+              [
+                6.755
+              ],
+              [
+                5.362
+              ],
+              [
+                4.097
+              ],
+              [
+                5.536
+              ],
+              [
+                5.812
+              ],
+              [
+                5.633
+              ],
+              [
+                4.664
+              ],
+              [
+                6.663
+              ],
+              [
+                5.429
+              ],
+              [
+                4.317
+              ],
+              [
+                2.564
+              ],
+              [
+                6.237
+              ],
+              [
+                4.951
+              ],
+              [
+                4.982
+              ],
+              [
+                6.038
+              ],
+              [
+                5.903
+              ],
+              [
+                5.653
+              ],
+              [
+                6.011
+              ],
+              [
+                5.86
+              ],
+              [
+                5.082
+              ],
+              [
+                2.812
+              ],
+              [
+                6.844
+              ],
+              [
+                6.033
+              ],
+              [
+                5.913
+              ],
+              [
+                4.335
+              ],
+              [
+                5.526
+              ],
+              [
+                6.602
+              ],
+              [
+                7.73
+              ],
+              [
+                5.977
+              ],
+              [
+                6.565
+              ],
+              [
+                6.035
+              ],
+              [
+                4.448
+              ],
+              [
+                5.602
+              ],
+              [
+                5.627
+              ],
+              [
+                6.029
+              ],
+              [
+                7.42
+              ],
+              [
+                7.016
+              ],
+              [
+                5.903
+              ],
+              [
+                5.796
+              ],
+              [
+                6.936
+              ],
+              [
+                6.768
+              ],
+              [
+                5.273
+              ],
+              [
+                5.251
+              ],
+              [
+                7.374
+              ],
+              [
+                7.899
+              ],
+              [
+                6.754
+              ],
+              [
+                8.045
+              ],
+              [
+                7.418
+              ],
+              [
+                6.104
+              ],
+              [
+                7.343
+              ],
+              [
+                5.432
+              ],
+              [
+                8.763
+              ],
+              [
+                9.475
+              ],
+              [
+                6.423
+              ],
+              [
+                5.543
+              ],
+              [
+                7.641
+              ],
+              [
+                6.724
+              ],
+              [
+                10.022
+              ],
+              [
+                6.849
+              ],
+              [
+                7.797
+              ],
+              [
+                6.936
+              ],
+              [
+                5.934
+              ],
+              [
+                7.145
+              ],
+              [
+                4.554
+              ],
+              [
+                8.805
+              ],
+              [
+                7.099
+              ],
+              [
+                7.473
+              ],
+              [
+                5.776
+              ],
+              [
+                4.59
+              ],
+              [
+                5.911
+              ],
+              [
+                4.366
+              ],
+              [
+                4.046
+              ],
+              [
+                5.591
+              ],
+              [
+                4.857
+              ],
+              [
+                5.301
+              ],
+              [
+                5.374
+              ],
+              [
+                4.71
+              ],
+              [
+                4.731
+              ],
+              [
+                5.165
+              ],
+              [
+                6.478
+              ],
+              [
+                3.776
+              ],
+              [
+                5.894
+              ],
+              [
+                5.633
+              ],
+              [
+                6.363
+              ],
+              [
+                4.996
+              ],
+              [
+                5.67
+              ],
+              [
+                5.567
+              ]
+            ]
+          ]
+        },
+        "x": {
+          "group": [
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "Control"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseA"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseB"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ],
+            [
+              "DoseC"
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "panels": {
+    "intro": {
+      "type": "text",
+      "title": "",
+      "text": "Slide the **FDR threshold** to re-filter the significance brackets (dashboard-scope BH correction); switch the **Transform** to re-express the data (log/z-score/normalize). Analysis controls re-run the analysis, not just the display."
+    },
+    "box": {
+      "title": "Tooth growth by dose",
+      "dataRef": "box",
+      "config": {
+        "graphType": "Boxplot",
+        "groupingFactors": [
+          [
+            "group"
+          ]
+        ],
+        "title": "Tooth growth by dose with pairwise significance (Welch t-test, BH-adjusted)",
+        "xAxisTitle": "value",
+        "smpTitle": "group",
+        "showBoxplotIfViolin": true,
+        "setMaxX": 13.6,
+        "showStatInference": true,
+        "statInference": {
+          "correction": {
+            "method": "BH",
+            "scope": "panel"
+          },
+          "annotate": "stars",
+          "comparisons": [
+            {
+              "groups": [
+                "Control",
+                "DoseA"
+              ],
+              "p": 0.00258746,
+              "value": 10.62
+            },
+            {
+              "groups": [
+                "Control",
+                "DoseB"
+              ],
+              "p": 4.7e-7,
+              "value": 11.36
+            },
+            {
+              "groups": [
+                "DoseA",
+                "DoseB"
+              ],
+              "p": 0.00116248,
+              "value": 12.11
+            },
+            {
+              "groups": [
+                "Control",
+                "DoseC"
+              ],
+              "p": 0.53069114,
+              "value": 13.01
+            }
+          ]
+        },
+        "graphOrientation": "vertical"
+      }
+    },
+    "tf": {
+      "type": "control",
+      "mode": "transform",
+      "target": "box",
+      "title": "Transform",
+      "analysis": "transform",
+      "value": "none",
+      "options": [
+        {
+          "label": "None",
+          "value": "none"
+        },
+        {
+          "label": "log2",
+          "value": "log2"
+        },
+        {
+          "label": "log10",
+          "value": "log10"
+        },
+        {
+          "label": "Z-score",
+          "value": "zscore"
+        },
+        {
+          "label": "Median-center",
+          "value": "medianCenter"
+        },
+        {
+          "label": "Quantile normalize",
+          "value": "quantileNormalize"
+        }
+      ]
+    },
+    "fdr": {
+      "type": "control",
+      "mode": "param",
+      "style": "range",
+      "param": "fdr",
+      "title": "FDR threshold",
+      "analysis": "fdr",
+      "method": "BH",
+      "min": 0.001,
+      "max": 0.25,
+      "step": 0.001,
+      "value": 0.05
+    }
+  },
+  "layout": {
+    "cols": 12,
+    "items": [
+      {
+        "panel": "intro",
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 2
+      },
+      {
+        "panel": "box",
+        "x": 0,
+        "y": 2,
+        "w": 12,
+        "h": 10
+      },
+      {
+        "panel": "tf",
+        "x": 0,
+        "y": 12,
+        "w": 6,
+        "h": 2
+      },
+      {
+        "panel": "fdr",
+        "x": 6,
+        "y": 12,
+        "w": 6,
+        "h": 2
+      }
+    ]
+  }
+}

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" data-cx-ui-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — Mutation Landscape</title>
+
+  <!-- CanvasXpress (peer dependency): rendering + broadcast coordination -->
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+
+  <!-- canvasxpress-dashboards renderer (UMD drop-in) -->
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    header { padding: 16px 24px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: var(--cx-ui-text-muted); font-size: 13px; }
+    #dashboard { padding: 16px 24px 32px; }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <a class="cxd-open" href="../?open=mutation-oncoprint">✏️ Open in Builder</a>
+    <span class="cxd-here">🎯 Mutation Landscape</span>
+  </nav>
+  <header>
+    <h1>Mutation Landscape (Oncoprint)</h1>
+    <p>A synthetic gene × sample alteration matrix of mutation and copy-number
+       tokens renders as a cBioPortal-style oncoprint — mutations and CNAs
+       stacked per gene, samples ordered by alteration — above a per-gene
+       alteration-frequency bar chart.</p>
+  </header>
+
+  <div id="dashboard"></div>
+
+  <script>
+    fetch('./mutation-oncoprint.spec.json')
+      .then(function (res) { return res.json(); })
+      .then(function (spec) {
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard');
+      })
+      .then(function (handle) {
+        console.log('Dashboard rendered:', handle.instances.length, 'instances in group', handle.broadcastGroup);
+      })
+      .catch(function (err) {
+        document.getElementById('dashboard').textContent = 'Failed to render: ' + err.message;
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

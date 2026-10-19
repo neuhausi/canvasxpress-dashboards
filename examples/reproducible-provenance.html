@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" data-cx-ui-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — Reproducible Provenance</title>
+
+  <!-- CanvasXpress (peer dependency): rendering + broadcast coordination -->
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+
+  <!-- canvasxpress-dashboards renderer (UMD drop-in) -->
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    header { padding: 16px 24px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: var(--cx-ui-text-muted); font-size: 13px; }
+    #dashboard { padding: 16px 24px 8px; }
+    .cxd-export-row { padding: 0 24px 28px; }
+    .cxd-export-row button { font: 500 13px/1.4 var(--cx-font-sans); padding: 7px 14px;
+      border: 1px solid var(--cx-ui-border); border-radius: var(--cx-radius-md);
+      background: var(--cx-ui-surface); color: var(--cx-ui-text); cursor: pointer; }
+    .cxd-export-row button:hover { border-color: var(--cx-ui-accent-strong); color: var(--cx-ui-accent-strong); }
+    .cxd-export-row small { color: var(--cx-ui-text-muted); margin-left: 10px; font-size: 12px; }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <a class="cxd-open" href="../?open=reproducible-provenance">✏️ Open in Builder</a>
+    <span class="cxd-here">🎯 Reproducible Provenance</span>
+  </nav>
+  <header>
+    <h1>Reproducible Provenance</h1>
+    <p>Each chart carries an auto-derived <b>method line</b> as a figure footer — read
+       off what the panel actually computed (here: an aggregate pushdown, and a plain
+       time-series line). The button below exports a <b>reproducible bundle</b>: a zip
+       with the self-contained spec, a data snapshot, per-panel R &amp; Python
+       regeneration code, a <code>methods.md</code>, and a <code>manifest.json</code>
+       carrying a content hash so a reviewer can tell two figures apart.</p>
+  </header>
+
+  <div id="dashboard"></div>
+  <div class="cxd-export-row">
+    <button id="export-bundle" type="button">⬇ Export reproducible bundle (.zip)</button>
+    <small id="export-note"></small>
+  </div>
+
+  <script>
+    fetch('./reproducible-provenance.spec.json')
+      .then(function (res) { return res.json(); })
+      .then(function (spec) {
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard');
+      })
+      .then(function (handle) {
+        console.log('Dashboard rendered:', handle.instances.length, 'instances in group', handle.broadcastGroup);
+        var btn = document.getElementById('export-bundle');
+        var note = document.getElementById('export-note');
+        btn.addEventListener('click', function () {
+          btn.disabled = true;
+          note.textContent = 'Building…';
+          Promise.resolve(CanvasXpressDashboards.exportReproducibleBundle(handle, {
+            filename: 'reproducible-provenance-bundle.zip'
+          })).then(function () {
+            btn.disabled = false; note.textContent = 'Downloaded reproducible-provenance-bundle.zip';
+          }, function (err) {
+            btn.disabled = false; note.textContent = 'Export failed: ' + (err && err.message || err);
+          });
+        });
+      })
+      .catch(function (err) {
+        document.getElementById('dashboard').textContent = 'Failed to render: ' + err.message;
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,434 @@
+{
+ "$schema": "https://canvasxpress.org/schema/dashboard.schema.json",
+ "schemaVersion": "1.1",
+ "id": "vcf-variants",
+ "title": "VCF Variants (ingestion)",
+ "version": 1,
+ "broadcastGroup": "vcf-variants",
+ "theme": "auto",
+ "layout": {
+  "cols": 12,
+  "rowHeight": 40,
+  "gap": 12,
+  "items": [
+   {
+    "panel": "intro",
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 2
+   },
+   {
+    "panel": "perchr",
+    "x": 0,
+    "y": 2,
+    "w": 5,
+    "h": 9
+   },
+   {
+    "panel": "qual",
+    "x": 5,
+    "y": 2,
+    "w": 7,
+    "h": 9
+   },
+   {
+    "panel": "about",
+    "x": 0,
+    "y": 11,
+    "w": 12,
+    "h": 2
+   }
+  ]
+ },
+ "data": {
+  "perChr": {
+   "kind": "inline",
+   "value": {
+    "y": {
+     "vars": [
+      "Variants"
+     ],
+     "smps": [
+      "1",
+      "2",
+      "3",
+      "5",
+      "7",
+      "10",
+      "12",
+      "17"
+     ],
+     "data": [
+      [
+       7,
+       6,
+       5,
+       4,
+       7,
+       7,
+       6,
+       6
+      ]
+     ]
+    }
+   }
+  },
+  "variants": {
+   "kind": "inline",
+   "value": {
+    "y": {
+     "vars": [
+      "rs9758947",
+      "1:19211614",
+      "1:17760080",
+      "1:48038846",
+      "rs1610281",
+      "1:29437603",
+      "rs8854818",
+      "2:29740445",
+      "2:29413063",
+      "rs6506967",
+      "2:46797797",
+      "rs5449059",
+      "2:10876086",
+      "3:38395366",
+      "3:34277254",
+      "3:48863911",
+      "3:23792743",
+      "3:47283780",
+      "5:26056245",
+      "rs9879795",
+      "5:25892108",
+      "rs6381561",
+      "rs9491121",
+      "7:21549492",
+      "7:44888188",
+      "7:29755445",
+      "rs9376026",
+      "rs8777677",
+      "rs8525274",
+      "rs6984983",
+      "rs4265241",
+      "10:2846526",
+      "rs3779271",
+      "10:10677072",
+      "10:37387638",
+      "rs5986792",
+      "12:41580034",
+      "rs7548663",
+      "rs6977741",
+      "rs1158938",
+      "12:21960128",
+      "12:5916266",
+      "rs8731338",
+      "rs8578111",
+      "rs2533652",
+      "rs4714249",
+      "rs7530316",
+      "17:33484896"
+     ],
+     "smps": [
+      "POS",
+      "QUAL"
+     ],
+     "data": [
+      [
+       4695205,
+       55.8
+      ],
+      [
+       19211614,
+       45.6
+      ],
+      [
+       17760080,
+       206.4
+      ],
+      [
+       48038846,
+       65.7
+      ],
+      [
+       27892965,
+       63.2
+      ],
+      [
+       29437603,
+       176.5
+      ],
+      [
+       29325919,
+       234.3
+      ],
+      [
+       29740445,
+       174.5
+      ],
+      [
+       29413063,
+       244.3
+      ],
+      [
+       19887967,
+       220.5
+      ],
+      [
+       46797797,
+       141.4
+      ],
+      [
+       41610059,
+       231.9
+      ],
+      [
+       10876086,
+       140.9
+      ],
+      [
+       38395366,
+       93.5
+      ],
+      [
+       34277254,
+       177.5
+      ],
+      [
+       48863911,
+       144.1
+      ],
+      [
+       23792743,
+       127.3
+      ],
+      [
+       47283780,
+       29
+      ],
+      [
+       26056245,
+       227
+      ],
+      [
+       27228462,
+       236
+      ],
+      [
+       25892108,
+       162.2
+      ],
+      [
+       6086277,
+       198.9
+      ],
+      [
+       5221775,
+       163.1
+      ],
+      [
+       21549492,
+       197.7
+      ],
+      [
+       44888188,
+       208.6
+      ],
+      [
+       29755445,
+       93.1
+      ],
+      [
+       8422388,
+       60.1
+      ],
+      [
+       28248170,
+       237
+      ],
+      [
+       39426754,
+       247.9
+      ],
+      [
+       1741307,
+       169.9
+      ],
+      [
+       32503587,
+       234.5
+      ],
+      [
+       2846526,
+       155.1
+      ],
+      [
+       20679467,
+       175
+      ],
+      [
+       10677072,
+       167.4
+      ],
+      [
+       37387638,
+       73.2
+      ],
+      [
+       37100560,
+       198.9
+      ],
+      [
+       41580034,
+       220.3
+      ],
+      [
+       24123101,
+       237.2
+      ],
+      [
+       22843501,
+       81
+      ],
+      [
+       22379089,
+       32.1
+      ],
+      [
+       21960128,
+       218
+      ],
+      [
+       5916266,
+       125.4
+      ],
+      [
+       26021166,
+       41.2
+      ],
+      [
+       25407276,
+       71.5
+      ],
+      [
+       48324437,
+       223.5
+      ],
+      [
+       12961409,
+       192.9
+      ],
+      [
+       49833260,
+       35.9
+      ],
+      [
+       33484896,
+       121.4
+      ]
+     ]
+    },
+    "z": {
+     "CHROM": [
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "3",
+      "3",
+      "3",
+      "3",
+      "3",
+      "5",
+      "5",
+      "5",
+      "5",
+      "7",
+      "7",
+      "7",
+      "7",
+      "7",
+      "7",
+      "7",
+      "10",
+      "10",
+      "10",
+      "10",
+      "10",
+      "10",
+      "10",
+      "12",
+      "12",
+      "12",
+      "12",
+      "12",
+      "12",
+      "17",
+      "17",
+      "17",
+      "17",
+      "17",
+      "17"
+     ]
+    }
+   }
+  }
+ },
+ "panels": {
+  "intro": {
+   "type": "text",
+   "title": false,
+   "align": "left",
+   "valign": "middle",
+   "html": "<b>VCF ingestion.</b> A Variant Call Format file (multi-sample, with INFO and genotype fields) parsed to a CanvasXpress data object — variants per chromosome, and every variant's quality by position. Bind the same parse to a Manhattan or genome panel for a positional view."
+  },
+  "perchr": {
+   "title": "Variants per chromosome",
+   "dataRef": "perChr",
+   "config": {
+    "graphType": "Bar",
+    "graphOrientation": "vertical",
+    "colorBy": "Variants",
+    "xAxisTitle": "Chromosome",
+    "yAxisTitle": "Variants",
+    "title": false
+   },
+   "provenance": {
+    "show": true,
+    "notes": "parsed from VCF with parseVcf()"
+   }
+  },
+  "qual": {
+   "title": "Variant quality by position",
+   "dataRef": "variants",
+   "config": {
+    "graphType": "Scatter2D",
+    "xAxis": [
+     "POS"
+    ],
+    "yAxis": [
+     "QUAL"
+    ],
+    "colorBy": "CHROM",
+    "xAxisTitle": "Position",
+    "yAxisTitle": "QUAL",
+    "title": false
+   }
+  },
+  "about": {
+   "type": "text",
+   "title": false,
+   "align": "left",
+   "valign": "top",
+   "html": "Data are <b>synthetic</b> (deterministic). The VCF is parsed by <code>parseVcf()</code> → <code>vcfToData()</code> / <code>variantsPerChromosome()</code>; see <code>docs/science-panels.md</code>."
+  }
+ }
+}

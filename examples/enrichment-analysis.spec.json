@@ -1,0 +1,250 @@
+{
+ "$schema": "https://canvasxpress.org/schema/dashboard.schema.json",
+ "schemaVersion": "1.1",
+ "id": "enrichment-analysis",
+ "title": "Enrichment Analysis (over-representation)",
+ "version": 1,
+ "broadcastGroup": "enrichment-analysis",
+ "theme": "auto",
+ "layout": {
+  "cols": 12,
+  "rowHeight": 40,
+  "gap": 12,
+  "items": [
+   {
+    "panel": "intro",
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 2
+   },
+   {
+    "panel": "bars",
+    "x": 0,
+    "y": 2,
+    "w": 12,
+    "h": 10
+   }
+  ]
+ },
+ "data": {
+  "enrichment": {
+   "kind": "inline",
+   "value": {
+    "y": {
+     "vars": [
+      "negLog10FDR"
+     ],
+     "smps": [
+      "Immune response",
+      "Cell cycle",
+      "Metabolism",
+      "Apoptosis",
+      "Signal transduction"
+     ],
+     "data": [
+      [
+       26.621,
+       0.868,
+       0,
+       0,
+       0
+      ]
+     ]
+    },
+    "x": {
+     "Overlap": [
+      34,
+      8,
+      0,
+      0,
+      0
+     ],
+     "SetSize": [
+      120,
+      140,
+      120,
+      140,
+      180
+     ],
+     "FDR": [
+      2.39e-27,
+      0.136,
+      1,
+      1,
+      1
+     ]
+    }
+   }
+  },
+  "query": {
+   "kind": "inline",
+   "value": {
+    "y": {
+     "vars": [
+      "In query"
+     ],
+     "smps": [
+      "G1",
+      "G2",
+      "G3",
+      "G4",
+      "G5",
+      "G6",
+      "G7",
+      "G8",
+      "G9",
+      "G10",
+      "G11",
+      "G12",
+      "G13",
+      "G14",
+      "G15",
+      "G16",
+      "G17",
+      "G18",
+      "G19",
+      "G20",
+      "G21",
+      "G22",
+      "G23",
+      "G24",
+      "G25",
+      "G26",
+      "G27",
+      "G28",
+      "G29",
+      "G30",
+      "G31",
+      "G32",
+      "G33",
+      "G34",
+      "G121",
+      "G122",
+      "G123",
+      "G124",
+      "G125",
+      "G126",
+      "G127",
+      "G128",
+      "G1142",
+      "G1298",
+      "G1411",
+      "G928",
+      "G1509",
+      "G1186",
+      "G1436",
+      "G1279",
+      "G1199",
+      "G1725",
+      "G1150",
+      "G1788",
+      "G1801",
+      "G1982",
+      "G1251",
+      "G1197",
+      "G963",
+      "G1065"
+     ],
+     "data": [
+      [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     ]
+    }
+   }
+  }
+ },
+ "panels": {
+  "intro": {
+   "type": "text",
+   "title": false,
+   "align": "left",
+   "valign": "middle",
+   "html": "<b>Enrichment analysis.</b> A selected gene set (60 genes) scored for over-representation against five pathways with the <b>hypergeometric test</b> and <b>Benjamini–Hochberg FDR</b>. Bars are −log<sub>10</sub> FDR; the <i>Immune response</i> pathway (the set the query was drawn from) rises to the top. The p-values match R's <code>phyper</code>/<code>p.adjust</code>."
+  },
+  "bars": {
+   "title": "Pathway over-representation (−log10 FDR)",
+   "dataRef": "enrichment",
+   "config": {
+    "graphType": "Bar",
+    "graphOrientation": "horizontal",
+    "colorBy": "negLog10FDR",
+    "xAxisTitle": "−log10 FDR",
+    "smpTitle": "Pathway",
+    "title": false,
+    "showConfidenceIntervals": false
+   },
+   "provenance": {
+    "show": true,
+    "notes": "hypergeometric over-representation, Benjamini–Hochberg FDR"
+   }
+  }
+ },
+ "controls": [
+  {
+   "kind": "table",
+   "dataRef": "query",
+   "title": "Query gene set"
+  }
+ ]
+}
