@@ -38,6 +38,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from . import mcp_bridge
 from . import billing
 from . import ask as ask_qa
+from .join import join_data
 from .billing import EntitlementStore, TokenPool
 from .datasets import DatasetStore, reshape_to_cx, filter_cx_data
 from .engine import DEFAULT_CANVASXPRESS_URL, EngineMiddleware, engine_is_default
@@ -911,9 +912,13 @@ def create_dashboards_app(
     # ---- health (for load balancers / orchestrators; no sign-in, not audited) ----
     @app.get("/healthz")
     def healthz():
-        """Liveness: the process answers (no database call)."""
+        """Liveness: the process answers (no database call). Also reports whether
+        the natural-language builder is configured (no secret exposed) so a
+        deploy can warn when prod comes up with the Chat NL builder disabled."""
         from . import __version__
-        return {"status": "ok", "version": __version__}
+        return {"status": "ok", "version": __version__,
+                "nlBuilder": "configured" if (bool(llm_api_key) or mcp_bridge.enabled())
+                             else "unconfigured"}
 
     @app.get("/readyz")
     def readyz():
@@ -1653,21 +1658,45 @@ def create_dashboards_app(
         if spec is None:
             raise HTTPException(status_code=404, detail="No such dashboard")
         viewer = request.session.get("user")
-        data_by_ref = {}
-        for ref, source in (spec.get("data") or {}).items():
-            if not isinstance(source, dict):
-                continue
+        sources = spec.get("data") or {}
+        resolved: dict = {}
+
+        def resolve_ref(ref, trail=()):
+            """The inline data of one source, or None (not inspectable). A
+            ``join`` is blended server-side (same semantics as the browser)
+            from its resolved inputs, so a question can span joined sources."""
+            if ref in resolved:
+                return resolved[ref]
+            source = sources.get(ref)
             data = None
-            if source.get("kind") == "inline":
-                data = source.get("value")
-            elif source.get("kind") == "dataset":
-                data_owner = source.get("owner") or spec_owner
-                try:
-                    data = dataset_store_for(source.get("store")).get(data_owner, source.get("id"))
-                except KeyError:
-                    data = None
-                if data is not None:   # row/column security with the viewer's principals
-                    data = secured(data, viewer, data_owner, source.get("store"), source.get("id"))
+            if isinstance(source, dict) and ref not in trail:
+                if source.get("kind") == "inline":
+                    data = source.get("value")
+                elif source.get("kind") == "dataset":
+                    data_owner = source.get("owner") or spec_owner
+                    try:
+                        data = dataset_store_for(source.get("store")).get(data_owner, source.get("id"))
+                    except KeyError:
+                        data = None
+                    if data is not None:   # row/column security with the viewer's principals
+                        data = secured(data, viewer, data_owner, source.get("store"), source.get("id"))
+                elif source.get("kind") == "join":
+                    left = resolve_ref(source.get("left"), trail + (ref,))
+                    right = resolve_ref(source.get("right"), trail + (ref,))
+                    if isinstance(left, dict) and left.get("y") and isinstance(right, dict) and right.get("y"):
+                        options = {k: source[k] for k in ("on", "how", "axis", "leftAxis", "rightAxis", "suffix")
+                                   if k in source}
+                        options["leftName"], options["rightName"] = source.get("left"), source.get("right")
+                        try:
+                            data = join_data(left, right, options)
+                        except ValueError:
+                            data = None
+            resolved[ref] = data
+            return data
+
+        data_by_ref = {}
+        for ref in sources:
+            data = resolve_ref(ref)
             if isinstance(data, dict) and data.get("y"):
                 data_by_ref[ref] = data
         if not data_by_ref:

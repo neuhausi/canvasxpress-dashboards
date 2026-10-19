@@ -445,6 +445,28 @@ export function renderDashboard(spec, target, options) {
     }
     applyFilterChange();
   }
+  /**
+   * Undo drag-zoom / pan on every panel (axis ranges and zoom state) and redraw
+   * those that were actually zoomed. Escape swallows the engine's own reset, so
+   * without this a zoomed panel could never be restored from the keyboard when
+   * no control or filter was active.
+   * @returns {void}
+   */
+  function resetPanelViews() {
+    instances.slice().forEach(function (inst) {
+      if (!inst || typeof inst.resetRange !== 'function') return;
+      var zoomed = inst.zoom !== 1 && inst.zoom != null;
+      ['setMinX', 'setMaxX', 'setMinX2', 'setMaxX2', 'setMinY', 'setMaxY', 'setMinZ', 'setMaxZ'].forEach(function (key) {
+        if (inst[key] != null) zoomed = true;
+      });
+      if (!zoomed) return;
+      try {
+        inst.resetRange();
+        if (typeof inst.resetZoomPan === 'function') inst.resetZoomPan();
+        if (typeof inst.draw === 'function') inst.draw({ func: 'resetRange', par: [] });
+      } catch (e) { /* keep resetting the remaining panels */ }
+    });
+  }
   var doc = container.ownerDocument || (typeof document !== 'undefined' ? document : null);
   var escListener = null;
   if (doc && typeof doc.addEventListener === 'function') {
@@ -455,9 +477,10 @@ export function renderDashboard(spec, target, options) {
       // the dashboard constrained (e.g. a hidden second measure) and
       // double-restores cross-filtered data (duplicated bars). Swallow Escape
       // and do the dashboard-level reset instead: clear an active cross-filter,
-      // else snap controls/filters back to All.
+      // else snap controls/filters back to All; panel zoom is always undone.
       if (crossMarks != null) clearCrossFilter();
       else resetAllControls();
+      resetPanelViews();
       if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
       if (typeof ev.preventDefault === 'function') ev.preventDefault();
     };
