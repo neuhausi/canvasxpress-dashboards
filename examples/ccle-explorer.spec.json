@@ -40,79 +40,86 @@
     "gap": 12,
     "items": [
       {
-        "panel": "gene-control",
+        "panel": "intro",
         "x": 0,
         "y": 0,
+        "w": 12,
+        "h": 2
+      },
+      {
+        "panel": "gene-control",
+        "x": 0,
+        "y": 2,
         "w": 4,
         "h": 1
       },
       {
         "panel": "dtype-control",
         "x": 4,
-        "y": 0,
+        "y": 2,
         "w": 4,
         "h": 1
       },
       {
         "panel": "genes-control",
         "x": 8,
-        "y": 0,
+        "y": 2,
         "w": 4,
         "h": 1
       },
       {
         "panel": "distribution",
         "x": 0,
-        "y": 1,
+        "y": 3,
         "w": 12,
         "h": 9
       },
       {
         "panel": "heatmap",
         "x": 0,
-        "y": 10,
+        "y": 12,
         "w": 12,
         "h": 9
       },
       {
         "panel": "genex-control",
         "x": 0,
-        "y": 19,
+        "y": 21,
         "w": 3,
         "h": 1
       },
       {
         "panel": "typex-control",
         "x": 3,
-        "y": 19,
+        "y": 21,
         "w": 3,
         "h": 1
       },
       {
         "panel": "geney-control",
         "x": 6,
-        "y": 19,
+        "y": 21,
         "w": 3,
         "h": 1
       },
       {
         "panel": "typey-control",
         "x": 9,
-        "y": 19,
+        "y": 21,
         "w": 3,
         "h": 1
       },
       {
         "panel": "correlation",
         "x": 0,
-        "y": 20,
+        "y": 22,
         "w": 12,
         "h": 9
       },
       {
         "panel": "mutations",
         "x": 0,
-        "y": 29,
+        "y": 31,
         "w": 12,
         "h": 13
       }
@@ -280,7 +287,7 @@
       }
     },
     "heatmap": {
-      "title": "Expression heatmap (genes \u00d7 cell lines)",
+      "title": "Expression heatmap (genes × cell lines)",
       "dataRef": "heatmap",
       "config": {
         "graphType": "Heatmap",
@@ -326,6 +333,10 @@
         "colorScheme": "Favorite",
         "title": false
       }
+    },
+    "intro": {
+      "type": "text",
+      "text": "CCLE gene explorer — explore expression/CNV across cancer cell lines: per-gene distributions, a multi-gene heatmap, gene–gene correlation, and mutations. Data: CCLE / DepMap."
     }
   }
 }

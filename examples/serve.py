@@ -721,8 +721,11 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
                     "wp-explorer.spec.json", "tcga-explorer.spec.json",
                     "ccle-explorer.spec.json"):
         explorer = load_spec(db_spec)
-        if not explorer or explorer["id"] in saved:
+        if not explorer:
             continue
+        # Shipped explorers are locked, canonical examples: always re-save from the
+        # spec file (not skip-if-present) so edits to the spec — e.g. the intro
+        # description — are picked up on restart instead of a stale stored copy.
         explorer = copy.deepcopy(explorer)
         for ref, source in explorer.get("data", {}).items():
             url = source.get("url")
