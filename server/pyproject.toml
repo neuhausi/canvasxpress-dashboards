@@ -71,7 +71,7 @@ packages = ["src/cxd_server"]
 # Ship the small demo SQLite databases so the built-in connectors integration can
 # seed demo sources on any install (CXD_CONNECTORS_DEMO_SOURCES=on), not just the
 # examples/ dev launcher.
-artifacts = ["src/cxd_server/demo_data/*.db"]
+artifacts = ["src/cxd_server/demo_data/*.db", "src/cxd_server/reference_dashboards/*.json"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

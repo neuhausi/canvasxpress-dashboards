@@ -23,6 +23,11 @@ serving code is **off by default**. This page is how a deployment — including 
 Databases serve the moment they are present and the flag is on; a known database
 with no file installed answers a clear `503`.
 
+With `CXD_REFERENCE_SOURCES=on`, the server also **seeds the GTEx and GENCODE
+explorer dashboards** onto the Dashboards page (for the examples owner) when their
+database is installed — so a fresh install has the boards, not just the data. They
+read the `/api/<db>` services directly, so no connectors are required.
+
 ## Installing the data
 
 ### Air-gapped (no network egress) — hand-drop + verify

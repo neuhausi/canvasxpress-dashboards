@@ -173,3 +173,42 @@ def test_reference_data_publish_override(monkeypatch, tmp_path):
     client = TestClient(app)
     assert client.get("/reference-data/tcga.sqlite").status_code == 200       # now allowed
     assert client.get("/reference-data/gencode.sqlite").status_code == 404    # override replaces default
+
+
+class _FakeDashStore:
+    def __init__(self):
+        self.saved = {}
+        self.locked = set()
+    def get_summary(self, owner, did):
+        return self.saved.get((owner, did))
+    def save_dashboard(self, owner, spec, now):
+        self.saved[(owner, spec["id"])] = {"id": spec["id"], "spec": spec, "locked": False}
+    def set_locked(self, owner, did, flag):
+        self.locked.add((owner, did))
+        if (owner, did) in self.saved:
+            self.saved[(owner, did)]["locked"] = flag
+
+
+def test_seed_reference_dashboards_gates_on_db_and_is_idempotent(monkeypatch, tmp_path):
+    import sqlite3
+    monkeypatch.setattr(rs, "SQLITE_DIR", str(tmp_path))
+    # gencode present, gtex absent
+    con = sqlite3.connect(str(tmp_path / "gencode.sqlite"))
+    con.execute("CREATE TABLE genome (geneName TEXT)"); con.commit(); con.close()
+    store = _FakeDashStore()
+    rsrc.seed_reference_dashboards(store, "app")
+    assert store.get_summary("app", "gencode-explorer") is not None   # db present -> seeded
+    assert store.get_summary("app", "gtex-explorer") is None          # db absent -> skipped
+    assert ("app", "gencode-explorer") in store.locked
+    # URLs rewritten root-relative to the /api/<db> routes (no "../")
+    spec = store.saved[("app", "gencode-explorer")]["spec"]
+    urls = [v.get("url") for v in spec["data"].values() if v.get("kind") == "connector"]
+    assert urls and all(u.startswith("/api/gencode") for u in urls), urls
+    # idempotent: a second call does not re-save (get_summary not None)
+    before = dict(store.saved)
+    rsrc.seed_reference_dashboards(store, "app")
+    assert store.saved.keys() == before.keys()
+
+
+def test_seed_reference_dashboards_noop_without_owner():
+    rsrc.seed_reference_dashboards(_FakeDashStore(), "")  # no owner -> no-op, no raise

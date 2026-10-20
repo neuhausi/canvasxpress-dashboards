@@ -50,6 +50,14 @@ side now ships in the package, **off by default**:
   context; a build-time check fails a mis-pathed/empty bake); `docker-compose.reference.yml`
   fetches them into a shared volume on first run for sites with egress. See
   [docs/reference-data.md](docs/reference-data.md).
+- A packaged `python -m cxd_server` install now also **seeds the GTEx/GENCODE explorer
+  dashboards** onto the Dashboards page when `CXD_REFERENCE_SOURCES=on` and the database
+  is present (shipped as package data, read-only via the `/api/<db>` services — no
+  connectors needed). Previously these dashboards existed only in the examples dev
+  launcher, so a fresh install had the data + services but no pre-built board.
+- `examples/dbservices.py` is now a thin re-export of `cxd_server.reference_services` (one
+  source of truth, no drift); `cxd_server`'s package init is lazy so a stdlib-only submodule
+  import no longer pulls in the web stack.
 
 ### Fixes
 - **Significance brackets no longer collapse a multi-variable panel.** Bracket heights and

@@ -90,6 +90,52 @@ def seed_gtex_sources(store: Any, user: str) -> None:
             store.save_source(user, name, url, sql)
 
 
+def seed_reference_dashboards(store: Any, owner: str, now: str = None) -> None:
+    """Seed the GTEx / GENCODE reference explorer dashboards for ``owner`` so a
+    packaged ``python -m cxd_server`` install with the data present shows them on
+    the Dashboards page (they otherwise exist only in the examples dev launcher).
+
+    Each shipped spec's ``../api/<db>`` connector URLs are rewritten root-relative
+    (``api/<db>``) — the same rewrite the dev launcher does — so they resolve to
+    the :func:`install_reference_services` routes under whatever mount prefix the
+    app is served at. No connectors are needed: the dashboards read the
+    ``/api/<db>`` services directly. Only a dashboard whose database is installed
+    is seeded, and only when it is not already stored (idempotent; never clobbers
+    a later edit). Each is locked as a canonical example.
+
+    :param store: The dashboards ``DashboardStore`` (``save_dashboard`` /
+        ``set_locked`` / ``get_summary``).
+    :param owner: The examples owner the shipped dashboards are stored under.
+    :param now: ISO-8601 timestamp for the save (defaults to current UTC).
+    """
+    import datetime
+    import json
+
+    if not store or not owner:
+        return
+    now = now or datetime.datetime.now(datetime.timezone.utc).isoformat()
+    ddir = os.path.join(os.path.dirname(__file__), "reference_dashboards")
+    for fname, db in (("gtex-explorer.spec.json", "gtex"),
+                      ("gencode-explorer.spec.json", "gencode")):
+        path = os.path.join(ddir, fname)
+        if not os.path.isfile(path) or not reference_services.db_present(db):
+            continue
+        with open(path, encoding="utf-8") as handle:
+            spec = json.load(handle)
+        for source in spec.get("data", {}).values():
+            url = source.get("url")
+            if source.get("kind") == "connector" and isinstance(url, str) and url.startswith("../api/"):
+                source["url"] = url[2:]
+        try:
+            if store.get_summary(owner, spec["id"]) is not None:
+                continue
+            store.save_dashboard(owner, spec, now)
+            store.set_locked(owner, spec["id"], True)
+            print("  [reference] seeded dashboard: %s (owner %s)" % (spec["id"], owner), flush=True)
+        except Exception as exc:  # noqa: BLE001 - a seeding failure must not break startup
+            print("  [reference] NOTE: could not seed %s (%s)" % (spec.get("id"), exc), flush=True)
+
+
 def install_reference_services(app: Any) -> None:
     """Register ``GET /api/<db>`` on the dashboards ``app`` for the reference
     databases (ccle / tcga / gtex / gencode / wp), reading each from SQLite via

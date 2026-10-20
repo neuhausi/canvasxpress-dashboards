@@ -551,6 +551,13 @@ def create_dashboards_app(
     # Dashboards: stdlib SQLite by default (zero-dep), or Postgres/SQLite via
     # SQLAlchemy when CXD_DASHBOARD_STORE names a postgres:// URL.
     store = store or open_dashboard_store(os.getenv("CXD_DASHBOARD_STORE"), db_path=db_path)
+    # Reference dashboards: with CXD_REFERENCE_SOURCES on and a reference database
+    # present, seed the GTEx/GENCODE explorer dashboards for the examples owner so a
+    # packaged install shows them (they otherwise live only in the dev launcher).
+    if examples_owner:
+        from . import reference_sources as _refsrc
+        if _refsrc.reference_sources_enabled():
+            _refsrc.seed_reference_dashboards(store, examples_owner)
     if registry is None:
         registry = StoreRegistry.from_env(
             dataset_uri=dataset_store_uri, s3_client=s3_client,
