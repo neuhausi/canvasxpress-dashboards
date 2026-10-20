@@ -325,20 +325,22 @@ def _seed_admin_board(dashboards, datasets, gov, now, spec, prefix, label):
     if dashboards.get_summary(EXAMPLES_OWNER, board_id) is not None:
         dashboards.delete_dashboard(EXAMPLES_OWNER, board_id)      # was app-owned
         print("  [seed] moved %s from %s to %s" % (board_id, EXAMPLES_OWNER, ADMIN_USER))
-    if dashboards.get_summary(ADMIN_USER, board_id) is None:
-        spec = copy.deepcopy(spec)
-        have = {d["id"] for d in datasets.list(ADMIN_USER)}
-        for ref, source in spec.get("data", {}).items():
-            if source.get("kind") != "inline":
-                continue
-            dataset_id = prefix + ref
-            if dataset_id not in have:
-                datasets.create(ADMIN_USER, source["value"], now,
-                                title=label + ref, dataset_id=dataset_id, locked=True)
-            spec["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
-        dashboards.save_dashboard(ADMIN_USER, spec, now)
-        dashboards.set_locked(ADMIN_USER, board_id, True)
-        print("  [seed] shipped dashboard: %s (owner %s)" % (board_id, ADMIN_USER))
+    # Locked, canonical example: re-save from the spec on every restart so spec
+    # edits (e.g. the standard header) replace a stale stored copy. Datasets are
+    # created once (guarded by `have`) and reused.
+    spec = copy.deepcopy(spec)
+    have = {d["id"] for d in datasets.list(ADMIN_USER)}
+    for ref, source in spec.get("data", {}).items():
+        if source.get("kind") != "inline":
+            continue
+        dataset_id = prefix + ref
+        if dataset_id not in have:
+            datasets.create(ADMIN_USER, source["value"], now,
+                            title=label + ref, dataset_id=dataset_id, locked=True)
+        spec["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+    dashboards.save_dashboard(ADMIN_USER, spec, now)
+    dashboards.set_locked(ADMIN_USER, board_id, True)
+    print("  [seed] shipped dashboard: %s (owner %s)" % (board_id, ADMIN_USER))
     gov.set_grant("dashboard", ADMIN_USER, board_id, EVERYONE, "view")
 
 
