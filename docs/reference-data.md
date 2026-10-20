@@ -1,11 +1,16 @@
 # Reference-database dashboards (GTEx, GENCODE, …)
 
 The science dashboards (GTEx tissue expression, the GENCODE genome browser, and
-the CCLE / TCGA / WikiPathways overviews) read large **read-only SQLite reference
+the WikiPathways overviews) read large **read-only SQLite reference
 databases**. Those files are far too large to ship in the package
 (GENCODE ≈ 93 MB, GTEx ≈ 4.1 GB), so they are installed separately and the
 serving code is **off by default**. This page is how a deployment — including an
 **air-gapped** one — gets them working.
+
+> **WikiPathways needs egress for the live diagram.** The WikiPathways overviews
+> work fully offline from `wp.sqlite`, but the Explorer's pathway-*diagram* panel
+> loads GPML live from `wikipathways.org`, so that panel is blank on an air-gapped
+> install. GTEx and GENCODE are fully offline.
 
 ## What the server needs
 
@@ -72,10 +77,12 @@ redistributable** databases only — `gencode`, `gtex`, `wp`.
 > `CXD_REFERENCE_DATA_BASE_URL` there (the file must be world-readable, `chmod
 > o+r`) — or raise the proxy's response-size limit. canvasxpress.org publishes
 > this way at `https://canvasxpress.org/reference-data` (static, no size cap,
-> Range-resumable). TCGA and CCLE have
-open vs controlled access tiers and are **not** published unless you have cleared
-the terms and list them explicitly in `CXD_REFERENCE_DATA_PUBLISH` (comma-separated,
-which overrides the default set).
+> Range-resumable).
+
+Only the **openly-redistributable** databases are published by default. Any other
+database is served only if you have cleared its redistribution terms yourself and
+list it explicitly in `CXD_REFERENCE_DATA_PUBLISH` (comma-separated, which overrides
+the default set).
 
 ## Building the databases from source
 
