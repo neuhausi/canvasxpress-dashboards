@@ -5,6 +5,16 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Fix: PNG/PDF export failed with "Error parsing CSS component value, unexpected EOF"
+Exporting a dashboard (or a preview) to PNG/PDF threw
+`Export failed: Error parsing CSS component value, unexpected EOF` whenever the
+board contained a design-system checkbox or radio — e.g. the **Filters** panel in
+the Cohort Explorer. html2canvas 1.4.1 crashes on any `<input>` that carries a
+`::before` pseudo-element, and the engine's primitive checkbox/radio draws its
+check mark and dot exactly that way. `dashboardToPng` now swaps those controls for
+equivalent `<span>`s (same box + an inline-SVG check/dot) inside html2canvas's
+clone via `onclone`, so the raster renders identically and no longer aborts.
+
 ### Reference-database dashboards on a packaged server (`CXD_REFERENCE_SOURCES`)
 The GTEx / GENCODE / CCLE / TCGA / WikiPathways science dashboards used to work
 only on the examples' dev launcher (`examples/serve.py`), because their serving
@@ -30,6 +40,16 @@ side now ships in the package, **off by default**:
   checksum-verified against a `.sha256` sidecar, then moved into place so an
   interrupted download never leaves a half-written database). Air-gapped install:
   copy `<db>.sqlite` in, `cxd-reference-data verify <db>`, set the flag, restart.
+- A deployment can **publish** the databases it holds (`CXD_REFERENCE_DATA_SERVE=on`)
+  at `GET /reference-data/<db>.sqlite` (+ a cached `.sha256` sidecar, Range-resumable),
+  so another install can `fetch` from it. Restricted to the openly-redistributable
+  set (`gencode`/`gtex`/`wp`) by default; `CXD_REFERENCE_DATA_PUBLISH` overrides it
+  once an operator has cleared TCGA/CCLE terms.
+- **Docker:** [`Dockerfile.refdata`](Dockerfile.refdata) bakes the databases into a
+  single self-contained image for air-gapped sites (you supply the files in the build
+  context; a build-time check fails a mis-pathed/empty bake); `docker-compose.reference.yml`
+  fetches them into a shared volume on first run for sites with egress. See
+  [docs/reference-data.md](docs/reference-data.md).
 
 ### Fixes
 - **Significance brackets no longer collapse a multi-variable panel.** Bracket heights and

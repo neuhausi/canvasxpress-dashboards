@@ -5081,6 +5081,7 @@ function dashboardToPng(container, opts) {
   var h2c = opts.html2canvas || (typeof window !== 'undefined' ? window.html2canvas : null);
   if (typeof h2c !== 'function') return Promise.reject(new Error('html2canvas is not loaded'));
   if (!container) return Promise.reject(new Error('no dashboard container to export'));
+  var callerOnClone = opts.onclone;
   return h2c(container, {
     scale: opts.scale || 2,
     backgroundColor: opts.background || '#ffffff',
@@ -5088,8 +5089,79 @@ function dashboardToPng(container, opts) {
     // Skip CanvasXpress's screen-reader-only nodes (the "Data table for chart"
     // a11y table + the live region): they hide with clip:rect(0 0 0 0), which
     // html2canvas ignores, so they would otherwise paint over the chart.
-    ignoreElements: opts.ignoreElements || isScreenReaderOnly
+    ignoreElements: opts.ignoreElements || isScreenReaderOnly,
+    // Swap the design-system checkboxes/radios for plain spans in the clone:
+    // html2canvas 1.4.1 throws "Error parsing CSS component value, unexpected
+    // EOF" on an <input> that carries a ::before pseudo (the engine draws the
+    // check/dot that way), aborting the whole export. See replaceFormControlsForRaster.
+    onclone: function (clonedDoc) {
+      replaceFormControlsForRaster(container, clonedDoc);
+      if (typeof callerOnClone === 'function') callerOnClone(clonedDoc);
+    }
   }).then(function (canvas) { return canvas.toDataURL('image/png'); });
+}
+
+/**
+ * In the html2canvas clone, replace every CanvasXpress design-system checkbox /
+ * radio (`<input type="checkbox|radio">` styled `appearance:none` with a
+ * `::before` check/dot) with a plain `<span>` that reproduces its look.
+ *
+ * html2canvas 1.4.1 crashes with "Error parsing CSS component value, unexpected
+ * EOF" whenever it has to render an `<input>` that owns a generated-content
+ * pseudo-element, and the engine's primitive checkbox/radio (05-ui-primitives.css)
+ * draws its check mark and radio dot exactly that way. A `<span>` carrying the
+ * same box (border, radius, fill) plus an SVG check mark / dot child renders
+ * identically and avoids the input+pseudo code path entirely. State is read from
+ * the live `container` because `cloneNode` does not copy the dynamic `.checked`
+ * property, only the attribute.
+ *
+ * @param {HTMLElement} container - The live rendered dashboard container.
+ * @param {Document} clonedDoc - The document html2canvas handed back for mutation.
+ * @returns {void}
+ * @private
+ */
+function replaceFormControlsForRaster(container, clonedDoc) {
+  if (!container || !clonedDoc) return;
+  var selector = 'input[type="checkbox"], input[type="radio"]';
+  var live = (container.ownerDocument || document).querySelectorAll(selector);
+  var clones = clonedDoc.querySelectorAll(selector);
+  // Index-aligned: html2canvas clones the whole document in document order, so
+  // the Nth matched input in the clone is the Nth in the live document.
+  for (var i = 0; i < clones.length; i++) {
+    var clone = clones[i];
+    var original = live[i] || clone;
+    if (!clone.parentNode) continue;
+    var win = clonedDoc.defaultView || window;
+    var cs = win.getComputedStyle(original);
+    var isRadio = /radio/i.test(original.getAttribute('type') || '');
+    var box = clonedDoc.createElement('span');
+    box.style.cssText =
+      'box-sizing:border-box;display:inline-grid;place-content:center;flex-shrink:0;' +
+      'width:' + cs.width + ';height:' + cs.height + ';margin:' + cs.margin + ';' +
+      'vertical-align:' + cs.verticalAlign + ';background-color:' + cs.backgroundColor + ';' +
+      'border:' + cs.borderTopWidth + ' solid ' + cs.borderTopColor + ';' +
+      'border-radius:' + cs.borderTopLeftRadius + ';';
+    if (original.checked || original.indeterminate) {
+      var pseudo = win.getComputedStyle(original, '::before');
+      var mark = clonedDoc.createElement('span');
+      if (isRadio) {
+        mark.style.cssText = 'width:' + pseudo.width + ';height:' + pseudo.height +
+          ';border-radius:50%;background-color:' + pseudo.backgroundColor + ';';
+      } else if (original.indeterminate) {
+        mark.style.cssText = 'width:' + pseudo.width + ';height:2px;background-color:' +
+          pseudo.backgroundColor + ';';
+      } else {
+        // The engine's check mark is a clip-path polygon; html2canvas ignores
+        // clip-path, so draw the identical shape as an inline SVG polygon.
+        mark.innerHTML = '<svg viewBox="0 0 100 100" width="' + pseudo.width +
+          '" height="' + pseudo.height + '" style="display:block">' +
+          '<polygon points="14,44 0,65 50,100 100,16 80,0 43,62" fill="' +
+          pseudo.backgroundColor + '"/></svg>';
+      }
+      box.appendChild(mark);
+    }
+    clone.parentNode.replaceChild(box, clone);
+  }
 }
 
 /**
