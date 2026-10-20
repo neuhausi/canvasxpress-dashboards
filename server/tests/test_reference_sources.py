@@ -145,3 +145,31 @@ def test_reference_data_server_serves_db_and_sha(monkeypatch, tmp_path):
     assert client.get("/reference-data/tcga.sqlite").status_code == 404
     assert client.get("/reference-data/bogus.sqlite").status_code == 404
     assert client.get("/reference-data/..%2f..%2fetc%2fpasswd").status_code == 404
+
+
+def test_reference_data_server_excludes_noncleared_dbs(monkeypatch, tmp_path):
+    """A present database that is NOT in the redistributable/publish set (TCGA)
+    must not be downloadable, even though it exists on disk."""
+    monkeypatch.setattr(rs, "SQLITE_DIR", str(tmp_path))
+    monkeypatch.delenv("CXD_REFERENCE_DATA_PUBLISH", raising=False)
+    _make_gencode(str(tmp_path / "gencode.sqlite"))      # redistributable
+    (tmp_path / "tcga.sqlite").write_bytes(b"")          # present but controlled-tier
+    app = FastAPI()
+    rsrc.install_reference_data_server(app)
+    client = TestClient(app)
+    assert client.get("/reference-data/gencode.sqlite").status_code == 200
+    assert client.get("/reference-data/tcga.sqlite").status_code == 404
+    assert client.get("/reference-data/tcga.sqlite.sha256").status_code == 404
+
+
+def test_reference_data_publish_override(monkeypatch, tmp_path):
+    """CXD_REFERENCE_DATA_PUBLISH overrides the default set (operator cleared terms)."""
+    monkeypatch.setattr(rs, "SQLITE_DIR", str(tmp_path))
+    monkeypatch.setenv("CXD_REFERENCE_DATA_PUBLISH", "tcga")
+    (tmp_path / "tcga.sqlite").write_bytes(b"x")
+    _make_gencode(str(tmp_path / "gencode.sqlite"))
+    app = FastAPI()
+    rsrc.install_reference_data_server(app)
+    client = TestClient(app)
+    assert client.get("/reference-data/tcga.sqlite").status_code == 200       # now allowed
+    assert client.get("/reference-data/gencode.sqlite").status_code == 404    # override replaces default

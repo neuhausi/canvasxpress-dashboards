@@ -159,12 +159,22 @@ def install_reference_data_server(app: Any) -> None:
     _NAME = re.compile(r"^(?P<db>[a-z]+)\.sqlite(?P<sha>\.sha256)?$")
     before = list(app.router.routes)
 
+    # Only openly-redistributable databases are published by default. TCGA/CCLE
+    # have open vs controlled tiers (plan D4), so they are NOT exposed unless the
+    # operator has cleared the terms and lists them in CXD_REFERENCE_DATA_PUBLISH
+    # (comma-separated), which overrides the default set entirely.
+    override = (os.environ.get("CXD_REFERENCE_DATA_PUBLISH") or "").strip()
+    publishable = ({s.strip() for s in override.split(",") if s.strip()}
+                   if override else set(reference_data.REDISTRIBUTABLE))
+
     def _resolve(fname):
-        """(db, is_sha, path) for a valid artifact filename, else (None, …)."""
+        """(db, is_sha, path) for a valid, PUBLISHABLE artifact filename, else (None, …)."""
         m = _NAME.match(fname or "")
         if not m or m.group("db") not in reference_services.REFERENCE_DBS:
             return None, False, None
         db = m.group("db")
+        if db not in publishable:                 # present on disk but not cleared to publish
+            return None, False, None
         return db, bool(m.group("sha")), reference_services.db_path(db)
 
     def _sha256_cached(path):
@@ -201,6 +211,8 @@ def install_reference_data_server(app: Any) -> None:
 
     app.add_api_route("/reference-data/{fname}", artifact, methods=["GET"], include_in_schema=False)
     _before_root_mount(app, [r for r in app.router.routes if r not in before])
-    servable = [db for db in reference_services.REFERENCE_DBS if reference_services.db_present(db)]
-    print("  [reference] /reference-data/<db>.sqlite downloads enabled (serving: %s)"
-          % (", ".join(servable) or "none"), flush=True)
+    servable = [db for db in reference_services.REFERENCE_DBS
+                if db in publishable and reference_services.db_present(db)]
+    print("  [reference] /reference-data/<db>.sqlite downloads enabled "
+          "(publishable: %s; serving: %s)"
+          % (", ".join(sorted(publishable)), ", ".join(servable) or "none"), flush=True)
