@@ -199,9 +199,12 @@ def _build_app():
     from .connectors import install_from_env
     app = create_dashboards_app()
     install_from_env(app)
-    from .reference_sources import install_reference_services, reference_sources_enabled
+    from .reference_sources import (install_reference_data_server, install_reference_services,
+                                    reference_data_server_enabled, reference_sources_enabled)
     if reference_sources_enabled():
         install_reference_services(app)
+    if reference_data_server_enabled():
+        install_reference_data_server(app)
     return app
 
 

@@ -773,6 +773,14 @@ _seed()
 # are served from the same origin as /api/* (route lookup tries the API first).
 app = create_dashboards_app(serve_static=False)
 
+# Optionally PUBLISH the reference databases for download (so another install can
+# `cxd-reference-data fetch` them). Off unless CXD_REFERENCE_DATA_SERVE=on; the
+# packaged `python -m cxd_server` launcher wires the same route.
+from cxd_server.reference_sources import (install_reference_data_server,
+                                          reference_data_server_enabled)
+if reference_data_server_enabled():
+    install_reference_data_server(app)
+
 
 # Dev convenience: never let a browser serve a STALE viewer page or bundle from
 # cache (that silently hides freshly-built features behind an old umd.js). The

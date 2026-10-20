@@ -116,3 +116,32 @@ def test_seed_gtex_sources_registers_when_present(monkeypatch, tmp_path):
     before = dict(store.sources["ann"])
     rsrc.seed_gtex_sources(store, "ann")
     assert store.sources["ann"] == before
+
+
+def test_reference_data_server_flag():
+    assert rsrc.reference_data_server_enabled({"CXD_REFERENCE_DATA_SERVE": "on"})
+    assert not rsrc.reference_data_server_enabled({})
+
+
+def test_reference_data_server_serves_db_and_sha(monkeypatch, tmp_path):
+    import hashlib
+    monkeypatch.setattr(rs, "SQLITE_DIR", str(tmp_path))
+    _make_gencode(str(tmp_path / "gencode.sqlite"))
+    raw = (tmp_path / "gencode.sqlite").read_bytes()
+    app = FastAPI()
+    rsrc.install_reference_data_server(app)
+    client = TestClient(app)
+
+    r = client.get("/reference-data/gencode.sqlite")
+    assert r.status_code == 200 and r.content == raw
+    assert r.headers["content-type"] == "application/octet-stream"
+
+    r = client.get("/reference-data/gencode.sqlite.sha256")
+    assert r.status_code == 200
+    assert r.text.split()[0] == hashlib.sha256(raw).hexdigest()
+    assert (tmp_path / "gencode.sqlite.sha256").is_file()  # cached beside the db
+
+    # not installed / path-traversal / unknown are all a clean 404
+    assert client.get("/reference-data/tcga.sqlite").status_code == 404
+    assert client.get("/reference-data/bogus.sqlite").status_code == 404
+    assert client.get("/reference-data/..%2f..%2fetc%2fpasswd").status_code == 404

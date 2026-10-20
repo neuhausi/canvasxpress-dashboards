@@ -33,12 +33,22 @@ from . import reference_services
 
 _TRUE = ("1", "on", "true", "yes")
 REFERENCE_ENV = "CXD_REFERENCE_SOURCES"
+SERVE_ENV = "CXD_REFERENCE_DATA_SERVE"
 
 
 def reference_sources_enabled(env=None) -> bool:
     """Whether ``CXD_REFERENCE_SOURCES`` turns the reference services on."""
     env = os.environ if env is None else env
     return str(env.get(REFERENCE_ENV, "")).strip().lower() in _TRUE
+
+
+def reference_data_server_enabled(env=None) -> bool:
+    """Whether ``CXD_REFERENCE_DATA_SERVE`` makes this deployment PUBLISH its
+    reference databases for download (so another install can ``fetch`` them).
+    Off by default — only a deployment that chooses to be a distribution point
+    turns it on, and only for the openly redistributable databases it holds."""
+    env = os.environ if env is None else env
+    return str(env.get(SERVE_ENV, "")).strip().lower() in _TRUE
 
 
 # GTEx Gene Explorer database sources (read-only SQL into gtex.sqlite), so the
@@ -122,3 +132,75 @@ def install_reference_services(app: Any) -> None:
     present = [db for db in reference_services.REFERENCE_DBS if reference_services.db_present(db)]
     print("  [reference] /api/<db> services enabled (CXD_SQLITE_DIR=%s; present: %s)"
           % (reference_services.SQLITE_DIR, ", ".join(present) or "none"), flush=True)
+
+
+def install_reference_data_server(app: Any) -> None:
+    """Publish this deployment's reference databases for download at
+    ``GET /reference-data/<db>.sqlite`` (+ a ``.sha256`` sidecar), so another
+    (often air-gapped-adjacent) install can ``cxd-reference-data fetch`` them with
+    ``CXD_REFERENCE_DATA_BASE_URL`` pointing here. Unauthenticated, read-only, and
+    restricted to the known database filenames (no path traversal). Registered
+    ahead of the static ``/`` mount. Only wired when
+    :func:`reference_data_server_enabled`.
+
+    The ``.sha256`` is computed once and cached beside the database (so a 4 GB
+    hash is not recomputed per request); when the data directory is read-only the
+    digest is computed in memory instead.
+
+    :param app: The dashboards FastAPI app returned by ``create_dashboards_app``.
+    """
+    import re
+
+    from fastapi import Request
+    from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+    from .connectors import _before_root_mount
+    from . import reference_data
+
+    _NAME = re.compile(r"^(?P<db>[a-z]+)\.sqlite(?P<sha>\.sha256)?$")
+    before = list(app.router.routes)
+
+    def _resolve(fname):
+        """(db, is_sha, path) for a valid artifact filename, else (None, …)."""
+        m = _NAME.match(fname or "")
+        if not m or m.group("db") not in reference_services.REFERENCE_DBS:
+            return None, False, None
+        db = m.group("db")
+        return db, bool(m.group("sha")), reference_services.db_path(db)
+
+    def _sha256_cached(path):
+        """The file's hex SHA-256, cached in a sibling ``.sha256`` when writable."""
+        sidecar = path + ".sha256"
+        try:
+            if os.path.isfile(sidecar) and os.path.getmtime(sidecar) >= os.path.getmtime(path):
+                with open(sidecar, encoding="utf-8") as handle:
+                    token = handle.read().split()[0].strip()
+                    if len(token) == 64:
+                        return token
+        except OSError:
+            pass
+        digest = reference_data.sha256_file(path)
+        try:
+            with open(sidecar, "w", encoding="utf-8") as handle:
+                handle.write(digest + "  " + os.path.basename(path) + "\n")
+        except OSError:
+            pass  # read-only data dir: serve the computed digest without caching
+        return digest
+
+    def artifact(fname: str, request: Request):
+        """Stream one reference database (or its checksum) for download."""
+        db, is_sha, path = _resolve(fname)
+        if db is None:
+            return JSONResponse({"detail": "no such reference artifact '%s'" % fname}, status_code=404)
+        if not path or not os.path.isfile(path):
+            return JSONResponse({"detail": "reference database '%s' is not installed here" % db},
+                                status_code=404)
+        if is_sha:
+            return PlainTextResponse(_sha256_cached(path) + "  " + db + ".sqlite\n")
+        # FileResponse honours Range requests, so a multi-GB download is resumable.
+        return FileResponse(path, media_type="application/octet-stream", filename=db + ".sqlite")
+
+    app.add_api_route("/reference-data/{fname}", artifact, methods=["GET"], include_in_schema=False)
+    _before_root_mount(app, [r for r in app.router.routes if r not in before])
+    servable = [db for db in reference_services.REFERENCE_DBS if reference_services.db_present(db)]
+    print("  [reference] /reference-data/<db>.sqlite downloads enabled (serving: %s)"
+          % (", ".join(servable) or "none"), flush=True)
