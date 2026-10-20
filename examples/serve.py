@@ -712,7 +712,8 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
                            "query": {"gene": "$gene"}, "ttl": 0},
         },
     }
-    for db_spec in ("gtex-explorer.spec.json", "gencode-explorer.spec.json"):
+    for db_spec in ("gtex-explorer.spec.json", "gencode-explorer.spec.json",
+                    "wp-explorer.spec.json"):
         explorer = load_spec(db_spec)
         if not explorer or explorer["id"] in saved:
             continue
@@ -738,7 +739,7 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     # A shipped example missing from the list keeps its own stamp.
     shipped_order = [
         "biomarker-cohort", "genomics-oncology", "heor-overview", "kpi-overview",
-        "gtex-explorer", "gencode-explorer",
+        "gtex-explorer", "gencode-explorer", "wp-explorer",
         "live-ops", "quality-metrics", "reproducible-bench", "sales-model", "sales-overview",
     ]
     listed = [d["id"] for d in dashboards.list_dashboards(EXAMPLES_OWNER)]
