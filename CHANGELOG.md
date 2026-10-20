@@ -5,6 +5,32 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Reference-database dashboards on a packaged server (`CXD_REFERENCE_SOURCES`)
+The GTEx / GENCODE / CCLE / TCGA / WikiPathways science dashboards used to work
+only on the examples' dev launcher (`examples/serve.py`), because their serving
+code lived there, not in the package — so a plain `pip install` + `python -m
+cxd_server` had no way to serve them even with the data present. That serving
+side now ships in the package, **off by default**:
+- New `cxd_server.reference_services` (the SQLite → CanvasXpress `.data` logic,
+  read-only, looked up in `CXD_SQLITE_DIR`) and `cxd_server.reference_sources`
+  (the wiring). Set `CXD_REFERENCE_SOURCES=on` to register `GET /api/<db>` for
+  the five reference databases (the GENCODE genome browser needs only the data
+  file; no connectors).
+- GTEx tissue expression is additionally seeded as a `cx_connectors` database
+  source per bridged user when `CXD_CONNECTORS=on` as well — a no-op on a host
+  without `gtex.sqlite`.
+- A known database with no file installed answers a clear **503** ("not
+  installed; set `CXD_SQLITE_DIR`"), not a 500. Nothing is enabled unless the
+  flag is on, so existing deployments are unaffected.
+- New **`cxd-reference-data`** CLI (`cxd_server.reference_data`) to install those
+  databases, offline-first for air-gapped sites: `status` (what is installed in
+  `CXD_SQLITE_DIR`), `verify <db>|all` (a hand-dropped file is readable + has the
+  expected tables — catches a truncated/corrupt copy), and `fetch <db>` (download
+  from a host-agnostic `CXD_REFERENCE_DATA_BASE_URL`, streamed to a temp file and
+  checksum-verified against a `.sha256` sidecar, then moved into place so an
+  interrupted download never leaves a half-written database). Air-gapped install:
+  copy `<db>.sqlite` in, `cxd-reference-data verify <db>`, set the flag, restart.
+
 ### Fixes
 - **Significance brackets no longer collapse a multi-variable panel.** Bracket heights and
   the value-axis headroom were computed over the panel's *entire* bound matrix, so a Boxplot

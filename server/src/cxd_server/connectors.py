@@ -451,14 +451,27 @@ def install_from_env(app: Any) -> Optional[Any]:
     With ``CXD_CONNECTORS_DEMO_SOURCES=on`` every bridged user is also seeded
     with the package's demo database sources (:mod:`cxd_server.demo_sources`), so
     a plain server-only deploy has something to chart from — the same seeding the
-    examples' dev launcher uses.
+    examples' dev launcher uses. With ``CXD_REFERENCE_SOURCES=on`` the GTEx
+    reference connector sources are seeded too (:mod:`cxd_server.reference_sources`),
+    a no-op on a host without ``gtex.sqlite``.
 
     :returns: The connectors ``Store``, or None when not enabled.
     """
     if not connectors_enabled():
         return None
-    seed = None
+    # Per-bridged-user source seeders, applied in order. Each is a no-op when its
+    # own precondition (demo flag on / the GTEx database present) is not met.
+    seeders = []
     from . import demo_sources
     if demo_sources.demo_sources_enabled():
-        seed = demo_sources.seed_demo_sources
-    return install_connectors(app, default_db_path(), os.environ.get("ENCRYPTION_KEY"), seed=seed)
+        seeders.append(demo_sources.seed_demo_sources)
+    from . import reference_sources
+    if reference_sources.reference_sources_enabled():
+        seeders.append(reference_sources.seed_gtex_sources)
+
+    def seed(store, user):
+        for seeder in seeders:
+            seeder(store, user)
+
+    return install_connectors(app, default_db_path(), os.environ.get("ENCRYPTION_KEY"),
+                              seed=seed if seeders else None)

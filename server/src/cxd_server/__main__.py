@@ -192,12 +192,16 @@ def main(argv=None) -> int:
 
 
 def _build_app():
-    """The dashboards app, with database sources when ``CXD_CONNECTORS`` is on
-    (raises RuntimeError when that is misconfigured)."""
+    """The dashboards app, with database sources when ``CXD_CONNECTORS`` is on and
+    the reference-database services when ``CXD_REFERENCE_SOURCES`` is on (raises
+    RuntimeError when the connectors integration is misconfigured)."""
     from .app import create_dashboards_app
     from .connectors import install_from_env
     app = create_dashboards_app()
     install_from_env(app)
+    from .reference_sources import install_reference_services, reference_sources_enabled
+    if reference_sources_enabled():
+        install_reference_services(app)
     return app
 
 

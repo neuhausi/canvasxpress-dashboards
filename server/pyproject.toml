@@ -64,6 +64,7 @@ Homepage = "https://github.com/neuhausi/canvasxpress-dashboards"
 [project.scripts]
 cxd-server = "cxd_server.__main__:main"
 cxd-pool = "cxd_server.billing:main"
+cxd-reference-data = "cxd_server.reference_data:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cxd_server"]
