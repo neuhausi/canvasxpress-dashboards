@@ -1,0 +1,57 @@
+# CanvasXpress Dashboards — science dashboards with FETCHED reference data.
+#
+#   ENCRYPTION_KEY=<your Fernet key> docker compose -f docker-compose.reference.yml up
+#
+# For a site WITH network egress: instead of baking the multi-GB databases into
+# the image (docker-compose + Dockerfile.refdata, the air-gapped path), a one-shot
+# init container downloads them into a shared `cxd-refdata` volume on first run,
+# then the app starts with the reference services enabled. Re-running `up` is
+# cheap — `fetch` is a no-op once a verified file is present.
+#
+# Point CXD_REFERENCE_DATA_BASE_URL at wherever the artifacts are published
+# (defaults to canvasxpress.org). Only the openly-redistributable databases are
+# published there (gencode/gtex); see docs/reference-data.md.
+
+services:
+  # One-shot: fetch the reference databases into the shared volume, verifying
+  # each checksum. Exits 0 on success; the app waits for it to complete.
+  refdata-init:
+    build:
+      context: .
+      args:
+        CXD_EXTRAS: "web,connectors"
+    command:
+      - sh
+      - -c
+      - "cxd-reference-data fetch gencode && cxd-reference-data fetch gtex"
+    environment:
+      CXD_SQLITE_DIR: /refdata
+      CXD_REFERENCE_DATA_BASE_URL: "${CXD_REFERENCE_DATA_BASE_URL:-https://canvasxpress.org/dashboards/reference-data}"
+    volumes:
+      - cxd-refdata:/refdata
+    restart: "no"
+
+  dashboards:
+    build:
+      context: .
+      args:
+        CXD_EXTRAS: "web,connectors"
+    depends_on:
+      refdata-init:
+        condition: service_completed_successfully
+    ports:
+      - "${CXD_HOST_PORT:-8000}:8000"
+    environment:
+      CXD_SQLITE_DIR: /refdata
+      CXD_REFERENCE_SOURCES: "on"
+      # GTEx tissue expression is a connector source, so it needs the connectors
+      # integration + a stable key you keep (GENCODE works without these).
+      CXD_CONNECTORS: "on"
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY:?set ENCRYPTION_KEY — the Fernet key that encrypts stored connections}"
+    volumes:
+      - cxd-data:/data
+      - cxd-refdata:/refdata
+
+volumes:
+  cxd-data:
+  cxd-refdata:

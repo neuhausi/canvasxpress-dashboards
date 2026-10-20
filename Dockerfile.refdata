@@ -1,0 +1,44 @@
+# CanvasXpress Dashboards — data-baked image for the science dashboards.
+#
+# A self-contained image for an AIR-GAPPED deployment: the base server image with
+# the large reference databases (GENCODE / GTEx / ...) baked in, so there is ONE
+# artifact to vet and run, with no data download at deploy time. The data files
+# are far too large for the repo, so YOU supply them in the build context.
+#
+# 1) Build (or pull) the base server image once:
+#      docker build --build-arg CXD_EXTRAS="web,connectors" -t cxd-server .
+#
+# 2) Put the reference databases in a build-context directory (default ./refdata):
+#      mkdir -p refdata && cp /path/to/{gencode,gtex}.sqlite refdata/
+#
+# 3) Bake them into an image:
+#      docker build -f Dockerfile.refdata \
+#        --build-arg BASE_IMAGE=cxd-server --build-arg REFDATA_SRC=refdata \
+#        -t cxd-server-data .
+#
+# 4) Run it. GENCODE (and the other /api/<db> services) work immediately; GTEx
+#    tissue expression also needs the connectors integration + a key you keep:
+#      docker run -p 8000:8000 -v cxd-data:/data \
+#        -e CXD_CONNECTORS=on -e ENCRYPTION_KEY=<your Fernet key> cxd-server-data
+#
+# Only bake databases you are licensed to redistribute (GENCODE / GTEx open-access
+# are fine; verify TCGA / CCLE terms first — see docs/reference-data.md).
+
+ARG BASE_IMAGE=cxd-server
+FROM ${BASE_IMAGE}
+
+# Directory in the build context holding the <db>.sqlite files to bake in.
+ARG REFDATA_SRC=refdata
+
+# Bake the data into its own layer, read-only at /refdata, and turn the reference
+# services on so a plain `docker run` serves the science dashboards.
+COPY ${REFDATA_SRC}/ /refdata/
+ENV CXD_SQLITE_DIR=/refdata \
+    CXD_REFERENCE_SOURCES=on
+
+# Sanity-check at build time that at least one reference database was baked in and
+# is well-formed (a typo in REFDATA_SRC would otherwise ship an empty image).
+RUN cxd-reference-data status && \
+    python -c "import sys; from cxd_server import reference_services as s; \
+sys.exit(0 if any(s.db_present(d) for d in s.REFERENCE_DBS) else \
+('no reference .sqlite found under /refdata — check REFDATA_SRC' and 1))"

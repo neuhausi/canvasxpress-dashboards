@@ -4,6 +4,10 @@ The dashboards server (`cxd_server`) can run as several processes, on one host o
 many, behind a load balancer. **Any process can serve any request**, so there is
 no need for sticky sessions.
 
+> Installing the large reference databases (GTEx, GENCODE, …) for the science
+> dashboards — hand-drop/verify for air-gapped sites, `fetch` with egress, or a
+> data-baked Docker image — is covered in [reference-data.md](reference-data.md).
+
 - A **session** is a signed cookie, not server memory. Any process holding the
   same `SESSION_SECRET` reads it, including single sign-on's in-flight `state`.
 - **Everything else lives in the shared database:**
