@@ -2885,7 +2885,13 @@
       x.setAttribute('aria-label', 'Close');
       head.appendChild(x);
       card.appendChild(head); card.appendChild(body); overlay.appendChild(card);
-      overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+      // Close on a backdrop click only when the press also STARTED on the backdrop.
+      // A drag that starts inside the card (selecting text, dragging a chart) and
+      // is released outside it fires `click` on the overlay and used to dismiss
+      // the whole dialog.
+      var pressedOnOverlay = false;
+      overlay.addEventListener('mousedown', function (e) { pressedOnOverlay = (e.target === overlay); });
+      overlay.addEventListener('click', function (e) { if (e.target === overlay && pressedOnOverlay) close(); });
       document.addEventListener('keydown', onKey);
       document.body.appendChild(overlay);
       body.close = close;
@@ -3096,6 +3102,23 @@
         editorialLabel.appendChild(editorial);
         editorialLabel.appendChild(document.createTextNode(' Editorial (publication) theme'));
         body.appendChild(editorialLabel);
+
+        // Manual override: always let the user pick any chart type, not only the
+        // suggested ones. "Suggested charts" (the default) re-runs the selector.
+        var typeSel = document.createElement('select');
+        var optSuggested = document.createElement('option');
+        optSuggested.value = ''; optSuggested.textContent = 'Suggested charts';
+        typeSel.appendChild(optSuggested);
+        WIZARD_FALLBACK_TYPES.forEach(function (t) {
+          var o = document.createElement('option'); o.value = t; o.textContent = t; typeSel.appendChild(o);
+        });
+        typeSel.onchange = function () {
+          if (!typeSel.value) { suggest(); return; }
+          drawCards([{ graphType: typeSel.value, reason: 'You chose this type.', config: { graphType: typeSel.value } }]);
+          state.config = CXD.orientConfig({ graphType: typeSel.value }, state.data);
+        };
+        body.appendChild(labeled('Chart type', typeSel));
+
         var cards = document.createElement('div');
         cards.className = 'cxd-wizard-cards';
         body.appendChild(cards);
@@ -3148,15 +3171,7 @@
           drawCards(WIZARD_FALLBACK_TYPES.slice(0, 4).map(function (t) {
             return { graphType: t, reason: '', config: { graphType: t } };
           }));
-          var pick = document.createElement('select');
-          WIZARD_FALLBACK_TYPES.forEach(function (t) {
-            var o = document.createElement('option'); o.value = t; o.textContent = t; pick.appendChild(o);
-          });
-          pick.onchange = function () {
-            drawCards([{ graphType: pick.value, reason: '', config: { graphType: pick.value } }]);
-            state.config = CXD.orientConfig({ graphType: pick.value }, state.data);
-          };
-          cards.parentNode.insertBefore(labeled('All types', pick), cards);
+          // The always-present "Chart type" picker above covers manual selection.
         }
         function suggest() {
           state.intent = intent.value.trim();
