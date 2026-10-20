@@ -341,12 +341,15 @@ var dashboardCss = [
   '.cxd-annctl-label { font-weight: 600; white-space: nowrap; }',
   '.cxd-annctl-hint { color: var(--cxd-muted); }',
   '.cxd-annctl-disabled { opacity: 0.65; }',
-  '.cxd-annctl-search { min-width: 140px; }',
   // Controls use --cxd-ctrl-border (a colour the renderer computes to contrast
   // with whatever the control sits on) so the box stays visible even when the
   // panel chrome is coordinated to the background. Falls back to the theme border.
-  '.cxd-annctl-select { padding: 4px 7px; border: 1px solid var(--cxd-ctrl-border, var(--cxd-border)); border-radius: var(--cx-radius-md);',
+  // The search box (a text <input>) shares the SAME box as the select dropdowns so
+  // the explorer controls read as one consistent set.
+  '.cxd-annctl-select, .cxd-annctl-search { padding: 4px 7px; border: 1px solid var(--cxd-ctrl-border, var(--cxd-border)); border-radius: var(--cx-radius-md);',
   '  font: inherit; background: var(--cxd-panel-bg); color: inherit; }',
+  // Strip the native search-input chrome so its box matches the select; keep a sensible width.
+  '.cxd-annctl-search { min-width: 140px; -webkit-appearance: none; appearance: none; }',
   '.cxd-annctl-radios { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }',
   '.cxd-annctl-radio { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }',
   '.cxd-annctl-seg { display: inline-flex; border: 1px solid var(--cxd-ctrl-border, var(--cxd-border)); border-radius: var(--cx-radius-md); overflow: hidden; }',
