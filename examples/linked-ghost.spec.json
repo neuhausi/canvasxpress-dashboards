@@ -2,7 +2,7 @@
   "$schema": "../schema/dashboard.schema.json",
   "schemaVersion": "1.1",
   "id": "linked-ghost",
-  "title": "Linked Selection \u2014 Ghost",
+  "title": "Linked Selection — Ghost",
   "version": 1,
   "broadcastGroup": "linked-ghost",
   "theme": "auto",
@@ -273,7 +273,8 @@
   "panels": {
     "intro": {
       "type": "text",
-      "value": "**Click a bar** in *Revenue by Order* (left). Both rep panels react to the selection via `markingMode:\"ghost\"` \u2014 the unrelated rep rows **fade back**, so the selection stands out. Same two datasets as the cross-filter demo (orders \u2194 reps on **Region**); only the **Links** behavior differs."
+      "value": "**Click a bar** in *Revenue by Order* (left). Both rep panels react to the selection via `markingMode:\"ghost\"` — the unrelated rep rows **fade back**, so the selection stands out. Same two datasets as the cross-filter demo (orders ↔ reps on **Region**); only the **Links** behavior differs.",
+      "text": "Selecting marks in one chart ghosts the unselected samples in the linked charts (markingMode: ghost) — unselected marks fade away, leaving the selection. Click to select, Esc to clear."
     },
     "orders": {
       "title": "Revenue by Order (select to focus)",

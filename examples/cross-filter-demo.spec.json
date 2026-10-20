@@ -273,7 +273,8 @@
   "panels": {
     "intro": {
       "type": "text",
-      "value": "**Click one or more bars** in *Revenue by Order* (left). Both rep panels instantly filter to the reps in that region \u2014 this is `markingMode:\"filter\"` cross-filtering across two datasets linked on **Region**. A floating **Reset cross-filter** control clears it (or click empty space)."
+      "value": "**Click one or more bars** in *Revenue by Order* (left). Both rep panels instantly filter to the reps in that region — this is `markingMode:\"filter\"` cross-filtering across two datasets linked on **Region**. A floating **Reset cross-filter** control clears it (or click empty space).",
+      "text": "Click a bar or point in any chart to filter the others — one-click cross-filtering, no code. A panel's selection narrows the related panels to the chosen category; press Esc or the reset chip to clear."
     },
     "orders": {
       "title": "Revenue by Order (select to filter)",

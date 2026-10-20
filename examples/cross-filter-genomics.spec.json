@@ -2,7 +2,7 @@
   "$schema": "../schema/dashboard.schema.json",
   "schemaVersion": "1.1",
   "id": "cross-filter-genomics",
-  "title": "Cross-Filter \u2014 Clinical \u00d7 Expression",
+  "title": "Cross-Filter — Clinical × Expression",
   "version": 1,
   "broadcastGroup": "cross-filter-genomics",
   "theme": "auto",
@@ -343,7 +343,8 @@
   "panels": {
     "intro": {
       "type": "text",
-      "value": "**Select patients** in *Tumor response* (left) \u2014 e.g. the responders with negative tumor change \u2014 and the expression panels narrow to just those patients' samples. This is `markingMode:\"filter\"` cross-filtering two linked datasets (16 patients \u2194 their expression samples, joined on patient id). Select in the heatmap to filter the clinical scatter the other way."
+      "value": "**Select patients** in *Tumor response* (left) — e.g. the responders with negative tumor change — and the expression panels narrow to just those patients' samples. This is `markingMode:\"filter\"` cross-filtering two linked datasets (16 patients ↔ their expression samples, joined on patient id). Select in the heatmap to filter the clinical scatter the other way.",
+      "text": "Clinical and expression data linked by sample: click a clinical category to filter the expression panels, and vice versa. Cross-filtering across two joined genomic sources."
     },
     "clinical": {
       "title": "Tumor response by patient (select to filter)",
@@ -362,7 +363,7 @@
       }
     },
     "heatmap": {
-      "title": "Expression (genes \u00d7 samples)",
+      "title": "Expression (genes × samples)",
       "dataRef": "expression",
       "config": {
         "graphType": "Heatmap",

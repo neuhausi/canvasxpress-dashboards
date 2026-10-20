@@ -2,7 +2,7 @@
   "$schema": "../schema/dashboard.schema.json",
   "schemaVersion": "1.1",
   "id": "linked-highlight",
-  "title": "Linked Selection \u2014 Highlight",
+  "title": "Linked Selection — Highlight",
   "version": 1,
   "broadcastGroup": "linked-highlight",
   "theme": "auto",
@@ -273,7 +273,8 @@
   "panels": {
     "intro": {
       "type": "text",
-      "value": "**Click a bar** in *Revenue by Order* (left). Both rep panels react to the selection via `markingMode:\"highlight\"` \u2014 the related rep rows are **outlined**, the rest stay visible. Same two datasets as the cross-filter demo (orders \u2194 reps on **Region**); only the **Links** behavior differs."
+      "value": "**Click a bar** in *Revenue by Order* (left). Both rep panels react to the selection via `markingMode:\"highlight\"` — the related rep rows are **outlined**, the rest stay visible. Same two datasets as the cross-filter demo (orders ↔ reps on **Region**); only the **Links** behavior differs.",
+      "text": "Selecting marks in one chart highlights the same samples in the linked charts (markingMode: highlight) — unselected marks stay visible but muted. Click to select, Esc to clear."
     },
     "orders": {
       "title": "Revenue by Order (select to highlight)",
