@@ -712,8 +712,14 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
                            "query": {"gene": "$gene"}, "ttl": 0},
         },
     }
+    # These explorers are seeded only on our own serve.py sites (dev + prod) —
+    # the packaged `python -m cxd_server` server does not run this seeding, so
+    # customer installs never get them. TCGA/CCLE are showcase-only here: their
+    # raw .sqlite is NOT published for download (CXD_REFERENCE_DATA_PUBLISH stays
+    # gencode/gtex/wp); only aggregate query results are served.
     for db_spec in ("gtex-explorer.spec.json", "gencode-explorer.spec.json",
-                    "wp-explorer.spec.json"):
+                    "wp-explorer.spec.json", "tcga-explorer.spec.json",
+                    "ccle-explorer.spec.json"):
         explorer = load_spec(db_spec)
         if not explorer or explorer["id"] in saved:
             continue
@@ -739,7 +745,7 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     # A shipped example missing from the list keeps its own stamp.
     shipped_order = [
         "biomarker-cohort", "genomics-oncology", "heor-overview", "kpi-overview",
-        "gtex-explorer", "gencode-explorer", "wp-explorer",
+        "gtex-explorer", "gencode-explorer", "wp-explorer", "tcga-explorer", "ccle-explorer",
         "live-ops", "quality-metrics", "reproducible-bench", "sales-model", "sales-overview",
     ]
     listed = [d["id"] for d in dashboards.list_dashboards(EXAMPLES_OWNER)]
