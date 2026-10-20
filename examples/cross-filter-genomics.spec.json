@@ -343,8 +343,7 @@
   "panels": {
     "intro": {
       "type": "text",
-      "value": "**Select patients** in *Tumor response* (left) — e.g. the responders with negative tumor change — and the expression panels narrow to just those patients' samples. This is `markingMode:\"filter\"` cross-filtering two linked datasets (16 patients ↔ their expression samples, joined on patient id). Select in the heatmap to filter the clinical scatter the other way.",
-      "text": "Clinical and expression data linked by sample: click a clinical category to filter the expression panels, and vice versa. Cross-filtering across two joined genomic sources."
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Cross-Filter — Clinical × Expression</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">Clinical and expression data linked by sample: click a clinical category to filter the expression panels, and vice versa. Cross-filtering across two joined genomic sources.</div>"
     },
     "clinical": {
       "title": "Tumor response by patient (select to filter)",

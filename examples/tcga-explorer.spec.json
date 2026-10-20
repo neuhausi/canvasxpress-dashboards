@@ -130,7 +130,7 @@
     },
     "intro": {
       "type": "text",
-      "text": "TCGA gene explorer — search a gene to see its expression distribution across cancer types and its somatic-mutation lollipop. Data: TCGA PanCanAtlas (open-access)."
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">TCGA Gene Explorer (live)</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">TCGA gene explorer — search a gene to see its expression distribution across cancer types and its somatic-mutation lollipop. Data: TCGA PanCanAtlas (open-access).</div>"
     }
   }
 }

@@ -11,37 +11,44 @@
     "gap": 12,
     "items": [
       {
-        "panel": "scatter",
+        "panel": "intro",
         "x": 0,
         "y": 0,
+        "w": 12,
+        "h": 2
+      },
+      {
+        "panel": "scatter",
+        "x": 0,
+        "y": 2,
         "w": 8,
         "h": 9
       },
       {
         "panel": "filters",
         "x": 8,
-        "y": 0,
+        "y": 2,
         "w": 4,
         "h": 9
       },
       {
         "panel": "products",
         "x": 0,
-        "y": 9,
+        "y": 11,
         "w": 6,
         "h": 8
       },
       {
         "panel": "customers",
         "x": 6,
-        "y": 9,
+        "y": 11,
         "w": 6,
         "h": 8
       },
       {
         "panel": "segments",
         "x": 0,
-        "y": 17,
+        "y": 19,
         "w": 12,
         "h": 8
       }
@@ -623,6 +630,10 @@
           "Segment"
         ]
       }
+    },
+    "intro": {
+      "type": "text",
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Sales Model</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">A sales dashboard built on joined sources — revenue vs margin with ƒx calculated fields, browser-shaped revenue by product, a customer-segment join, and linked selection from orders to customers.</div>"
     }
   }
 }

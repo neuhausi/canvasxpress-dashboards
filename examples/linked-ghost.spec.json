@@ -273,8 +273,7 @@
   "panels": {
     "intro": {
       "type": "text",
-      "value": "**Click a bar** in *Revenue by Order* (left). Both rep panels react to the selection via `markingMode:\"ghost\"` — the unrelated rep rows **fade back**, so the selection stands out. Same two datasets as the cross-filter demo (orders ↔ reps on **Region**); only the **Links** behavior differs.",
-      "text": "Selecting marks in one chart ghosts the unselected samples in the linked charts (markingMode: ghost) — unselected marks fade away, leaving the selection. Click to select, Esc to clear."
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Linked Selection — Ghost</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">Selecting marks in one chart ghosts the unselected samples in the linked charts (markingMode: ghost) — unselected marks fade away, leaving the selection. Click to select, Esc to clear.</div>"
     },
     "orders": {
       "title": "Revenue by Order (select to focus)",

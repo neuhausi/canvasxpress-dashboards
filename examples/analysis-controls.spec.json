@@ -843,8 +843,7 @@
   "panels": {
     "intro": {
       "type": "text",
-      "title": "",
-      "text": "Slide the **FDR threshold** to re-filter the significance brackets (dashboard-scope BH correction); switch the **Transform** to re-express the data (log/z-score/normalize). Analysis controls re-run the analysis, not just the display."
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Analysis controls — transform + FDR slider</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">Slide the **FDR threshold** to re-filter the significance brackets (dashboard-scope BH correction); switch the **Transform** to re-express the data (log/z-score/normalize). Analysis controls re-run the analysis, not just the display.</div>"
     },
     "box": {
       "title": "Tooth growth by dose",
@@ -882,7 +881,7 @@
                 "Control",
                 "DoseB"
               ],
-              "p": 4.7e-7,
+              "p": 4.7e-07,
               "value": 11.36
             },
             {

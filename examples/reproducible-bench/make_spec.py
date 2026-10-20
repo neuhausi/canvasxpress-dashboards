@@ -90,12 +90,13 @@ spec = {
     "theme": "auto",
     "layout": {
         "cols": 12,
-        "rowHeight": 130,
+        "rowHeight": 40,
         "gap": 12,
         "items": [
-            {"panel": "heatmap",   "x": 0, "y": 0, "w": 7, "h": 4},
-            {"panel": "survival",  "x": 7, "y": 0, "w": 5, "h": 4},
-            {"panel": "oncoprint", "x": 0, "y": 4, "w": 12, "h": 3},
+            {"panel": "intro",     "x": 0, "y": 0,  "w": 12, "h": 2},
+            {"panel": "heatmap",   "x": 0, "y": 2,  "w": 7,  "h": 11},
+            {"panel": "survival",  "x": 7, "y": 2,  "w": 5,  "h": 11},
+            {"panel": "oncoprint", "x": 0, "y": 13, "w": 12, "h": 8},
         ],
     },
     "data": {
@@ -104,6 +105,12 @@ spec = {
         "survival":   {"kind": "inline", "value": survival},
     },
     "panels": {
+        "intro": {"type": "text", "html": (
+            '<div style="font-weight: 700; font-size: 25px">The Reproducible Bench</div>'
+            '<div style="font-size: 18px; color: var(--cxd-muted)">A reproducible benchmark figure — '
+            'a top-variable-gene expression heatmap, an oncoprint of recurrent alterations, and '
+            'Kaplan–Meier survival by transcriptional cluster, shipped with its data snapshot and '
+            'regeneration code for exact reproduction.</div>')},
         "heatmap": {
             "title": "Expression — top %d variable genes" % len(genes),
             "dataRef": "expression",

@@ -11,23 +11,30 @@
     "gap": 12,
     "items": [
       {
-        "panel": "cpu",
+        "panel": "intro",
         "x": 0,
         "y": 0,
+        "w": 12,
+        "h": 2
+      },
+      {
+        "panel": "cpu",
+        "x": 0,
+        "y": 2,
         "w": 7,
         "h": 8
       },
       {
         "panel": "traffic",
         "x": 7,
-        "y": 0,
+        "y": 2,
         "w": 5,
         "h": 8
       },
       {
         "panel": "baseline",
         "x": 0,
-        "y": 8,
+        "y": 10,
         "w": 12,
         "h": 7
       }
@@ -265,6 +272,10 @@
           "mem"
         ]
       }
+    },
+    "intro": {
+      "type": "text",
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Live Ops</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">A real-time operations board — CPU &amp; memory and requests &amp; errors follow a live stream over the last 60 seconds, alongside a 24-hour hourly-average snapshot.</div>"
     }
   }
 }

@@ -84,7 +84,7 @@
     },
     "intro": {
       "type": "text",
-      "text": "GENCODE genome browser — search a gene to view its transcript/exon models and nearby GWAS Catalog variants along the chromosome. Data: GENCODE annotation."
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">GENCODE Genome Browser (live)</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">GENCODE genome browser — search a gene to view its transcript/exon models and nearby GWAS Catalog variants along the chromosome. Data: GENCODE annotation.</div>"
     }
   }
 }

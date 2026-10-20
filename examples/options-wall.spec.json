@@ -10,23 +10,30 @@
     "gap": 12,
     "items": [
       {
-        "panel": "expiry-slider",
+        "panel": "intro",
         "x": 0,
         "y": 0,
+        "w": 12,
+        "h": 2
+      },
+      {
+        "panel": "expiry-slider",
+        "x": 0,
+        "y": 2,
         "w": 8,
         "h": 2
       },
       {
         "panel": "metric-toggle",
         "x": 8,
-        "y": 0,
+        "y": 2,
         "w": 4,
         "h": 2
       },
       {
         "panel": "wall",
         "x": 0,
-        "y": 2,
+        "y": 4,
         "w": 12,
         "h": 14
       }
@@ -3909,6 +3916,10 @@
         "optionsWallCallMax": 2,
         "title": false
       }
+    },
+    "intro": {
+      "type": "text",
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">IBM Options Wall</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">An IBM options-chain wall — candlestick price with implied-volatility and premium flanks and a spot ruler; use the Expiry and Flank-metric controls to re-read the chain.</div>"
     }
   }
 }

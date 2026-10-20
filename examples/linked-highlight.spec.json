@@ -273,8 +273,7 @@
   "panels": {
     "intro": {
       "type": "text",
-      "value": "**Click a bar** in *Revenue by Order* (left). Both rep panels react to the selection via `markingMode:\"highlight\"` — the related rep rows are **outlined**, the rest stay visible. Same two datasets as the cross-filter demo (orders ↔ reps on **Region**); only the **Links** behavior differs.",
-      "text": "Selecting marks in one chart highlights the same samples in the linked charts (markingMode: highlight) — unselected marks stay visible but muted. Click to select, Esc to clear."
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Linked Selection — Highlight</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">Selecting marks in one chart highlights the same samples in the linked charts (markingMode: highlight) — unselected marks stay visible but muted. Click to select, Esc to clear.</div>"
     },
     "orders": {
       "title": "Revenue by Order (select to highlight)",

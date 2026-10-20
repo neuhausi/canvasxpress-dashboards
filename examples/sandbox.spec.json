@@ -12,23 +12,30 @@
     "gap": 12,
     "items": [
       {
-        "panel": "about",
+        "panel": "intro",
         "x": 0,
         "y": 0,
+        "w": 12,
+        "h": 2
+      },
+      {
+        "panel": "about",
+        "x": 0,
+        "y": 2,
         "w": 12,
         "h": 3
       },
       {
         "panel": "sales",
         "x": 0,
-        "y": 3,
+        "y": 5,
         "w": 6,
         "h": 8
       },
       {
         "panel": "price",
         "x": 6,
-        "y": 3,
+        "y": 5,
         "w": 6,
         "h": 8
       }
@@ -303,6 +310,10 @@
         "xAxisTitle": "Price",
         "yAxisTitle": "Units sold"
       }
+    },
+    "intro": {
+      "type": "text",
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Sandbox (anyone can edit)</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">A scratch dashboard anyone signed in can edit, save and reset — quarterly sales by region and price vs units — a safe place to try the Builder.</div>"
     }
   }
 }

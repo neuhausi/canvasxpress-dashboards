@@ -12,37 +12,44 @@
     "gap": 12,
     "items": [
       {
-        "panel": "about",
+        "panel": "intro",
         "x": 0,
         "y": 0,
+        "w": 12,
+        "h": 2
+      },
+      {
+        "panel": "about",
+        "x": 0,
+        "y": 2,
         "w": 12,
         "h": 4
       },
       {
         "panel": "emax",
         "x": 0,
-        "y": 4,
+        "y": 6,
         "w": 6,
         "h": 8
       },
       {
         "panel": "scatter",
         "x": 6,
-        "y": 4,
+        "y": 6,
         "w": 6,
         "h": 8
       },
       {
         "panel": "trend",
         "x": 0,
-        "y": 12,
+        "y": 14,
         "w": 7,
         "h": 8
       },
       {
         "panel": "corr",
         "x": 7,
-        "y": 12,
+        "y": 14,
         "w": 5,
         "h": 8
       }
@@ -3269,6 +3276,10 @@
         "setMaxX": 1,
         "showDataValues": true
       }
+    },
+    "intro": {
+      "type": "text",
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Dose–Response Lab</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">A dose–response study composed from several sources — an Emax fit (R nls), response vs baseline ctDNA, mean ctDNA by arm over time, and correlations (Python pandas).</div>"
     }
   }
 }

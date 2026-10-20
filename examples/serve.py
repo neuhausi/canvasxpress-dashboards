@@ -495,7 +495,9 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     # Reproducible Bench: generated spec carries inline data; move each inline
     # value into the dataset store and point the spec at it.
     bench = load_spec("reproducible-bench/bench.spec.json")
-    if bench and bench["id"] not in saved:
+    # Re-save from spec on every restart (locked, canonical example) so spec edits
+    # — the intro header, the standardized grid — replace a stale stored copy.
+    if bench:
         bench = copy.deepcopy(bench)
         for ref, source in bench.get("data", {}).items():
             if source.get("kind") != "inline":

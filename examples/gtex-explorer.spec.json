@@ -103,7 +103,7 @@
     },
     "intro": {
       "type": "text",
-      "text": "GTEx tissue-expression explorer — type a gene to see its expression (TPM) distribution across human tissues as a violin + boxplot. Data: GTEx v8 (open-access)."
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">GTEx Gene Explorer (live)</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">GTEx tissue-expression explorer — type a gene to see its expression (TPM) distribution across human tissues as a violin + boxplot. Data: GTEx v8 (open-access).</div>"
     }
   }
 }

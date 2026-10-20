@@ -336,7 +336,7 @@
     },
     "intro": {
       "type": "text",
-      "text": "CCLE gene explorer — explore expression/CNV across cancer cell lines: per-gene distributions, a multi-gene heatmap, gene–gene correlation, and mutations. Data: CCLE / DepMap."
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">CCLE Gene Explorer (live)</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">CCLE gene explorer — explore expression/CNV across cancer cell lines: per-gene distributions, a multi-gene heatmap, gene–gene correlation, and mutations. Data: CCLE / DepMap.</div>"
     }
   }
 }
