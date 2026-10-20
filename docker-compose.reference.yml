@@ -26,7 +26,7 @@ services:
       - "cxd-reference-data fetch gencode && cxd-reference-data fetch gtex"
     environment:
       CXD_SQLITE_DIR: /refdata
-      CXD_REFERENCE_DATA_BASE_URL: "${CXD_REFERENCE_DATA_BASE_URL:-https://canvasxpress.org/dashboards/reference-data}"
+      CXD_REFERENCE_DATA_BASE_URL: "${CXD_REFERENCE_DATA_BASE_URL:-https://canvasxpress.org/reference-data}"
     volumes:
       - cxd-refdata:/refdata
     restart: "no"

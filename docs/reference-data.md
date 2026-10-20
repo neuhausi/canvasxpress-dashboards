@@ -33,7 +33,7 @@ with no file installed answers a clear `503`.
 ### With egress — fetch
 
 ```
-export CXD_REFERENCE_DATA_BASE_URL=https://canvasxpress.org/dashboards/reference-data
+export CXD_REFERENCE_DATA_BASE_URL=https://canvasxpress.org/reference-data
 cxd-reference-data fetch gencode        # streamed, checksum-verified, atomic
 cxd-reference-data fetch gtex
 ```
@@ -62,7 +62,17 @@ app starts with the reference services on.
 A deployment can serve the databases it holds so another install can `fetch`
 them: set `CXD_REFERENCE_DATA_SERVE=on`. It exposes
 `GET /reference-data/<db>.sqlite` (+ a `.sha256` sidecar) for the **openly
-redistributable** databases only — `gencode`, `gtex`, `wp`. TCGA and CCLE have
+redistributable** databases only — `gencode`, `gtex`, `wp`.
+
+> **Large databases through a reverse proxy.** The app route works for
+> GENCODE-sized files, but many proxies cap a *dynamic/proxied* response
+> (LiteSpeed's default is ~1 GiB, which truncates GTEx at 4.1 GB). For databases
+> over ~1 GiB, serve the file **statically** from your web server instead of
+> through the app — e.g. symlink it into a static path and point
+> `CXD_REFERENCE_DATA_BASE_URL` there (the file must be world-readable, `chmod
+> o+r`) — or raise the proxy's response-size limit. canvasxpress.org publishes
+> this way at `https://canvasxpress.org/reference-data` (static, no size cap,
+> Range-resumable). TCGA and CCLE have
 open vs controlled access tiers and are **not** published unless you have cleared
 the terms and list them explicitly in `CXD_REFERENCE_DATA_PUBLISH` (comma-separated,
 which overrides the default set).
