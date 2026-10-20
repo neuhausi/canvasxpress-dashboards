@@ -226,12 +226,25 @@ def main(argv=None):
         return 1 if bad else 0
 
     if args.cmd == "fetch":
+        # On a terminal, animate one line with \r. When output is redirected (a
+        # log, CI, a tool capturing stdout), that would emit thousands of lines
+        # for a multi-GB file, so print a milestone only every ~10% instead.
+        tty = sys.stderr.isatty()
+        last = [-1]
+
         def show(got, total):
-            if total:
-                sys.stderr.write("\r  %s: %5.1f%%  (%s / %s)"
-                                 % (args.db, 100.0 * got / total, _human(got), _human(total)))
-            else:
-                sys.stderr.write("\r  %s: %s" % (args.db, _human(got)))
+            if tty:
+                if total:
+                    sys.stderr.write("\r  %s: %5.1f%%  (%s / %s)"
+                                     % (args.db, 100.0 * got / total, _human(got), _human(total)))
+                else:
+                    sys.stderr.write("\r  %s: %s" % (args.db, _human(got)))
+                return
+            step = int(got * 10 / total) if total else -1
+            if step != last[0]:
+                last[0] = step
+                pct = ("%d%%" % (step * 10)) if total else _human(got)
+                sys.stderr.write("  %s: %s (%s)\n" % (args.db, pct, _human(got)))
         try:
             path = fetch(args.db, dest_dir=args.dir, url_base=args.url_base, progress=show)
         except ValueError as exc:
