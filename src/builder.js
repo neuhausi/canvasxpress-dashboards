@@ -13,7 +13,7 @@
  */
 
 import { injectStyles } from './styles.js';
-import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames, annotationValues, sourceLineage, showCodeDialog } from './renderDashboard.js';
+import { renderDashboard, resizeInstance, sanitizeHtml, annotationNames, annotationValues, sourceLineage, showCodeDialog, makeDialogDraggable } from './renderDashboard.js';
 import { sqlParamNames, WIZARD_CHART_TYPES, chartFieldsFor, chartColumns, buildChartConfig,
   WIZARD_SCIENCE_TYPES, scientificFieldsFor, buildScientificConfig, suggestPanelType } from './wizard.js';
 import { sourceUsesParam } from './spec.js';
@@ -639,6 +639,7 @@ export function createBuilder(target, options) {
     body.appendChild(wrap);
     body.appendChild(bar);
     dialog.appendChild(head);
+    makeDialogDraggable(dialog, head);
     dialog.appendChild(body);
     backdrop.appendChild(dialog);
 
@@ -4643,6 +4644,10 @@ function openDataDialog(doc, existingNames, opts) {
 
     append(modal, [heading, field('Name', nameInput), field('Source', typeSel), bodyWrap, errEl, footer]);
     overlay.appendChild(modal);
+    // Floating + draggable (drag the title), with a click-through overlay, so
+    // the chart stays visible while writing a data function / adding a source.
+    overlay.classList.add('cxb-modal-float');
+    makeDialogDraggable(modal, heading);
     on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
     (doc.body || doc.documentElement).appendChild(overlay);
     if (typeof nameInput.focus === 'function') nameInput.focus();

@@ -3891,6 +3891,7 @@ export function showCodeDialog(container, title, panel, lineage, sources, opts) 
   head.appendChild(heading);
   head.appendChild(close);
   dialog.appendChild(head);
+  makeDialogDraggable(dialog, head);   // drag by the header to see the chart behind
 
   var body = document.createElement('div');
   body.className = 'cxd-code-body';
@@ -4046,6 +4047,46 @@ export function showCodeDialog(container, title, panel, lineage, sources, opts) 
  * @returns {void}
  * @private
  */
+/**
+ * Make a floating dialog draggable by a handle (typically its header). On the
+ * first drag the dialog detaches from its centered layout (switches to fixed
+ * left/top) and then stays where it is left, so the chart behind stays visible.
+ * A press on an interactive control in the handle (the close button, an input)
+ * never starts a drag. A sliver is always kept on-screen so it stays grabbable.
+ * @param {HTMLElement} dialog - The dialog element to move.
+ * @param {HTMLElement} handle - The element whose drag moves the dialog.
+ * @returns {void}
+ * @public
+ */
+export function makeDialogDraggable(dialog, handle) {
+  if (!dialog || !handle || typeof handle.addEventListener !== 'function') return;
+  handle.addEventListener('pointerdown', function (ev) {
+    if (ev.button != null && ev.button !== 0) return;
+    var tgt = ev.target;
+    if (tgt && tgt !== handle && /^(button|input|textarea|select|a)$/i.test(tgt.nodeName)) return;
+    var rect = dialog.getBoundingClientRect();
+    dialog.style.position = 'fixed';
+    dialog.style.margin = '0';
+    dialog.style.left = rect.left + 'px';
+    dialog.style.top = rect.top + 'px';
+    var startX = ev.clientX, startY = ev.clientY, baseLeft = rect.left, baseTop = rect.top;
+    if (ev.preventDefault) ev.preventDefault();
+    function move(e) {
+      var vw = window.innerWidth || 0, vh = window.innerHeight || 0;
+      var nx = baseLeft + (e.clientX - startX);
+      var ny = baseTop + (e.clientY - startY);
+      dialog.style.left = Math.max(60 - dialog.offsetWidth, Math.min(nx, vw - 60)) + 'px';
+      dialog.style.top = Math.max(0, Math.min(ny, vh - 24)) + 'px';
+    }
+    function up() {
+      document.removeEventListener('pointermove', move, true);
+      document.removeEventListener('pointerup', up, true);
+    }
+    document.addEventListener('pointermove', move, true);
+    document.addEventListener('pointerup', up, true);
+  });
+}
+
 function wireCodeDialog(container, backdrop, close) {
   var canListen = typeof document.addEventListener === 'function';
   function dismiss() {

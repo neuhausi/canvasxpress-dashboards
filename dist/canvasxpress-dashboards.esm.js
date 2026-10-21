@@ -73,12 +73,15 @@ var dashboardCss = [
   '.cxd-code-btn { flex: 0 0 auto; padding: 1px 8px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md);',
   '  background: var(--cxd-panel-bg); color: var(--cxd-muted); font: 500 12px/1.5 var(--cx-font-mono); cursor: pointer; }',
   '.cxd-code-btn:hover { color: var(--cxd-title); border-color: var(--cxd-muted); }',
+  // Transparent, click-through backdrop: the dialog floats over the dashboard so',
+  // the chart stays visible (and the dialog can be dragged aside to watch it',
+  // update). The dialog itself re-enables pointer events.',
   '.cxd-code-backdrop { position: fixed; inset: 0; z-index: var(--cx-z-modal); display: flex; align-items: center; justify-content: center;',
-  '  padding: 16px; background: var(--cx-ui-backdrop); }',
+  '  padding: 16px; background: transparent; pointer-events: none; }',
   '.cxd-code-dialog { display: flex; flex-direction: column; width: min(760px, 100%); max-height: min(85vh, 900px);',
   '  border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-lg); background: var(--cxd-panel-bg);',
-  '  color: var(--cxd-title); box-shadow: var(--cx-shadow-3); font: 14px/1.45 var(--cxd-font); }',
-  '.cxd-code-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--cxd-border); }',
+  '  color: var(--cxd-title); box-shadow: var(--cx-shadow-3); font: 14px/1.45 var(--cxd-font); pointer-events: auto; }',
+  '.cxd-code-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--cxd-border); cursor: move; }',
   '.cxd-code-heading { flex: 1 1 auto; min-width: 0; font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
   '.cxd-code-close { border: none; background: none; color: var(--cxd-muted); font-size: 22px; line-height: 1; cursor: pointer; }',
   '.cxd-code-body { overflow: auto; padding: 6px 14px 14px; }',
@@ -537,6 +540,12 @@ var dashboardCss = [
   '  border-radius: var(--cx-radius-lg); box-shadow: var(--cx-shadow-3); padding: 18px 18px 14px;',
   '  display: flex; flex-direction: column; gap: 12px; font-family: var(--cxd-font); }',
   '.cxb-modal-title { margin: 0; font-size: 17px; }',
+  // Floating variant (e.g. the data/function dialog): a transparent,',
+  // click-through overlay so the chart stays visible, and the title is a drag',
+  // handle so the dialog can be moved aside.',
+  '.cxb-modal-overlay.cxb-modal-float { background: transparent; pointer-events: none; }',
+  '.cxb-modal-overlay.cxb-modal-float .cxb-modal { pointer-events: auto; }',
+  '.cxb-modal-float .cxb-modal-title { cursor: move; }',
   '.cxb-modal-field { display: flex; flex-direction: column; gap: 4px; }',
   '.cxb-modal-field label { font: 600 14px var(--cxd-font); text-transform: uppercase; letter-spacing: .03em;',
   '  color: var(--cxd-muted); }',
@@ -10832,6 +10841,7 @@ function showCodeDialog(container, title, panel, lineage, sources, opts) {
   head.appendChild(heading);
   head.appendChild(close);
   dialog.appendChild(head);
+  makeDialogDraggable(dialog, head);   // drag by the header to see the chart behind
 
   var body = document.createElement('div');
   body.className = 'cxd-code-body';
@@ -10987,6 +10997,46 @@ function showCodeDialog(container, title, panel, lineage, sources, opts) {
  * @returns {void}
  * @private
  */
+/**
+ * Make a floating dialog draggable by a handle (typically its header). On the
+ * first drag the dialog detaches from its centered layout (switches to fixed
+ * left/top) and then stays where it is left, so the chart behind stays visible.
+ * A press on an interactive control in the handle (the close button, an input)
+ * never starts a drag. A sliver is always kept on-screen so it stays grabbable.
+ * @param {HTMLElement} dialog - The dialog element to move.
+ * @param {HTMLElement} handle - The element whose drag moves the dialog.
+ * @returns {void}
+ * @public
+ */
+function makeDialogDraggable(dialog, handle) {
+  if (!dialog || !handle || typeof handle.addEventListener !== 'function') return;
+  handle.addEventListener('pointerdown', function (ev) {
+    if (ev.button != null && ev.button !== 0) return;
+    var tgt = ev.target;
+    if (tgt && tgt !== handle && /^(button|input|textarea|select|a)$/i.test(tgt.nodeName)) return;
+    var rect = dialog.getBoundingClientRect();
+    dialog.style.position = 'fixed';
+    dialog.style.margin = '0';
+    dialog.style.left = rect.left + 'px';
+    dialog.style.top = rect.top + 'px';
+    var startX = ev.clientX, startY = ev.clientY, baseLeft = rect.left, baseTop = rect.top;
+    if (ev.preventDefault) ev.preventDefault();
+    function move(e) {
+      var vw = window.innerWidth || 0, vh = window.innerHeight || 0;
+      var nx = baseLeft + (e.clientX - startX);
+      var ny = baseTop + (e.clientY - startY);
+      dialog.style.left = Math.max(60 - dialog.offsetWidth, Math.min(nx, vw - 60)) + 'px';
+      dialog.style.top = Math.max(0, Math.min(ny, vh - 24)) + 'px';
+    }
+    function up() {
+      document.removeEventListener('pointermove', move, true);
+      document.removeEventListener('pointerup', up, true);
+    }
+    document.addEventListener('pointermove', move, true);
+    document.addEventListener('pointerup', up, true);
+  });
+}
+
 function wireCodeDialog(container, backdrop, close) {
   var canListen = typeof document.addEventListener === 'function';
   function dismiss() {
@@ -15168,6 +15218,7 @@ function createBuilder(target, options) {
     body.appendChild(wrap);
     body.appendChild(bar);
     dialog.appendChild(head);
+    makeDialogDraggable(dialog, head);
     dialog.appendChild(body);
     backdrop.appendChild(dialog);
 
@@ -19172,6 +19223,10 @@ function openDataDialog(doc, existingNames, opts) {
 
     append(modal, [heading, field('Name', nameInput), field('Source', typeSel), bodyWrap, errEl, footer]);
     overlay.appendChild(modal);
+    // Floating + draggable (drag the title), with a click-through overlay, so
+    // the chart stays visible while writing a data function / adding a source.
+    overlay.classList.add('cxb-modal-float');
+    makeDialogDraggable(modal, heading);
     on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
     (doc.body || doc.documentElement).appendChild(overlay);
     if (typeof nameInput.focus === 'function') nameInput.focus();
