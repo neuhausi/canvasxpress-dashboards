@@ -17979,6 +17979,11 @@ function createBuilder(target, options) {
    * @private
    */
   function resizePanelGraph(panelId) {
+    // A ggplot (cxplot) panel reconstructs from its self-contained isGGPlot spec;
+    // CanvasXpress `setDimensions` resizes the canvas but leaves a cxplot chart
+    // blank, so rebuild it at the new cell size instead of fitting in place.
+    var def = spec.panels && spec.panels[panelId];
+    if (def && def.type === 'ggplot') { rerenderPanel(panelId); return; }
     var inst = instByPanel[panelId];
     var cell = cellEls[panelId];
     if (!inst || !cell) return;
