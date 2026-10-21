@@ -1251,13 +1251,19 @@ export function renderDashboard(spec, target, options) {
       sizeCanvasToCell(cell, canvasInset);
       var ggSpec = shallowClone(panel.spec);
       ggSpec.renderTo = canvasId;
-      var ggInstance = new CX(ggSpec);
-      instances.push(ggInstance);
-      if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = ggInstance;
-      if (autoResize) observeResize(cell, ggInstance, observers, canvasInset);
-      cell.setState('ready');
-      notify(ggInstance, 'ready');
-      return Promise.resolve(ggInstance);
+      // The isGGPlot constructor returns a TRANSIENT wrapper (no setDimensions,
+      // getConfig, …); the functional CanvasXpress instance registers under the
+      // canvas id once the async cxplot render completes. Resolve and wire THAT,
+      // so resize, the customizer and getConfig act on the chart actually drawn.
+      var ggWrapper = new CX(ggSpec);
+      return resolveCxInstance(CX, canvasId, ggWrapper).then(function (ggInstance) {
+        instances.push(ggInstance);
+        if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = ggInstance;
+        if (autoResize) observeResize(cell, ggInstance, observers, canvasInset);
+        cell.setState('ready');
+        notify(ggInstance, 'ready');
+        return ggInstance;
+      });
     }
 
     // A chart fed (directly or through a join) by a data function gets a
@@ -3700,6 +3706,34 @@ var RESIZE_DEBOUNCE_MS = 180;
  * @param {number} h - Target height (px).
  * @returns {void}
  */
+/**
+ * Resolve the functional CanvasXpress instance for a canvas id. The isGGPlot
+ * (R/ggplot) constructor returns a transient wrapper and registers the real
+ * instance asynchronously under its `renderTo` id; poll `CanvasXpress.getObject`
+ * (bounded) until it is ready, then resolve it — or the wrapper if it never is.
+ * @param {Function} CX - The CanvasXpress constructor (carries `getObject`).
+ * @param {string} id - The canvas id the chart renders into.
+ * @param {object} wrapper - The constructor's return, used as a fallback.
+ * @returns {Promise<object>} The functional instance (has setDimensions), else the wrapper.
+ * @private
+ */
+function resolveCxInstance(CX, id, wrapper) {
+  if (!CX || typeof CX.getObject !== 'function') return Promise.resolve(wrapper);
+  return new Promise(function (resolve) {
+    var tries = 0;
+    var step = (typeof requestAnimationFrame === 'function')
+      ? requestAnimationFrame : function (fn) { return setTimeout(fn, 16); };
+    (function poll() {
+      var inst = CX.getObject(id);
+      if ((inst && typeof inst.setDimensions === 'function') || tries++ > 90) {
+        resolve((inst && typeof inst.setDimensions === 'function') ? inst : (inst || wrapper));
+        return;
+      }
+      step(poll);
+    })();
+  });
+}
+
 export function resizeInstance(instance, w, h) {
   if (!instance || typeof instance.setDimensions !== 'function') return;
   if (w < 5 || h < 5) return;
