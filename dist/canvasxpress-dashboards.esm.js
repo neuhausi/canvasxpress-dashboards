@@ -8107,11 +8107,20 @@ function renderDashboard(spec, target, options) {
     grid.style.gap = t.gap;
     // Re-place every cell for the active mode (spans in the spec grid, or the
     // one-column reading order) — the per-cell ResizeObservers then resize the
-    // charts to their new cells.
+    // charts to their new cells. Place from the LIVE `renderedItems`, not each
+    // cell's stored `item`: a host (the builder) can move/resize a cell out of
+    // band (updating the layout + DOM directly), leaving the stored item stale —
+    // placing from it would snap peers back to their old spots on the next
+    // refresh (e.g. re-rendering one panel after resizing another).
     var areaByPanel = stackedNow ? t.areaByPanel : null;
+    var itemByPanel = {};
+    for (var ri = 0; ri < renderedItems.length; ri++) {
+      if (renderedItems[ri]) itemByPanel[renderedItems[ri].panel] = renderedItems[ri];
+    }
     for (var panelId in cellByPanel) {
       if (!Object.prototype.hasOwnProperty.call(cellByPanel, panelId)) continue;
       var entry = cellByPanel[panelId];
+      if (itemByPanel[panelId]) entry.item = itemByPanel[panelId];   // adopt the live item
       var area = areaByPanel ? areaByPanel[panelId] : cellArea(entry.item);
       if (!area) continue;
       entry.cell.root.style.gridColumn = area.column;
