@@ -187,10 +187,14 @@ class _FakeDashStore:
         self.locked.add((owner, did))
         if (owner, did) in self.saved:
             self.saved[(owner, did)]["locked"] = flag
+    def delete_dashboard(self, owner, did):
+        self.saved.pop((owner, did), None)
+        self.locked.discard((owner, did))
 
 
 def test_seed_reference_dashboards_gates_on_db_and_is_idempotent(monkeypatch, tmp_path):
     import sqlite3
+    monkeypatch.setenv("CXD_REFERENCE_SOURCES", "on")
     monkeypatch.setattr(rs, "SQLITE_DIR", str(tmp_path))
     # gencode present, gtex absent
     con = sqlite3.connect(str(tmp_path / "gencode.sqlite"))
@@ -212,3 +216,30 @@ def test_seed_reference_dashboards_gates_on_db_and_is_idempotent(monkeypatch, tm
 
 def test_seed_reference_dashboards_noop_without_owner():
     rsrc.seed_reference_dashboards(_FakeDashStore(), "")  # no owner -> no-op, no raise
+
+
+def test_seed_reference_dashboards_not_seeded_when_flag_off(monkeypatch, tmp_path):
+    import sqlite3
+    monkeypatch.delenv("CXD_REFERENCE_SOURCES", raising=False)   # flag off
+    monkeypatch.setattr(rs, "SQLITE_DIR", str(tmp_path))
+    con = sqlite3.connect(str(tmp_path / "gencode.sqlite"))      # data present, but flag off
+    con.execute("CREATE TABLE genome (geneName TEXT)"); con.commit(); con.close()
+    store = _FakeDashStore()
+    rsrc.seed_reference_dashboards(store, "app")
+    assert store.get_summary("app", "gencode-explorer") is None  # not seeded without the flag
+
+
+def test_seed_reference_dashboards_removes_stale_when_data_gone(monkeypatch, tmp_path):
+    import sqlite3
+    monkeypatch.setenv("CXD_REFERENCE_SOURCES", "on")
+    monkeypatch.setattr(rs, "SQLITE_DIR", str(tmp_path))
+    gencode = tmp_path / "gencode.sqlite"
+    con = sqlite3.connect(str(gencode))
+    con.execute("CREATE TABLE genome (geneName TEXT)"); con.commit(); con.close()
+    store = _FakeDashStore()
+    rsrc.seed_reference_dashboards(store, "app")
+    assert store.get_summary("app", "gencode-explorer") is not None   # seeded while present
+    # The database disappears (uninstalled / CXD_SQLITE_DIR cleared) on a later run.
+    gencode.unlink()
+    rsrc.seed_reference_dashboards(store, "app")
+    assert store.get_summary("app", "gencode-explorer") is None       # stale copy removed

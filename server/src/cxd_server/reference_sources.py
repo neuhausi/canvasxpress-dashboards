@@ -99,12 +99,18 @@ def seed_reference_dashboards(store: Any, owner: str, now: str = None) -> None:
     (``api/<db>``) — the same rewrite the dev launcher does — so they resolve to
     the :func:`install_reference_services` routes under whatever mount prefix the
     app is served at. No connectors are needed: the dashboards read the
-    ``/api/<db>`` services directly. Only a dashboard whose database is installed
-    is seeded, and only when it is not already stored (idempotent; never clobbers
-    a later edit). Each is locked as a canonical example.
+    ``/api/<db>`` services directly.
+
+    A dashboard is seeded **only** when its data is actually available —
+    ``CXD_REFERENCE_SOURCES`` is on *and* its ``<db>.sqlite`` is present — and only
+    when it is not already stored (idempotent; never clobbers a later edit). When
+    the data is **not** available, a copy seeded by an earlier run (with the flag
+    on and the database present) is **removed**, so the Dashboards page never lists
+    an explorer whose ``/api/<db>`` panels can only 503. Each seeded board is
+    locked as a canonical example. Safe to call unconditionally.
 
     :param store: The dashboards ``DashboardStore`` (``save_dashboard`` /
-        ``set_locked`` / ``get_summary``).
+        ``set_locked`` / ``get_summary`` / ``delete_dashboard``).
     :param owner: The examples owner the shipped dashboards are stored under.
     :param now: ISO-8601 timestamp for the save (defaults to current UTC).
     """
@@ -115,10 +121,22 @@ def seed_reference_dashboards(store: Any, owner: str, now: str = None) -> None:
         return
     now = now or datetime.datetime.now(datetime.timezone.utc).isoformat()
     ddir = os.path.join(os.path.dirname(__file__), "reference_dashboards")
+    enabled = reference_sources_enabled()
     for fname, db in (("gtex-explorer.spec.json", "gtex"),
                       ("gencode-explorer.spec.json", "gencode")):
+        dashboard_id = fname[:-len(".spec.json")]   # "gtex-explorer" / "gencode-explorer"
         path = os.path.join(ddir, fname)
-        if not os.path.isfile(path) or not reference_services.db_present(db):
+        available = enabled and os.path.isfile(path) and reference_services.db_present(db)
+        if not available:
+            # Drop a copy a previous run seeded when the flag/data were present, so
+            # it does not linger as a broken (503) example.
+            try:
+                if store.get_summary(owner, dashboard_id) is not None:
+                    store.delete_dashboard(owner, dashboard_id)
+                    print("  [reference] removed dashboard: %s (owner %s) — %s data not available"
+                          % (dashboard_id, owner, db), flush=True)
+            except Exception as exc:  # noqa: BLE001 - never break startup over cleanup
+                print("  [reference] NOTE: could not remove %s (%s)" % (dashboard_id, exc), flush=True)
             continue
         with open(path, encoding="utf-8") as handle:
             spec = json.load(handle)

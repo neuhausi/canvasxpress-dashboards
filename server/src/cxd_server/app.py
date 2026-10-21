@@ -569,10 +569,12 @@ def create_dashboards_app(
     # Reference dashboards: with CXD_REFERENCE_SOURCES on and a reference database
     # present, seed the GTEx/GENCODE explorer dashboards for the examples owner so a
     # packaged install shows them (they otherwise live only in the dev launcher).
+    # Called unconditionally: it seeds only the explorers whose data is available
+    # and removes any it seeded on an earlier run that no longer is (flag now off,
+    # or the database removed), so a broken explorer never lingers on the page.
     if examples_owner:
         from . import reference_sources as _refsrc
-        if _refsrc.reference_sources_enabled():
-            _refsrc.seed_reference_dashboards(store, examples_owner)
+        _refsrc.seed_reference_dashboards(store, examples_owner)
     if registry is None:
         registry = StoreRegistry.from_env(
             dataset_uri=dataset_store_uri, s3_client=s3_client,

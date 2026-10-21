@@ -425,6 +425,19 @@ def _seed_demo_collaboration(dashboards, now):
         print("  [seed] demo ask history on %s" % board)
 
 
+def _pins_feature_available():
+    """Whether the Posit **pins** feature can work on this host: the ``pins`` and
+    ``pandas`` packages both import. Without them the live pins connector source is
+    never published (see :func:`_seed_pins_board_source`) and a pins example board
+    can only error, so it is not seeded."""
+    try:
+        import pandas  # noqa: F401
+        import pins  # noqa: F401
+    except Exception:  # noqa: BLE001 - any import failure means the feature is absent
+        return False
+    return True
+
+
 def _seed_shipped_dashboards(dashboards, datasets, have, now):
     """Ship the example dashboards inside the app: their data goes into the
     dataset store, and the specs (rewired from inline to kind:"dataset") are
@@ -494,6 +507,22 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     saved = _Saved()
     have = _Have()
 
+    def _unseed(dashboard_id, why):
+        """Remove a previously seeded example whose backing data or feature is no
+        longer available, so the Dashboards page never lists a board that can only
+        error when opened (the explorers' /api/<db> would 503, a pins board has no
+        source). A no-op when nothing is stored under that id."""
+        if dashboards.get_summary(EXAMPLES_OWNER, dashboard_id) is not None:
+            dashboards.delete_dashboard(EXAMPLES_OWNER, dashboard_id)
+            print("  [seed] removed %s — %s" % (dashboard_id, why))
+
+    def _reference_db_available(db):
+        """Whether a reference explorer's SQLite is present on this host, so its
+        ``/api/<db>`` panels can actually load. Mirrors the live service's own
+        presence check (``dbservices.db_present``)."""
+        import dbservices
+        return dbservices.db_present(db)
+
     # Reproducible Bench: generated spec carries inline data; move each inline
     # value into the dataset store and point the spec at it.
     bench = load_spec("reproducible-bench/bench.spec.json")
@@ -532,8 +561,12 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
 
     # Pins Board Overview: data published to a Posit pins board and read back,
     # reshaped into region-tagged datasets; same inline->dataset move as KPI.
+    # A pins showcase: seed only where the pins feature is installed, and drop a
+    # previously seeded copy when it is not.
     pins = load_spec("pins-overview.spec.json")
-    if pins and pins["id"] not in saved:
+    if pins and not _pins_feature_available():
+        _unseed(pins["id"], "pins package not installed")
+    elif pins and pins["id"] not in saved:
         pins = copy.deepcopy(pins)
         for ref, source in pins.get("data", {}).items():
             if source.get("kind") != "inline":
@@ -757,11 +790,27 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     # customer installs never get them. TCGA/CCLE are showcase-only here: their
     # raw .sqlite is NOT published for download (CXD_REFERENCE_DATA_PUBLISH stays
     # gencode/gtex/wp); only aggregate query results are served.
+    # Each explorer needs its backing data/feature present to load: the reference
+    # explorers need their SQLite behind /api/<db>, and the live pins board needs
+    # the pins feature (its /connectors source is only published when pins is
+    # installed). Seed one only when its dependency is available, and remove a
+    # previously seeded copy when it is not — so the Dashboards page never lists a
+    # board that can only error when opened.
+    explorer_requires = {"gtex-explorer": ("db", "gtex"), "gencode-explorer": ("db", "gencode"),
+                         "wp-explorer": ("db", "wp"), "tcga-explorer": ("db", "tcga"),
+                         "ccle-explorer": ("db", "ccle"), "pins-live": ("pins", None)}
     for db_spec in ("gtex-explorer.spec.json", "gencode-explorer.spec.json",
                     "wp-explorer.spec.json", "tcga-explorer.spec.json",
                     "ccle-explorer.spec.json", "pins-live.spec.json"):
         explorer = load_spec(db_spec)
         if not explorer:
+            continue
+        kind, dep = explorer_requires.get(explorer["id"], (None, None))
+        if kind == "db" and not _reference_db_available(dep):
+            _unseed(explorer["id"], "%s reference database not present" % dep)
+            continue
+        if kind == "pins" and not _pins_feature_available():
+            _unseed(explorer["id"], "pins package not installed")
             continue
         # Shipped explorers are locked, canonical examples: always re-save from the
         # spec file (not skip-if-present) so edits to the spec — e.g. the intro
