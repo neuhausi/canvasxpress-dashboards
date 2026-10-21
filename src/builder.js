@@ -373,6 +373,7 @@ export function createBuilder(target, options) {
     var createActions = [titleInput, editJsonBtn, undoBtn, redoBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }, 'cxb-bt-add'),
       button('+ Image', function () { doAddImage(); }, 'cxb-bt-add'),
+      button('📈 ggplot', function () { doAddGgplot(); }, 'cxb-bt-add'),
       addControlBtn, addFiltersBtn, addTransformBtn, addFdrBtn, addSignificanceBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
@@ -551,6 +552,162 @@ export function createBuilder(target, options) {
     } else {
       rebuild();
     }
+  }
+
+  /**
+   * Add a ggplot panel from pasted R/ggplot2 code. The snippet (which must
+   * assign its plot to `g`) is sent to the server, which converts it in the
+   * SANDBOXED runtime (no network, writes confined to a throwaway temp dir,
+   * CPU/memory/output limits) into a self-contained isGGPlot spec — the panel's
+   * data and styling ride inside it. Running pasted R is the same trust boundary
+   * as authoring a data function, so this is gated to function authors.
+   * @returns {void}
+   * @private
+   */
+  function doAddGgplot() {
+    var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
+    if (typeof fetchImpl !== 'function') {
+      return showError('Converting pasted R needs a server connection.');
+    }
+    functionStatus().then(function (status) {
+      if (!status.languages || status.languages.indexOf('r') === -1 || !status.canAuthor) {
+        return showError('Pasting R/ggplot2 code is disabled on this server, or ' +
+          'restricted to administrators (it runs pasted R in the sandboxed runtime).');
+      }
+      openGgplotDialog(fetchImpl);
+    });
+  }
+
+  /**
+   * The "add a ggplot panel from R code" modal: a textarea, a Convert button
+   * that posts to `<baseUrl>/api/ggplot/convert`, and on success a new
+   * type:"ggplot" panel. Reuses the shared code-dialog styling.
+   * @param {Function} fetchImpl - The fetch implementation to use.
+   * @returns {void}
+   * @private
+   */
+  function openGgplotDialog(fetchImpl) {
+    var doc = container.ownerDocument || document;
+    var backdrop = doc.createElement('div');
+    backdrop.className = 'cxd-code-backdrop';
+    var dialog = doc.createElement('div');
+    dialog.className = 'cxd-code-dialog';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-label', 'Add a ggplot panel from R code');
+
+    var head = doc.createElement('div');
+    head.className = 'cxd-code-head';
+    var heading = doc.createElement('div');
+    heading.className = 'cxd-code-heading';
+    heading.textContent = 'Add a panel from R / ggplot2 code';
+    var close = doc.createElement('button');
+    close.type = 'button';
+    close.className = 'cxd-code-close';
+    close.textContent = '×';
+    close.setAttribute('aria-label', 'Close');
+    head.appendChild(heading);
+    head.appendChild(close);
+
+    var body = doc.createElement('div');
+    body.className = 'cxd-code-body';
+    var note = doc.createElement('div');
+    note.className = 'cxd-code-step-detail';
+    note.textContent = 'Paste ggplot2 code that assigns its plot to g. It is converted ' +
+      'on the server (sandboxed) into a native, interactive panel.';
+    var wrap = doc.createElement('div');
+    wrap.className = 'cxd-code-block';
+    var area = doc.createElement('textarea');
+    area.className = 'cxd-code-edit';
+    area.spellcheck = false;
+    area.rows = 10;
+    area.value = 'library(ggplot2)\n' +
+      'g <- ggplot(mtcars, aes(x = wt, y = mpg, color = factor(cyl))) +\n' +
+      '  geom_point(size = 2) +\n' +
+      '  labs(x = "Weight (1000 lbs)", y = "MPG", color = "Cylinders")\n';
+    wrap.appendChild(area);
+    var bar = doc.createElement('div');
+    bar.className = 'cxd-code-actions';
+    var statusEl = doc.createElement('span');
+    statusEl.className = 'cxd-code-status';
+    var addBtn = doc.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'cxd-code-apply';
+    addBtn.textContent = 'Convert & add';
+    bar.appendChild(statusEl);
+    bar.appendChild(addBtn);
+    body.appendChild(note);
+    body.appendChild(wrap);
+    body.appendChild(bar);
+    dialog.appendChild(head);
+    dialog.appendChild(body);
+    backdrop.appendChild(dialog);
+
+    function dismiss() {
+      if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+    }
+    close.addEventListener('click', dismiss);
+    backdrop.addEventListener('click', function (ev) { if (ev.target === backdrop) dismiss(); });
+
+    addBtn.addEventListener('click', function () {
+      var code = area.value;
+      if (!code.trim()) {
+        statusEl.className = 'cxd-code-status cxd-code-error';
+        statusEl.textContent = 'Paste some ggplot2 code first.';
+        return;
+      }
+      addBtn.disabled = true;
+      statusEl.className = 'cxd-code-status';
+      statusEl.textContent = 'Converting on the server…';
+      fetchImpl(baseUrl + '/api/ggplot/convert', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code })
+      }).then(function (res) {
+        return res.json().then(function (b) {
+          return { ok: res.ok, status: res.status, body: b };
+        });
+      }).then(function (r) {
+        addBtn.disabled = false;
+        if (!r.ok || !r.body || !r.body.spec) {
+          statusEl.className = 'cxd-code-status cxd-code-error';
+          statusEl.textContent = (r.body && r.body.detail) ||
+            ('Conversion failed (' + r.status + ').');
+          return;
+        }
+        var id = uniquePanelId(spec);
+        commit(addPanel(spec, { id: id, type: 'ggplot', title: ggplotPanelTitle(r.body.spec),
+          spec: r.body.spec, code: code, w: 6, h: 7 }), false);
+        selectedId = id;
+        dismiss();
+        if (liveHandle && liveHandle.addPanel && gridEl) {
+          lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items)
+            .then(function () { renderProps(); });
+        } else {
+          rebuild();
+        }
+        setMsg('Added a ggplot panel from R code.');
+      }, function (err) {
+        addBtn.disabled = false;
+        statusEl.className = 'cxd-code-status cxd-code-error';
+        statusEl.textContent = 'Error: ' + err;
+      });
+    });
+
+    container.appendChild(backdrop);
+    if (typeof area.focus === 'function') area.focus();
+  }
+
+  /**
+   * A panel title for a converted ggplot: its ggplot title if any, else a default.
+   * @param {object} ggSpec - The isGGPlot spec.
+   * @returns {string} The title.
+   * @private
+   */
+  function ggplotPanelTitle(ggSpec) {
+    if (ggSpec && ggSpec.labels && typeof ggSpec.labels.title === 'string' && ggSpec.labels.title) {
+      return ggSpec.labels.title;
+    }
+    return 'ggplot panel';
   }
 
   /**
@@ -1571,9 +1728,12 @@ export function createBuilder(target, options) {
       on(dataBtn, 'pointerdown', stop);
       append(tools, [dataBtn, gear]);
       var codePanel = spec.panels[info.panelId] || {};
-      if (typeof codePanel.dataRef === 'string' &&
-          sourceLineage(spec.data || {}, codePanel.dataRef).some(function (ref) { return spec.data[ref].kind === 'function'; })) {
-        var codeBtn = iconBtn('</>', 'Code: edit the data function and the chart config', function (ev) {
+      var ggplotCode = codePanel.type === 'ggplot';
+      var functionCode = typeof codePanel.dataRef === 'string' &&
+        sourceLineage(spec.data || {}, codePanel.dataRef).some(function (ref) { return spec.data[ref].kind === 'function'; });
+      if (ggplotCode || functionCode) {
+        var codeBtn = iconBtn('</>', ggplotCode ? 'Code: the R ggplot2 code and the data'
+          : 'Code: edit the data function and the chart config', function (ev) {
           stop(ev);
           openCodeEditor(info.panelId);
         });
@@ -2021,6 +2181,23 @@ export function createBuilder(target, options) {
     // variables) + annotation + widget style. One annotation per control.
     if (panel.type === 'control') {
       renderControlProps(panel, refs, titleField);
+      return;
+    }
+
+    // ggplot panels are self-contained charts converted from R (ggplot.as.list):
+    // their data and styling are baked into panel.spec, so there is no data
+    // binding or graph config to edit here. The builder edits the title (above)
+    // and alignment; the chart itself is re-authored in R and re-run through the
+    // cxd-ggplot tool. Show a short read-only note instead of the graph UI.
+    if (panel.type === 'ggplot') {
+      var ggLabel = el('span', 'cxb-tlabel');
+      ggLabel.textContent = 'ggplot';
+      var ggNote = el('div', 'cxb-tlabel');
+      ggNote.textContent = 'Converted from R (ggplot2); its data and styling are ' +
+        'baked in. Open </> Code on the panel to edit the R and re-convert it.';
+      // The "</> Code" recipe (R code + data) is on the panel's chrome toolbar,
+      // same as the data-function panels — not duplicated here.
+      append(propsGroup, [ggLabel, ggNote].concat(alignmentFields(panel)));
       return;
     }
 
@@ -3474,6 +3651,28 @@ export function createBuilder(target, options) {
         commit(updatePanel(spec, panelId, { config: config }), true);
         rerenderPanel(panelId);
         return null;
+      },
+      // ggplot panels: re-convert the edited R on the server (sandboxed) and
+      // replace this panel's isGGPlot spec + source. Async → returns a Promise
+      // of the error message, or null on success.
+      onApplyGgplot: function (code) {
+        var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
+        if (typeof fetchImpl !== 'function') return 'No server connection to convert R.';
+        return fetchImpl(baseUrl + '/api/ggplot/convert', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code })
+        }).then(function (res) {
+          return res.json().then(function (b) { return { ok: res.ok, status: res.status, body: b }; });
+        }).then(function (r) {
+          if (!r.ok || !r.body || !r.body.spec) {
+            return (r.body && r.body.detail) || ('Conversion failed (' + r.status + ').');
+          }
+          if (!spec.panels[panelId]) return 'The panel no longer exists';
+          commit(updatePanel(spec, panelId, { spec: r.body.spec, code: code }), false);
+          rerenderPanel(panelId);
+          return null;
+        }, function (err) { return String((err && err.message) || err); });
       }
     });
   }

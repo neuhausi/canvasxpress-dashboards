@@ -1237,6 +1237,29 @@ export function renderDashboard(spec, target, options) {
     var canvasId = makeCanvasId(spec.id, 'panel', item.panel, panelIdCounter.n++);
     cell.canvas.id = canvasId;
 
+    // ggplot panel: a self-contained CanvasXpress "isGGPlot" spec produced by
+    // the R converter (ggplot.as.list). It carries its own data frame inside
+    // the spec, so it bypasses the dataRef / prepare pipeline entirely and uses
+    // the single-object constructor form — the only path that routes to the
+    // engine's cxplot (ggplot) renderer (new CX(string, data, config) does not).
+    if (panel && panel.type === 'ggplot' && panel.spec && panel.spec.isGGPlot) {
+      // Give it the same "</> Code" recipe button the data-function panels get:
+      // the R source and the converted data frame, shown read-only.
+      if (cell.header && panel.showCode !== false) {
+        addCodeButton(cell.header, container, title, panel, [], spec.data || {});
+      }
+      sizeCanvasToCell(cell, canvasInset);
+      var ggSpec = shallowClone(panel.spec);
+      ggSpec.renderTo = canvasId;
+      var ggInstance = new CX(ggSpec);
+      instances.push(ggInstance);
+      if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = ggInstance;
+      if (autoResize) observeResize(cell, ggInstance, observers, canvasInset);
+      cell.setState('ready');
+      notify(ggInstance, 'ready');
+      return Promise.resolve(ggInstance);
+    }
+
     // A chart fed (directly or through a join) by a data function gets a
     // "Code" button showing its recipe: the function code and the chart config.
     if (cell.header && panel && panel.showCode !== false && typeof panel.dataRef === 'string') {
@@ -3880,6 +3903,20 @@ export function showCodeDialog(container, title, panel, lineage, sources, opts) 
       applyBtn.addEventListener('click', function () {
         if (locked) return;
         var error = apply(area.value);
+        // A server-backed apply (e.g. re-converting ggplot) returns a Promise of
+        // the error-or-null; show progress, then the outcome.
+        if (error && typeof error.then === 'function') {
+          status.textContent = 'Applying…';
+          status.className = 'cxd-code-status';
+          error.then(function (err) {
+            status.textContent = err ? String(err) : 'Applied — the chart is re-rendering';
+            status.className = 'cxd-code-status' + (err ? ' cxd-code-error' : '');
+          }, function (err) {
+            status.textContent = String((err && err.message) || err);
+            status.className = 'cxd-code-status cxd-code-error';
+          });
+          return;
+        }
         status.textContent = error ? String(error) : 'Applied — the chart is re-rendering';
         status.className = 'cxd-code-status' + (error ? ' cxd-code-error' : '');
       });
@@ -3903,6 +3940,24 @@ export function showCodeDialog(container, title, panel, lineage, sources, opts) 
     wrap.appendChild(copy);
     wrap.appendChild(pre);
     section.appendChild(wrap);
+  }
+
+  // ggplot panels keep their R source (the chart's data rides inside the spec):
+  // show — and, in the builder for function authors, EDIT — the ggplot2 code.
+  // Applying re-converts the snippet on the server and replaces the panel.
+  if (panel.type === 'ggplot') {
+    var ggEditable = editable && typeof opts.onApplyGgplot === 'function';
+    var codeStep = step('The ggplot2 code (R)',
+      ggEditable
+        ? 'Edit the ggplot2 code (assign the plot to g) and Apply — it is re-converted ' +
+          'on the server in the sandboxed runtime and this panel updates.'
+        : 'Written in R with ggplot2 and converted with ggplot.as.list() (canvasXpress R package).');
+    codeBlock(codeStep, String(panel.code || ''),
+      ggEditable ? function (code) { return opts.onApplyGgplot(code); } : null);
+    dialog.appendChild(body);
+    backdrop.appendChild(dialog);
+    wireCodeDialog(container, backdrop, close);
+    return backdrop;
   }
 
   lineage.forEach(function (ref) {
@@ -3935,14 +3990,25 @@ export function showCodeDialog(container, title, panel, lineage, sources, opts) 
   } : null);
   dialog.appendChild(body);
   backdrop.appendChild(dialog);
+  wireCodeDialog(container, backdrop, close);
+  return backdrop;
+}
 
+/**
+ * Mount a code dialog and wire its dismissal (close button, backdrop click,
+ * Escape — but Escape inside a textarea only leaves the box, never loses edits).
+ * @param {HTMLElement} container - Element the dialog is appended to.
+ * @param {HTMLElement} backdrop - The dialog backdrop (removed on dismiss).
+ * @param {HTMLElement} close - The close button.
+ * @returns {void}
+ * @private
+ */
+function wireCodeDialog(container, backdrop, close) {
   var canListen = typeof document.addEventListener === 'function';
   function dismiss() {
     if (canListen) document.removeEventListener('keydown', onKey, true);
     if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
   }
-  // Capture Escape so it closes the dialog without also resetting the dashboard.
-  // In an editor box Escape only stops there (no accidental loss of edits).
   function onKey(ev) {
     if (ev.key === 'Escape' || ev.keyCode === 27) {
       ev.preventDefault();
@@ -3955,7 +4021,6 @@ export function showCodeDialog(container, title, panel, lineage, sources, opts) 
   if (canListen) document.addEventListener('keydown', onKey, true);
   container.appendChild(backdrop);
   if (typeof close.focus === 'function') close.focus();
-  return backdrop;
 }
 
 /**

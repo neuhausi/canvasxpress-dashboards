@@ -23,6 +23,7 @@ database) · [live-data controls](docs/live-data-controls.md) ·
 [ask](docs/ask.md) (view-time Q&A of the data, computed not hallucinated) ·
 [reproducibility](docs/reproducibility.md) (provenance method lines + a reproducible bundle: spec, data, R/Python, methods) ·
 [science panels](docs/science-panels.md) (auto-detect survival / oncoprint / Manhattan / volcano / heatmap and suggest the matching panel) ·
+[ggplot panels](docs/ggplot-panels.md) (build a dashboard from a folder of R/ggplot2 code — converted once to native interactive panels) ·
 [publication figures](docs/figure-composer.md) (compose panels into one multi-panel vector SVG/PDF with A/B/C labels, sized to a journal column at print DPI) ·
 [Databricks as the viewer + Unity Catalog browser](docs/databricks-viewer-oauth.md) (Posit Connect OAuth or a shared token) ·
 [server](server/README.md) · [changelog](CHANGELOG.md)

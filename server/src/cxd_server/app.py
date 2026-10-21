@@ -37,6 +37,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from . import mcp_bridge
 from . import billing
+from . import ggplot_convert
 from . import ask as ask_qa
 from .join import join_data
 from .billing import EntitlementStore, TokenPool
@@ -88,6 +89,12 @@ updated spec, preserving ids and anything the user didn't ask to change.
                   "dependsOn"?: ["<param>", ...]  // params beyond those in query
                                                   // that should re-trigger a fetch
                  }
+                  // Live connector sources (SQL warehouses, Google Sheets,
+                  // Salesforce/ServiceNow, and Posit pins boards — datasets
+                  // pinned from R or Python) are read at render time from
+                  // url "/connectors/api/data?source=<source name>". Only bind
+                  // to a connector source the "Connector sources" catalogue
+                  // below lists by name; never invent a source name.
               or {"kind": "join", "left": "<ref>", "right": "<ref>",
                   "on"?: "smps" | "<column>" | {"left": "<col>", "right": "<col>"} | [...],
                   "how"?: "inner|left|right|outer", "suffix"?: "<str>"}
@@ -124,11 +131,18 @@ updated spec, preserving ids and anything the user didn't ask to change.
 }
 
 ## Panel variants
-A panel's "type" is absent for a GRAPH panel, or one of "text", "control", "image":
+A panel's "type" is absent for a GRAPH panel, or one of "text", "control", "image", "ggplot":
 - text  — {"type":"text","text":"<markdown/plain text>","align"?:"left|center|right","valign"?:"top|middle|bottom"}
 - image — {"type":"image","src":"<url or data: URI>","alt"?:"...","fit"?:"contain|cover|fill|none|scale-down","href"?:"<link>"}
 Text and image panels need NO dataRef and no data. Use them for titles, notes,
 logos and banners — never refuse such a request.
+- ggplot — {"type":"ggplot","title":"<Title>","spec":{<isGGPlot spec>}}
+  A chart authored in R with ggplot2 and converted (via the cxd-ggplot tool /
+  ggplot.as.list) into a self-contained CanvasXpress "isGGPlot" spec that embeds
+  its own data — so it needs NO dataRef. Do NOT author or invent a ggplot panel
+  or its "spec" from scratch; you cannot produce a valid isGGPlot spec. Only ever
+  carry an EXISTING ggplot panel through unchanged when editing a spec that
+  already has one; to make one, the user runs the cxd-ggplot tool.
 - filters — {"type":"filters","dataRef":"<ref>",
              "fields"?:["<field>", {"field":"<f>","dataRef":"<ref>","kind":"values|range|search"}]}
   A Filters panel (like Spotfire's): checkbox lists for categories, min/max for
@@ -2647,6 +2661,54 @@ def create_dashboards_app(
               flush=True)
         return result
 
+    @app.get("/api/ggplot/status")
+    def ggplot_status(request: Request):
+        """Whether paste-to-ggplot is available to the caller: the runtime is on,
+        runs on this host, and the caller may run code (function authors)."""
+        user = request.session.get("user")
+        return {
+            "available": ggplot_convert.available(functions),
+            "canRun": bool(user) and can_author_functions(user),
+        }
+
+    @app.post("/api/ggplot/convert")
+    async def ggplot_convert_endpoint(request: Request):
+        """Convert pasted R/ggplot2 code (assigning `g`) into a ggplot panel spec,
+        in the sandboxed embedded runtime. Same trust boundary as authoring a data
+        function: arbitrary pasted R runs only for function authors (admins by
+        default) and only on the embedded runtime (never when a standalone
+        function runtime is configured)."""
+        user = require_user(request)
+        if not ggplot_convert.available(functions):
+            raise HTTPException(
+                status_code=403,
+                detail=("ggplot conversion is unavailable: set CXD_FUNCTIONS to "
+                        "admin or users; it runs on the embedded runtime, not with "
+                        "a standalone function runtime."))
+        if not can_author_functions(user):
+            raise HTTPException(
+                status_code=403,
+                detail="Your role does not allow running pasted R code: "
+                       + PERMISSIONS["function.run"].lower())
+        try:
+            body = await request.json()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Request body must be JSON")
+        code = body.get("code") if isinstance(body, dict) else None
+        # The code is not stored; a hash identifies which snippet ran.
+        note(request, code_sha256=(hashlib.sha256(code.encode("utf-8")).hexdigest()[:16]
+                                   if isinstance(code, str) else None))
+        started = time.monotonic()
+        try:
+            spec = await run_in_threadpool(ggplot_convert.convert, code, functions)
+        except ggplot_convert.GgplotConvertError as exc:
+            note(request, duration_ms=int((time.monotonic() - started) * 1000),
+                 error=str(exc)[:200])
+            raise HTTPException(status_code=exc.status, detail=str(exc))
+        note(request, duration_ms=int((time.monotonic() - started) * 1000))
+        print("[ggplot] user=%s ok" % user, flush=True)
+        return {"spec": spec}
+
     # ---- audit log (admin only; reading it is itself audited) ----
     def audit_filters(request: Request) -> dict:
         q = request.query_params
@@ -2819,6 +2881,39 @@ def create_dashboards_app(
                             entry[annot + "_annotations"] = keys[:20]
                 catalog.append(entry)
 
+        # Live connector sources (SQL warehouses, Google Sheets, Salesforce/
+        # ServiceNow, and Posit pins boards — datasets pinned from R or Python).
+        # The user binds panels to these with kind "connector" at RENDER time;
+        # they are not in the dataset store, so the LLM would otherwise never
+        # learn they exist. List name + a credential-free location only (no live
+        # fetch, no credentials). Best-effort: any failure leaves the list empty.
+        connector_sources = []
+        cstore = getattr(request.app.state, "connectors_store", None)
+        if cstore is not None:
+            from urllib.parse import urlsplit, quote
+            try:
+                for meta in cstore.list_sources_meta(user):
+                    name = meta.get("name")
+                    if not name:
+                        continue
+                    location = ""
+                    try:
+                        record = cstore.get_source(user, name)
+                        if record:
+                            parts = urlsplit(record.get("conn_url") or "")
+                            location = (parts.scheme or "").split("+")[0]
+                            if parts.hostname:
+                                location += "@" + parts.hostname
+                    except Exception:
+                        location = ""
+                    connector_sources.append({
+                        "name": name,
+                        "location": location or "connector",
+                        "url": "/connectors/api/data?source=" + quote(name),
+                    })
+            except Exception:
+                connector_sources = []
+
         # ---- Keyless fast path: single-chart creation via canvasxpress-mcp ----
         # With no LLM key configured, the chat can still build one chart: one
         # dataset in scope + empty canvas -> the MCP authors the validated
@@ -2895,6 +2990,14 @@ def create_dashboards_app(
         # system prompt on every catalogue change. It goes in a second,
         # uncached block after the breakpoint instead.
         catalog_block = "## The user's datasets\n" + json.dumps(catalog)
+        # Live connector sources available to this user (incl. Posit pins boards).
+        # Bind a panel to one with {"kind":"connector","url": <its url>}; use the
+        # url EXACTLY as given and never invent a source that is not listed here.
+        if connector_sources:
+            catalog_block += ("\n\n## Connector sources (live; bind with kind "
+                              "\"connector\" using each source's url verbatim — "
+                              "these include Posit pins boards)\n"
+                              + json.dumps(connector_sources))
         # Data functions depend on server config and the caller's role, so the
         # availability note rides in the uncached block too.
         can_run_functions = functions.mode == "users" or (

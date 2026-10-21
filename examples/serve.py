@@ -715,6 +715,16 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.set_locked(EXAMPLES_OWNER, heor["id"], True)
         print("  [seed] shipped dashboard: %s" % heor["id"])
 
+    # ggplot Gallery: four charts authored in R with ggplot2 and converted to
+    # self-contained CanvasXpress "ggplot" panels (each panel.spec carries its
+    # own data), so there are no inline datasets to move into the store — the
+    # spec ships as-is.
+    ggplot_gallery = load_spec("ggplot-gallery.spec.json")
+    if ggplot_gallery and ggplot_gallery["id"] not in saved:
+        dashboards.save_dashboard(EXAMPLES_OWNER, ggplot_gallery, now)
+        dashboards.set_locked(EXAMPLES_OWNER, ggplot_gallery["id"], True)
+        print("  [seed] shipped dashboard: %s" % ggplot_gallery["id"])
+
     # Live database explorers (GTEx tissue expression, GENCODE genome browser):
     # a param Control whose choices come from the database re-queries it on
     # every pick. Their sources stay live connectors — nothing moves into the
@@ -768,7 +778,7 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     # order — only when the stored order differs, so restarts don't churn.
     # A shipped example missing from the list keeps its own stamp.
     shipped_order = [
-        "biomarker-cohort", "genomics-oncology", "pins-overview", "heor-overview", "kpi-overview",
+        "biomarker-cohort", "genomics-oncology", "ggplot-gallery", "pins-overview", "heor-overview", "kpi-overview",
         "gtex-explorer", "gencode-explorer", "wp-explorer", "tcga-explorer", "ccle-explorer",
         "live-ops", "quality-metrics", "reproducible-bench", "sales-model", "sales-overview",
     ]

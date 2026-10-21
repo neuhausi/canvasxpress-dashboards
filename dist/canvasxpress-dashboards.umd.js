@@ -5554,9 +5554,16 @@ function validateSpec(spec) {
       // and recomputes across panels.
       var isTransformControl = panel.type === 'control' && panel.mode === 'transform';
       var isRangeParam = panel.type === 'control' && panel.mode === 'param' && panel.style === 'range';
+      // A ggplot panel is self-contained: its data frame lives inside the
+      // isGGPlot spec (from the R ggplot.as.list converter), so it needs no
+      // dataRef / inline data.
+      var isGgplotPanel = panel.type === 'ggplot';
+      if (isGgplotPanel && (panel.spec == null || panel.spec.isGGPlot !== true)) {
+        errors.push(at + ' of type "ggplot" requires a spec with isGGPlot:true');
+      }
       if (panel.type !== 'text' && panel.type !== 'image' && panel.type !== 'filters' &&
           !paramWithOptions && !isConfigControl && !isTransformControl && !isRangeParam &&
-          panel.dataRef == null && panel.data == null) {
+          !isGgplotPanel && panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
       if (panel.type === 'image') {
@@ -6200,6 +6207,112 @@ function checkRelation(rel, at, data, errors, what) {
  */
 function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+/* ==== src/ggplotDashboard.js ==== */
+/**
+ * ggplotDashboard — assemble a dashboard spec from ggplot conversions.
+ *
+ * The R `ggplot.as.list()` converter turns each ggplot object into a
+ * self-contained CanvasXpress "isGGPlot" spec (it embeds its own data frame).
+ * This module lays those out into a grid of `type:"ggplot"` panels that
+ * {@link module:renderDashboard} renders as native, interactive CanvasXpress
+ * charts. No dataRef / inline data is needed — the data rides inside each spec.
+ *
+ * @module ggplotDashboard
+ */
+
+/**
+ * One converted ggplot chart.
+ * @typedef {object} GgplotConversion
+ * @property {string} key - Stable panel id (kebab-case).
+ * @property {string} [title] - Panel title (defaults to the key).
+ * @property {object} spec - A CanvasXpress isGGPlot spec (`isGGPlot:true`, with
+ *   embedded `data`), exactly as `ggplot.as.list()` emits it.
+ * @property {string} [code] - The original R/ggplot2 source for this chart, kept
+ *   so the dashboard can show how it was made (the "</> Code" recipe).
+ */
+
+/**
+ * Build a dashboard spec that renders a collection of ggplot charts as a grid
+ * of self-contained `ggplot` panels.
+ *
+ * @param {GgplotConversion[]} conversions - The converted charts, in order.
+ * @param {object} [opts] - Options.
+ * @param {string} [opts.id="ggplot-dashboard"] - Dashboard id.
+ * @param {string} [opts.title="ggplot Dashboard"] - Dashboard title.
+ * @param {string} [opts.theme="auto"] - "light" | "dark" | "auto".
+ * @param {number} [opts.cols=12] - Grid column count.
+ * @param {number} [opts.perRow=2] - ggplot panels per row.
+ * @param {number} [opts.panelHeight=7] - Panel height in grid rows.
+ * @param {number} [opts.rowHeight=40] - Grid row height in px.
+ * @param {number} [opts.gap=12] - Grid gap in px.
+ * @param {string} [opts.intro] - Optional intro text/HTML shown in a full-width
+ *   banner above the charts. Omit for no banner.
+ * @returns {object} A dashboard spec (schema `panels` + `layout`), ready for
+ *   {@link validateSpec} and {@link renderDashboard}.
+ * @public
+ */
+function buildGgplotDashboardSpec(conversions, opts) {
+  var options = opts || {};
+  var cols = options.cols || 12;
+  var perRow = options.perRow || 2;
+  var panelHeight = options.panelHeight || 7;
+  var panelWidth = Math.max(1, Math.floor(cols / perRow));
+
+  var items = [];
+  var panels = {};
+  var cursorY = 0;
+
+  if (options.intro) {
+    panels.intro = { type: 'text', html: options.intro };
+    items.push({ panel: 'intro', x: 0, y: cursorY, w: cols, h: 2 });
+    cursorY += 2;
+  }
+
+  for (var i = 0; i < conversions.length; i++) {
+    var conv = conversions[i];
+    if (!conv || typeof conv.key !== 'string' || !conv.key) {
+      throw new Error('conversion[' + i + '] needs a string "key"');
+    }
+    if (!conv.spec || conv.spec.isGGPlot !== true) {
+      throw new Error('conversion "' + conv.key + '" needs a spec with isGGPlot:true');
+    }
+    var col = i % perRow;
+    if (col === 0 && i > 0) cursorY += panelHeight;   // start a fresh row
+    items.push({
+      panel: conv.key,
+      x: col * panelWidth,
+      y: cursorY,
+      w: panelWidth,
+      h: panelHeight
+    });
+    panels[conv.key] = {
+      type: 'ggplot',
+      title: conv.title || conv.key,
+      spec: conv.spec
+    };
+    if (typeof conv.code === 'string' && conv.code) {
+      panels[conv.key].code = conv.code;   // R source for the "</> Code" recipe
+    }
+  }
+
+  return {
+    $schema: 'https://canvasxpress.org/schema/dashboard.schema.json',
+    schemaVersion: '1.3',
+    id: options.id || 'ggplot-dashboard',
+    title: options.title || 'ggplot Dashboard',
+    version: 1,
+    theme: options.theme || 'auto',
+    layout: {
+      cols: cols,
+      rowHeight: options.rowHeight || 40,
+      gap: options.gap || 12,
+      items: items
+    },
+    data: {},
+    panels: panels
+  };
 }
 
 /* ==== src/statInference.js ==== */
@@ -8071,6 +8184,29 @@ function renderDashboard(spec, target, options) {
 
     var canvasId = makeCanvasId(spec.id, 'panel', item.panel, panelIdCounter.n++);
     cell.canvas.id = canvasId;
+
+    // ggplot panel: a self-contained CanvasXpress "isGGPlot" spec produced by
+    // the R converter (ggplot.as.list). It carries its own data frame inside
+    // the spec, so it bypasses the dataRef / prepare pipeline entirely and uses
+    // the single-object constructor form — the only path that routes to the
+    // engine's cxplot (ggplot) renderer (new CX(string, data, config) does not).
+    if (panel && panel.type === 'ggplot' && panel.spec && panel.spec.isGGPlot) {
+      // Give it the same "</> Code" recipe button the data-function panels get:
+      // the R source and the converted data frame, shown read-only.
+      if (cell.header && panel.showCode !== false) {
+        addCodeButton(cell.header, container, title, panel, [], spec.data || {});
+      }
+      sizeCanvasToCell(cell, canvasInset);
+      var ggSpec = shallowClone(panel.spec);
+      ggSpec.renderTo = canvasId;
+      var ggInstance = new CX(ggSpec);
+      instances.push(ggInstance);
+      if (cellByPanel[item.panel]) cellByPanel[item.panel].instance = ggInstance;
+      if (autoResize) observeResize(cell, ggInstance, observers, canvasInset);
+      cell.setState('ready');
+      notify(ggInstance, 'ready');
+      return Promise.resolve(ggInstance);
+    }
 
     // A chart fed (directly or through a join) by a data function gets a
     // "Code" button showing its recipe: the function code and the chart config.
@@ -10715,6 +10851,20 @@ function showCodeDialog(container, title, panel, lineage, sources, opts) {
       applyBtn.addEventListener('click', function () {
         if (locked) return;
         var error = apply(area.value);
+        // A server-backed apply (e.g. re-converting ggplot) returns a Promise of
+        // the error-or-null; show progress, then the outcome.
+        if (error && typeof error.then === 'function') {
+          status.textContent = 'Applying…';
+          status.className = 'cxd-code-status';
+          error.then(function (err) {
+            status.textContent = err ? String(err) : 'Applied — the chart is re-rendering';
+            status.className = 'cxd-code-status' + (err ? ' cxd-code-error' : '');
+          }, function (err) {
+            status.textContent = String((err && err.message) || err);
+            status.className = 'cxd-code-status cxd-code-error';
+          });
+          return;
+        }
         status.textContent = error ? String(error) : 'Applied — the chart is re-rendering';
         status.className = 'cxd-code-status' + (error ? ' cxd-code-error' : '');
       });
@@ -10738,6 +10888,24 @@ function showCodeDialog(container, title, panel, lineage, sources, opts) {
     wrap.appendChild(copy);
     wrap.appendChild(pre);
     section.appendChild(wrap);
+  }
+
+  // ggplot panels keep their R source (the chart's data rides inside the spec):
+  // show — and, in the builder for function authors, EDIT — the ggplot2 code.
+  // Applying re-converts the snippet on the server and replaces the panel.
+  if (panel.type === 'ggplot') {
+    var ggEditable = editable && typeof opts.onApplyGgplot === 'function';
+    var codeStep = step('The ggplot2 code (R)',
+      ggEditable
+        ? 'Edit the ggplot2 code (assign the plot to g) and Apply — it is re-converted ' +
+          'on the server in the sandboxed runtime and this panel updates.'
+        : 'Written in R with ggplot2 and converted with ggplot.as.list() (canvasXpress R package).');
+    codeBlock(codeStep, String(panel.code || ''),
+      ggEditable ? function (code) { return opts.onApplyGgplot(code); } : null);
+    dialog.appendChild(body);
+    backdrop.appendChild(dialog);
+    wireCodeDialog(container, backdrop, close);
+    return backdrop;
   }
 
   lineage.forEach(function (ref) {
@@ -10770,14 +10938,25 @@ function showCodeDialog(container, title, panel, lineage, sources, opts) {
   } : null);
   dialog.appendChild(body);
   backdrop.appendChild(dialog);
+  wireCodeDialog(container, backdrop, close);
+  return backdrop;
+}
 
+/**
+ * Mount a code dialog and wire its dismissal (close button, backdrop click,
+ * Escape — but Escape inside a textarea only leaves the box, never loses edits).
+ * @param {HTMLElement} container - Element the dialog is appended to.
+ * @param {HTMLElement} backdrop - The dialog backdrop (removed on dismiss).
+ * @param {HTMLElement} close - The close button.
+ * @returns {void}
+ * @private
+ */
+function wireCodeDialog(container, backdrop, close) {
   var canListen = typeof document.addEventListener === 'function';
   function dismiss() {
     if (canListen) document.removeEventListener('keydown', onKey, true);
     if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
   }
-  // Capture Escape so it closes the dialog without also resetting the dashboard.
-  // In an editor box Escape only stops there (no accidental loss of edits).
   function onKey(ev) {
     if (ev.key === 'Escape' || ev.keyCode === 27) {
       ev.preventDefault();
@@ -10790,7 +10969,6 @@ function showCodeDialog(container, title, panel, lineage, sources, opts) {
   if (canListen) document.addEventListener('keydown', onKey, true);
   container.appendChild(backdrop);
   if (typeof close.focus === 'function') close.focus();
-  return backdrop;
 }
 
 /**
@@ -12065,6 +12243,12 @@ function addPanel(spec, panel) {
     var filters = { type: 'filters', title: panel.title || 'Filters', dataRef: panel.dataRef };
     if (Array.isArray(panel.fields)) filters.fields = panel.fields;
     next.panels[panel.id] = filters;
+  } else if (panel.type === 'ggplot') {
+    // A ggplot panel (from the R converter): a self-contained isGGPlot spec that
+    // embeds its own data, plus the original R source. No dataRef or graph config.
+    var gg = { type: 'ggplot', title: panel.title || panel.id, spec: panel.spec };
+    if (typeof panel.code === 'string' && panel.code) gg.code = panel.code;
+    next.panels[panel.id] = gg;
   } else {
     next.panels[panel.id] = {
       title: panel.title || panel.id,
@@ -12245,6 +12429,9 @@ function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'title')) panel.title = changes.title;
   if (Object.prototype.hasOwnProperty.call(changes, 'dataRef')) panel.dataRef = changes.dataRef;
   if (Object.prototype.hasOwnProperty.call(changes, 'config')) panel.config = changes.config;
+  // ggplot panels: the re-converted isGGPlot spec and the edited R source.
+  if (Object.prototype.hasOwnProperty.call(changes, 'spec')) panel.spec = changes.spec;
+  if (Object.prototype.hasOwnProperty.call(changes, 'code')) panel.code = changes.code;
   if (Object.prototype.hasOwnProperty.call(changes, 'text')) panel.text = changes.text;
   ['compartment', 'annotation', 'style', 'align', 'valign', 'mode', 'param', 'placeholder', 'debounce',
     'src', 'fit', 'alt', 'href'].forEach(function (key) {
@@ -14679,6 +14866,7 @@ function createBuilder(target, options) {
     var createActions = [titleInput, editJsonBtn, undoBtn, redoBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }, 'cxb-bt-add'),
       button('+ Image', function () { doAddImage(); }, 'cxb-bt-add'),
+      button('📈 ggplot', function () { doAddGgplot(); }, 'cxb-bt-add'),
       addControlBtn, addFiltersBtn, addTransformBtn, addFdrBtn, addSignificanceBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
@@ -14857,6 +15045,162 @@ function createBuilder(target, options) {
     } else {
       rebuild();
     }
+  }
+
+  /**
+   * Add a ggplot panel from pasted R/ggplot2 code. The snippet (which must
+   * assign its plot to `g`) is sent to the server, which converts it in the
+   * SANDBOXED runtime (no network, writes confined to a throwaway temp dir,
+   * CPU/memory/output limits) into a self-contained isGGPlot spec — the panel's
+   * data and styling ride inside it. Running pasted R is the same trust boundary
+   * as authoring a data function, so this is gated to function authors.
+   * @returns {void}
+   * @private
+   */
+  function doAddGgplot() {
+    var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
+    if (typeof fetchImpl !== 'function') {
+      return showError('Converting pasted R needs a server connection.');
+    }
+    functionStatus().then(function (status) {
+      if (!status.languages || status.languages.indexOf('r') === -1 || !status.canAuthor) {
+        return showError('Pasting R/ggplot2 code is disabled on this server, or ' +
+          'restricted to administrators (it runs pasted R in the sandboxed runtime).');
+      }
+      openGgplotDialog(fetchImpl);
+    });
+  }
+
+  /**
+   * The "add a ggplot panel from R code" modal: a textarea, a Convert button
+   * that posts to `<baseUrl>/api/ggplot/convert`, and on success a new
+   * type:"ggplot" panel. Reuses the shared code-dialog styling.
+   * @param {Function} fetchImpl - The fetch implementation to use.
+   * @returns {void}
+   * @private
+   */
+  function openGgplotDialog(fetchImpl) {
+    var doc = container.ownerDocument || document;
+    var backdrop = doc.createElement('div');
+    backdrop.className = 'cxd-code-backdrop';
+    var dialog = doc.createElement('div');
+    dialog.className = 'cxd-code-dialog';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-label', 'Add a ggplot panel from R code');
+
+    var head = doc.createElement('div');
+    head.className = 'cxd-code-head';
+    var heading = doc.createElement('div');
+    heading.className = 'cxd-code-heading';
+    heading.textContent = 'Add a panel from R / ggplot2 code';
+    var close = doc.createElement('button');
+    close.type = 'button';
+    close.className = 'cxd-code-close';
+    close.textContent = '×';
+    close.setAttribute('aria-label', 'Close');
+    head.appendChild(heading);
+    head.appendChild(close);
+
+    var body = doc.createElement('div');
+    body.className = 'cxd-code-body';
+    var note = doc.createElement('div');
+    note.className = 'cxd-code-step-detail';
+    note.textContent = 'Paste ggplot2 code that assigns its plot to g. It is converted ' +
+      'on the server (sandboxed) into a native, interactive panel.';
+    var wrap = doc.createElement('div');
+    wrap.className = 'cxd-code-block';
+    var area = doc.createElement('textarea');
+    area.className = 'cxd-code-edit';
+    area.spellcheck = false;
+    area.rows = 10;
+    area.value = 'library(ggplot2)\n' +
+      'g <- ggplot(mtcars, aes(x = wt, y = mpg, color = factor(cyl))) +\n' +
+      '  geom_point(size = 2) +\n' +
+      '  labs(x = "Weight (1000 lbs)", y = "MPG", color = "Cylinders")\n';
+    wrap.appendChild(area);
+    var bar = doc.createElement('div');
+    bar.className = 'cxd-code-actions';
+    var statusEl = doc.createElement('span');
+    statusEl.className = 'cxd-code-status';
+    var addBtn = doc.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'cxd-code-apply';
+    addBtn.textContent = 'Convert & add';
+    bar.appendChild(statusEl);
+    bar.appendChild(addBtn);
+    body.appendChild(note);
+    body.appendChild(wrap);
+    body.appendChild(bar);
+    dialog.appendChild(head);
+    dialog.appendChild(body);
+    backdrop.appendChild(dialog);
+
+    function dismiss() {
+      if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+    }
+    close.addEventListener('click', dismiss);
+    backdrop.addEventListener('click', function (ev) { if (ev.target === backdrop) dismiss(); });
+
+    addBtn.addEventListener('click', function () {
+      var code = area.value;
+      if (!code.trim()) {
+        statusEl.className = 'cxd-code-status cxd-code-error';
+        statusEl.textContent = 'Paste some ggplot2 code first.';
+        return;
+      }
+      addBtn.disabled = true;
+      statusEl.className = 'cxd-code-status';
+      statusEl.textContent = 'Converting on the server…';
+      fetchImpl(baseUrl + '/api/ggplot/convert', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code })
+      }).then(function (res) {
+        return res.json().then(function (b) {
+          return { ok: res.ok, status: res.status, body: b };
+        });
+      }).then(function (r) {
+        addBtn.disabled = false;
+        if (!r.ok || !r.body || !r.body.spec) {
+          statusEl.className = 'cxd-code-status cxd-code-error';
+          statusEl.textContent = (r.body && r.body.detail) ||
+            ('Conversion failed (' + r.status + ').');
+          return;
+        }
+        var id = uniquePanelId(spec);
+        commit(addPanel(spec, { id: id, type: 'ggplot', title: ggplotPanelTitle(r.body.spec),
+          spec: r.body.spec, code: code, w: 6, h: 7 }), false);
+        selectedId = id;
+        dismiss();
+        if (liveHandle && liveHandle.addPanel && gridEl) {
+          lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items)
+            .then(function () { renderProps(); });
+        } else {
+          rebuild();
+        }
+        setMsg('Added a ggplot panel from R code.');
+      }, function (err) {
+        addBtn.disabled = false;
+        statusEl.className = 'cxd-code-status cxd-code-error';
+        statusEl.textContent = 'Error: ' + err;
+      });
+    });
+
+    container.appendChild(backdrop);
+    if (typeof area.focus === 'function') area.focus();
+  }
+
+  /**
+   * A panel title for a converted ggplot: its ggplot title if any, else a default.
+   * @param {object} ggSpec - The isGGPlot spec.
+   * @returns {string} The title.
+   * @private
+   */
+  function ggplotPanelTitle(ggSpec) {
+    if (ggSpec && ggSpec.labels && typeof ggSpec.labels.title === 'string' && ggSpec.labels.title) {
+      return ggSpec.labels.title;
+    }
+    return 'ggplot panel';
   }
 
   /**
@@ -15877,9 +16221,12 @@ function createBuilder(target, options) {
       on(dataBtn, 'pointerdown', stop);
       append(tools, [dataBtn, gear]);
       var codePanel = spec.panels[info.panelId] || {};
-      if (typeof codePanel.dataRef === 'string' &&
-          sourceLineage(spec.data || {}, codePanel.dataRef).some(function (ref) { return spec.data[ref].kind === 'function'; })) {
-        var codeBtn = iconBtn('</>', 'Code: edit the data function and the chart config', function (ev) {
+      var ggplotCode = codePanel.type === 'ggplot';
+      var functionCode = typeof codePanel.dataRef === 'string' &&
+        sourceLineage(spec.data || {}, codePanel.dataRef).some(function (ref) { return spec.data[ref].kind === 'function'; });
+      if (ggplotCode || functionCode) {
+        var codeBtn = iconBtn('</>', ggplotCode ? 'Code: the R ggplot2 code and the data'
+          : 'Code: edit the data function and the chart config', function (ev) {
           stop(ev);
           openCodeEditor(info.panelId);
         });
@@ -16327,6 +16674,23 @@ function createBuilder(target, options) {
     // variables) + annotation + widget style. One annotation per control.
     if (panel.type === 'control') {
       renderControlProps(panel, refs, titleField);
+      return;
+    }
+
+    // ggplot panels are self-contained charts converted from R (ggplot.as.list):
+    // their data and styling are baked into panel.spec, so there is no data
+    // binding or graph config to edit here. The builder edits the title (above)
+    // and alignment; the chart itself is re-authored in R and re-run through the
+    // cxd-ggplot tool. Show a short read-only note instead of the graph UI.
+    if (panel.type === 'ggplot') {
+      var ggLabel = el('span', 'cxb-tlabel');
+      ggLabel.textContent = 'ggplot';
+      var ggNote = el('div', 'cxb-tlabel');
+      ggNote.textContent = 'Converted from R (ggplot2); its data and styling are ' +
+        'baked in. Open </> Code on the panel to edit the R and re-convert it.';
+      // The "</> Code" recipe (R code + data) is on the panel's chrome toolbar,
+      // same as the data-function panels — not duplicated here.
+      append(propsGroup, [ggLabel, ggNote].concat(alignmentFields(panel)));
       return;
     }
 
@@ -17780,6 +18144,28 @@ function createBuilder(target, options) {
         commit(updatePanel(spec, panelId, { config: config }), true);
         rerenderPanel(panelId);
         return null;
+      },
+      // ggplot panels: re-convert the edited R on the server (sandboxed) and
+      // replace this panel's isGGPlot spec + source. Async → returns a Promise
+      // of the error message, or null on success.
+      onApplyGgplot: function (code) {
+        var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
+        if (typeof fetchImpl !== 'function') return 'No server connection to convert R.';
+        return fetchImpl(baseUrl + '/api/ggplot/convert', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code })
+        }).then(function (res) {
+          return res.json().then(function (b) { return { ok: res.ok, status: res.status, body: b }; });
+        }).then(function (r) {
+          if (!r.ok || !r.body || !r.body.spec) {
+            return (r.body && r.body.detail) || ('Conversion failed (' + r.status + ').');
+          }
+          if (!spec.panels[panelId]) return 'The panel no longer exists';
+          commit(updatePanel(spec, panelId, { spec: r.body.spec, code: code }), false);
+          rerenderPanel(panelId);
+          return null;
+        }, function (err) { return String((err && err.message) || err); });
       }
     });
   }

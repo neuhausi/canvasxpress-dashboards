@@ -432,13 +432,18 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["text", "control", "image", "filters"],
-          "description": "Panel variant: absent = graph; 'text' = free-form text; 'control' = annotation-filter widget; 'image' = a picture (URL or data: URI); 'filters' = a Filters panel (multi-field filter inspector with filter schemes). Text and control panels float free (may overlap graph panels)."
+          "enum": ["text", "control", "image", "filters", "ggplot"],
+          "description": "Panel variant: absent = graph; 'text' = free-form text; 'control' = annotation-filter widget; 'image' = a picture (URL or data: URI); 'filters' = a Filters panel (multi-field filter inspector with filter schemes); 'ggplot' = a self-contained ggplot chart converted from R (see `spec`). Text and control panels float free (may overlap graph panels)."
         },
         "title": { "type": "string" },
         "dataRef": { "type": "string" },
         "data": { "type": "object" },
         "config": { "type": "object" },
+        "spec": {
+          "type": "object",
+          "description": "ggplot panels only: a self-contained CanvasXpress `isGGPlot` spec (from the R `ggplot.as.list()` converter). It carries its own data frame, so a ggplot panel needs no dataRef/inline data. Must have `isGGPlot: true`.",
+          "properties": { "isGGPlot": { "const": true } }
+        },
         "src": {
           "type": "string",
           "description": "Image panels: the picture's URL or a data: URI. Empty renders a placeholder."

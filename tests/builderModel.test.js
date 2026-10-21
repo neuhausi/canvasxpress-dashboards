@@ -428,3 +428,17 @@ test('addQueryControl: parameter + query binding + param control in one step', f
   assert.throws(function () { addQueryControl(spec, { id: 'c3', param: 'g', choicesRef: 'nope', annotation: 'a', targetRef: 'expr' }); }, /choices/);
   assert.throws(function () { addQueryControl(spec, { id: 'c3', param: '1x', choicesRef: 'genes', annotation: 'a', targetRef: 'expr' }); }, /parameter/);
 });
+
+test('addPanel keeps a ggplot panel self-contained (spec + code, no dataRef/config)', function () {
+  var gg = { isGGPlot: true, data: [['Id', 'x'], ['a', 1]], geoms: 'GeomPoint' };
+  var next = addPanel(blankSpec('d', 'D'),
+    { id: 'p1', type: 'ggplot', title: 'Scatter', spec: gg, code: 'g <- ggplot(...)', w: 6, h: 7 });
+  var p = next.panels.p1;
+  assert.equal(p.type, 'ggplot');
+  assert.equal(p.title, 'Scatter');
+  assert.deepEqual(p.spec, gg);          // the isGGPlot spec survives (not dropped)
+  assert.equal(p.code, 'g <- ggplot(...)');
+  assert.equal(p.dataRef, undefined);    // no bogus data binding
+  assert.equal(p.config, undefined);     // no bogus graph config
+  assert.ok(validateSpec(next).valid, JSON.stringify(validateSpec(next).errors));
+});

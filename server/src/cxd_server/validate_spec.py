@@ -195,9 +195,14 @@ def _check_panels(panels: Any, data: Any, params: Any, errors: list) -> None:
             or panel.get("optionsFrom") is not None
             or panel.get("style") == "search")
         is_config_control = ptype == "control" and panel.get("mode") == "config"
+        # A ggplot panel carries a self-contained isGGPlot spec (embedding its own
+        # data) from the R converter, so it needs no dataRef / inline data.
+        is_ggplot = ptype == "ggplot"
+        if is_ggplot and not (_is_obj(panel.get("spec")) and panel.get("spec").get("isGGPlot") is True):
+            errors.append(at + ' of type "ggplot" requires a spec with isGGPlot:true')
 
         if (ptype not in ("text", "image", "filters") and not param_with_options
-                and not is_config_control
+                and not is_config_control and not is_ggplot
                 and panel.get("dataRef") is None and panel.get("data") is None):
             errors.append(at + " must have either a dataRef or inline data")
 

@@ -100,6 +100,12 @@ export function addPanel(spec, panel) {
     var filters = { type: 'filters', title: panel.title || 'Filters', dataRef: panel.dataRef };
     if (Array.isArray(panel.fields)) filters.fields = panel.fields;
     next.panels[panel.id] = filters;
+  } else if (panel.type === 'ggplot') {
+    // A ggplot panel (from the R converter): a self-contained isGGPlot spec that
+    // embeds its own data, plus the original R source. No dataRef or graph config.
+    var gg = { type: 'ggplot', title: panel.title || panel.id, spec: panel.spec };
+    if (typeof panel.code === 'string' && panel.code) gg.code = panel.code;
+    next.panels[panel.id] = gg;
   } else {
     next.panels[panel.id] = {
       title: panel.title || panel.id,
@@ -280,6 +286,9 @@ export function updatePanel(spec, panelId, changes) {
   if (Object.prototype.hasOwnProperty.call(changes, 'title')) panel.title = changes.title;
   if (Object.prototype.hasOwnProperty.call(changes, 'dataRef')) panel.dataRef = changes.dataRef;
   if (Object.prototype.hasOwnProperty.call(changes, 'config')) panel.config = changes.config;
+  // ggplot panels: the re-converted isGGPlot spec and the edited R source.
+  if (Object.prototype.hasOwnProperty.call(changes, 'spec')) panel.spec = changes.spec;
+  if (Object.prototype.hasOwnProperty.call(changes, 'code')) panel.code = changes.code;
   if (Object.prototype.hasOwnProperty.call(changes, 'text')) panel.text = changes.text;
   ['compartment', 'annotation', 'style', 'align', 'valign', 'mode', 'param', 'placeholder', 'debounce',
     'src', 'fit', 'alt', 'href'].forEach(function (key) {

@@ -132,9 +132,16 @@ export function validateSpec(spec) {
       // and recomputes across panels.
       var isTransformControl = panel.type === 'control' && panel.mode === 'transform';
       var isRangeParam = panel.type === 'control' && panel.mode === 'param' && panel.style === 'range';
+      // A ggplot panel is self-contained: its data frame lives inside the
+      // isGGPlot spec (from the R ggplot.as.list converter), so it needs no
+      // dataRef / inline data.
+      var isGgplotPanel = panel.type === 'ggplot';
+      if (isGgplotPanel && (panel.spec == null || panel.spec.isGGPlot !== true)) {
+        errors.push(at + ' of type "ggplot" requires a spec with isGGPlot:true');
+      }
       if (panel.type !== 'text' && panel.type !== 'image' && panel.type !== 'filters' &&
           !paramWithOptions && !isConfigControl && !isTransformControl && !isRangeParam &&
-          panel.dataRef == null && panel.data == null) {
+          !isGgplotPanel && panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
       if (panel.type === 'image') {
