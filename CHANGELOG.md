@@ -5,6 +5,39 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Example: Pins Board (live connector)
+A new **Pins Board (live connector)** example (`examples/pins-live.html`) reads a
+Posit **pins** board **live** through the real
+`cx_connectors.sources.pins_board.PinsBoardSource` — nothing baked. The demo
+publishes the Palmer Penguins table to a local `board_folder` with `pin_write()`
+(what an analyst produces), registers it as a `pins` connector source, and binds two
+species-colored scatters + a Species filter to `kind:"connector"`
+(`/connectors/api/data?source=pins-penguins`). The standalone page bridges the
+connector session from your app login (`prepareConnectors`). Point it at your own
+Connect / folder / S3 / URL board by changing the source config. Companion to the
+baked **Pins Board Overview**. Docs: [docs/pins-connector.md](docs/pins-connector.md).
+Needs `pip install "canvasxpress-connectors[pins]"`; degrades cleanly (the example is
+simply absent) when `pins` isn't installed.
+
+### Feature: author panels from code — ggplot2, R `canvasXpress`, Python `canvasxpress`
+Already write charts as code? Drop that code into a dashboard. One **📈 Code**
+button in the Builder opens a dialog with a **Source** picker — ggplot2, the R
+`canvasXpress` package, or the Python `canvasxpress` package (whichever the server
+offers). The snippet (which assigns its chart to `g`) runs **once, in the sandboxed
+runtime** (`POST /api/ggplot/convert` or `/api/cx/convert`, same OS sandbox + trust
+boundary as data functions — admin-gated, embedded-runtime-only, network denied).
+ggplot2 converts via `ggplot.as.list()` to a `type:"ggplot"` panel; `canvasXpress`
+code extracts the library's own native spec (the R widget's `$x` via htmlwidgets,
+or the Python object's `render_to_dict`) into a self-contained `type:"cxcode"`
+panel. Both render as ordinary interactive CanvasXpress charts (no new renderer),
+and the **`</> Code`** recipe keeps the source so it can be edited and re-converted.
+CLIs: `bin/cxd-ggplot` and the new `bin/cxd-cx` build a whole dashboard from a folder
+of snippets. `GET /api/cx/status` reports which languages have a CanvasXpress package
+installed, so a server with only R offers only R; the Python `canvasxpress` package
+is an optional runtime dependency. See [docs/code-panels.md](docs/code-panels.md),
+the **CanvasXpress Code Gallery** example (a ggplot2, an R and a Python panel), and a
+served `/llms.txt` so agents can discover the app's features and examples.
+
 ### Fix: PNG/PDF export failed with "Error parsing CSS component value, unexpected EOF"
 Exporting a dashboard (or a preview) to PNG/PDF threw
 `Export failed: Error parsing CSS component value, unexpected EOF` whenever the

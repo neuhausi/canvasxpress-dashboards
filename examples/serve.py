@@ -725,6 +725,15 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.set_locked(EXAMPLES_OWNER, ggplot_gallery["id"], True)
         print("  [seed] shipped dashboard: %s" % ggplot_gallery["id"])
 
+    # CanvasXpress Code Gallery: charts authored with the canvasXpress library
+    # (R / Python) and converted to self-contained "cxcode" panels (each
+    # panel.spec carries its own data), so the spec ships as-is — same as ggplot.
+    code_panels = load_spec("code-panels-gallery.spec.json")
+    if code_panels and code_panels["id"] not in saved:
+        dashboards.save_dashboard(EXAMPLES_OWNER, code_panels, now)
+        dashboards.set_locked(EXAMPLES_OWNER, code_panels["id"], True)
+        print("  [seed] shipped dashboard: %s" % code_panels["id"])
+
     # Live database explorers (GTEx tissue expression, GENCODE genome browser):
     # a param Control whose choices come from the database re-queries it on
     # every pick. Their sources stay live connectors — nothing moves into the
@@ -750,7 +759,7 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     # gencode/gtex/wp); only aggregate query results are served.
     for db_spec in ("gtex-explorer.spec.json", "gencode-explorer.spec.json",
                     "wp-explorer.spec.json", "tcga-explorer.spec.json",
-                    "ccle-explorer.spec.json"):
+                    "ccle-explorer.spec.json", "pins-live.spec.json"):
         explorer = load_spec(db_spec)
         if not explorer:
             continue
@@ -778,7 +787,7 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     # order — only when the stored order differs, so restarts don't churn.
     # A shipped example missing from the list keeps its own stamp.
     shipped_order = [
-        "biomarker-cohort", "genomics-oncology", "ggplot-gallery", "pins-overview", "heor-overview", "kpi-overview",
+        "biomarker-cohort", "genomics-oncology", "ggplot-gallery", "code-panels-gallery", "pins-overview", "pins-live", "heor-overview", "kpi-overview",
         "gtex-explorer", "gencode-explorer", "wp-explorer", "tcga-explorer", "ccle-explorer",
         "live-ops", "quality-metrics", "reproducible-bench", "sales-model", "sales-overview",
     ]
@@ -883,9 +892,55 @@ def _seed_demo_sources(store, user):
     """Every bridged user starts with the demo SQLite sources registered. The
     inventory/furniture sources come from the package (so the dev launcher and a
     server-only deploy seed identically); GTEx is a dev-only extra layered on top,
-    present only on machines that have gtex.sqlite."""
+    present only on machines that have gtex.sqlite; the pins board is a local
+    board_folder published once so the Pins Board (live) example reads it through
+    the real connector."""
     _demo.seed_demo_sources(store, user)
     _seed_gtex_sources(store, user)
+    _seed_pins_board_source(store, user)
+
+
+def _seed_pins_board_source(store, user):
+    """Publish the Palmer Penguins table to a local pins ``board_folder`` (what an
+    analyst's ``pin_write()`` produces) and register it as a ``pins`` connector
+    source, so the **Pins Board (live connector)** example reads it through the
+    real :class:`cx_connectors.sources.pins_board.PinsBoardSource` — no baked data.
+    Skipped cleanly when pandas / pins aren't installed, so the demo still runs."""
+    import json as _json
+    try:
+        import pandas as pd
+        import pins
+    except Exception:
+        return
+    csv_path = os.path.join(HERE, "data", "penguins.csv")
+    board_dir = os.path.join(DATA_DIR, "pins-board")
+    if not os.path.isfile(csv_path):
+        return
+    try:
+        os.makedirs(board_dir, exist_ok=True)
+        board = pins.board_folder(board_dir, allow_pickle_read=True)
+        if "penguins" not in board.pin_list():
+            measures = ["bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g"]
+            df = pd.read_csv(csv_path)
+            # Drop the few rows with missing measurements and fill missing sex —
+            # NaN is not JSON-serializable, so the connector read would 422 on it.
+            df = df.dropna(subset=measures)
+            df["sex"] = df["sex"].fillna("unknown")
+            df = df.reset_index(drop=True)
+            # A unique id first (so samples are distinct) + the categorical columns
+            # as annotations, then the numeric measurements the charts map.
+            df.insert(0, "penguin", ["p%03d" % (i + 1) for i in range(len(df))])
+            df = df[["penguin", "species", "island", "sex"] + measures]
+            board.pin_write(df, "penguins", type="csv")
+    except Exception as exc:  # noqa: BLE001 — a publish failure just disables the example
+        print("  [seed] NOTE: could not publish the local pins board (%s)" % exc)
+        return
+    cfg = _json.dumps({"board_type": "folder", "pin": "penguins",
+                       "config": {"path": board_dir}})
+    have = store.list_sources(user)
+    current = store.get_source(user, "pins-penguins") if "pins-penguins" in have else None
+    if not current or current.get("conn_url") != cfg:
+        store.save_source(user, "pins-penguins", cfg, "", kind="pins")
 
 
 # GTEx Gene Explorer database sources (read-only SQL into gtex.sqlite), so the
@@ -1018,6 +1073,14 @@ def _site_themes_css():
 def _site_theme_js():
     from fastapi.responses import FileResponse
     return FileResponse(os.path.join(HERE, "site-theme.js"), media_type="text/javascript")
+
+
+@app.get("/llms.txt", include_in_schema=False)
+def _llms_txt():
+    # Machine-readable map of the dashboards app for LLMs/agents: what it is, how
+    # to author panels from code, the docs, and the example galleries.
+    from fastapi.responses import FileResponse
+    return FileResponse(os.path.join(HERE, "llms.txt"), media_type="text/plain")
 
 
 # ---------------------------------------------------------------------------

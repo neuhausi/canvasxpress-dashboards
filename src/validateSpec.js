@@ -139,9 +139,18 @@ export function validateSpec(spec) {
       if (isGgplotPanel && (panel.spec == null || panel.spec.isGGPlot !== true)) {
         errors.push(at + ' of type "ggplot" requires a spec with isGGPlot:true');
       }
+      // A cxcode panel is self-contained too: it carries a native CanvasXpress
+      // spec ({data, config, …}) produced by the R `canvasXpress` converter
+      // (/api/cx/convert), so it needs no dataRef / inline data either.
+      var isCxCodePanel = panel.type === 'cxcode';
+      if (isCxCodePanel &&
+          (panel.spec == null || typeof panel.spec !== 'object' ||
+           panel.spec.config == null || typeof panel.spec.config !== 'object')) {
+        errors.push(at + ' of type "cxcode" requires a spec with a config object');
+      }
       if (panel.type !== 'text' && panel.type !== 'image' && panel.type !== 'filters' &&
           !paramWithOptions && !isConfigControl && !isTransformControl && !isRangeParam &&
-          !isGgplotPanel && panel.dataRef == null && panel.data == null) {
+          !isGgplotPanel && !isCxCodePanel && panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
       if (panel.type === 'image') {

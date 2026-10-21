@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en" data-cx-ui-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — Pins Board (live connector)</title>
+
+  <!-- CanvasXpress (peer dependency): rendering + broadcast coordination -->
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+
+  <!-- canvasxpress-dashboards renderer (UMD drop-in) -->
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    header { padding: 16px 24px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: var(--cx-ui-text-muted); font-size: 13px; }
+    #status { padding: 0 24px 4px; color: var(--cx-ui-text-muted); font-size: 12px; }
+    #dashboard { padding: 8px 24px 32px; }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <a class="cxd-open" href="../?open=pins-live">✏️ Open in Builder</a>
+    <span class="cxd-here">🎯 Pins Board (live connector)</span>
+  </nav>
+  <header>
+    <h1>Pins Board (live connector)</h1>
+    <p>The Palmer Penguins table was published to a Posit <b>pins</b> board with
+       <code>pin_write()</code> — exactly what an analyst produces — and is read back
+       here <b>live</b> through the real <code>PinsBoardSource</code> connector
+       (<code>GET /connectors/api/data?source=pins-penguins</code>). Nothing is baked:
+       the server reads the pin, reshapes it, and the browser only sees chart data.
+       You must be <b>signed in</b> to this app (the connector session is bridged from
+       your login). Open it inside the Builder to see the source wiring.</p>
+  </header>
+  <div id="status">starting…</div>
+  <div id="dashboard"></div>
+
+  <script>
+    function setStatus(m) { document.getElementById('status').textContent = m; }
+    // App base: "" in dev, "/dashboards" behind a reverse-proxy subpath.
+    var API_BASE = location.pathname.replace(/\/(examples\/)?[^/]*$/, '');
+
+    // Bridge the connectors session from this app's login: fetch a derived
+    // credential (guarded by the dashboards session) and sign into the connectors
+    // app behind the scenes. Runs once, before the first /connectors fetch.
+    var connectorsBridge = null;
+    function ensureConnectorsSession() {
+      if (connectorsBridge) return connectorsBridge;
+      connectorsBridge = fetch(API_BASE + '/api/connectors/credentials', { credentials: 'include' })
+        .then(function (r) {
+          if (r.status === 401) throw new Error('Please sign in to this app first.');
+          if (!r.ok) throw new Error('bridge: HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (cred) {
+          return fetch(API_BASE + '/connectors/auth/login', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cred)
+          });
+        })
+        .then(function (r) { if (!r.ok) throw new Error('login: HTTP ' + r.status); });
+      connectorsBridge.catch(function () { connectorsBridge = null; });  // retry next time
+      return connectorsBridge;
+    }
+
+    fetch('./pins-live.spec.json')
+      .then(function (r) { return r.json(); })
+      .then(function (spec) {
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard', {
+          CanvasXpress: window.CanvasXpress, baseUrl: API_BASE, cache: new Map(),
+          prepareConnectors: ensureConnectorsSession, prepareLive: ensureConnectorsSession
+        });
+      })
+      .then(function (handle) {
+        return handle.ready.then(function () {
+          setStatus('Ready — read live from the pins board via the connector. Pick a species to filter.');
+          console.log('Rendered', handle.instances.length, 'instances in', handle.broadcastGroup);
+        });
+      })
+      .catch(function (err) { setStatus('Failed: ' + err.message); console.error(err); });
+  </script>
+</body>
+</html>

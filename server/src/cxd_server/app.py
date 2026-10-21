@@ -38,6 +38,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from . import mcp_bridge
 from . import billing
 from . import ggplot_convert
+from . import cx_convert
 from . import ask as ask_qa
 from .join import join_data
 from .billing import EntitlementStore, TokenPool
@@ -2707,6 +2708,60 @@ def create_dashboards_app(
             raise HTTPException(status_code=exc.status, detail=str(exc))
         note(request, duration_ms=int((time.monotonic() - started) * 1000))
         print("[ggplot] user=%s ok" % user, flush=True)
+        return {"spec": spec}
+
+    @app.get("/api/cx/status")
+    def cx_convert_status(request: Request):
+        """Whether paste-to-panel (R `canvasXpress` / Python `canvasxpress` code)
+        is available to the caller: the runtime is on, runs on this host, and the
+        caller may run code (function authors). `languages` lists the subset whose
+        interpreter + CanvasXpress package actually import here."""
+        user = request.session.get("user")
+        return {
+            "available": cx_convert.available(functions),
+            "canRun": bool(user) and can_author_functions(user),
+            "languages": (cx_convert.available_languages(functions)
+                          if cx_convert.available(functions) else []),
+        }
+
+    @app.post("/api/cx/convert")
+    async def cx_convert_endpoint(request: Request):
+        """Convert pasted R `canvasXpress` code (assigning `g`) into a native
+        CanvasXpress panel spec, in the sandboxed embedded runtime. Same trust
+        boundary as authoring a data function: arbitrary pasted code runs only
+        for function authors (admins by default) and only on the embedded
+        runtime (never when a standalone function runtime is configured)."""
+        user = require_user(request)
+        if not cx_convert.available(functions):
+            raise HTTPException(
+                status_code=403,
+                detail=("CanvasXpress code conversion is unavailable: set "
+                        "CXD_FUNCTIONS to admin or users; it runs on the embedded "
+                        "runtime, not with a standalone function runtime."))
+        if not can_author_functions(user):
+            raise HTTPException(
+                status_code=403,
+                detail="Your role does not allow running pasted code: "
+                       + PERMISSIONS["function.run"].lower())
+        try:
+            body = await request.json()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Request body must be JSON")
+        code = body.get("code") if isinstance(body, dict) else None
+        language = body.get("language", "r") if isinstance(body, dict) else "r"
+        # The code is not stored; a hash identifies which snippet ran.
+        note(request, language=language,
+             code_sha256=(hashlib.sha256(code.encode("utf-8")).hexdigest()[:16]
+                          if isinstance(code, str) else None))
+        started = time.monotonic()
+        try:
+            spec = await run_in_threadpool(cx_convert.convert, code, functions, language)
+        except cx_convert.CxConvertError as exc:
+            note(request, duration_ms=int((time.monotonic() - started) * 1000),
+                 error=str(exc)[:200])
+            raise HTTPException(status_code=exc.status, detail=str(exc))
+        note(request, duration_ms=int((time.monotonic() - started) * 1000))
+        print("[cx-convert] user=%s language=%s ok" % (user, language), flush=True)
         return {"spec": spec}
 
     # ---- audit log (admin only; reading it is itself audited) ----

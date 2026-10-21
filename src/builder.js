@@ -373,7 +373,7 @@ export function createBuilder(target, options) {
     var createActions = [titleInput, editJsonBtn, undoBtn, redoBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }, 'cxb-bt-add'),
       button('+ Image', function () { doAddImage(); }, 'cxb-bt-add'),
-      button('📈 ggplot', function () { doAddGgplot(); }, 'cxb-bt-add'),
+      button('📈 Code', function () { doAddCodePanel(); }, 'cxb-bt-add'),
       addControlBtn, addFiltersBtn, addTransformBtn, addFdrBtn, addSignificanceBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
@@ -554,52 +554,102 @@ export function createBuilder(target, options) {
     }
   }
 
+  // Starter snippets for each "chart from code" source. Each must assign its
+  // chart to `g`.
+  var CODE_SNIPPETS = {
+    ggplot: 'library(ggplot2)\n' +
+      'g <- ggplot(mtcars, aes(x = wt, y = mpg, color = factor(cyl))) +\n' +
+      '  geom_point(size = 2) +\n' +
+      '  labs(x = "Weight (1000 lbs)", y = "MPG", color = "Cylinders")\n',
+    'cx-r': 'library(canvasXpress)\n' +
+      'y <- matrix(c(10, 20, 30, 40, 50, 60), nrow = 2, byrow = TRUE,\n' +
+      '            dimnames = list(c("A", "B"), c("c1", "c2", "c3")))\n' +
+      'g <- canvasXpress(data = y, graphType = "Bar")\n',
+    'cx-python': 'from canvasxpress.canvas import CanvasXpress\n' +
+      'from canvasxpress.data.keypair import CXDictData\n' +
+      'g = CanvasXpress(\n' +
+      "    data=CXDictData({'y': {'vars': ['A', 'B'], 'smps': ['c1', 'c2', 'c3'],\n" +
+      "                           'data': [[10, 20, 30], [40, 50, 60]]}}),\n" +
+      "    config={'graphType': 'Bar'})\n"
+  };
+
+  // The three code → panel sources, each describing its label, conversion
+  // endpoint, resulting panel type, and language. `cx-*` go through
+  // /api/cx/convert; `ggplot` through /api/ggplot/convert.
+  var CODE_SOURCES = [
+    { key: 'ggplot', label: 'ggplot2 (R)', endpoint: '/api/ggplot/convert',
+      panelType: 'ggplot', language: 'r' },
+    { key: 'cx-r', label: 'canvasXpress (R)', endpoint: '/api/cx/convert',
+      panelType: 'cxcode', language: 'r' },
+    { key: 'cx-python', label: 'canvasXpress (Python)', endpoint: '/api/cx/convert',
+      panelType: 'cxcode', language: 'python' }
+  ];
+
   /**
-   * Add a ggplot panel from pasted R/ggplot2 code. The snippet (which must
-   * assign its plot to `g`) is sent to the server, which converts it in the
+   * Add a panel from pasted chart code — ggplot2, R `canvasXpress`, or Python
+   * `canvasxpress`. The one dialog offers whichever sources this server can run.
+   * The snippet (which must assign its chart to `g`) is converted in the
    * SANDBOXED runtime (no network, writes confined to a throwaway temp dir,
-   * CPU/memory/output limits) into a self-contained isGGPlot spec — the panel's
-   * data and styling ride inside it. Running pasted R is the same trust boundary
-   * as authoring a data function, so this is gated to function authors.
+   * CPU/memory/output limits). Running pasted code is the same trust boundary as
+   * authoring a data function, so it is gated to function authors.
    * @returns {void}
    * @private
    */
-  function doAddGgplot() {
+  function doAddCodePanel() {
     var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
     if (typeof fetchImpl !== 'function') {
-      return showError('Converting pasted R needs a server connection.');
+      return showError('Converting pasted code needs a server connection.');
     }
-    functionStatus().then(function (status) {
-      if (!status.languages || status.languages.indexOf('r') === -1 || !status.canAuthor) {
-        return showError('Pasting R/ggplot2 code is disabled on this server, or ' +
-          'restricted to administrators (it runs pasted R in the sandboxed runtime).');
-      }
-      openGgplotDialog(fetchImpl);
-    });
+    // Soft-fetch a status endpoint: any failure (404 on an old server, network)
+    // becomes "unavailable" rather than an error.
+    function status(path) {
+      return fetchImpl(baseUrl + path, { credentials: 'include' })
+        .then(function (res) { return res.ok ? res.json() : {}; }, function () { return {}; })
+        .then(function (s) { return s || {}; });
+    }
+    Promise.all([status('/api/ggplot/status'), status('/api/cx/status')])
+      .then(function (results) {
+        var gg = results[0];
+        var cx = results[1];
+        var cxLangs = (cx && cx.languages) || [];
+        var available = CODE_SOURCES.filter(function (source) {
+          if (source.key === 'ggplot') return !!(gg.available && gg.canRun);
+          return !!(cx.available && cx.canRun && cxLangs.indexOf(source.language) !== -1);
+        });
+        if (!available.length) {
+          return showError('Adding a panel from code is disabled on this server, or ' +
+            'restricted to administrators (it runs pasted code in the sandboxed runtime).');
+        }
+        openCodePanelDialog(fetchImpl, available);
+      });
   }
 
   /**
-   * The "add a ggplot panel from R code" modal: a textarea, a Convert button
-   * that posts to `<baseUrl>/api/ggplot/convert`, and on success a new
-   * type:"ggplot" panel. Reuses the shared code-dialog styling.
+   * The unified "add a panel from code" modal: a source picker (ggplot2 / R
+   * canvasXpress / Python canvasxpress, whichever the server offers), a textarea,
+   * and a Convert button that posts to the source's endpoint and, on success,
+   * adds the matching panel (`ggplot` or `cxcode`). Reuses the shared code-dialog
+   * styling.
    * @param {Function} fetchImpl - The fetch implementation to use.
+   * @param {object[]} sources - The available CODE_SOURCES entries.
    * @returns {void}
    * @private
    */
-  function openGgplotDialog(fetchImpl) {
+  function openCodePanelDialog(fetchImpl, sources) {
     var doc = container.ownerDocument || document;
+    var source = sources[0];                 // current selection
     var backdrop = doc.createElement('div');
     backdrop.className = 'cxd-code-backdrop';
     var dialog = doc.createElement('div');
     dialog.className = 'cxd-code-dialog';
     dialog.setAttribute('role', 'dialog');
-    dialog.setAttribute('aria-label', 'Add a ggplot panel from R code');
+    dialog.setAttribute('aria-label', 'Add a panel from code');
 
     var head = doc.createElement('div');
     head.className = 'cxd-code-head';
     var heading = doc.createElement('div');
     heading.className = 'cxd-code-heading';
-    heading.textContent = 'Add a panel from R / ggplot2 code';
+    heading.textContent = 'Add a panel from code';
     var close = doc.createElement('button');
     close.type = 'button';
     close.className = 'cxd-code-close';
@@ -612,19 +662,49 @@ export function createBuilder(target, options) {
     body.className = 'cxd-code-body';
     var note = doc.createElement('div');
     note.className = 'cxd-code-step-detail';
-    note.textContent = 'Paste ggplot2 code that assigns its plot to g. It is converted ' +
+    note.textContent = 'Paste chart code that assigns its plot to g. It is converted ' +
       'on the server (sandboxed) into a native, interactive panel.';
+    body.appendChild(note);
+
+    // Source picker — only when the server offers more than one source.
+    var sourceSel = null;
+    if (sources.length > 1) {
+      var sourceRow = doc.createElement('label');
+      sourceRow.className = 'cxd-code-step-detail';
+      sourceRow.textContent = 'Source: ';
+      sourceSel = doc.createElement('select');
+      sources.forEach(function (s) {
+        var o = doc.createElement('option');
+        o.value = s.key;
+        o.textContent = s.label;
+        sourceSel.appendChild(o);
+      });
+      sourceSel.value = source.key;
+      sourceRow.appendChild(sourceSel);
+      body.appendChild(sourceRow);
+    }
+
     var wrap = doc.createElement('div');
     wrap.className = 'cxd-code-block';
     var area = doc.createElement('textarea');
     area.className = 'cxd-code-edit';
     area.spellcheck = false;
     area.rows = 10;
-    area.value = 'library(ggplot2)\n' +
-      'g <- ggplot(mtcars, aes(x = wt, y = mpg, color = factor(cyl))) +\n' +
-      '  geom_point(size = 2) +\n' +
-      '  labs(x = "Weight (1000 lbs)", y = "MPG", color = "Cylinders")\n';
+    area.value = CODE_SNIPPETS[source.key] || '';
     wrap.appendChild(area);
+
+    // Switching source swaps the starter snippet, but never clobbers edits the
+    // user has already made (only replace an untouched default).
+    if (sourceSel) {
+      sourceSel.addEventListener('change', function () {
+        if (area.value === (CODE_SNIPPETS[source.key] || '')) {
+          area.value = CODE_SNIPPETS[sourceSel.value] || '';
+        }
+        for (var i = 0; i < sources.length; i++) {
+          if (sources[i].key === sourceSel.value) { source = sources[i]; break; }
+        }
+      });
+    }
     var bar = doc.createElement('div');
     bar.className = 'cxd-code-actions';
     var statusEl = doc.createElement('span');
@@ -635,7 +715,6 @@ export function createBuilder(target, options) {
     addBtn.textContent = 'Convert & add';
     bar.appendChild(statusEl);
     bar.appendChild(addBtn);
-    body.appendChild(note);
     body.appendChild(wrap);
     body.appendChild(bar);
     dialog.appendChild(head);
@@ -653,16 +732,17 @@ export function createBuilder(target, options) {
       var code = area.value;
       if (!code.trim()) {
         statusEl.className = 'cxd-code-status cxd-code-error';
-        statusEl.textContent = 'Paste some ggplot2 code first.';
+        statusEl.textContent = 'Paste some code first.';
         return;
       }
       addBtn.disabled = true;
       statusEl.className = 'cxd-code-status';
       statusEl.textContent = 'Converting on the server…';
-      fetchImpl(baseUrl + '/api/ggplot/convert', {
+      var chosen = source;                   // capture for this conversion
+      fetchImpl(baseUrl + chosen.endpoint, {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code })
+        body: JSON.stringify({ code: code, language: chosen.language })
       }).then(function (res) {
         return res.json().then(function (b) {
           return { ok: res.ok, status: res.status, body: b };
@@ -676,8 +756,12 @@ export function createBuilder(target, options) {
           return;
         }
         var id = uniquePanelId(spec);
-        commit(addPanel(spec, { id: id, type: 'ggplot', title: ggplotPanelTitle(r.body.spec),
-          spec: r.body.spec, code: code, w: 6, h: 7 }), false);
+        var panel = chosen.panelType === 'ggplot'
+          ? { id: id, type: 'ggplot', title: ggplotPanelTitle(r.body.spec),
+              spec: r.body.spec, code: code, w: 6, h: 7 }
+          : { id: id, type: 'cxcode', title: cxCodePanelTitle(r.body.spec),
+              spec: r.body.spec, code: code, language: chosen.language, w: 6, h: 7 };
+        commit(addPanel(spec, panel), false);
         selectedId = id;
         dismiss();
         if (liveHandle && liveHandle.addPanel && gridEl) {
@@ -686,7 +770,7 @@ export function createBuilder(target, options) {
         } else {
           rebuild();
         }
-        setMsg('Added a ggplot panel from R code.');
+        setMsg('Added a panel from ' + chosen.label + ' code.');
       }, function (err) {
         addBtn.disabled = false;
         statusEl.className = 'cxd-code-status cxd-code-error';
@@ -709,6 +793,22 @@ export function createBuilder(target, options) {
       return ggSpec.labels.title;
     }
     return 'ggplot panel';
+  }
+
+  /**
+   * A panel title for a converted canvasXpress chart: its config title if any,
+   * else a default.
+   * @param {object} cxSpec - The native CanvasXpress spec.
+   * @returns {string} The title.
+   * @private
+   */
+  function cxCodePanelTitle(cxSpec) {
+    var cfg = cxSpec && cxSpec.config;
+    if (cfg && typeof cfg.title === 'string' && cfg.title) return cfg.title;
+    if (cfg && typeof cfg.graphType === 'string' && cfg.graphType) {
+      return cfg.graphType + ' panel';
+    }
+    return 'CanvasXpress panel';
   }
 
   /**
@@ -1730,10 +1830,12 @@ export function createBuilder(target, options) {
       append(tools, [dataBtn, gear]);
       var codePanel = spec.panels[info.panelId] || {};
       var ggplotCode = codePanel.type === 'ggplot';
+      var cxCode = codePanel.type === 'cxcode';
       var functionCode = typeof codePanel.dataRef === 'string' &&
         sourceLineage(spec.data || {}, codePanel.dataRef).some(function (ref) { return spec.data[ref].kind === 'function'; });
-      if (ggplotCode || functionCode) {
+      if (ggplotCode || cxCode || functionCode) {
         var codeBtn = iconBtn('</>', ggplotCode ? 'Code: the R ggplot2 code and the data'
+          : cxCode ? 'Code: the R canvasXpress code'
           : 'Code: edit the data function and the chart config', function (ev) {
           stop(ev);
           openCodeEditor(info.panelId);
@@ -2197,8 +2299,25 @@ export function createBuilder(target, options) {
       ggNote.textContent = 'Converted from R (ggplot2); its data and styling are ' +
         'baked in. Open </> Code on the panel to edit the R and re-convert it.';
       // The "</> Code" recipe (R code + data) is on the panel's chrome toolbar,
-      // same as the data-function panels — not duplicated here.
-      append(propsGroup, [ggLabel, ggNote].concat(alignmentFields(panel)));
+      // same as the data-function panels — not duplicated here. No alignment
+      // controls: the chart canvas fills the cell, so align/valign is a no-op.
+      append(propsGroup, [ggLabel, ggNote]);
+      return;
+    }
+
+    // cxcode panels are self-contained too: a native CanvasXpress spec converted
+    // from R `canvasXpress` code. Same read-only treatment as ggplot panels.
+    if (panel.type === 'cxcode') {
+      var cxLangLabel = panel.language === 'python' ? 'Python' : 'R';
+      var cxPkgLabel = panel.language === 'python' ? 'canvasxpress' : 'canvasXpress';
+      var cxLabel = el('span', 'cxb-tlabel');
+      cxLabel.textContent = 'CanvasXpress (' + cxLangLabel + ')';
+      var cxNote = el('div', 'cxb-tlabel');
+      cxNote.textContent = 'Converted from ' + cxLangLabel + ' (' + cxPkgLabel +
+        ' package); its data and styling are baked in. Open </> Code on the panel ' +
+        'to edit the ' + cxLangLabel + ' and re-convert it.';
+      // No alignment controls: the chart canvas fills the cell (align/valign no-op).
+      append(propsGroup, [cxLabel, cxNote]);
       return;
     }
 
@@ -3663,6 +3782,29 @@ export function createBuilder(target, options) {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code: code })
+        }).then(function (res) {
+          return res.json().then(function (b) { return { ok: res.ok, status: res.status, body: b }; });
+        }).then(function (r) {
+          if (!r.ok || !r.body || !r.body.spec) {
+            return (r.body && r.body.detail) || ('Conversion failed (' + r.status + ').');
+          }
+          if (!spec.panels[panelId]) return 'The panel no longer exists';
+          commit(updatePanel(spec, panelId, { spec: r.body.spec, code: code }), false);
+          rerenderPanel(panelId);
+          return null;
+        }, function (err) { return String((err && err.message) || err); });
+      },
+      // cxcode panels: re-convert the edited R `canvasXpress` code on the server
+      // (sandboxed) and replace this panel's native spec + source. Async → returns
+      // a Promise of the error message, or null on success.
+      onApplyCxCode: function (code) {
+        var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
+        if (typeof fetchImpl !== 'function') return 'No server connection to convert code.';
+        var panelLang = (spec.panels[panelId] && spec.panels[panelId].language) || 'r';
+        return fetchImpl(baseUrl + '/api/cx/convert', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code, language: panelLang })
         }).then(function (res) {
           return res.json().then(function (b) { return { ok: res.ok, status: res.status, body: b }; });
         }).then(function (r) {

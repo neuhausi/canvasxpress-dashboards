@@ -1251,7 +1251,14 @@ export function renderDashboard(spec, target, options) {
     // the spec, so it bypasses the dataRef / prepare pipeline entirely and uses
     // the single-object constructor form — the only path that routes to the
     // engine's cxplot (ggplot) renderer (new CX(string, data, config) does not).
-    if (panel && panel.type === 'ggplot' && panel.spec && panel.spec.isGGPlot) {
+    // A cxcode panel is the same shape — a self-contained native CanvasXpress
+    // spec ({data, config, …}) produced by the R `canvasXpress` converter — but
+    // its spec is NOT isGGPlot; the single-object constructor renders it as an
+    // ordinary chart. Both render through this one block.
+    var selfContainedSpec = panel && panel.spec &&
+      ((panel.type === 'ggplot' && panel.spec.isGGPlot) ||
+       (panel.type === 'cxcode' && panel.spec.config));
+    if (selfContainedSpec) {
       // Give it the same "</> Code" recipe button the data-function panels get:
       // the R source and the converted data frame, shown read-only.
       if (cell.header && panel.showCode !== false) {
@@ -3998,6 +4005,26 @@ export function showCodeDialog(container, title, panel, lineage, sources, opts) 
         : 'Written in R with ggplot2 and converted with ggplot.as.list() (canvasXpress R package).');
     codeBlock(codeStep, String(panel.code || ''),
       ggEditable ? function (code) { return opts.onApplyGgplot(code); } : null);
+    dialog.appendChild(body);
+    backdrop.appendChild(dialog);
+    wireCodeDialog(container, backdrop, close);
+    return backdrop;
+  }
+
+  // cxcode panels keep their R `canvasXpress` source the same way: show it, and
+  // (in the builder for function authors) let it be edited + re-converted.
+  if (panel.type === 'cxcode') {
+    var cxEditable = editable && typeof opts.onApplyCxCode === 'function';
+    var cxLangName = panel.language === 'python' ? 'Python' : 'R';
+    var cxPkgName = panel.language === 'python' ? 'canvasxpress' : 'canvasXpress';
+    var cxStep = step('The CanvasXpress code (' + cxLangName + ')',
+      cxEditable
+        ? 'Edit the ' + cxLangName + ' ' + cxPkgName + ' code (assign the chart to g) and ' +
+          'Apply — it is re-converted on the server in the sandboxed runtime and this panel updates.'
+        : 'Written in ' + cxLangName + ' with the ' + cxPkgName +
+          ' package; converted to a native spec on the server.');
+    codeBlock(cxStep, String(panel.code || ''),
+      cxEditable ? function (code) { return opts.onApplyCxCode(code); } : null);
     dialog.appendChild(body);
     backdrop.appendChild(dialog);
     wireCodeDialog(container, backdrop, close);

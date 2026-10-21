@@ -1,0 +1,31 @@
+# CanvasXpress Dashboards
+
+> canvasxpress-dashboards is a no-code dashboard builder and a portable JSON spec for composing, coordinating, persisting and sharing linked CanvasXpress charts. Panels bind to datasets, database/connector sources, live streams, or chart code; selections and filters coordinate across every linked panel; a whole board saves as a spec and renders with one call. It ships a Python server (cxd_server) with accounts, governance, sharing, scheduling and an audit log.
+
+## Authoring charts from code
+
+A panel can be authored directly from chart code and converted — once, on the server, in a sandboxed runtime (network denied, filesystem confined, resource-limited; gated to function-author/admin accounts) — into a native, interactive CanvasXpress panel. Three sources are supported through one **Code** button in the Builder (and matching CLI tools):
+
+- ggplot2 (R) — converted via the canvasXpress R package's `ggplot.as.list()`; `type:"ggplot"` panel. CLI: `bin/cxd-ggplot`.
+- canvasXpress (R) — a `canvasXpress(...)` call; its native spec is extracted; `type:"cxcode"` panel. CLI: `bin/cxd-cx`.
+- canvasXpress (Python) — a `CanvasXpress(...)` object from the `canvasxpress` package; same `type:"cxcode"` panel.
+
+Endpoints: `POST /api/ggplot/convert` and `POST /api/cx/convert` (`{code, language:"r"|"python"}`); `GET /api/cx/status` reports which languages have a CanvasXpress package installed. See the docs below.
+
+## Docs
+
+- [CanvasXpress code panels](https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/code-panels.md): author panels from R `canvasXpress` or Python `canvasxpress` code (or a folder, with `cxd-cx`).
+- [ggplot panels](https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/ggplot-panels.md): build a dashboard from a folder of R/ggplot2 code.
+- [Reproducibility](https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/reproducibility.md): per-panel method strings + a reproducible bundle (spec, data, R/Python, methods).
+- [Science panels](https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/science-panels.md): auto-detect survival / oncoprint / Manhattan / volcano / heatmap and suggest the matching panel.
+- [Live streaming](https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/live-streaming.md): subscribe panels to Server-Sent-Events streams without code.
+
+## Example dashboards
+
+- [CanvasXpress Code Gallery](https://canvasxpress.org/dashboards/examples/code-panels-gallery.html): three charts authored in code — a ggplot2 scatter, an R `canvasXpress` bar chart and a Python `canvasxpress` heatmap — each converted to a native, interactive panel.
+- [ggplot Gallery](https://canvasxpress.org/dashboards/examples/ggplot-gallery.html): four ggplot2 charts converted to native CanvasXpress panels.
+- [Pins Board (live connector)](https://canvasxpress.org/dashboards/examples/pins-live.html): a Posit pins board read live through the `PinsBoardSource` connector (not baked) — two species-colored scatters + a Species filter. See [docs/pins-connector.md](https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/pins-connector.md).
+- [Cohort Explorer](https://canvasxpress.org/dashboards/examples/cohort-explorer.html): linked sources, joins and a shared Filters panel.
+- [Cross-Filter](https://canvasxpress.org/dashboards/examples/cross-filter-demo.html): click a mark and every linked panel responds (focus / highlight / ghost / filter).
+- [Live Ops](https://canvasxpress.org/dashboards/examples/live-ops.html): panels that follow Server-Sent-Events streams.
+- [All examples](https://canvasxpress.org/dashboards/examples/index.html): the full example gallery.

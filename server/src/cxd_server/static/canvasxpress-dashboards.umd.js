@@ -50,11 +50,11 @@ var dashboardCss = [
   // border instead of on it, with room so the text never runs under it. Scoped to our roots (a
   // host page keeps its own selects); the engine's own selects (customizer, data filter,
   // its classed dropdowns) keep their styling.
-  ':is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay) select:not([multiple]):not([size]):not([class*="cX-"]):not([class*="CanvasXpress"]):not(:where([class*="cX-Customizer"], [class*="cX-DataFilter"]) select) {',
+  ':is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay, .cxd-code-backdrop) select:not([multiple]):not([size]):not([class*="cX-"]):not([class*="CanvasXpress"]):not(:where([class*="cX-Customizer"], [class*="cX-DataFilter"]) select) {',
   '  -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 30px; cursor: pointer;',
   '  background-image: linear-gradient(45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%), linear-gradient(-45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%);',
   '  background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }',
-  '@media (forced-colors: active) { :is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay) select { -webkit-appearance: auto; appearance: auto; background-image: none; } }',
+  '@media (forced-colors: active) { :is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay, .cxd-code-backdrop) select { -webkit-appearance: auto; appearance: auto; background-image: none; } }',
   // --cxd-ctrl-border is NOT aliased here: it falls back to --cxd-border at the use site, so it
   // follows a dark theme's --cxd-border (a custom property resolves where it is declared).
   '.cxd-dashboard { box-sizing: border-box; width: 100%; }',
@@ -94,6 +94,12 @@ var dashboardCss = [
   '.cxd-code-step { padding-top: 10px; }',
   '.cxd-code-step-title { font-weight: 600; }',
   '.cxd-code-step-detail { color: var(--cxd-muted); font-size: 13px; margin-top: 2px; }',
+  // The source / language picker in the code dialog: the box (padding, border,
+  // radius, surface, text, font) to match the dashboards dropdowns — the shared
+  // :is(...) select rule above only adds the appearance + chevron.
+  '.cxd-code-backdrop select { margin-left: 6px; padding: 5px 30px 5px 8px; border: 1px solid var(--cxd-border);',
+  '  border-radius: var(--cx-radius-md); background: var(--cx-ui-surface); color: var(--cx-ui-text); font: inherit; }',
+  '.cxd-code-backdrop select:focus { outline: 2px solid var(--cx-ui-focus); outline-offset: 1px; }',
   '.cxd-code-block { position: relative; margin-top: 6px; }',
   '.cxd-code-block pre { margin: 0; padding: 10px 12px; overflow: auto; max-height: 340px; border-radius: var(--cx-radius-md);',
   '  border: 1px solid var(--cxd-border); background: var(--cxd-title-bg);',
@@ -5570,9 +5576,18 @@ function validateSpec(spec) {
       if (isGgplotPanel && (panel.spec == null || panel.spec.isGGPlot !== true)) {
         errors.push(at + ' of type "ggplot" requires a spec with isGGPlot:true');
       }
+      // A cxcode panel is self-contained too: it carries a native CanvasXpress
+      // spec ({data, config, …}) produced by the R `canvasXpress` converter
+      // (/api/cx/convert), so it needs no dataRef / inline data either.
+      var isCxCodePanel = panel.type === 'cxcode';
+      if (isCxCodePanel &&
+          (panel.spec == null || typeof panel.spec !== 'object' ||
+           panel.spec.config == null || typeof panel.spec.config !== 'object')) {
+        errors.push(at + ' of type "cxcode" requires a spec with a config object');
+      }
       if (panel.type !== 'text' && panel.type !== 'image' && panel.type !== 'filters' &&
           !paramWithOptions && !isConfigControl && !isTransformControl && !isRangeParam &&
-          !isGgplotPanel && panel.dataRef == null && panel.data == null) {
+          !isGgplotPanel && !isCxCodePanel && panel.dataRef == null && panel.data == null) {
         errors.push(at + ' must have either a dataRef or inline data');
       }
       if (panel.type === 'image') {
@@ -6311,6 +6326,118 @@ function buildGgplotDashboardSpec(conversions, opts) {
     schemaVersion: '1.3',
     id: options.id || 'ggplot-dashboard',
     title: options.title || 'ggplot Dashboard',
+    version: 1,
+    theme: options.theme || 'auto',
+    layout: {
+      cols: cols,
+      rowHeight: options.rowHeight || 40,
+      gap: options.gap || 12,
+      items: items
+    },
+    data: {},
+    panels: panels
+  };
+}
+
+/* ==== src/codePanelsDashboard.js ==== */
+/**
+ * codePanelsDashboard — assemble a dashboard spec from R `canvasXpress` code
+ * conversions.
+ *
+ * The sibling of {@link module:ggplotDashboard}. Where that lays out
+ * self-contained `isGGPlot` specs (from ggplot2), this lays out native
+ * CanvasXpress specs (`{data, config, …}`, from the R `canvasXpress` package's
+ * own `canvasXpress(...)` call) as a grid of `type:"cxcode"` panels that
+ * {@link module:renderDashboard} draws as ordinary, interactive CanvasXpress
+ * charts. No dataRef / inline data is needed — the data rides inside each spec.
+ *
+ * @module codePanelsDashboard
+ */
+
+/**
+ * One converted canvasXpress chart.
+ * @typedef {object} CodePanelConversion
+ * @property {string} key - Stable panel id (kebab-case).
+ * @property {string} [title] - Panel title (defaults to the key).
+ * @property {object} spec - A native CanvasXpress spec (`{data, config, …}`,
+ *   with a `config` object and embedded `data`), exactly as the R
+ *   `canvasXpress()` widget emits it (its `$x`).
+ * @property {string} [code] - The original R source for this chart, kept so the
+ *   dashboard can show how it was made (the "</> Code" recipe).
+ */
+
+/**
+ * Build a dashboard spec that renders a collection of canvasXpress charts as a
+ * grid of self-contained `cxcode` panels.
+ *
+ * @param {CodePanelConversion[]} conversions - The converted charts, in order.
+ * @param {object} [opts] - Options.
+ * @param {string} [opts.id="canvasxpress-dashboard"] - Dashboard id.
+ * @param {string} [opts.title="CanvasXpress Dashboard"] - Dashboard title.
+ * @param {string} [opts.theme="auto"] - "light" | "dark" | "auto".
+ * @param {number} [opts.cols=12] - Grid column count.
+ * @param {number} [opts.perRow=2] - Panels per row.
+ * @param {number} [opts.panelHeight=7] - Panel height in grid rows.
+ * @param {number} [opts.rowHeight=40] - Grid row height in px.
+ * @param {number} [opts.gap=12] - Grid gap in px.
+ * @param {string} [opts.intro] - Optional intro text/HTML shown in a full-width
+ *   banner above the charts. Omit for no banner.
+ * @returns {object} A dashboard spec (schema `panels` + `layout`), ready for
+ *   {@link validateSpec} and {@link renderDashboard}.
+ * @throws {Error} If any conversion lacks a string `key` or a spec with a
+ *   `config` object.
+ * @public
+ */
+function buildCodePanelsDashboardSpec(conversions, opts) {
+  var options = opts || {};
+  var cols = options.cols || 12;
+  var perRow = options.perRow || 2;
+  var panelHeight = options.panelHeight || 7;
+  var panelWidth = Math.max(1, Math.floor(cols / perRow));
+
+  var items = [];
+  var panels = {};
+  var cursorY = 0;
+
+  if (options.intro) {
+    panels.intro = { type: 'text', html: options.intro };
+    items.push({ panel: 'intro', x: 0, y: cursorY, w: cols, h: 2 });
+    cursorY += 2;
+  }
+
+  for (var i = 0; i < conversions.length; i++) {
+    var conv = conversions[i];
+    if (!conv || typeof conv.key !== 'string' || !conv.key) {
+      throw new Error('conversion[' + i + '] needs a string "key"');
+    }
+    if (!conv.spec || typeof conv.spec !== 'object' ||
+        !conv.spec.config || typeof conv.spec.config !== 'object') {
+      throw new Error('conversion "' + conv.key + '" needs a spec with a config object');
+    }
+    var col = i % perRow;
+    if (col === 0 && i > 0) cursorY += panelHeight;   // start a fresh row
+    items.push({
+      panel: conv.key,
+      x: col * panelWidth,
+      y: cursorY,
+      w: panelWidth,
+      h: panelHeight
+    });
+    panels[conv.key] = {
+      type: 'cxcode',
+      title: conv.title || conv.key,
+      spec: conv.spec
+    };
+    if (typeof conv.code === 'string' && conv.code) {
+      panels[conv.key].code = conv.code;   // R source for the "</> Code" recipe
+    }
+  }
+
+  return {
+    $schema: 'https://canvasxpress.org/schema/dashboard.schema.json',
+    schemaVersion: '1.3',
+    id: options.id || 'canvasxpress-dashboard',
+    title: options.title || 'CanvasXpress Dashboard',
     version: 1,
     theme: options.theme || 'auto',
     layout: {
@@ -8208,7 +8335,14 @@ function renderDashboard(spec, target, options) {
     // the spec, so it bypasses the dataRef / prepare pipeline entirely and uses
     // the single-object constructor form — the only path that routes to the
     // engine's cxplot (ggplot) renderer (new CX(string, data, config) does not).
-    if (panel && panel.type === 'ggplot' && panel.spec && panel.spec.isGGPlot) {
+    // A cxcode panel is the same shape — a self-contained native CanvasXpress
+    // spec ({data, config, …}) produced by the R `canvasXpress` converter — but
+    // its spec is NOT isGGPlot; the single-object constructor renders it as an
+    // ordinary chart. Both render through this one block.
+    var selfContainedSpec = panel && panel.spec &&
+      ((panel.type === 'ggplot' && panel.spec.isGGPlot) ||
+       (panel.type === 'cxcode' && panel.spec.config));
+    if (selfContainedSpec) {
       // Give it the same "</> Code" recipe button the data-function panels get:
       // the R source and the converted data frame, shown read-only.
       if (cell.header && panel.showCode !== false) {
@@ -10954,6 +11088,26 @@ function showCodeDialog(container, title, panel, lineage, sources, opts) {
         : 'Written in R with ggplot2 and converted with ggplot.as.list() (canvasXpress R package).');
     codeBlock(codeStep, String(panel.code || ''),
       ggEditable ? function (code) { return opts.onApplyGgplot(code); } : null);
+    dialog.appendChild(body);
+    backdrop.appendChild(dialog);
+    wireCodeDialog(container, backdrop, close);
+    return backdrop;
+  }
+
+  // cxcode panels keep their R `canvasXpress` source the same way: show it, and
+  // (in the builder for function authors) let it be edited + re-converted.
+  if (panel.type === 'cxcode') {
+    var cxEditable = editable && typeof opts.onApplyCxCode === 'function';
+    var cxLangName = panel.language === 'python' ? 'Python' : 'R';
+    var cxPkgName = panel.language === 'python' ? 'canvasxpress' : 'canvasXpress';
+    var cxStep = step('The CanvasXpress code (' + cxLangName + ')',
+      cxEditable
+        ? 'Edit the ' + cxLangName + ' ' + cxPkgName + ' code (assign the chart to g) and ' +
+          'Apply — it is re-converted on the server in the sandboxed runtime and this panel updates.'
+        : 'Written in ' + cxLangName + ' with the ' + cxPkgName +
+          ' package; converted to a native spec on the server.');
+    codeBlock(cxStep, String(panel.code || ''),
+      cxEditable ? function (code) { return opts.onApplyCxCode(code); } : null);
     dialog.appendChild(body);
     backdrop.appendChild(dialog);
     wireCodeDialog(container, backdrop, close);
@@ -14958,7 +15112,7 @@ function createBuilder(target, options) {
     var createActions = [titleInput, editJsonBtn, undoBtn, redoBtn, addPanelBtn,
       button('+ Text', function () { doAddText(); }, 'cxb-bt-add'),
       button('+ Image', function () { doAddImage(); }, 'cxb-bt-add'),
-      button('📈 ggplot', function () { doAddGgplot(); }, 'cxb-bt-add'),
+      button('📈 Code', function () { doAddCodePanel(); }, 'cxb-bt-add'),
       addControlBtn, addFiltersBtn, addTransformBtn, addFdrBtn, addSignificanceBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
     if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
     createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
@@ -15139,52 +15293,102 @@ function createBuilder(target, options) {
     }
   }
 
+  // Starter snippets for each "chart from code" source. Each must assign its
+  // chart to `g`.
+  var CODE_SNIPPETS = {
+    ggplot: 'library(ggplot2)\n' +
+      'g <- ggplot(mtcars, aes(x = wt, y = mpg, color = factor(cyl))) +\n' +
+      '  geom_point(size = 2) +\n' +
+      '  labs(x = "Weight (1000 lbs)", y = "MPG", color = "Cylinders")\n',
+    'cx-r': 'library(canvasXpress)\n' +
+      'y <- matrix(c(10, 20, 30, 40, 50, 60), nrow = 2, byrow = TRUE,\n' +
+      '            dimnames = list(c("A", "B"), c("c1", "c2", "c3")))\n' +
+      'g <- canvasXpress(data = y, graphType = "Bar")\n',
+    'cx-python': 'from canvasxpress.canvas import CanvasXpress\n' +
+      'from canvasxpress.data.keypair import CXDictData\n' +
+      'g = CanvasXpress(\n' +
+      "    data=CXDictData({'y': {'vars': ['A', 'B'], 'smps': ['c1', 'c2', 'c3'],\n" +
+      "                           'data': [[10, 20, 30], [40, 50, 60]]}}),\n" +
+      "    config={'graphType': 'Bar'})\n"
+  };
+
+  // The three code → panel sources, each describing its label, conversion
+  // endpoint, resulting panel type, and language. `cx-*` go through
+  // /api/cx/convert; `ggplot` through /api/ggplot/convert.
+  var CODE_SOURCES = [
+    { key: 'ggplot', label: 'ggplot2 (R)', endpoint: '/api/ggplot/convert',
+      panelType: 'ggplot', language: 'r' },
+    { key: 'cx-r', label: 'canvasXpress (R)', endpoint: '/api/cx/convert',
+      panelType: 'cxcode', language: 'r' },
+    { key: 'cx-python', label: 'canvasXpress (Python)', endpoint: '/api/cx/convert',
+      panelType: 'cxcode', language: 'python' }
+  ];
+
   /**
-   * Add a ggplot panel from pasted R/ggplot2 code. The snippet (which must
-   * assign its plot to `g`) is sent to the server, which converts it in the
+   * Add a panel from pasted chart code — ggplot2, R `canvasXpress`, or Python
+   * `canvasxpress`. The one dialog offers whichever sources this server can run.
+   * The snippet (which must assign its chart to `g`) is converted in the
    * SANDBOXED runtime (no network, writes confined to a throwaway temp dir,
-   * CPU/memory/output limits) into a self-contained isGGPlot spec — the panel's
-   * data and styling ride inside it. Running pasted R is the same trust boundary
-   * as authoring a data function, so this is gated to function authors.
+   * CPU/memory/output limits). Running pasted code is the same trust boundary as
+   * authoring a data function, so it is gated to function authors.
    * @returns {void}
    * @private
    */
-  function doAddGgplot() {
+  function doAddCodePanel() {
     var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
     if (typeof fetchImpl !== 'function') {
-      return showError('Converting pasted R needs a server connection.');
+      return showError('Converting pasted code needs a server connection.');
     }
-    functionStatus().then(function (status) {
-      if (!status.languages || status.languages.indexOf('r') === -1 || !status.canAuthor) {
-        return showError('Pasting R/ggplot2 code is disabled on this server, or ' +
-          'restricted to administrators (it runs pasted R in the sandboxed runtime).');
-      }
-      openGgplotDialog(fetchImpl);
-    });
+    // Soft-fetch a status endpoint: any failure (404 on an old server, network)
+    // becomes "unavailable" rather than an error.
+    function status(path) {
+      return fetchImpl(baseUrl + path, { credentials: 'include' })
+        .then(function (res) { return res.ok ? res.json() : {}; }, function () { return {}; })
+        .then(function (s) { return s || {}; });
+    }
+    Promise.all([status('/api/ggplot/status'), status('/api/cx/status')])
+      .then(function (results) {
+        var gg = results[0];
+        var cx = results[1];
+        var cxLangs = (cx && cx.languages) || [];
+        var available = CODE_SOURCES.filter(function (source) {
+          if (source.key === 'ggplot') return !!(gg.available && gg.canRun);
+          return !!(cx.available && cx.canRun && cxLangs.indexOf(source.language) !== -1);
+        });
+        if (!available.length) {
+          return showError('Adding a panel from code is disabled on this server, or ' +
+            'restricted to administrators (it runs pasted code in the sandboxed runtime).');
+        }
+        openCodePanelDialog(fetchImpl, available);
+      });
   }
 
   /**
-   * The "add a ggplot panel from R code" modal: a textarea, a Convert button
-   * that posts to `<baseUrl>/api/ggplot/convert`, and on success a new
-   * type:"ggplot" panel. Reuses the shared code-dialog styling.
+   * The unified "add a panel from code" modal: a source picker (ggplot2 / R
+   * canvasXpress / Python canvasxpress, whichever the server offers), a textarea,
+   * and a Convert button that posts to the source's endpoint and, on success,
+   * adds the matching panel (`ggplot` or `cxcode`). Reuses the shared code-dialog
+   * styling.
    * @param {Function} fetchImpl - The fetch implementation to use.
+   * @param {object[]} sources - The available CODE_SOURCES entries.
    * @returns {void}
    * @private
    */
-  function openGgplotDialog(fetchImpl) {
+  function openCodePanelDialog(fetchImpl, sources) {
     var doc = container.ownerDocument || document;
+    var source = sources[0];                 // current selection
     var backdrop = doc.createElement('div');
     backdrop.className = 'cxd-code-backdrop';
     var dialog = doc.createElement('div');
     dialog.className = 'cxd-code-dialog';
     dialog.setAttribute('role', 'dialog');
-    dialog.setAttribute('aria-label', 'Add a ggplot panel from R code');
+    dialog.setAttribute('aria-label', 'Add a panel from code');
 
     var head = doc.createElement('div');
     head.className = 'cxd-code-head';
     var heading = doc.createElement('div');
     heading.className = 'cxd-code-heading';
-    heading.textContent = 'Add a panel from R / ggplot2 code';
+    heading.textContent = 'Add a panel from code';
     var close = doc.createElement('button');
     close.type = 'button';
     close.className = 'cxd-code-close';
@@ -15197,19 +15401,49 @@ function createBuilder(target, options) {
     body.className = 'cxd-code-body';
     var note = doc.createElement('div');
     note.className = 'cxd-code-step-detail';
-    note.textContent = 'Paste ggplot2 code that assigns its plot to g. It is converted ' +
+    note.textContent = 'Paste chart code that assigns its plot to g. It is converted ' +
       'on the server (sandboxed) into a native, interactive panel.';
+    body.appendChild(note);
+
+    // Source picker — only when the server offers more than one source.
+    var sourceSel = null;
+    if (sources.length > 1) {
+      var sourceRow = doc.createElement('label');
+      sourceRow.className = 'cxd-code-step-detail';
+      sourceRow.textContent = 'Source: ';
+      sourceSel = doc.createElement('select');
+      sources.forEach(function (s) {
+        var o = doc.createElement('option');
+        o.value = s.key;
+        o.textContent = s.label;
+        sourceSel.appendChild(o);
+      });
+      sourceSel.value = source.key;
+      sourceRow.appendChild(sourceSel);
+      body.appendChild(sourceRow);
+    }
+
     var wrap = doc.createElement('div');
     wrap.className = 'cxd-code-block';
     var area = doc.createElement('textarea');
     area.className = 'cxd-code-edit';
     area.spellcheck = false;
     area.rows = 10;
-    area.value = 'library(ggplot2)\n' +
-      'g <- ggplot(mtcars, aes(x = wt, y = mpg, color = factor(cyl))) +\n' +
-      '  geom_point(size = 2) +\n' +
-      '  labs(x = "Weight (1000 lbs)", y = "MPG", color = "Cylinders")\n';
+    area.value = CODE_SNIPPETS[source.key] || '';
     wrap.appendChild(area);
+
+    // Switching source swaps the starter snippet, but never clobbers edits the
+    // user has already made (only replace an untouched default).
+    if (sourceSel) {
+      sourceSel.addEventListener('change', function () {
+        if (area.value === (CODE_SNIPPETS[source.key] || '')) {
+          area.value = CODE_SNIPPETS[sourceSel.value] || '';
+        }
+        for (var i = 0; i < sources.length; i++) {
+          if (sources[i].key === sourceSel.value) { source = sources[i]; break; }
+        }
+      });
+    }
     var bar = doc.createElement('div');
     bar.className = 'cxd-code-actions';
     var statusEl = doc.createElement('span');
@@ -15220,7 +15454,6 @@ function createBuilder(target, options) {
     addBtn.textContent = 'Convert & add';
     bar.appendChild(statusEl);
     bar.appendChild(addBtn);
-    body.appendChild(note);
     body.appendChild(wrap);
     body.appendChild(bar);
     dialog.appendChild(head);
@@ -15238,16 +15471,17 @@ function createBuilder(target, options) {
       var code = area.value;
       if (!code.trim()) {
         statusEl.className = 'cxd-code-status cxd-code-error';
-        statusEl.textContent = 'Paste some ggplot2 code first.';
+        statusEl.textContent = 'Paste some code first.';
         return;
       }
       addBtn.disabled = true;
       statusEl.className = 'cxd-code-status';
       statusEl.textContent = 'Converting on the server…';
-      fetchImpl(baseUrl + '/api/ggplot/convert', {
+      var chosen = source;                   // capture for this conversion
+      fetchImpl(baseUrl + chosen.endpoint, {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code })
+        body: JSON.stringify({ code: code, language: chosen.language })
       }).then(function (res) {
         return res.json().then(function (b) {
           return { ok: res.ok, status: res.status, body: b };
@@ -15261,8 +15495,12 @@ function createBuilder(target, options) {
           return;
         }
         var id = uniquePanelId(spec);
-        commit(addPanel(spec, { id: id, type: 'ggplot', title: ggplotPanelTitle(r.body.spec),
-          spec: r.body.spec, code: code, w: 6, h: 7 }), false);
+        var panel = chosen.panelType === 'ggplot'
+          ? { id: id, type: 'ggplot', title: ggplotPanelTitle(r.body.spec),
+              spec: r.body.spec, code: code, w: 6, h: 7 }
+          : { id: id, type: 'cxcode', title: cxCodePanelTitle(r.body.spec),
+              spec: r.body.spec, code: code, language: chosen.language, w: 6, h: 7 };
+        commit(addPanel(spec, panel), false);
         selectedId = id;
         dismiss();
         if (liveHandle && liveHandle.addPanel && gridEl) {
@@ -15271,7 +15509,7 @@ function createBuilder(target, options) {
         } else {
           rebuild();
         }
-        setMsg('Added a ggplot panel from R code.');
+        setMsg('Added a panel from ' + chosen.label + ' code.');
       }, function (err) {
         addBtn.disabled = false;
         statusEl.className = 'cxd-code-status cxd-code-error';
@@ -15294,6 +15532,22 @@ function createBuilder(target, options) {
       return ggSpec.labels.title;
     }
     return 'ggplot panel';
+  }
+
+  /**
+   * A panel title for a converted canvasXpress chart: its config title if any,
+   * else a default.
+   * @param {object} cxSpec - The native CanvasXpress spec.
+   * @returns {string} The title.
+   * @private
+   */
+  function cxCodePanelTitle(cxSpec) {
+    var cfg = cxSpec && cxSpec.config;
+    if (cfg && typeof cfg.title === 'string' && cfg.title) return cfg.title;
+    if (cfg && typeof cfg.graphType === 'string' && cfg.graphType) {
+      return cfg.graphType + ' panel';
+    }
+    return 'CanvasXpress panel';
   }
 
   /**
@@ -16315,10 +16569,12 @@ function createBuilder(target, options) {
       append(tools, [dataBtn, gear]);
       var codePanel = spec.panels[info.panelId] || {};
       var ggplotCode = codePanel.type === 'ggplot';
+      var cxCode = codePanel.type === 'cxcode';
       var functionCode = typeof codePanel.dataRef === 'string' &&
         sourceLineage(spec.data || {}, codePanel.dataRef).some(function (ref) { return spec.data[ref].kind === 'function'; });
-      if (ggplotCode || functionCode) {
+      if (ggplotCode || cxCode || functionCode) {
         var codeBtn = iconBtn('</>', ggplotCode ? 'Code: the R ggplot2 code and the data'
+          : cxCode ? 'Code: the R canvasXpress code'
           : 'Code: edit the data function and the chart config', function (ev) {
           stop(ev);
           openCodeEditor(info.panelId);
@@ -16782,8 +17038,25 @@ function createBuilder(target, options) {
       ggNote.textContent = 'Converted from R (ggplot2); its data and styling are ' +
         'baked in. Open </> Code on the panel to edit the R and re-convert it.';
       // The "</> Code" recipe (R code + data) is on the panel's chrome toolbar,
-      // same as the data-function panels — not duplicated here.
-      append(propsGroup, [ggLabel, ggNote].concat(alignmentFields(panel)));
+      // same as the data-function panels — not duplicated here. No alignment
+      // controls: the chart canvas fills the cell, so align/valign is a no-op.
+      append(propsGroup, [ggLabel, ggNote]);
+      return;
+    }
+
+    // cxcode panels are self-contained too: a native CanvasXpress spec converted
+    // from R `canvasXpress` code. Same read-only treatment as ggplot panels.
+    if (panel.type === 'cxcode') {
+      var cxLangLabel = panel.language === 'python' ? 'Python' : 'R';
+      var cxPkgLabel = panel.language === 'python' ? 'canvasxpress' : 'canvasXpress';
+      var cxLabel = el('span', 'cxb-tlabel');
+      cxLabel.textContent = 'CanvasXpress (' + cxLangLabel + ')';
+      var cxNote = el('div', 'cxb-tlabel');
+      cxNote.textContent = 'Converted from ' + cxLangLabel + ' (' + cxPkgLabel +
+        ' package); its data and styling are baked in. Open </> Code on the panel ' +
+        'to edit the ' + cxLangLabel + ' and re-convert it.';
+      // No alignment controls: the chart canvas fills the cell (align/valign no-op).
+      append(propsGroup, [cxLabel, cxNote]);
       return;
     }
 
@@ -18248,6 +18521,29 @@ function createBuilder(target, options) {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code: code })
+        }).then(function (res) {
+          return res.json().then(function (b) { return { ok: res.ok, status: res.status, body: b }; });
+        }).then(function (r) {
+          if (!r.ok || !r.body || !r.body.spec) {
+            return (r.body && r.body.detail) || ('Conversion failed (' + r.status + ').');
+          }
+          if (!spec.panels[panelId]) return 'The panel no longer exists';
+          commit(updatePanel(spec, panelId, { spec: r.body.spec, code: code }), false);
+          rerenderPanel(panelId);
+          return null;
+        }, function (err) { return String((err && err.message) || err); });
+      },
+      // cxcode panels: re-convert the edited R `canvasXpress` code on the server
+      // (sandboxed) and replace this panel's native spec + source. Async → returns
+      // a Promise of the error message, or null on success.
+      onApplyCxCode: function (code) {
+        var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
+        if (typeof fetchImpl !== 'function') return 'No server connection to convert code.';
+        var panelLang = (spec.panels[panelId] && spec.panels[panelId].language) || 'r';
+        return fetchImpl(baseUrl + '/api/cx/convert', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code, language: panelLang })
         }).then(function (res) {
           return res.json().then(function (b) { return { ok: res.ok, status: res.status, body: b }; });
         }).then(function (r) {

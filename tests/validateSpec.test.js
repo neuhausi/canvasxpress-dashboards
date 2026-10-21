@@ -400,3 +400,23 @@ test('layout.stackBelow takes a px width or false', function () {
   assert.equal(validateSpec(withStack(true)).valid, false);
   assert.equal(validateSpec(withStack(-1)).valid, false);
 });
+
+test('validator accepts a self-contained cxcode panel (native CX spec, no dataRef)', function () {
+  var spec = {
+    id: 'cx', layout: { cols: 12, items: [{ panel: 'p', x: 0, y: 0, w: 6, h: 7 }] },
+    data: {}, panels: { p: { type: 'cxcode', spec: {
+      data: { y: { vars: ['A'], smps: ['s'], data: [[1]] } },
+      config: { graphType: 'Bar' } } } }
+  };
+  assert.equal(validateSpec(spec).valid, true, validateSpec(spec).errors.join('; '));
+});
+
+test('validator rejects a cxcode panel without a spec config', function () {
+  var spec = {
+    id: 'cx', layout: { cols: 12, items: [{ panel: 'p', x: 0, y: 0, w: 6, h: 7 }] },
+    data: {}, panels: { p: { type: 'cxcode', spec: { data: {} } } }
+  };
+  var result = validateSpec(spec);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some(function (e) { return e.includes('cxcode'); }));
+});

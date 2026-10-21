@@ -30,11 +30,11 @@ export var dashboardCss = [
   // border instead of on it, with room so the text never runs under it. Scoped to our roots (a
   // host page keeps its own selects); the engine's own selects (customizer, data filter,
   // its classed dropdowns) keep their styling.
-  ':is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay) select:not([multiple]):not([size]):not([class*="cX-"]):not([class*="CanvasXpress"]):not(:where([class*="cX-Customizer"], [class*="cX-DataFilter"]) select) {',
+  ':is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay, .cxd-code-backdrop) select:not([multiple]):not([size]):not([class*="cX-"]):not([class*="CanvasXpress"]):not(:where([class*="cX-Customizer"], [class*="cX-DataFilter"]) select) {',
   '  -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 30px; cursor: pointer;',
   '  background-image: linear-gradient(45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%), linear-gradient(-45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%);',
   '  background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }',
-  '@media (forced-colors: active) { :is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay) select { -webkit-appearance: auto; appearance: auto; background-image: none; } }',
+  '@media (forced-colors: active) { :is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay, .cxd-code-backdrop) select { -webkit-appearance: auto; appearance: auto; background-image: none; } }',
   // --cxd-ctrl-border is NOT aliased here: it falls back to --cxd-border at the use site, so it
   // follows a dark theme's --cxd-border (a custom property resolves where it is declared).
   '.cxd-dashboard { box-sizing: border-box; width: 100%; }',
@@ -74,6 +74,12 @@ export var dashboardCss = [
   '.cxd-code-step { padding-top: 10px; }',
   '.cxd-code-step-title { font-weight: 600; }',
   '.cxd-code-step-detail { color: var(--cxd-muted); font-size: 13px; margin-top: 2px; }',
+  // The source / language picker in the code dialog: the box (padding, border,
+  // radius, surface, text, font) to match the dashboards dropdowns — the shared
+  // :is(...) select rule above only adds the appearance + chevron.
+  '.cxd-code-backdrop select { margin-left: 6px; padding: 5px 30px 5px 8px; border: 1px solid var(--cxd-border);',
+  '  border-radius: var(--cx-radius-md); background: var(--cx-ui-surface); color: var(--cx-ui-text); font: inherit; }',
+  '.cxd-code-backdrop select:focus { outline: 2px solid var(--cx-ui-focus); outline-offset: 1px; }',
   '.cxd-code-block { position: relative; margin-top: 6px; }',
   '.cxd-code-block pre { margin: 0; padding: 10px 12px; overflow: auto; max-height: 340px; border-radius: var(--cx-radius-md);',
   '  border: 1px solid var(--cxd-border); background: var(--cxd-title-bg);',
