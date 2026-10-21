@@ -35,6 +35,17 @@ gdrive = ["google-api-python-client>=2.0", "google-auth>=2.0"]
 # harness runs each input through a pandas DataFrame, so the Python language is
 # only offered when pandas is importable (functions_status gates on it).
 functions = ["pandas>=2.0"]
+# The Python canvasxpress package, so the Builder's "📈 Code" button can convert a
+# pasted Python `canvasxpress(...)` snippet into a panel (/api/cx/convert, language
+# "python"). The ggplot / R canvasXpress sources instead need R + ggplot2 + the
+# canvasXpress R package — system deps, not pip. The distribution is not
+# semver-versioned (it reports 0.0.0.dev0), so it is intentionally left unpinned.
+code-panels = ["canvasxpress"]
+# Publish + read a Posit pins board as a live dashboard source (the "Pins Board
+# (live connector)" example): the dashboards process publishes the demo board and
+# registers the source, then the connectors service reads it live (install
+# canvasxpress-connectors[pins] there). pandas builds the frame that is pinned.
+pins = ["pins>=0.8", "pandas>=2.0"]
 # Natural-language dashboard builder (CXD_LLM_API_KEY). 1.8 is the version
 # tested; older SDKs may lack messages.create(output_config=...).
 llm = ["anthropic>=1.8"]
@@ -56,6 +67,12 @@ posit-connect = ["canvasxpress-connectors[web,sql,databricks,posit-connect]>=0.8
 # The Data page's Databricks catalog browser WITHOUT Posit Connect (CXD_DATABRICKS_AUTH=token).
 # SQLAlchemy 2.1 breaks the Databricks driver ("Expected tuple, got Row"), hence the cap.
 databricks = ["canvasxpress-connectors[web,sql,databricks]>=0.8", "SQLAlchemy>=2.0,<2.1"]
+# Everything the hosted demo server (examples/serve.py — what canvasxpress.org/dashboards
+# runs) needs so every live feature works on a fresh venv with no manual pip: the web API,
+# the data-function + Python code-panel runtimes, the pins board publisher, bridged
+# connectors, SQL demo sources and the NL chat. Self-references the extras above so it
+# never drifts. This is the extra the deploy installs for the `dashboards` target.
+demo = ["canvasxpress-dashboards-server[web,functions,code-panels,pins,llm,sso,connectors,sql]"]
 dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6", "pandas>=2.0", "PyJWT[crypto]>=2.8"]
 
 [project.urls]
