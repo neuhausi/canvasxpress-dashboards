@@ -114,7 +114,7 @@ def refresh_fetcher(store: Any) -> Callable:
         if kind == "packed":
             raise ValueError("Matrix sources need a gene list and cannot be refreshed on a schedule")
         given = dict(params or {})
-        if kind in ("salesforce", "servicenow"):
+        if kind in ("salesforce", "servicenow", "pins"):
             if given:
                 raise ValueError("A %s source takes no parameters" % kind)
             header, rows = _read_saas_source(record)

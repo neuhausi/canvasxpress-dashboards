@@ -530,6 +530,23 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.set_locked(EXAMPLES_OWNER, kpi["id"], True)
         print("  [seed] shipped dashboard: %s" % kpi["id"])
 
+    # Pins Board Overview: data published to a Posit pins board and read back,
+    # reshaped into region-tagged datasets; same inline->dataset move as KPI.
+    pins = load_spec("pins-overview.spec.json")
+    if pins and pins["id"] not in saved:
+        pins = copy.deepcopy(pins)
+        for ref, source in pins.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            dataset_id = "pins-" + ref
+            if dataset_id not in have:
+                datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                title="Pins: " + ref, dataset_id=dataset_id, locked=True)
+            pins["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+        dashboards.save_dashboard(EXAMPLES_OWNER, pins, now)
+        dashboards.set_locked(EXAMPLES_OWNER, pins["id"], True)
+        print("  [seed] shipped dashboard: %s" % pins["id"])
+
     # Sales Model: calculated fields, a browser-run pushdown query, a
     # relationship and a join. Its inline sources move into the dataset store;
     # a source's own keys (calculatedFields, pushdown) ride along, and the
@@ -751,7 +768,7 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     # order — only when the stored order differs, so restarts don't churn.
     # A shipped example missing from the list keeps its own stamp.
     shipped_order = [
-        "biomarker-cohort", "genomics-oncology", "heor-overview", "kpi-overview",
+        "biomarker-cohort", "genomics-oncology", "pins-overview", "heor-overview", "kpi-overview",
         "gtex-explorer", "gencode-explorer", "wp-explorer", "tcga-explorer", "ccle-explorer",
         "live-ops", "quality-metrics", "reproducible-bench", "sales-model", "sales-overview",
     ]
