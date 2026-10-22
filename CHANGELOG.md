@@ -5,6 +5,30 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Security: a stored source login is never shown again
+`GET /api/connectors/source` (the read-back behind the Builder's **Edit**) used to return a
+source's stored login to the owner's browser. It now masks every secret as `********`: the
+password in a database connection URL (so a Databricks token), secret-looking URL parameters, and
+the secret fields of a Salesforce, ServiceNow or pins source. Saving a form that still carries the
+mask keeps the stored secret, restored on the server (`secret_from` names the source), and only
+while the scheme, host and port are unchanged, so a stored password cannot be redirected to a new
+server. The Builder explains that a Salesforce, ServiceNow or pins source has no edit form (register
+it again to change it) and no longer offers one as "Same database as…". `sources-meta` and the
+read-back report each source's `type` (`salesforce`, `databricks`, `databricks-viewer`,
+`postgresql` …). The database half needs `canvasxpress-connectors` with `connmask`; with an older
+one a database URL is still returned as stored.
+
+### Salesforce: sign in with an OAuth app, no password
+A Salesforce source can name an **OAuth app** defined only in the server's settings
+(`CXC_SALESFORCE_APPS`) instead of storing a username, password and token; scheduled refreshes
+re-check the app's `users` list each run. `CXC_SALESFORCE_PASSWORD_AUTH=off` refuses stored
+passwords. The `demo` extra now installs `canvasxpress-connectors[salesforce]`.
+
+### Docs: connecting Salesforce, Databricks and pins
+New guides: [Connecting your data](docs/connecting-your-data.md),
+[Salesforce](docs/connect-salesforce.md), [Databricks](docs/connect-databricks.md) and
+[pins](docs/connect-pins.md).
+
 ### Example: Pins Board (live connector)
 A new **Pins Board (live connector)** example (`examples/pins-live.html`) reads a
 Posit **pins** board **live** through the real

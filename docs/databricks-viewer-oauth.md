@@ -1,5 +1,9 @@
 # Databricks — sign in as the viewer (Posit Connect OAuth)
 
+> New to connecting Databricks? Start with
+> [Connect a dashboard to Databricks](connect-databricks.md): it covers both a personal access
+> token and viewer sign-in, step by step. This page is the detail on viewer sign-in.
+
 A Databricks data source normally stores a credential — a personal access token
 (PAT) — in its connection URL, and every viewer of the dashboard reads
 Databricks as *that one token's* identity.

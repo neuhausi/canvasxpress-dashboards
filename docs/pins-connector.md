@@ -82,5 +82,9 @@ an analyst's R `pin_write()` board becomes a live dashboard source with no port.
 - A non-tabular pin (a model, a plot) cannot become a chart — `PinsBoardSource`
   raises a clear error rather than a cryptic reshape failure.
 
+To connect **your own** board with your own credentials, see
+[Connect a dashboard to a Posit pins board](connect-pins.md) (registration, the server's
+folder and S3 rules, and how the board's key is protected).
+
 See also: [live streaming](live-streaming.md) (SSE streams through the same
 connectors mount) and the connectors package README for the full source list.

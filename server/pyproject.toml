@@ -70,9 +70,11 @@ databricks = ["canvasxpress-connectors[web,sql,databricks]>=0.8", "SQLAlchemy>=2
 # Everything the hosted demo server (examples/serve.py — what canvasxpress.org/dashboards
 # runs) needs so every live feature works on a fresh venv with no manual pip: the web API,
 # the data-function + Python code-panel runtimes, the pins board publisher, bridged
-# connectors, SQL demo sources and the NL chat. Self-references the extras above so it
-# never drifts. This is the extra the deploy installs for the `dashboards` target.
-demo = ["canvasxpress-dashboards-server[web,functions,code-panels,pins,llm,sso,connectors,sql]"]
+# connectors, SQL demo sources, Salesforce (SOQL) sources and the NL chat. Self-references
+# the extras above so it never drifts. This is the extra the deploy installs for the
+# `dashboards` target.
+demo = ["canvasxpress-dashboards-server[web,functions,code-panels,pins,llm,sso,connectors,sql]",
+        "canvasxpress-connectors[salesforce]>=0.8"]
 dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6", "pandas>=2.0", "PyJWT[crypto]>=2.8"]
 
 [project.urls]

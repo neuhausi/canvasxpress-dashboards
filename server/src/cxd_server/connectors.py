@@ -26,8 +26,56 @@ user signs in once, to the dashboards app.
 # install_connectors (fastapi is an optional extra), so it must stay a real class.
 import hashlib
 import hmac
+import json
 import os
+import re
 from typing import Any, Callable, Optional
+
+# SaaS sources (Salesforce, ServiceNow, pins boards) keep a JSON document of settings AND
+# credentials where a database source keeps its connection string.
+SAAS_KINDS = ("salesforce", "servicenow", "pins")
+_SECRET_FIELD = re.compile(r"pass|secret|token|(^|_)key$", re.IGNORECASE)
+SECRET_MASK = "********"
+
+
+def redact_secrets(value: Any) -> Any:
+    """A copy of parsed JSON with every secret-looking string field masked.
+
+    A field is secret when its name contains ``pass``, ``secret`` or ``token``, or ends in
+    ``key`` (``password``, ``security_token``, ``client_secret``, ``api_key``, …). Everything
+    else — usernames, domains, instance names, an ``oauth_app`` name — is kept so the owner can
+    still see what a source points at. Empty values stay empty, so "not set" is distinguishable
+    from "set".
+    """
+    if isinstance(value, dict):
+        return {key: (SECRET_MASK if _SECRET_FIELD.search(str(key)) and isinstance(item, str) and item
+                      else redact_secrets(item))
+                for key, item in value.items()}
+    if isinstance(value, list):
+        return [redact_secrets(item) for item in value]
+    return value
+
+
+def _connmask():
+    """``cx_connectors.connmask`` when the installed canvasxpress-connectors can restore a masked
+    secret on save, else ``None``. Masking a database URL is only safe with it: an older
+    connectors would store the ``********`` as the password, so then the URL is shown as stored."""
+    try:
+        from cx_connectors import connmask
+    except ImportError:
+        return None
+    return connmask
+
+
+def _connector_type(kind: Optional[str], conn_url: Optional[str]) -> str:
+    """``salesforce``, ``databricks``, ``postgresql`` … (see ``cx_connectors.kinds``); the plain
+    ``kind`` when the installed connectors predates it."""
+    try:
+        from cx_connectors.kinds import connector_type
+    except ImportError:
+        return kind or "sql"
+    return connector_type(kind, conn_url)
+
 
 _TRUE = ("1", "on", "true", "yes")
 _KEY_HINT = ('generate one with: python -c "from cryptography.fernet import Fernet; '
@@ -117,7 +165,16 @@ def refresh_fetcher(store: Any) -> Callable:
         if kind in ("salesforce", "servicenow", "pins"):
             if given:
                 raise ValueError("A %s source takes no parameters" % kind)
-            header, rows = _read_saas_source(record)
+            try:
+                from cx_connectors.web.byo_app import authorize_saas_source
+            except ImportError:
+                # an older canvasxpress-connectors: no Salesforce OAuth apps, nothing to authorize
+                header, rows = _read_saas_source(record)
+            else:
+                # An OAuth-app source stores no credential; the operator's `users` list for
+                # that app is the authorization, so re-check it on every scheduled run.
+                authorize_saas_source(owner, record)
+                header, rows = _read_saas_source(record, owner=owner)
         else:
             from cx_connectors.databricks_oauth import is_viewer_oauth_url
 
@@ -276,26 +333,59 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
         for meta in store.list_sources_meta(user):
             record = store.get_source(user, meta["name"])
             location = ""
+            ctype = ""
             if record:
                 parts = urlsplit(record["conn_url"])
                 location = (parts.scheme or "").split("+")[0]
                 if parts.hostname:
                     location += "@" + parts.hostname
-            out.append({"name": meta["name"], "updated_at": meta["updated_at"], "location": location})
+                ctype = _connector_type(record.get("kind"), record["conn_url"])
+            out.append({"name": meta["name"], "updated_at": meta["updated_at"], "location": location,
+                        "type": ctype})
         return {"sources": out}
 
     def source_detail(request: Request, name: str = ""):
         """Owner-only read-back of one source's connection URL + SQL, so the Data
         page can prefill its edit form. Guarded by the session; a user can only
-        read their own sources. NOTE: this returns the stored connection string,
-        credentials included, to its owner's browser."""
+        read their own sources.
+
+        A stored password, token or client secret should be replaceable but never
+        shown again (it would otherwise sit in the browser, its network tab and
+        screenshots), so both kinds of source come back with every secret masked:
+
+        * a SaaS source (Salesforce, ServiceNow, pins) stores a JSON document of
+          settings and credentials; its secret fields read ``********``;
+        * a database source's connection string keeps its host, database and options,
+          with the password (and any secret query parameter) shown as ``********``.
+          Saving the form with the mask still in it keeps the stored secret
+          (``secret_from`` names the source it comes from).
+
+        ``kind`` and ``type`` (``salesforce``, ``databricks``, ``postgresql`` …) let the
+        page tell sources apart; ``masked`` says the URL's secrets were hidden. With a
+        connectors package too old to restore a masked secret on save, a database URL is
+        returned as stored (``masked`` false) rather than break the edit form."""
         user = request.session.get("user")
         if not user:
             return JSONResponse({"detail": "Not logged in"}, status_code=401)
         record = store.get_source(user, name)
         if not record:
             return JSONResponse({"detail": "No such source"}, status_code=404)
-        return {"name": name, "conn_url": record["conn_url"], "sql": record["sql"]}
+        kind = record.get("kind") or "sql"
+        conn_url = record["conn_url"]
+        masked = False
+        if kind in SAAS_KINDS:
+            masked = True
+            try:
+                conn_url = json.dumps(redact_secrets(json.loads(conn_url)), sort_keys=True)
+            except ValueError:
+                conn_url = ""          # not the JSON we expect: show nothing rather than risk a leak
+        else:
+            connmask = _connmask()
+            if connmask is not None:
+                masked = True
+                conn_url = connmask.mask_conn_url(conn_url)
+        return {"name": name, "kind": kind, "type": _connector_type(kind, record["conn_url"]),
+                "masked": masked, "conn_url": conn_url, "sql": record["sql"]}
 
     def resolve_connection(user: str, body: dict):
         """The connection URL a wizard/editor request names: one of the user's own
@@ -312,6 +402,16 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
         conn_url = (body.get("conn_url") or "").strip()
         if not conn_url:
             return None, JSONResponse({"detail": "source or conn_url is required"}, status_code=400)
+        connmask = _connmask()
+        if connmask is not None and connmask.MASK in conn_url:
+            # An edit form that still shows "********": take the real secret from the user's
+            # own source it came from (``secret_from``), only while the server is unchanged.
+            original = store.get_source(user, (body.get("secret_from") or "").strip())
+            stored = original["conn_url"] if original and (original.get("kind") or "sql") == "sql" else None
+            try:
+                conn_url = connmask.unmask_conn_url(conn_url, stored)
+            except ValueError as exc:
+                return None, JSONResponse({"detail": str(exc)}, status_code=400)
         return conn_url, None
 
     def resolve_for_viewer(request: Request, conn_url: str):
