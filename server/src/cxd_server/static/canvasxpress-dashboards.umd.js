@@ -483,7 +483,12 @@ var dashboardCss = [
   // another panel reads as "in motion", and the board underneath stays visible.
   '.cxb-cell.cxb-dragging { opacity: .65; z-index: var(--cx-z-raised); box-shadow: var(--cx-shadow-2); }',
   '.cxb-cell.cxb-drop { outline: 2px dashed var(--cx-ui-accent); outline-offset: -3px; background: var(--cx-ui-accent-tint-subtle); z-index: 2; }',
-  '.cxb-cell .cxd-panel-title { cursor: grab; user-select: none; display: flex; align-items: center; gap: 6px; }',
+  /* Dragging a dataset from the data list over the canvas: the whole builder
+     area reads as a drop target that will spawn a new panel. */
+  '.cxb.cxb-dataset-drop { outline: 2px dashed var(--cx-ui-accent); outline-offset: -4px; background: var(--cx-ui-accent-tint-subtle); border-radius: var(--cx-ui-radius, 6px); }',
+  // A touch taller in the builder so the floating edit-chrome pill (~32px) sits
+  // fully inside the bar, vertically centred (see .cxb-chrome top below).
+  '.cxb-cell .cxd-panel-title { cursor: grab; user-select: none; display: flex; align-items: center; gap: 6px; min-height: 44px; box-sizing: border-box; }',
   '.cxb-tools { margin-left: auto; display: inline-flex; gap: 2px; }',
   /* floating chrome (drag grip + tools) for panels without a title bar */
   // Editing controls float over the panel's top-right corner on hover — kept
@@ -491,17 +496,19 @@ var dashboardCss = [
   // grip/delete stay clickable on title-less panels —
   // INSIDE the cell so the stage needs no reserved strip above the top row
   // (the builder stage starts exactly where the rendered dashboard does).
-  '.cxb-chrome { position: absolute; top: 4px; right: 4px; z-index: calc(var(--cx-z-popover-high) + 4); display: inline-flex;',
+  '.cxb-chrome { position: absolute; top: 6px; right: 4px; z-index: calc(var(--cx-z-popover-high) + 4); display: inline-flex;',
   '  align-items: center; gap: 1px; padding: 2px 4px; pointer-events: none; opacity: 0;',
   '  transition: opacity .12s ease; background: var(--cxd-panel-bg);',
   '  border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md); box-shadow: var(--cx-shadow-1); }',
   '.cxb-cell:hover .cxb-chrome, .cxb-cell.cxb-selected .cxb-chrome { opacity: 1; pointer-events: auto; }',
-  '.cxb-grip { cursor: grab; user-select: none; width: 22px; height: 22px; line-height: 22px;',
-  '  text-align: center; color: var(--cxd-muted); }',
+  // Flex-centre the glyphs: line-height alone leaves text glyphs (⚙ ✕ ⠿) sitting
+  // low in the box, so the whole pill reads as bottom-heavy even when centred.
+  '.cxb-grip { cursor: grab; user-select: none; width: 22px; height: 22px;',
+  '  display: inline-flex; align-items: center; justify-content: center; color: var(--cxd-muted); }',
   '.cxb-grip:hover { color: inherit; }',
-  '.cxb-chrome .cxb-tools { margin: 0; background: none; box-shadow: none; }',
-  '.cxb-tool { width: 26px; height: 26px; line-height: 24px; text-align: center; border-radius: var(--cx-radius-md);',
-  '  cursor: pointer; font-size: 19px; color: var(--cxd-muted); }',
+  '.cxb-chrome .cxb-tools { margin: 0; background: none; box-shadow: none; align-items: center; }',
+  '.cxb-tool { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;',
+  '  border-radius: var(--cx-radius-md); cursor: pointer; font-size: 19px; line-height: 1; color: var(--cxd-muted); }',
   '.cxb-tool:hover { background: var(--cx-ui-accent-tint); color: inherit; }',
   '.cxb-tool.cxb-tool-code { width: auto; padding: 0 5px; font: 600 12px/26px var(--cx-font-mono); }',
   '.cxb-resize { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize;',
@@ -14998,6 +15005,11 @@ function createBuilder(target, options) {
   var baselineConfigs = {}; // panelId -> {configKey: JSON} snapshot at render (diff-based save capture)
   var pendingBaselines = []; // baseline snapshots waiting for getConfig() to attach
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
+  // Drag payloads a host's data list sets to let a stored dataset or a database
+  // (connector) source be dropped on the canvas to spawn a panel (see
+  // setupDatasetDrop / createPanelFromDataset / createPanelFromConnector).
+  var DATASET_DND_MIME = 'application/x-cxd-dataset';
+  var CONNECTOR_DND_MIME = 'application/x-cxd-connector';
   var availableConnectors = []; // connector sources ({name, url}) from options.listConnectorSources
   var ownStore = null;          // the dialogs' data store before the first render (pickStore)
   var stageFitTimer = null;     // debounces onStageResize
@@ -15144,6 +15156,11 @@ function createBuilder(target, options) {
   on(stage, 'click', function (ev) {
     if (ev.target && ev.target.closest && !ev.target.closest('.cxb-cell')) deselect();
   });
+  // Drag a dataset from the host's data list onto the canvas to create a new
+  // panel bound to it, chart type auto-picked from the data shape. Wired to the
+  // whole builder root, not just the stage: an EMPTY dashboard's stage is only
+  // as tall as its hint, so the large drop area the user aims at is the root.
+  setupDatasetDrop(root);
   // Track the selection inside text editors so the format toolbar (which blurs
   // the editor when clicked) can restore it before applying a command.
   if (typeof document !== 'undefined' && document.addEventListener && typeof window !== 'undefined') {
@@ -16876,7 +16893,11 @@ function createBuilder(target, options) {
     cell.addEventListener('drop', function (ev) {
       stopEv(ev); cell.classList.remove('cxb-drop');
       var file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
-      if (file) handlePanelDrop(panelId, ev, file);
+      if (file) { handlePanelDrop(panelId, ev, file); return; }
+      // A dataset / database source dragged from the data list and dropped on an
+      // existing panel creates a NEW panel from it (the cell's capture handler
+      // stops the event reaching the document-level drop, so handle it here).
+      handleSourceDrop(ev);
     }, true);
   }
 
@@ -18047,6 +18068,181 @@ function createBuilder(target, options) {
   }
 
   /**
+   * Create a NEW panel bound to a stored dataset (unlike {@link useDataset},
+   * which rebinds the selected panel). The chart type is auto-picked: the
+   * dataset's associated config if it carries one, else {@link suggestPanelType}
+   * over the fetched data for a recognised scientific shape
+   * (Heatmap/Oncoprint/Kaplan-Meier/Manhattan/Volcano), else a default Bar. Used
+   * by the drag-a-dataset-onto-the-canvas gesture ({@link setupDatasetDrop}) and
+   * exposed on the handle as `createPanelFromDataset`.
+   * @param {object} info - Dataset summary `{id, title?, store?, config?}`.
+   * @returns {void}
+   * @private
+   */
+  function createPanelFromDataset(info) {
+    if (!info || !info.id) return;
+    // Reuse a dataset source already declared for this id, else add one.
+    var existing = spec.data || {};
+    var ref = null;
+    Object.keys(existing).forEach(function (r) {
+      var srcx = existing[r];
+      if (!ref && srcx && srcx.kind === 'dataset' && srcx.id === info.id) ref = r;
+    });
+    var newSource = false;
+    var next = spec;
+    if (!ref) {
+      ref = uniqueSourceName(info.id);
+      var source = { kind: 'dataset', id: info.id };
+      if (info.store) source.store = info.store;
+      next = setDataSource(spec, ref, source);
+      newSource = true;
+    }
+    var id = uniquePanelId(next);
+    var title = info.title || info.id;
+    var DEFAULT_CFG = { graphType: 'Bar', graphOrientation: 'vertical', title: false };
+
+    // Place the panel full-height at half width, select it, and insert it
+    // incrementally when possible (a brand-new source needs a full rebuild so
+    // the live render learns it).
+    function place(config) {
+      commit(addPanel(next, { id: id, title: title, dataRef: ref, w: 6, h: 12, config: config }), false);
+      selectedId = id;
+      if (newSource || !(liveHandle && liveHandle.addPanel && gridEl)) {
+        syncLiveConfigs();
+        rebuild();
+      } else {
+        lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
+      }
+    }
+
+    // A dataset that carries its own config wins — it is the author's chosen
+    // chart (useDataset adopts it the same way when rebinding a panel).
+    if (info.config && Object.keys(info.config).length) {
+      place(Object.assign({ title: false }, JSON.parse(JSON.stringify(info.config))));
+      return;
+    }
+    // No config and no way to read the data: fall back to a Bar.
+    if (!client || typeof client.getDataset !== 'function') { place(DEFAULT_CFG); return; }
+    // Fetch the data and let the shape detector pick the chart (same engine the
+    // "+ Panel" wizard's "this looks like …" hint uses). Best-effort: any
+    // failure falls back to a Bar.
+    setMsg('Adding “' + title + '” …');
+    client.getDataset(info.id, { store: info.store }).then(function (data) {
+      var hit = data ? suggestPanelType(data) : null;
+      var cfg = DEFAULT_CFG;
+      if (hit && hit.graphType) {
+        try { cfg = buildScientificConfig(hit.graphType, {}, { title: false }, data); }
+        catch (e) { cfg = { graphType: hit.graphType, title: false }; }
+      }
+      place(cfg);
+      setMsg('');
+    }, function () { place(DEFAULT_CFG); setMsg(''); });
+  }
+
+  /**
+   * Create a NEW panel bound to a database (connector) source dragged from the
+   * host's data list. Reuses a connector source already pointing at the same URL
+   * or adds one, then adds a default Bar panel (the connector's data is resolved
+   * at render time, so no shape detection here — change the chart via the ⚙
+   * customizer). Companion to {@link createPanelFromDataset}.
+   * @param {object} info - Connector descriptor `{name?, url}`.
+   * @returns {void}
+   * @private
+   */
+  function createPanelFromConnector(info) {
+    if (!info || !info.url) return;
+    var existing = spec.data || {};
+    var ref = null;
+    Object.keys(existing).forEach(function (r) {
+      var srcx = existing[r];
+      if (!ref && srcx && srcx.kind === 'connector' && sameConnectorUrl(srcx.url, info.url)) ref = r;
+    });
+    var newSource = false;
+    var next = spec;
+    if (!ref) {
+      ref = uniqueSourceName(info.name || 'database');
+      next = setDataSource(spec, ref, { kind: 'connector', url: info.url });
+      newSource = true;
+    }
+    var id = uniquePanelId(next);
+    commit(addPanel(next, { id: id, title: info.name || ref, dataRef: ref, w: 6, h: 12,
+      config: { graphType: 'Bar', graphOrientation: 'vertical', title: false } }), false);
+    selectedId = id;
+    if (newSource || !(liveHandle && liveHandle.addPanel && gridEl)) {
+      syncLiveConfigs();
+      rebuild();
+    } else {
+      lastRender = liveHandle.addPanel(itemFor(id), spec.panels[id], spec.layout.items).then(function () { renderProps(); });
+    }
+  }
+
+  /**
+   * Wire the stage as a drop target for a dataset dragged from the host's data
+   * list: dropping one on empty canvas creates a new panel via
+   * {@link createPanelFromDataset}. Only reacts to the DATASET_DND_MIME payload,
+   * so panel moves and per-panel file drops ({@link setupPanelDrop}) are
+   * untouched. A dataset dropped on an existing panel cell is handled there.
+   *
+   * Listeners go on the DOCUMENT (capture phase), not the builder root: an empty
+   * dashboard's root collapses to the toolbar height (~28px), so the large area
+   * the user actually drops a dataset onto belongs to the HOST page's layout
+   * (the view/main containers that hold #builder-host), which the builder does
+   * not own. Document capture catches the drop wherever it lands; the strict
+   * DATASET_DND_MIME gate keeps every other drag (files, panel moves) untouched,
+   * and the root.isConnected guard stops us firing after the builder is torn
+   * down. The highlight class still goes on the builder root.
+   * @param {HTMLElement} builderRoot - The builder root element (`.cxb`).
+   * @returns {void}
+   * @private
+   */
+  function setupDatasetDrop(builderRoot) {
+    var doc = builderRoot.ownerDocument || document;
+    function hasType(ev, mime) {
+      var types = ev.dataTransfer && ev.dataTransfer.types;
+      if (!types) return false;
+      // DOMStringList (.contains) in some browsers, a plain array in others.
+      return types.contains ? types.contains(mime)
+        : Array.prototype.indexOf.call(types, mime) >= 0;
+    }
+    function hasPayload(ev) { return hasType(ev, DATASET_DND_MIME) || hasType(ev, CONNECTOR_DND_MIME); }
+    // Only react while this builder is still in the page (document listeners
+    // outlive a destroyed builder otherwise).
+    function live(ev) { return builderRoot.isConnected && hasPayload(ev); }
+    doc.addEventListener('dragover', function (ev) {
+      if (!live(ev)) return;                    // leave file / panel-move drags alone
+      ev.preventDefault();                       // required or the browser rejects the drop
+      if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'copy';
+      builderRoot.classList.add('cxb-dataset-drop');
+    }, true);
+    doc.addEventListener('dragleave', function (ev) {
+      // relatedTarget is null when the pointer leaves the window entirely.
+      if (builderRoot.isConnected && !ev.relatedTarget) builderRoot.classList.remove('cxb-dataset-drop');
+    }, true);
+    doc.addEventListener('drop', function (ev) {
+      if (!live(ev)) return;
+      ev.preventDefault();
+      builderRoot.classList.remove('cxb-dataset-drop');
+      handleSourceDrop(ev);
+    }, true);
+  }
+
+  /**
+   * Route a dataset/connector drag drop to the matching panel-creator.
+   * @param {DragEvent} ev - The drop event.
+   * @returns {boolean} True when a payload was recognised and handled.
+   * @private
+   */
+  function handleSourceDrop(ev) {
+    var dt = ev.dataTransfer;
+    if (!dt || !dt.getData) return false;
+    var ds = dt.getData(DATASET_DND_MIME);
+    if (ds) { try { createPanelFromDataset(JSON.parse(ds)); return true; } catch (e) { return false; } }
+    var cs = dt.getData(CONNECTOR_DND_MIME);
+    if (cs) { try { createPanelFromConnector(JSON.parse(cs)); return true; } catch (e) { return false; } }
+    return false;
+  }
+
+  /**
    * Bind the selected panel to a database/connector source, reusing a spec
    * source that already points at its URL or creating one transparently.
    * @param {object} connector - `{name, url}` from options.listConnectorSources.
@@ -18903,6 +19099,20 @@ function createBuilder(target, options) {
         rebuild();
       }
     },
+    /**
+     * Create a new panel bound to a stored dataset, chart type auto-picked from
+     * the data shape (same path as dropping a dataset on the canvas).
+     * @param {object} info - Dataset summary `{id, title?, store?, config?}`.
+     * @returns {void}
+     */
+    createPanelFromDataset: createPanelFromDataset,
+    /**
+     * Create a new panel bound to a database (connector) source (same path as
+     * dropping a database source on the canvas).
+     * @param {object} info - Connector descriptor `{name?, url}`.
+     * @returns {void}
+     */
+    createPanelFromConnector: createPanelFromConnector,
     /**
      * Select a panel (opens its editor).
      * @param {string} panelId - Panel id.

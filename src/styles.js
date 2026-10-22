@@ -463,7 +463,12 @@ export var dashboardCss = [
   // another panel reads as "in motion", and the board underneath stays visible.
   '.cxb-cell.cxb-dragging { opacity: .65; z-index: var(--cx-z-raised); box-shadow: var(--cx-shadow-2); }',
   '.cxb-cell.cxb-drop { outline: 2px dashed var(--cx-ui-accent); outline-offset: -3px; background: var(--cx-ui-accent-tint-subtle); z-index: 2; }',
-  '.cxb-cell .cxd-panel-title { cursor: grab; user-select: none; display: flex; align-items: center; gap: 6px; }',
+  /* Dragging a dataset from the data list over the canvas: the whole builder
+     area reads as a drop target that will spawn a new panel. */
+  '.cxb.cxb-dataset-drop { outline: 2px dashed var(--cx-ui-accent); outline-offset: -4px; background: var(--cx-ui-accent-tint-subtle); border-radius: var(--cx-ui-radius, 6px); }',
+  // A touch taller in the builder so the floating edit-chrome pill (~32px) sits
+  // fully inside the bar, vertically centred (see .cxb-chrome top below).
+  '.cxb-cell .cxd-panel-title { cursor: grab; user-select: none; display: flex; align-items: center; gap: 6px; min-height: 44px; box-sizing: border-box; }',
   '.cxb-tools { margin-left: auto; display: inline-flex; gap: 2px; }',
   /* floating chrome (drag grip + tools) for panels without a title bar */
   // Editing controls float over the panel's top-right corner on hover — kept
@@ -471,17 +476,19 @@ export var dashboardCss = [
   // grip/delete stay clickable on title-less panels —
   // INSIDE the cell so the stage needs no reserved strip above the top row
   // (the builder stage starts exactly where the rendered dashboard does).
-  '.cxb-chrome { position: absolute; top: 4px; right: 4px; z-index: calc(var(--cx-z-popover-high) + 4); display: inline-flex;',
+  '.cxb-chrome { position: absolute; top: 6px; right: 4px; z-index: calc(var(--cx-z-popover-high) + 4); display: inline-flex;',
   '  align-items: center; gap: 1px; padding: 2px 4px; pointer-events: none; opacity: 0;',
   '  transition: opacity .12s ease; background: var(--cxd-panel-bg);',
   '  border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md); box-shadow: var(--cx-shadow-1); }',
   '.cxb-cell:hover .cxb-chrome, .cxb-cell.cxb-selected .cxb-chrome { opacity: 1; pointer-events: auto; }',
-  '.cxb-grip { cursor: grab; user-select: none; width: 22px; height: 22px; line-height: 22px;',
-  '  text-align: center; color: var(--cxd-muted); }',
+  // Flex-centre the glyphs: line-height alone leaves text glyphs (⚙ ✕ ⠿) sitting
+  // low in the box, so the whole pill reads as bottom-heavy even when centred.
+  '.cxb-grip { cursor: grab; user-select: none; width: 22px; height: 22px;',
+  '  display: inline-flex; align-items: center; justify-content: center; color: var(--cxd-muted); }',
   '.cxb-grip:hover { color: inherit; }',
-  '.cxb-chrome .cxb-tools { margin: 0; background: none; box-shadow: none; }',
-  '.cxb-tool { width: 26px; height: 26px; line-height: 24px; text-align: center; border-radius: var(--cx-radius-md);',
-  '  cursor: pointer; font-size: 19px; color: var(--cxd-muted); }',
+  '.cxb-chrome .cxb-tools { margin: 0; background: none; box-shadow: none; align-items: center; }',
+  '.cxb-tool { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;',
+  '  border-radius: var(--cx-radius-md); cursor: pointer; font-size: 19px; line-height: 1; color: var(--cxd-muted); }',
   '.cxb-tool:hover { background: var(--cx-ui-accent-tint); color: inherit; }',
   '.cxb-tool.cxb-tool-code { width: auto; padding: 0 5px; font: 600 12px/26px var(--cx-font-mono); }',
   '.cxb-resize { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize;',

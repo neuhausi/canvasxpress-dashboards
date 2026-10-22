@@ -4979,6 +4979,27 @@
         }).catch(function () {});
     }
 
+    // Use the card itself as the drag image. The browser's default snapshot of
+    // a row near the bottom of the scrolling list includes a sliver of the
+    // scrollbar / clips at the container edge; an off-screen clone never does.
+    // The clone is removed on the next tick (after the browser has grabbed it).
+    function setCardDragImage(ev, card) {
+      if (!ev.dataTransfer || typeof ev.dataTransfer.setDragImage !== 'function') return;
+      try {
+        var r = card.getBoundingClientRect();
+        var ghost = card.cloneNode(true);
+        // Keep the card's own flex row (checkbox left, title/meta block right) —
+        // cssText replaces the label's inline display:flex, so restate it.
+        ghost.style.cssText = 'position:fixed;top:-1000px;left:-1000px;margin:0;' +
+          'display:flex;align-items:center;gap:8px;' +
+          'box-sizing:border-box;width:' + Math.round(r.width) + 'px;pointer-events:none;' +
+          'background:var(--cx-ui-surface);box-shadow:var(--cx-shadow-2);opacity:1';
+        document.body.appendChild(ghost);
+        ev.dataTransfer.setDragImage(ghost, Math.round(ev.clientX - r.left), Math.round(ev.clientY - r.top));
+        setTimeout(function () { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); }, 0);
+      } catch (e) { /* setDragImage unsupported — keep the default image */ }
+    }
+
     function loadChatDatasets() {
       var listEl = document.getElementById('chat-dataset-list');
       var searchEl = document.getElementById('chat-dataset-search');
@@ -4990,19 +5011,47 @@
           if (!rows.length) { listEl.textContent = 'No datasets yet — add some in the Data view.'; return; }
           listEl.innerHTML = '';
           rows.forEach(function (d) {
+            // Card styled like the Data page's dataset list (.data-item): a bold
+            // title over a muted meta line (dims · store · date). Still a <label>
+            // so the whole card toggles its checkbox, still draggable to the
+            // canvas. Zero margin — the list's flex gap already spaces the cards.
             var label = document.createElement('label');
-            label.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer';
-            label.className = 'chat-ds-row';
-            var text = (d.title || d.id) + ' (' + Math.max(d.rows || 0, d.cols || 0) + '×' + Math.min(d.rows || 0, d.cols || 0) + ')';
-            label.setAttribute('data-search', (d.id + ' ' + text).toLowerCase());
+            label.className = 'chat-ds-row data-item';
+            label.style.cssText = 'display:flex;align-items:center;gap:8px;margin:0;cursor:grab';
+            var meta = [];
+            if (d.rows != null && d.cols != null) meta.push(Math.max(d.rows, d.cols) + '×' + Math.min(d.rows, d.cols));
+            else if (d.rows != null) meta.push(d.rows + '×?');
+            if (d.store) meta.push(d.store);
+            if (d.updated_at) meta.push(String(d.updated_at).slice(0, 10));
+            label.setAttribute('data-search', ((d.title || '') + ' ' + d.id + ' ' + (d.store || '')).toLowerCase());
+            // Drag the row onto the builder canvas to create a panel from it
+            // (the builder's setupDatasetDrop reads this payload); chart type is
+            // auto-picked from the data shape.
+            label.setAttribute('draggable', 'true');
+            label.title = 'Drag onto the canvas to add a panel, or tick to use';
+            label.addEventListener('dragstart', function (ev) {
+              if (!ev.dataTransfer) return;
+              ev.dataTransfer.effectAllowed = 'copy';
+              ev.dataTransfer.setData('application/x-cxd-dataset',
+                JSON.stringify({ id: d.id, title: d.title || d.id, store: d.store || undefined, config: d.config || undefined }));
+              setCardDragImage(ev, label);
+            });
             var cb = document.createElement('input');
             cb.type = 'checkbox'; cb.value = d.id; cb.className = 'chat-ds';
             cb.setAttribute('data-store', d.store || '');
             cb.onchange = function () { toggleSpecDataset(d, cb.checked); };
             label.appendChild(cb);
-            var span = document.createElement('span');
-            span.textContent = text;
-            label.appendChild(span);
+            var info = document.createElement('div');
+            info.style.cssText = 'flex:1;min-width:0';
+            var titleEl = document.createElement('div');
+            titleEl.className = 'data-item-title';
+            titleEl.textContent = d.title || d.id;
+            var metaEl = document.createElement('div');
+            metaEl.className = 'data-item-meta';
+            metaEl.textContent = meta.join(' · ');
+            info.appendChild(titleEl);
+            info.appendChild(metaEl);
+            label.appendChild(info);
             listEl.appendChild(label);
           });
           if (searchEl) searchEl.oninput = function () {
@@ -5028,22 +5077,40 @@
         if (document.getElementById('chat-dataset-list') !== listEl) return;
         (res.sources || []).forEach(function (name) {
           var url = API_BASE + '/connectors/api/data?source=' + encodeURIComponent(name);
+          // Card styled like the dataset rows / Data page (.data-item): a title
+          // (🗄 name) over a muted meta line (dims · database).
           var label = document.createElement('label');
-          label.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer';
-          label.className = 'chat-ds-row';
+          label.className = 'chat-ds-row data-item';
+          label.style.cssText = 'display:flex;align-items:center;gap:8px;margin:0;cursor:grab';
           label.setAttribute('data-search', name.toLowerCase() + ' database');
+          // Drag the row onto the canvas to create a panel bound to this
+          // database source (the builder's setupDatasetDrop reads this payload).
+          label.setAttribute('draggable', 'true');
+          label.title = 'Drag onto the canvas to add a panel, or tick to use';
+          label.addEventListener('dragstart', function (ev) {
+            if (!ev.dataTransfer) return;
+            ev.dataTransfer.effectAllowed = 'copy';
+            ev.dataTransfer.setData('application/x-cxd-connector', JSON.stringify({ name: name, url: url }));
+            setCardDragImage(ev, label);
+          });
           var cb = document.createElement('input');
           cb.type = 'checkbox'; cb.value = url; cb.className = 'chat-cs';
           cb.onchange = function () { toggleSpecConnector(name, url, cb); };
           label.appendChild(cb);
-          var span = document.createElement('span');
-          span.textContent = '🗄 ' + name + ' ';
-          // Same size annotation as the dataset rows: "(rows×cols)".
-          var dims = document.createElement('span');
-          dims.setAttribute('data-paren', '1');
-          span.appendChild(dims);
-          fillDbSourceDims(name, dims);
-          label.appendChild(span);
+          var info = document.createElement('div');
+          info.style.cssText = 'flex:1;min-width:0';
+          var titleEl = document.createElement('div');
+          titleEl.className = 'data-item-title';
+          titleEl.textContent = '🗄 ' + name;
+          // Meta is the size span; data-sep appends " · database" once dims load
+          // (no data-paren, so it reads "342×2 · database" like the dataset meta).
+          var metaEl = document.createElement('div');
+          metaEl.className = 'data-item-meta';
+          metaEl.setAttribute('data-sep', ' · database');
+          fillDbSourceDims(name, metaEl);
+          info.appendChild(titleEl);
+          info.appendChild(metaEl);
+          label.appendChild(info);
           listEl.appendChild(label);
         });
         syncChatChecks(currentSpec);
