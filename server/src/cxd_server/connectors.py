@@ -38,6 +38,11 @@ _SECRET_FIELD = re.compile(r"pass|secret|token|(^|_)key$", re.IGNORECASE)
 SECRET_MASK = "********"
 
 
+def _is_secret(key: Any, item: Any) -> bool:
+    """A non-empty string under a secret-looking field name."""
+    return bool(_SECRET_FIELD.search(str(key))) and isinstance(item, str) and bool(item)
+
+
 def redact_secrets(value: Any) -> Any:
     """A copy of parsed JSON with every secret-looking string field masked.
 
@@ -48,9 +53,10 @@ def redact_secrets(value: Any) -> Any:
     from "set".
     """
     if isinstance(value, dict):
-        return {key: (SECRET_MASK if _SECRET_FIELD.search(str(key)) and isinstance(item, str) and item
-                      else redact_secrets(item))
-                for key, item in value.items()}
+        return {
+            key: SECRET_MASK if _is_secret(key, item) else redact_secrets(item)
+            for key, item in value.items()
+        }
     if isinstance(value, list):
         return [redact_secrets(item) for item in value]
     return value
@@ -340,8 +346,8 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
                 if parts.hostname:
                     location += "@" + parts.hostname
                 ctype = _connector_type(record.get("kind"), record["conn_url"])
-            out.append({"name": meta["name"], "updated_at": meta["updated_at"], "location": location,
-                        "type": ctype})
+            out.append({"name": meta["name"], "updated_at": meta["updated_at"],
+                        "location": location, "type": ctype})
         return {"sources": out}
 
     def source_detail(request: Request, name: str = ""):
@@ -378,7 +384,7 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
             try:
                 conn_url = json.dumps(redact_secrets(json.loads(conn_url)), sort_keys=True)
             except ValueError:
-                conn_url = ""          # not the JSON we expect: show nothing rather than risk a leak
+                conn_url = ""  # not the JSON we expect: show nothing rather than leak
         else:
             connmask = _connmask()
             if connmask is not None:
@@ -407,7 +413,8 @@ def install_connectors(app: Any, db_path: str, encryption_key: Optional[str],
             # An edit form that still shows "********": take the real secret from the user's
             # own source it came from (``secret_from``), only while the server is unchanged.
             original = store.get_source(user, (body.get("secret_from") or "").strip())
-            stored = original["conn_url"] if original and (original.get("kind") or "sql") == "sql" else None
+            is_sql = bool(original) and (original.get("kind") or "sql") == "sql"
+            stored = original["conn_url"] if is_sql else None
             try:
                 conn_url = connmask.unmask_conn_url(conn_url, stored)
             except ValueError as exc:

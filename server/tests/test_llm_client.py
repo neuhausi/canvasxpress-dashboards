@@ -21,4 +21,7 @@ def test_the_sdk_accepts_them():
         **_anthropic_client_kwargs("k", "https://gw.example.test/anthropic", "api-key"))
     assert str(client.base_url).rstrip("/") == "https://gw.example.test/anthropic"
     headers = client.default_headers
-    assert headers["api-key"] == "k" and headers["X-Api-Key"] == "k"
+    assert headers["api-key"] == "k"          # the gateway's own key header, always sent
+    # The SDK's own key header depends on its version: X-Api-Key (1.x) or Bearer (2.x).
+    sdk_auth = {**headers, **getattr(client, "auth_headers", {})}
+    assert sdk_auth.get("X-Api-Key") == "k" or sdk_auth.get("Authorization") == "Bearer k"
