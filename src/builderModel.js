@@ -106,6 +106,15 @@ export function addPanel(spec, panel) {
     var gg = { type: 'ggplot', title: panel.title || panel.id, spec: panel.spec };
     if (typeof panel.code === 'string' && panel.code) gg.code = panel.code;
     next.panels[panel.id] = gg;
+  } else if (panel.type === 'cxcode') {
+    // A CanvasXpress code panel (R `canvasXpress` / Python `canvasxpress` converter): a
+    // self-contained native spec plus the original source and its language. Like a
+    // ggplot panel it has no dataRef or graph config — without this branch it would
+    // fall through to a plain (empty) Bar graph panel and lose the converted chart.
+    var cx = { type: 'cxcode', title: panel.title || panel.id, spec: panel.spec };
+    if (typeof panel.code === 'string' && panel.code) cx.code = panel.code;
+    if (panel.language) cx.language = panel.language;
+    next.panels[panel.id] = cx;
   } else {
     next.panels[panel.id] = {
       title: panel.title || panel.id,

@@ -132,6 +132,27 @@
     .cxd-left-resizer::after { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px;
       border-radius: var(--cx-radius-sm); background: transparent; transition: background .15s; }
     .cxd-left-resizer:hover::after, .cxd-left-resizer.cxd-dragging::after { background: var(--cx-ui-accent); }
+    /* A visible grip in the middle, like the Data page's splitter handle. */
+    .cxd-left-resizer::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 7px; height: 34px; border-radius: var(--cx-radius-md); background-color: var(--cx-ui-surface);
+      background-image: repeating-linear-gradient(0deg, var(--muted) 0 2px, transparent 2px 5px);
+      background-size: 3px 20px; background-repeat: no-repeat; background-position: center;
+      border: 1px solid var(--rail-border); box-shadow: var(--cx-shadow-1); z-index: var(--cx-z-raised);
+      transition: border-color .15s, box-shadow .15s; }
+    .cxd-left-resizer:hover::before, .cxd-left-resizer.cxd-dragging::before { border-color: var(--cx-ui-accent); box-shadow: var(--cx-shadow-2); }
+    /* Horizontal (row) splitter: same capsule grip + hover as the left resizer. */
+    .cxd-h-splitter { flex: none; height: 10px; position: relative; cursor: ns-resize; touch-action: none; }
+    /* Full-width accent line on hover (matches the left resizer's ::after). */
+    .cxd-h-splitter::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+      height: 2px; border-radius: var(--cx-radius-sm); background: transparent; transition: background .15s; }
+    .cxd-h-splitter:hover::after, .cxd-h-splitter.cxd-dragging::after { background: var(--cx-ui-accent); }
+    .cxd-h-splitter::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: var(--cx-z-raised);
+      height: 7px; width: 34px; border-radius: var(--cx-radius-md); background-color: var(--cx-ui-surface);
+      background-image: repeating-linear-gradient(90deg, var(--muted) 0 2px, transparent 2px 5px);
+      background-size: 20px 3px; background-repeat: no-repeat; background-position: center;
+      border: 1px solid var(--rail-border); box-shadow: var(--cx-shadow-1);
+      transition: border-color .15s, box-shadow .15s; }
+    .cxd-h-splitter:hover::before, .cxd-h-splitter.cxd-dragging::before { border-color: var(--cx-ui-accent); box-shadow: var(--cx-shadow-2); }
     body.cxd-col-resizing { cursor: col-resize; user-select: none; }
     /* Settings view */
     .settings { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
@@ -643,12 +664,12 @@
             notice('🧱', 'Browse Databricks', 'Explore Unity Catalog from <b>Data → Databricks</b>: pick a SQL warehouse, open catalogs, schemas and tables, and preview a table’s columns and first 50 rows. <b>Save as source</b> or start a <b>Dashboard from this table</b>. On Posit Connect it reads Databricks as you, with your own grants; elsewhere it uses the server’s shared token. <a href="#" class="home-dbx">Open Data</a>.', 'n-feature') +
           '</div>' +
           notice('📡', 'Real-time streams', 'A panel can follow a stream as it happens: pick a 📡 stream in the panel’s <b>Data</b> list, set how many samples to keep and how often to update, and the chart slides forward with each new reading — no reload, one redraw per frame however fast data arrives. The browser never holds a credential, and every subscription is recorded in the audit log. <a href="' + API_BASE + '/examples/live-ops.html">See it in Live Ops</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/live-streaming.md" target="_blank" rel="noopener">How it works</a>.', 'n-feature') +
-          notice('🧩', 'Blend and link sources', 'Link related sources in <b>🔗 Links</b>: pick each source and its key, and selecting an order marks its customer everywhere. Join two sources from <b>+ Data → Join two sources</b>. Filter the whole board from one <b>Filters</b> panel with saved schemes. No JSON needed. <a href="' + API_BASE + '/examples/cohort-explorer.html">See it in the Cohort Explorer</a>.', 'n-md') +
+          notice('🧩', 'Blend and link sources', 'Link related sources in <b>Data → Links</b>: pick each source and its key, and selecting an order marks its customer everywhere. Join two sources from <b>Data → Data source → Join two sources</b>. Filter the whole board from one <b>Filters</b> panel with saved schemes. No JSON needed. <a href="' + API_BASE + '/examples/cohort-explorer.html">See it in the Cohort Explorer</a>.', 'n-md') +
           notice('🎯', 'Cross-filter and linked selection', 'Click a bar, point or cell and every linked panel responds — no code. A dashboard’s <code>markingMode</code> sets how: <b>Focus</b> greys the rest, <b>Highlight</b> outlines the marked rows, <b>Ghost</b> fades the unrelated away, and <b>Filter</b> narrows the related panels to the selection (true cross-filtering). Press <b>Esc</b> to clear. <a href="' + API_BASE + '/examples/cross-filter-demo.html">Cross-Filter</a> · <a href="' + API_BASE + '/examples/linked-highlight.html">Highlight</a> · <a href="' + API_BASE + '/examples/linked-ghost.html">Ghost</a>.', 'n-feature') +
           notice('🧪', 'R and Python functions', 'A data source can be a short R or Python snippet over your other sources — rank genes against survival, fit a model — and its result feeds panels like any dataset. Runs on the server in a sandbox, when an admin enables it.', 'cxb-n-40') +
-          notice('📈', 'Author charts in code', 'Already write charts as code? Click <b>📈 Code</b> in the Builder and pick your source — <b>ggplot2</b>, the R <code>canvasXpress</code> package, or the Python <code>canvasxpress</code> package — then paste a snippet that assigns the chart to <code>g</code>. It runs once on the server (sandboxed) and becomes a <b>live, interactive</b> CanvasXpress panel: hover, selection and the customizer, not a picture. Open <b>&lt;/&gt; Code</b> on a panel to edit the source and re-convert it. Build a whole dashboard from a folder of snippets with the <code>cxd-ggplot</code> / <code>cxd-cx</code> tools. Admin-enabled, same trust boundary as the data functions above. <a href="' + API_BASE + '/examples/code-panels-gallery.html">See the Code Gallery</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/code-panels.md" target="_blank" rel="noopener">How it works</a>.', 'n-feature') +
-          notice('ƒx', 'Calculated fields', 'Define a field once on a data source (a formula such as <code>Revenue / Units</code> or <code>Age &gt;= 50 ? "50+" : "&lt;50"</code>, or bins of a number column) and every panel, <b>Filters</b> panel, join and link on that source can use it, like a column of the source itself. Open <b>ƒx Fields</b> in the Builder: it checks the formula as you type and previews the first values. <a href="' + API_BASE + '/examples/sales-model.html">See it in the Sales Model</a>.', 'n-md') +
-          notice('▦', 'Shape your data', 'Keep only the rows you need, keep some columns or summarize them (group by, with count, sum, average, min or max), sort, and keep the top rows, all from <b>▦ Shape data</b> with a live preview. A database source does this in its database, so only the answer travels. Other sources do it in the browser, with the same results. <a href="' + API_BASE + '/examples/sales-model.html">See it in the Sales Model</a>.', 'n-md') +
+          notice('📈', 'Author charts in code', 'Already write charts as code? Choose <b>+ Add → Code</b> in the Builder and pick your source — <b>ggplot2</b>, the R <code>canvasXpress</code> package, or the Python <code>canvasxpress</code> package — then paste a snippet that assigns the chart to <code>g</code>. It runs once on the server (sandboxed) and becomes a <b>live, interactive</b> CanvasXpress panel: hover, selection and the customizer, not a picture. Open <b>&lt;/&gt; Code</b> on a panel to edit the source and re-convert it. Build a whole dashboard from a folder of snippets with the <code>cxd-ggplot</code> / <code>cxd-cx</code> tools. Admin-enabled, same trust boundary as the data functions above. <a href="' + API_BASE + '/examples/code-panels-gallery.html">See the Code Gallery</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/code-panels.md" target="_blank" rel="noopener">How it works</a>.', 'n-feature') +
+          notice('ƒx', 'Calculated fields', 'Define a field once on a data source (a formula such as <code>Revenue / Units</code> or <code>Age &gt;= 50 ? "50+" : "&lt;50"</code>, or bins of a number column) and every panel, <b>Filters</b> panel, join and link on that source can use it, like a column of the source itself. Open <b>Data → Fields</b> in the Builder: it checks the formula as you type and previews the first values. <a href="' + API_BASE + '/examples/sales-model.html">See it in the Sales Model</a>.', 'n-md') +
+          notice('▦', 'Shape your data', 'Keep only the rows you need, keep some columns or summarize them (group by, with count, sum, average, min or max), sort, and keep the top rows, all from <b>Data → Shape data</b> with a live preview. A database source does this in its database, so only the answer travels. Other sources do it in the browser, with the same results. <a href="' + API_BASE + '/examples/sales-model.html">See it in the Sales Model</a>.', 'n-md') +
           notice('🛡️', 'Governance', 'Roles decide who can build, upload and share. Share a dashboard or dataset with people and groups, to view or to edit. Row- and column-level security decides who sees which rows and columns — site A sees site A; only clinicians see names — in the app, in shared dashboards and on share links. Lineage shows which dashboards read which data. <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/governance.md" target="_blank" rel="noopener">How it works</a>.', 'n-lg') +
           notice('🧾', 'Audit log', 'Who did what, when: sign-ins, changes, shares, share-link views and function runs. Tamper-evident, filterable and exportable from the Admin view.', 'n-sm') +
           notice('⏰', 'Scheduling', 'Refresh datasets from a URL or a database every night (with values for the query’s parameters, such as one region), get an email when a value crosses a threshold, and send dashboards to people every Monday — with a PNG snapshot of what each of them may see. Set it up in <b>Schedules</b>.', 'n-md') +
@@ -708,14 +729,14 @@
               '<div style="font-weight:600;font-size:16px;margin-bottom:6px">💬 Assistant</div>' +
               '<strong>How it works:</strong> tick the datasets to use, then describe the ' +
               'dashboard you want — it appears on the canvas, where you keep refining by hand ' +
-              'or by chat. Prefer manual? Tick a dataset and click <strong>+ Panel</strong>.' +
+              'or by chat. Prefer manual? Tick a dataset, then <strong>+ Add → Panel</strong>.' +
             '</div>' +
             '<div id="chat-datasets" style="flex:none;height:250px;min-height:250px;display:flex;flex-direction:column;padding:10px 12px;font-size:16px;overflow:hidden;background:var(--rail-bg);border:1px solid var(--cx-ui-border);border-radius:var(--cx-radius-lg)">' +
               '<div style="flex:none;font-weight:600;text-transform:uppercase;font-size:13px;color:var(--muted);margin-bottom:4px">Datasets to use</div>' +
               '<input id="chat-dataset-search" type="search" placeholder="Search datasets…" style="flex:none;width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:6px;font:inherit;font-size:15px;border:1px solid var(--rail-border);border-radius:var(--cx-radius-md)"/>' +
               '<div id="chat-dataset-list" style="flex:1;min-height:0;display:flex;flex-direction:column;gap:7px;overflow-y:auto;padding:2px 0">Loading…</div>' +
             '</div>' +
-            '<div id="chat-splitter" title="Drag to resize" style="flex:none;height:8px;cursor:ns-resize;border-top:1px solid var(--rail-border);border-bottom:1px solid var(--rail-border);background:repeating-linear-gradient(90deg,transparent,transparent 4px,var(--rail-border) 4px,var(--rail-border) 8px);background-size:24px 2px;background-position:center;background-repeat:no-repeat"></div>' +
+            '<div id="chat-splitter" class="cxd-h-splitter" title="Drag to resize"></div>' +
             '<div id="chat-section" style="flex:1;min-height:250px;display:flex;flex-direction:column;overflow:hidden;background:var(--rail-bg);border:1px solid var(--cx-ui-border);border-radius:var(--cx-radius-lg)">' +
               '<div id="chat-log" style="flex:1;min-height:0;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>' +
               '<div style="flex:none;display:flex;gap:6px;padding:8px;border-top:1px solid var(--rail-border)">' +
@@ -845,7 +866,7 @@
               '<button type="button" class="cxd-src-head" aria-expanded="true"><span class="cxd-src-chev" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6l4.5 4.5L12.5 6"/></svg></span>File sources</button>' +
               '<div id="data-list" style="flex:1;min-height:0;overflow-y:auto"><div class="placeholder">Loading…</div></div>' +
             '</div>' +
-            '<div id="data-splitter" title="Drag to resize" style="flex:none;height:8px;margin:4px 0;cursor:ns-resize;border-top:1px solid var(--rail-border);border-bottom:1px solid var(--rail-border);background:repeating-linear-gradient(90deg,transparent,transparent 4px,var(--rail-border) 4px,var(--rail-border) 8px);background-size:24px 2px;background-position:center;background-repeat:no-repeat"></div>' +
+            '<div id="data-splitter" class="cxd-h-splitter" title="Drag to resize" style="margin:4px 0"></div>' +
             '<div class="data-list" id="db-sources" style="flex:1;min-height:250px;width:auto;align-self:stretch;padding:10px;display:flex;flex-direction:column;overflow:hidden">' +
               '<button type="button" class="cxd-src-head" aria-expanded="true"><span class="cxd-src-chev" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6l4.5 4.5L12.5 6"/></svg></span>Database sources</button>' +
               '<div id="db-source-list" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px"><div class="placeholder">Loading…</div></div>' +
@@ -4306,7 +4327,7 @@
         '<li><b>The values to pick from</b> — a database query (Data → + Database).</li>' +
         '<li><b>The query a pick re-runs</b> — a query with a <code>:parameter</code>.</li>' +
         '<li><b>The Control</b> — lists the values and re-runs the query (Builder → + Control).</li>' +
-        '<li><b>The chart</b> — of the re-run query, with a live preview (Builder → + Panel).</li></ol>';
+        '<li><b>The chart</b> — of the re-run query, with a live preview (Builder → + Add → Panel).</li></ol>';
       body.appendChild(intro);
       var title = document.createElement('input');
       title.type = 'text';
@@ -4380,7 +4401,7 @@
             var finalSpec = builder.getSpec();
             currentSpec = finalSpec;
             return client.save(finalSpec).then(function () {
-              if (!panel) window.alert('Saved “' + dashTitle + '”. Add its chart with + Panel.');
+              if (!panel) window.alert('Saved “' + dashTitle + '”. Add its chart with + Add → Panel.');
             });
           });
         }).catch(function (e) { window.alert('Dashboard from database: ' + (e && e.message || e)); });

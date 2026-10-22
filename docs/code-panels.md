@@ -17,7 +17,7 @@ Dash-style app, a different architecture.
 
 ### 1. Paste in the Builder
 
-Click **📈 Code** in the Builder, pick a **Source** — ggplot2, R `canvasXpress`, or
+Choose **+ Add → Code** in the Builder, pick a **Source** — ggplot2, R `canvasXpress`, or
 Python `canvasxpress` (whichever the server offers) — and paste a snippet that
 assigns its chart to `g`:
 

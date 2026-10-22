@@ -147,6 +147,39 @@ test('the panel "Method" toggle sets provenance.show and renders the footer', as
   assert.ok(container.querySelector('.cxd-panel-footer'), 'footer rendered after toggle');
 });
 
+// ggplot and CanvasXpress-code panels are self-contained, but their props strip carries
+// the same Title and Method controls as every other panel (plus the PANEL name).
+['ggplot', 'cxcode'].forEach(function (kind) {
+  test('a ' + kind + ' panel has the PANEL name, Title and Method controls', async function () {
+    installDom();
+    var container = document.createElement('div');
+    var builder = createBuilder(container, { spec: blankSpec('d1'), CanvasXpress: makeCX([]) });
+    var inner = kind === 'ggplot'
+      ? { isGGPlot: true, data: [['Id', 'x'], ['a', 1]], geoms: ['GeomPoint'] }
+      : { data: { y: { vars: ['a'], smps: ['s'], data: [[1]] } }, config: { graphType: 'Bar' } };
+    builder.addPanel({ id: 'p1', type: kind, title: 'Code chart', spec: inner });
+    await builder.whenReady();
+
+    function labelled(text) {
+      return [].filter.call(container.querySelectorAll('.cxb-check'), function (lab) {
+        return [].some.call(lab.querySelectorAll('span'), function (s) { return s.textContent === text; });
+      })[0];
+    }
+    assert.ok(labelled('Title'), 'Title toggle present for a ' + kind + ' panel');
+    assert.ok(labelled('Method'), 'Method toggle present for a ' + kind + ' panel');
+    assert.ok(container.querySelector('.cxb-tinput'), 'PANEL name field present');
+
+    var box = labelled('Method').querySelector('input');
+    box.checked = true;
+    box.dispatchEvent('change');
+    assert.equal(builder.getSpec().panels.p1.provenance.show, true, 'Method sets provenance.show');
+    var title = labelled('Title').querySelector('input');
+    title.checked = false;
+    title.dispatchEvent('change');
+    assert.equal(builder.getSpec().panels.p1.hideTitle, true, 'unticking Title sets hideTitle');
+  });
+});
+
 test('adding an image element renders a placeholder cell (no ⚙) and image props', async function () {
   installDom();
   var container = document.createElement('div');
@@ -271,6 +304,113 @@ test('getSpec preserves the panel graphType when getConfig returns it undefined'
   assert.equal(spec.panels.p1.config.colorBy, 'Region', 'defined live keys still apply');
 });
 
+// --- toolbar items are enabled only when adding them can succeed ---
+
+/** A builder over `panels` ({id: panel def}) with one data source; returns {builder, container}. */
+async function builderWithPanels(panels, extraOptions) {
+  installDom();
+  var container = document.createElement('div');
+  var builder = createBuilder(container, Object.assign({
+    spec: setDataSource(blankSpec('d1'), 'sample', DATA),
+    CanvasXpress: makeCX([])
+  }, extraOptions || {}));
+  Object.keys(panels).forEach(function (id) {
+    builder.addPanel(Object.assign({ id: id, title: id }, panels[id]));
+  });
+  await builder.whenReady();
+  return { builder: builder, container: container };
+}
+
+var GG_PANEL = { type: 'ggplot', spec: { isGGPlot: true, data: [['Id', 'x'], ['a', 1]], geoms: ['GeomPoint'] } };
+var CX_PANEL = { type: 'cxcode', spec: { data: { y: { vars: ['a'], smps: ['s'], data: [[1]] } }, config: { graphType: 'Bar' } } };
+
+test('Transform and Significance are disabled when only ggplot / code panels exist', async function () {
+  var ctx = await builderWithPanels({ g1: GG_PANEL, c1: CX_PANEL });
+  assert.equal(buttonNamed(ctx.container, 'Transform').disabled, true, 'nothing to transform');
+  assert.equal(buttonNamed(ctx.container, 'Significance').disabled, true, 'nothing to bracket (a code panel is not a graph panel)');
+  assert.match(buttonNamed(ctx.container, 'Transform').title, /ggplot and code panels/);
+  assert.match(buttonNamed(ctx.container, 'Significance').title, /Boxplot, Violin or Bar/);
+});
+
+test('Transform needs a data-bound graph panel; Significance needs a Boxplot / Violin / Bar one', async function () {
+  var scatter = await builderWithPanels({ p1: { dataRef: 'sample', config: { graphType: 'Scatter2D' } } });
+  assert.equal(buttonNamed(scatter.container, 'Transform').disabled, false, 'a scatter panel can be transformed');
+  assert.equal(buttonNamed(scatter.container, 'Significance').disabled, true, 'but brackets render only on group charts');
+
+  var box = await builderWithPanels({ p1: { dataRef: 'sample', config: { graphType: 'Boxplot' } } });
+  assert.equal(buttonNamed(box.container, 'Transform').disabled, false);
+  assert.equal(buttonNamed(box.container, 'Significance').disabled, false, 'a boxplot takes brackets');
+});
+
+test('a ggplot panel next to a graph panel does not change the enabled state, and removing the graph panel disables both', async function () {
+  var ctx = await builderWithPanels({ p1: { dataRef: 'sample', config: { graphType: 'Bar' } }, g1: GG_PANEL });
+  assert.equal(buttonNamed(ctx.container, 'Transform').disabled, false);
+  assert.equal(buttonNamed(ctx.container, 'Significance').disabled, false);
+  var spec = ctx.builder.getSpec();
+  delete spec.panels.p1;
+  spec.layout.items = spec.layout.items.filter(function (it) { return it.panel !== 'p1'; });
+  ctx.builder.setSpec(spec);
+  await ctx.builder.whenReady();
+  assert.equal(buttonNamed(ctx.container, 'Transform').disabled, true, 'the last graph panel is gone');
+  assert.equal(buttonNamed(ctx.container, 'Significance').disabled, true);
+});
+
+// A user's database sources let a query Control start before any graph panel exists; that
+// must not leak into a dashboard of ggplot / code panels, which has nothing to drive.
+var WITH_DB = { listConnectorSources: function () { return [{ name: 'warehouse', url: '/c/warehouse' }]; } };
+
+test('Control and the FDR slider are disabled in a dashboard of ggplot / code panels, even with database sources', async function () {
+  var ctx = await builderWithPanels({ g1: GG_PANEL, c1: CX_PANEL }, WITH_DB);
+  await new Promise(function (r) { setTimeout(r, 0); });   // connector list resolves async
+  assert.equal(buttonNamed(ctx.container, 'Control').disabled, true, 'nothing for a control to drive');
+  assert.match(buttonNamed(ctx.container, 'Control').title, /ggplot and code panels carry their own data/);
+  assert.equal(buttonNamed(ctx.container, 'FDR slider').disabled, true, 'no panel can carry brackets to re-filter');
+  assert.match(buttonNamed(ctx.container, 'FDR slider').title, /Boxplot, Violin or Bar/);
+});
+
+test('Control keeps its database-source start on an empty dashboard; the FDR slider follows Significance', async function () {
+  var empty = await builderWithPanels({}, WITH_DB);
+  await new Promise(function (r) { setTimeout(r, 0); });
+  assert.equal(buttonNamed(empty.container, 'Control').disabled, false, 'a query control can still start from a database source');
+  assert.equal(buttonNamed(empty.container, 'FDR slider').disabled, true, 'but there is nothing to re-filter yet');
+
+  var scatter = await builderWithPanels({ p1: { dataRef: 'sample', config: { graphType: 'Scatter2D' } } });
+  assert.equal(buttonNamed(scatter.container, 'FDR slider').disabled, true, 'no bracket-able panel');
+  var box = await builderWithPanels({ p1: { dataRef: 'sample', config: { graphType: 'Boxplot' } } });
+  assert.equal(buttonNamed(box.container, 'FDR slider').disabled, false, 'a boxplot can carry brackets');
+  assert.equal(buttonNamed(box.container, 'Control').disabled, false, 'and a control can drive it');
+});
+
+test('a code panel next to a data-bound graph panel leaves Control and the FDR slider enabled', async function () {
+  var ctx = await builderWithPanels({ p1: { dataRef: 'sample', config: { graphType: 'Bar' } }, g1: GG_PANEL }, WITH_DB);
+  await new Promise(function (r) { setTimeout(r, 0); });
+  assert.equal(buttonNamed(ctx.container, 'Control').disabled, false, 'the bar panel can be driven');
+  assert.equal(buttonNamed(ctx.container, 'FDR slider').disabled, false);
+});
+
+test('Code is disabled once the server reports it cannot convert code, enabled when it can', async function () {
+  var realFetch = globalThis.fetch;
+  try {
+    // A server that runs ggplot conversion.
+    globalThis.fetch = function (url) {
+      var ok = /\/api\/ggplot\/status/.test(url) ? { available: true, canRun: true } : {};
+      return Promise.resolve({ ok: true, json: function () { return Promise.resolve(ok); } });
+    };
+    var yes = await builderWithPanels({});
+    await new Promise(function (r) { setTimeout(r, 0); });
+    assert.equal(buttonNamed(yes.container, 'Code').disabled, false, 'ggplot conversion available');
+
+    // A server with code conversion off (or an old one with no status endpoint).
+    globalThis.fetch = function () { return Promise.resolve({ ok: false, json: function () { return Promise.resolve({}); } }); };
+    var no = await builderWithPanels({});
+    await new Promise(function (r) { setTimeout(r, 0); });
+    assert.equal(buttonNamed(no.container, 'Code').disabled, true, 'nothing available → disabled');
+    assert.match(buttonNamed(no.container, 'Code').title, /disabled on this server/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 test('ACCEPTANCE: build a 4-panel dashboard with no code; the spec validates and renders', async function () {
   installDom();
   var container = document.createElement('div');
@@ -308,7 +448,7 @@ test('+ Control is disabled until the dashboard has data and a graph panel', asy
   var builder = createBuilder(container, { spec: blankSpec('d1'), CanvasXpress: makeCX(calls) });
   function controlBtn() {
     return [].filter.call(container.querySelectorAll('button'), function (b) {
-      return b.textContent === '+ Control';
+      return b.textContent === 'Control';
     })[0];
   }
   assert.equal(controlBtn().disabled, true, 'disabled on a blank dashboard');
@@ -348,7 +488,7 @@ test('+ Filters adds a Filters panel over the first source once a graph exists',
   var builder = createBuilder(container, { spec: setDataSource(blankSpec('d1'), 'sample', DATA), CanvasXpress: makeCX([]) });
   function filtersBtn() {
     return [].filter.call(container.querySelectorAll('button'), function (b) {
-      return b.textContent === '+ Filters';
+      return b.textContent === 'Filters';
     })[0];
   }
   assert.equal(filtersBtn().disabled, true, 'disabled before a graph panel exists');
@@ -475,10 +615,10 @@ test('🔗 Links is disabled until there are two data sources', async function (
   installDom();
   var container = document.createElement('div');
   var builder = createBuilder(container, { spec: setDataSource(blankSpec('d1'), 'clinical', CLINICAL_SRC), CanvasXpress: makeCX([]) });
-  assert.equal(buttonNamed(container, '🔗 Links').disabled, true, 'one source: nothing to link');
+  assert.equal(buttonNamed(container, 'Links').disabled, true, 'one source: nothing to link');
   builder.setSpec(twoSourceSpec());
   await builder.whenReady();
-  assert.equal(buttonNamed(container, '🔗 Links').disabled, false, 'two sources: enabled');
+  assert.equal(buttonNamed(container, 'Links').disabled, false, 'two sources: enabled');
 });
 
 test('Links dialog: link two sources on a key and pick a marking mode, without JSON', async function () {
@@ -489,7 +629,7 @@ test('Links dialog: link two sources on a key and pick a marking mode, without J
   await builder.whenReady();
   var before = calls.length;
 
-  buttonNamed(container, '🔗 Links').dispatchEvent('click');
+  buttonNamed(container, 'Links').dispatchEvent('click');
   await settle();
   var modal = document.body.querySelector('.cxb-modal');
   assert.ok(modal, 'the Links dialog opened');
@@ -535,7 +675,7 @@ test('Links dialog: removing a link and Cancel leave the spec as it was', async 
   var builder = createBuilder(container, { spec: start, CanvasXpress: makeCX([]) });
   await builder.whenReady();
 
-  buttonNamed(container, '🔗 Links').dispatchEvent('click');
+  buttonNamed(container, 'Links').dispatchEvent('click');
   var modal = document.body.querySelector('.cxb-modal');
   assert.equal(modal.querySelectorAll('.cxb-links-row').length, 1, 'existing link listed');
   buttonNamed(modal.querySelector('.cxb-links-row'), '×').dispatchEvent('click');
@@ -543,7 +683,7 @@ test('Links dialog: removing a link and Cancel leave the spec as it was', async 
   buttonNamed(modal, 'Cancel').dispatchEvent('click');
   assert.deepEqual(builder.getSpec().relationships, start.relationships, 'Cancel discards the edit');
 
-  buttonNamed(container, '🔗 Links').dispatchEvent('click');
+  buttonNamed(container, 'Links').dispatchEvent('click');
   modal = document.body.querySelector('.cxb-modal');
   buttonNamed(modal.querySelector('.cxb-links-row'), '×').dispatchEvent('click');
   buttonNamed(modal, 'Apply').dispatchEvent('click');
@@ -557,7 +697,7 @@ test('+ Data → Join two sources adds a valid join source from pickers', async 
   var builder = createBuilder(container, { spec: twoSourceSpec(), CanvasXpress: makeCX([]) });
   await builder.whenReady();
 
-  buttonNamed(container, '+ Data').dispatchEvent('click');
+  buttonNamed(container, 'Data source').dispatchEvent('click');
   await settle();
   var modal = document.body.querySelector('.cxb-modal');
   var typeSel = modal.querySelectorAll('select')[0];
@@ -616,7 +756,7 @@ test('ƒx Fields: add a formula field to a source with live validation, then App
   await builder.whenReady();
   var before = calls.length;
 
-  buttonNamed(container, 'ƒx Fields').dispatchEvent('click');
+  buttonNamed(container, 'Fields').dispatchEvent('click');
   await settle();
   var modal = document.body.querySelector('.cxb-modal');
   var sourceSel = modal.querySelectorAll('select')[0];
@@ -654,7 +794,7 @@ test('ƒx Fields: an engine without the static API explains why fields cannot be
   var container = document.createElement('div');
   var builder = createBuilder(container, { spec: twoSourceSpec(), CanvasXpress: makeCX([]) });
   await builder.whenReady();
-  buttonNamed(container, 'ƒx Fields').dispatchEvent('click');
+  buttonNamed(container, 'Fields').dispatchEvent('click');
   await settle();
   var modal = document.body.querySelector('.cxb-modal');
   var texts = [].map.call(modal.querySelectorAll('.cxb-links-none'), function (s) { return s.textContent; }).join(' ');
@@ -678,7 +818,7 @@ test('Shape data: filter, summarize, sort, preview, then Apply writes the pushdo
   var builder = createBuilder(container, { spec: spec, CanvasXpress: makeCX(calls) });
   await builder.whenReady();
 
-  buttonNamed(container, '▦ Shape data').dispatchEvent('click');
+  buttonNamed(container, 'Shape data').dispatchEvent('click');
   await settle();
   var modal = document.body.querySelector('.cxb-modal');
   // Selects in order: source, filter column, filter op, result mode, measure fn, measure column, sort.
@@ -749,7 +889,7 @@ test('undo/redo: a committed edit reverts and reapplies; buttons track the stack
   assert.equal(Object.keys(builder.getSpec().panels || {}).length, 0, 'both adds undone');
   builder.undo();   // empty stack: a no-op, never a throw
   var buttons = [].filter.call(container.querySelectorAll('button'), function (b) {
-    return b.textContent === '\u21b6' || b.textContent === '\u21b7';
+    return b.attributes && (b.attributes['aria-label'] === 'Undo' || b.attributes['aria-label'] === 'Redo');
   });
   assert.equal(buttons.length, 2, 'undo/redo buttons in the toolbar');
   assert.equal(buttons[0].disabled, true, 'undo disabled on an empty stack');

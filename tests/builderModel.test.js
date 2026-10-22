@@ -442,3 +442,11 @@ test('addPanel keeps a ggplot panel self-contained (spec + code, no dataRef/conf
   assert.equal(p.config, undefined);     // no bogus graph config
   assert.ok(validateSpec(next).valid, JSON.stringify(validateSpec(next).errors));
 });
+
+test('addPanel keeps a CanvasXpress code panel (cxcode) intact instead of making a blank Bar panel', function () {
+  var inner = { config: { graphType: 'Heatmap' }, data: { y: { vars: ['a'], smps: ['s'], data: [[1]] } } };
+  var next = addPanel(blankSpec('d'), { id: 'c1', type: 'cxcode', title: 'Expr', spec: inner, code: 'cx(...)', language: 'python' });
+  assert.deepEqual(next.panels.c1, { type: 'cxcode', title: 'Expr', spec: inner, code: 'cx(...)', language: 'python' });
+  assert.ok(!('dataRef' in next.panels.c1) && !('config' in next.panels.c1), 'no dataRef / graph config, like a ggplot panel');
+  assert.equal(next.layout.items.length, 1, 'laid out like any panel');
+});

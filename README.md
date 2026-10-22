@@ -310,9 +310,9 @@ keyed differently, declare how the sources relate:
 "markingMode": "focus"   // focus (default) | highlight | ghost | filter
 ```
 
-In the builder, **🔗 Links** does this without JSON: pick two sources and a key
+In the builder, **Data → Links** does this without JSON: pick two sources and a key
 on each (row id, annotation or column), **+ Link**, and choose how a selection
-shows. **+ Data → Join two sources** builds a join the same way.
+shows. **Data → Data source → Join two sources** builds a join the same way.
 
 - **Marking** — selecting rows in a panel marks the related rows in the panels
   of every source reachable through relationships (several hops, both
@@ -361,7 +361,7 @@ panel, join and link on it sees them as ordinary columns:
   (`breaks`).
 - Needs the CanvasXpress release after 70.4. With an older engine the data
   shows without the fields and a warning is logged once per source.
-- In the builder, **ƒx Fields** adds and removes them without JSON, with live
+- In the builder, **Data → Fields** adds and removes them without JSON, with live
   validation and a preview.
 
 ## Data functions (R / Python)
@@ -488,7 +488,7 @@ of its `dataRef`.
   `spec.filterSchemes`). **Reset** or Esc clears every filter.
 - `handle.getFilterState()` / `handle.setFilterState(state)` /
   `handle.getFilterSchemes()` read and restore the state programmatically.
-- In the builder, **+ Filters** adds one over the first data source.
+- In the builder, **Interact → Filters** adds one over the first data source.
 
 ## Portable, versioned specs (git-native dashboards)
 
@@ -562,7 +562,7 @@ returned no rows" error. On an aggregated source, pick Filters fields that
 exist before and after the query (a group key); an output-only field such as a
 measure has no column to filter the source rows by.
 
-In the builder, **▦ Shape data** writes this query without JSON, for any source:
+In the builder, **Data → Shape data** writes this query without JSON, for any source:
 filters, keep columns or summarize, sort and top N, with a live preview.
 
 ## New chart from data (wizard)

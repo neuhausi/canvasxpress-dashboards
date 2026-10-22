@@ -394,17 +394,60 @@ export var dashboardCss = [
   /* toolbar (host may be an app-shell element) */
   // Two fixed rows: create actions + Save, then the selected element's
   // configuration (always reserved, so the stage never jumps on select).
-  '.cxb-topbar { display: flex; flex-direction: column; align-items: stretch; gap: 12px; width: 100%; }',
+  '.cxb-topbar { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 100%; }',
   '.cxb-trow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }',
+  /* Toolbar drop-downs: one per accent colour (+ Add / Interact / Data). The
+     trigger keeps the group's left-edge accent; the panel opens beneath it with
+     the same accent along its top edge and the actions as full-width rows. */
+  '.cxb-menu { position: relative; display: inline-block; }',
+  /* The three triggers share one width (label left, chevron right) so the group reads as a set. */
+  '.cxb-menu-trigger { display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; width: 124px; }',
+  '.cxb-menu-caret { display: inline-flex; flex: none; width: 18px; height: 18px; opacity: .8; }',
+  '.cxb-menu-caret svg { width: 100%; height: 100%; display: block; }',
+  '.cxb-menu-panel { display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 200px;',
+  '  flex-direction: column; gap: 2px; padding: 4px; z-index: var(--cx-z-modal);',
+  '  background: var(--cx-ui-surface); border: 1px solid var(--cxd-border); border-top-width: 3px;',
+  '  border-radius: var(--cx-radius-md); box-shadow: var(--cx-shadow-2); }',
+  '.cxb-menu-open .cxb-menu-panel { display: flex; }',
+  '.cxb-menu-add .cxb-menu-panel { border-top-color: var(--cx-color-brand-add); }',
+  '.cxb-menu-interact .cxb-menu-panel { border-top-color: var(--cx-color-brand-interact); }',
+  '.cxb-menu-data .cxb-menu-panel { border-top-color: var(--cx-color-brand-data); }',
+  '.cxb-menu-open > .cxb-menu-trigger { background: var(--cx-ui-surface-sunken); }',
+  /* Actions inside a panel read as menu rows, not buttons: borderless, left-aligned. */
+  '.cxb-menu-panel .cxb-btn { display: flex; align-items: center; justify-content: flex-start; width: 100%; text-align: left;',
+  '  border: 0; border-radius: var(--cx-radius-sm); background: transparent; box-shadow: none; padding: 7px 10px; }',
+  /* Menu-item icons: a leading SVG (ordered first, the label stays the button's own
+     text), tinted with the group's accent so the colour language carries into the rows. */
+  '.cxb-menu-panel .cxb-btn { gap: 10px; }',
+  '.cxb-ic { order: -1; display: inline-flex; flex: none; width: 18px; height: 18px; color: var(--cxd-muted); }',
+  '.cxb-ic svg { width: 100%; height: 100%; display: block; }',
+  /* Icon-only history buttons: full-strength icon (not the muted menu tint), compact padding. */
+  '.cxb-icon-btn { display: inline-flex; align-items: center; justify-content: center; padding: 6px 9px; }',
+  '.cxb-icon-btn .cxb-ic { order: 0; width: 20px; height: 20px; color: var(--cx-ui-text); }',
+  '.cxb-menu-add .cxb-ic { color: var(--cx-color-brand-add); }',
+  '.cxb-menu-interact .cxb-ic { color: var(--cx-color-brand-interact); }',
+  '.cxb-menu-data .cxb-ic { color: var(--cx-color-brand-data); }',
+  '.cxb-menu-add .cxb-menu-panel .cxb-btn:hover:not(:disabled) { background: var(--cx-color-brand-add-a14); }',
+  '.cxb-menu-interact .cxb-menu-panel .cxb-btn:hover:not(:disabled) { background: var(--cx-color-brand-interact-a18); }',
+  '.cxb-menu-data .cxb-menu-panel .cxb-btn:hover:not(:disabled) { background: var(--cx-color-brand-data-a12); }',
   '.cxb-tgroup { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }',
   '.cxb-spacer { flex: 1 1 auto; }',
   '.cxb-tlabel { font: 600 14px var(--cxd-font); text-transform: uppercase; letter-spacing: .03em;',
   '  color: var(--cxd-muted); }',
+  // The dashboard title takes the free room (so it is not cut off) but yields to the menus.
   '.cxb-title-input { padding: 5px 8px; border: 1px solid var(--cxd-border);',
-  '  border-radius: var(--cx-radius-md); font: 600 16px var(--cxd-font); min-width: 150px; }',
+  '  border-radius: var(--cx-radius-md); font: 600 16px var(--cxd-font); min-width: 150px; flex: 0 1 320px; }',
   '.cxb-tinput { padding: 5px 8px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md);',
   '  font: inherit; width: 130px; }',
-  '.cxb-props { min-height: 34px; }',
+  /* The selected-panel strip: a slim bar attached under the toolbar. Dashed with a
+     hint while nothing is selected; solid accent once a panel is. Height is always
+     reserved so selecting never shifts the stage. */
+  '.cxb-props { min-height: 44px; box-sizing: border-box; padding: 5px 12px; gap: 10px;',
+  '  background: var(--cx-ui-surface); border: 1px dashed var(--cxd-border); border-radius: var(--cx-radius-md); }',
+  '.cxb-props.cxb-props-active { border-style: solid; border-color: var(--cx-ui-accent); background: var(--cx-ui-accent-tint-subtle); }',
+  '.cxb-props-hint { color: var(--cxd-muted); font-size: 14px; }',
+  // The panel-name field grows with the free room instead of a fixed 130px.
+  '.cxb-props .cxb-tinput { flex: 1 1 150px; width: auto; min-width: 120px; max-width: 300px; }',
   '.cxb-props select { padding: 5px 5px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md); font: inherit; }',
   // Compact labels in the props row so a control's full configuration fits on
   // one line in a ~1400px window.
@@ -481,6 +524,9 @@ export var dashboardCss = [
   '  transition: opacity .12s ease; background: var(--cxd-panel-bg);',
   '  border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md); box-shadow: var(--cx-shadow-1); }',
   '.cxb-cell:hover .cxb-chrome, .cxb-cell.cxb-selected .cxb-chrome { opacity: 1; pointer-events: auto; }',
+  // The edit chrome is controls, not content: a drag that starts near it must never
+  // sweep a text selection across its glyphs (or the resize handle).
+  '.cxb-chrome, .cxb-chrome *, .cxb-resize, .cxb-resize * { -webkit-user-select: none; user-select: none; }',
   // Flex-centre the glyphs: line-height alone leaves text glyphs (⚙ ✕ ⠿) sitting
   // low in the box, so the whole pill reads as bottom-heavy even when centred.
   '.cxb-grip { cursor: grab; user-select: none; width: 22px; height: 22px;',
@@ -491,9 +537,15 @@ export var dashboardCss = [
   '  border-radius: var(--cx-radius-md); cursor: pointer; font-size: 19px; line-height: 1; color: var(--cxd-muted); }',
   '.cxb-tool:hover { background: var(--cx-ui-accent-tint); color: inherit; }',
   '.cxb-tool.cxb-tool-code { width: auto; padding: 0 5px; font: 600 12px/26px var(--cx-font-mono); }',
-  '.cxb-resize { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize;',
-  '  background: linear-gradient(135deg, transparent 50%, var(--cx-ui-accent) 50%); border-bottom-right-radius: var(--cx-radius-lg); z-index: var(--cx-z-popover-high);',
-  '  opacity: 0; transition: opacity .12s ease; }',
+  /* Corner resize handle: two nested chevrons at 45° (stroked SVG, set in builder.js). Shown
+     while the panel is hovered or selected; muted at rest, accent when the handle itself is hovered. */
+  '.cxb-resize { position: absolute; right: 2px; bottom: 2px; width: 24px; height: 24px; cursor: nwse-resize; touch-action: none;',
+  '  display: flex; align-items: center; justify-content: center; color: var(--cx-ui-text); z-index: var(--cx-z-popover-high);',
+  // A soft backing chip keeps the arrow legible over the chart's own bottom-right watermark.
+  '  background: color-mix(in srgb, var(--cx-ui-surface) 88%, transparent); border-radius: var(--cx-radius-md);',
+  '  opacity: 0; transition: opacity .12s ease, color .12s ease; }',
+  '.cxb-resize svg { width: 18px; height: 18px; display: block; }',
+  '.cxb-resize:hover { color: var(--cx-ui-accent); }',
   '.cxb-cell:hover .cxb-resize, .cxb-cell.cxb-selected .cxb-resize { opacity: 1; }',
   /* control (table/filter) height-resize: a grabbable bottom edge */
   '.cxb-ctl-resize { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; cursor: ns-resize;',

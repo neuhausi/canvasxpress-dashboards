@@ -58,7 +58,7 @@ reps in the same region(s). Because relationships are bidirectional, selecting i
 
 ## Authoring in the builder
 
-Open **🔗 Links**, add the relationship (source + key on each side), and set
+Open **Data → Links**, add the relationship (source + key on each side), and set
 **When you select marks** to *Filter: narrow related panels to the selection
 (cross-filter)*. The links summary then reads "selections filter related panels".
 

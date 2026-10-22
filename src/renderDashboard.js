@@ -1264,6 +1264,9 @@ export function renderDashboard(spec, target, options) {
       if (cell.header && panel.showCode !== false) {
         addCodeButton(cell.header, container, title, panel, [], spec.data || {});
       }
+      // The method footer (panel.provenance.show), attached BEFORE sizing like the
+      // other graph paths so the canvas is sized to the body that remains.
+      attachProvenanceFooter(cell, spec, item.panel, panel);
       sizeCanvasToCell(cell, canvasInset);
       var ggSpec = shallowClone(panel.spec);
       ggSpec.renderTo = canvasId;
@@ -1338,10 +1341,12 @@ export function renderDashboard(spec, target, options) {
             }
             return remoteInstance;
           }
+          // Attach the method footer BEFORE buildRemote sizes the canvas, so the
+          // chart is sized to the body that remains and never overlaps the footer.
+          attachProvenanceFooter(cell, spec, item.panel, panel);
           buildRemote(data);
           bind(panel && panel.dataRef, remoteInstance, cell, buildRemote);
           cell.setState('ready');
-          attachProvenanceFooter(cell, spec, item.panel, panel);
           notify(remoteInstance, 'ready');
           return remoteInstance;
         }
@@ -1353,6 +1358,10 @@ export function renderDashboard(spec, target, options) {
          * @returns {object} The new instance.
          */
         function buildInstance(prepared) {
+          // Attach the method footer BEFORE sizing: it reserves its height in the
+          // flex column, so the canvas is sized to the body that remains and the
+          // chart no longer overlaps (and clips) the footer line.
+          attachProvenanceFooter(cell, spec, item.panel, panel);
           sizeCanvasToCell(cell, canvasInset);
           var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
           applyDashboardChartStyle(config, spec);   // dashboard-wide font/theme/colors (Settings)
@@ -1362,7 +1371,6 @@ export function renderDashboard(spec, target, options) {
           bind(panel && panel.dataRef, instance, cell, undefined, prepare);
           if (autoResize) observeResize(cell, instance, observers, canvasInset);
           cell.setState('ready');
-          attachProvenanceFooter(cell, spec, item.panel, panel);
           notify(instance, 'ready');
           return instance;
         }

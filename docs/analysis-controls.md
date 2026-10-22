@@ -18,7 +18,7 @@ spec.panels.tf = buildTransformControl({ target: 'heatmap', value: 'none' });
 // methods: none | log2 | log10 | zscore | medianCenter | quantileNormalize
 ```
 
-In the builder: **∿ Transform** adds one bound to the selected (or first) graph panel.
+In the builder: **Data → Transform** adds one bound to the selected (or first) graph panel.
 `transformData(cxData, method)` is exported for direct use.
 
 ## FDR threshold slider

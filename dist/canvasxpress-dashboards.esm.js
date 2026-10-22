@@ -408,17 +408,60 @@ var dashboardCss = [
   /* toolbar (host may be an app-shell element) */
   // Two fixed rows: create actions + Save, then the selected element's
   // configuration (always reserved, so the stage never jumps on select).
-  '.cxb-topbar { display: flex; flex-direction: column; align-items: stretch; gap: 12px; width: 100%; }',
+  '.cxb-topbar { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 100%; }',
   '.cxb-trow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }',
+  /* Toolbar drop-downs: one per accent colour (+ Add / Interact / Data). The
+     trigger keeps the group's left-edge accent; the panel opens beneath it with
+     the same accent along its top edge and the actions as full-width rows. */
+  '.cxb-menu { position: relative; display: inline-block; }',
+  /* The three triggers share one width (label left, chevron right) so the group reads as a set. */
+  '.cxb-menu-trigger { display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; width: 124px; }',
+  '.cxb-menu-caret { display: inline-flex; flex: none; width: 18px; height: 18px; opacity: .8; }',
+  '.cxb-menu-caret svg { width: 100%; height: 100%; display: block; }',
+  '.cxb-menu-panel { display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 200px;',
+  '  flex-direction: column; gap: 2px; padding: 4px; z-index: var(--cx-z-modal);',
+  '  background: var(--cx-ui-surface); border: 1px solid var(--cxd-border); border-top-width: 3px;',
+  '  border-radius: var(--cx-radius-md); box-shadow: var(--cx-shadow-2); }',
+  '.cxb-menu-open .cxb-menu-panel { display: flex; }',
+  '.cxb-menu-add .cxb-menu-panel { border-top-color: var(--cx-color-brand-add); }',
+  '.cxb-menu-interact .cxb-menu-panel { border-top-color: var(--cx-color-brand-interact); }',
+  '.cxb-menu-data .cxb-menu-panel { border-top-color: var(--cx-color-brand-data); }',
+  '.cxb-menu-open > .cxb-menu-trigger { background: var(--cx-ui-surface-sunken); }',
+  /* Actions inside a panel read as menu rows, not buttons: borderless, left-aligned. */
+  '.cxb-menu-panel .cxb-btn { display: flex; align-items: center; justify-content: flex-start; width: 100%; text-align: left;',
+  '  border: 0; border-radius: var(--cx-radius-sm); background: transparent; box-shadow: none; padding: 7px 10px; }',
+  /* Menu-item icons: a leading SVG (ordered first, the label stays the button's own
+     text), tinted with the group's accent so the colour language carries into the rows. */
+  '.cxb-menu-panel .cxb-btn { gap: 10px; }',
+  '.cxb-ic { order: -1; display: inline-flex; flex: none; width: 18px; height: 18px; color: var(--cxd-muted); }',
+  '.cxb-ic svg { width: 100%; height: 100%; display: block; }',
+  /* Icon-only history buttons: full-strength icon (not the muted menu tint), compact padding. */
+  '.cxb-icon-btn { display: inline-flex; align-items: center; justify-content: center; padding: 6px 9px; }',
+  '.cxb-icon-btn .cxb-ic { order: 0; width: 20px; height: 20px; color: var(--cx-ui-text); }',
+  '.cxb-menu-add .cxb-ic { color: var(--cx-color-brand-add); }',
+  '.cxb-menu-interact .cxb-ic { color: var(--cx-color-brand-interact); }',
+  '.cxb-menu-data .cxb-ic { color: var(--cx-color-brand-data); }',
+  '.cxb-menu-add .cxb-menu-panel .cxb-btn:hover:not(:disabled) { background: var(--cx-color-brand-add-a14); }',
+  '.cxb-menu-interact .cxb-menu-panel .cxb-btn:hover:not(:disabled) { background: var(--cx-color-brand-interact-a18); }',
+  '.cxb-menu-data .cxb-menu-panel .cxb-btn:hover:not(:disabled) { background: var(--cx-color-brand-data-a12); }',
   '.cxb-tgroup { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }',
   '.cxb-spacer { flex: 1 1 auto; }',
   '.cxb-tlabel { font: 600 14px var(--cxd-font); text-transform: uppercase; letter-spacing: .03em;',
   '  color: var(--cxd-muted); }',
+  // The dashboard title takes the free room (so it is not cut off) but yields to the menus.
   '.cxb-title-input { padding: 5px 8px; border: 1px solid var(--cxd-border);',
-  '  border-radius: var(--cx-radius-md); font: 600 16px var(--cxd-font); min-width: 150px; }',
+  '  border-radius: var(--cx-radius-md); font: 600 16px var(--cxd-font); min-width: 150px; flex: 0 1 320px; }',
   '.cxb-tinput { padding: 5px 8px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md);',
   '  font: inherit; width: 130px; }',
-  '.cxb-props { min-height: 34px; }',
+  /* The selected-panel strip: a slim bar attached under the toolbar. Dashed with a
+     hint while nothing is selected; solid accent once a panel is. Height is always
+     reserved so selecting never shifts the stage. */
+  '.cxb-props { min-height: 44px; box-sizing: border-box; padding: 5px 12px; gap: 10px;',
+  '  background: var(--cx-ui-surface); border: 1px dashed var(--cxd-border); border-radius: var(--cx-radius-md); }',
+  '.cxb-props.cxb-props-active { border-style: solid; border-color: var(--cx-ui-accent); background: var(--cx-ui-accent-tint-subtle); }',
+  '.cxb-props-hint { color: var(--cxd-muted); font-size: 14px; }',
+  // The panel-name field grows with the free room instead of a fixed 130px.
+  '.cxb-props .cxb-tinput { flex: 1 1 150px; width: auto; min-width: 120px; max-width: 300px; }',
   '.cxb-props select { padding: 5px 5px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md); font: inherit; }',
   // Compact labels in the props row so a control's full configuration fits on
   // one line in a ~1400px window.
@@ -495,6 +538,9 @@ var dashboardCss = [
   '  transition: opacity .12s ease; background: var(--cxd-panel-bg);',
   '  border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md); box-shadow: var(--cx-shadow-1); }',
   '.cxb-cell:hover .cxb-chrome, .cxb-cell.cxb-selected .cxb-chrome { opacity: 1; pointer-events: auto; }',
+  // The edit chrome is controls, not content: a drag that starts near it must never
+  // sweep a text selection across its glyphs (or the resize handle).
+  '.cxb-chrome, .cxb-chrome *, .cxb-resize, .cxb-resize * { -webkit-user-select: none; user-select: none; }',
   // Flex-centre the glyphs: line-height alone leaves text glyphs (⚙ ✕ ⠿) sitting
   // low in the box, so the whole pill reads as bottom-heavy even when centred.
   '.cxb-grip { cursor: grab; user-select: none; width: 22px; height: 22px;',
@@ -505,9 +551,15 @@ var dashboardCss = [
   '  border-radius: var(--cx-radius-md); cursor: pointer; font-size: 19px; line-height: 1; color: var(--cxd-muted); }',
   '.cxb-tool:hover { background: var(--cx-ui-accent-tint); color: inherit; }',
   '.cxb-tool.cxb-tool-code { width: auto; padding: 0 5px; font: 600 12px/26px var(--cx-font-mono); }',
-  '.cxb-resize { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize;',
-  '  background: linear-gradient(135deg, transparent 50%, var(--cx-ui-accent) 50%); border-bottom-right-radius: var(--cx-radius-lg); z-index: var(--cx-z-popover-high);',
-  '  opacity: 0; transition: opacity .12s ease; }',
+  /* Corner resize handle: two nested chevrons at 45° (stroked SVG, set in builder.js). Shown
+     while the panel is hovered or selected; muted at rest, accent when the handle itself is hovered. */
+  '.cxb-resize { position: absolute; right: 2px; bottom: 2px; width: 24px; height: 24px; cursor: nwse-resize; touch-action: none;',
+  '  display: flex; align-items: center; justify-content: center; color: var(--cx-ui-text); z-index: var(--cx-z-popover-high);',
+  // A soft backing chip keeps the arrow legible over the chart's own bottom-right watermark.
+  '  background: color-mix(in srgb, var(--cx-ui-surface) 88%, transparent); border-radius: var(--cx-radius-md);',
+  '  opacity: 0; transition: opacity .12s ease, color .12s ease; }',
+  '.cxb-resize svg { width: 18px; height: 18px; display: block; }',
+  '.cxb-resize:hover { color: var(--cx-ui-accent); }',
   '.cxb-cell:hover .cxb-resize, .cxb-cell.cxb-selected .cxb-resize { opacity: 1; }',
   /* control (table/filter) height-resize: a grabbable bottom edge */
   '.cxb-ctl-resize { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; cursor: ns-resize;',
@@ -4420,6 +4472,39 @@ function describeJoinKey(on) {
 }
 
 /**
+ * The method line for a self-contained code panel (`ggplot` / `cxcode`): the code
+ * it was converted from, then what it draws — the ggplot2 layers, or the
+ * CanvasXpress graph type with any statistical overlays.
+ * @param {object} panel - A `ggplot` or `cxcode` panel.
+ * @returns {string} The method line (never empty: the origin is always known).
+ * @private
+ */
+function deriveCodePanelMethod(panel) {
+  var inner = panel.spec || {};
+  var clauses = [];
+  if (panel.type === 'ggplot') {
+    clauses.push('R ggplot2 code, converted');
+    var layers = [];
+    // `geoms` is a list in a real conversion but a single name in some callers.
+    var geoms = Array.isArray(inner.geoms) ? inner.geoms : (inner.geoms ? [inner.geoms] : []);
+    geoms.forEach(function (geom) {
+      // GeomPoint → "point", GeomSmooth → "smooth", GeomBoxplot → "boxplot"
+      var name = String(geom).replace(/^Geom/, '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+      if (name && layers.indexOf(name) === -1) layers.push(name);
+    });
+    if (layers.length) clauses.push('layers: ' + layers.join(', '));
+  } else {
+    clauses.push((panel.language === 'python' ? 'Python canvasxpress' : 'R canvasXpress') + ' code, converted');
+    var config = inner.config || {};
+    if (config.graphType) {
+      var stat = describeStatOptions(config);
+      clauses.push('plotted as ' + config.graphType + (stat ? ' ' + stat : ''));
+    }
+  }
+  return joinClauses(clauses);
+}
+
+/**
  * Derive the full method line for a graph panel: the source's origin and
  * transformations followed by the chart type and any statistical overlays.
  * @param {object} spec - The dashboard spec.
@@ -4430,6 +4515,9 @@ function describeJoinKey(on) {
 function derivePanelMethod(spec, panelId) {
   var panel = spec && spec.panels && spec.panels[panelId];
   if (!panel) return '';
+  // Code panels carry their own data and chart (no dataRef / panel.config): their
+  // method is where the chart came from and what it draws.
+  if (panel.type === 'ggplot' || panel.type === 'cxcode') return deriveCodePanelMethod(panel);
   var clauses = [];
   if (panel.dataRef) {
     var sourceLine = describeSource(panel.dataRef, spec);
@@ -8349,6 +8437,9 @@ function renderDashboard(spec, target, options) {
       if (cell.header && panel.showCode !== false) {
         addCodeButton(cell.header, container, title, panel, [], spec.data || {});
       }
+      // The method footer (panel.provenance.show), attached BEFORE sizing like the
+      // other graph paths so the canvas is sized to the body that remains.
+      attachProvenanceFooter(cell, spec, item.panel, panel);
       sizeCanvasToCell(cell, canvasInset);
       var ggSpec = shallowClone(panel.spec);
       ggSpec.renderTo = canvasId;
@@ -8423,10 +8514,12 @@ function renderDashboard(spec, target, options) {
             }
             return remoteInstance;
           }
+          // Attach the method footer BEFORE buildRemote sizes the canvas, so the
+          // chart is sized to the body that remains and never overlaps the footer.
+          attachProvenanceFooter(cell, spec, item.panel, panel);
           buildRemote(data);
           bind(panel && panel.dataRef, remoteInstance, cell, buildRemote);
           cell.setState('ready');
-          attachProvenanceFooter(cell, spec, item.panel, panel);
           notify(remoteInstance, 'ready');
           return remoteInstance;
         }
@@ -8438,6 +8531,10 @@ function renderDashboard(spec, target, options) {
          * @returns {object} The new instance.
          */
         function buildInstance(prepared) {
+          // Attach the method footer BEFORE sizing: it reserves its height in the
+          // flex column, so the canvas is sized to the body that remains and the
+          // chart no longer overlaps (and clips) the footer line.
+          attachProvenanceFooter(cell, spec, item.panel, panel);
           sizeCanvasToCell(cell, canvasInset);
           var config = mergeConfig(panel && panel.config, broadcastGroup, panel);
           applyDashboardChartStyle(config, spec);   // dashboard-wide font/theme/colors (Settings)
@@ -8447,7 +8544,6 @@ function renderDashboard(spec, target, options) {
           bind(panel && panel.dataRef, instance, cell, undefined, prepare);
           if (autoResize) observeResize(cell, instance, observers, canvasInset);
           cell.setState('ready');
-          attachProvenanceFooter(cell, spec, item.panel, panel);
           notify(instance, 'ready');
           return instance;
         }
@@ -12496,6 +12592,15 @@ function addPanel(spec, panel) {
     var gg = { type: 'ggplot', title: panel.title || panel.id, spec: panel.spec };
     if (typeof panel.code === 'string' && panel.code) gg.code = panel.code;
     next.panels[panel.id] = gg;
+  } else if (panel.type === 'cxcode') {
+    // A CanvasXpress code panel (R `canvasXpress` / Python `canvasxpress` converter): a
+    // self-contained native spec plus the original source and its language. Like a
+    // ggplot panel it has no dataRef or graph config — without this branch it would
+    // fall through to a plain (empty) Bar graph panel and lose the converted chart.
+    var cx = { type: 'cxcode', title: panel.title || panel.id, spec: panel.spec };
+    if (typeof panel.code === 'string' && panel.code) cx.code = panel.code;
+    if (panel.language) cx.language = panel.language;
+    next.panels[panel.id] = cx;
   } else {
     next.panels[panel.id] = {
       title: panel.title || panel.id,
@@ -14978,6 +15083,11 @@ function createBuilder(target, options) {
   var linksBtn = null;      // disabled until there are two data sources to link
   var fieldsBtn = null;     // disabled until there is a (non-live) data source
   var shapeBtn = null;      // same rule as fieldsBtn
+  var addTransformBtn = null;     // disabled until a graph panel (one bound to data) exists to transform
+  var addSignificanceBtn = null;  // disabled until a Boxplot / Violin / Bar panel exists to bracket
+  var addFdrBtn = null;           // same rule as addSignificanceBtn (it re-filters bracketed panels)
+  var addCodeBtn = null;          // disabled when this server cannot convert pasted code
+  var codeAvailable = null;       // null = not known yet (item stays enabled), then true / false
   var undoBtn = null;       // disabled while the undo stack is empty
   var redoBtn = null;       // disabled while the redo stack is empty
   // Undo/redo state (see pushHistory/undo/redo below). Declared before
@@ -14999,6 +15109,7 @@ function createBuilder(target, options) {
   var baselineConfigs = {}; // panelId -> {configKey: JSON} snapshot at render (diff-based save capture)
   var pendingBaselines = []; // baseline snapshots waiting for getConfig() to attach
   var availableDatasets = []; // stored datasets (client.listDatasets) for quick-bind
+  var chromeObservers = [];   // ResizeObservers that keep each panel's edit-chrome centred on its title bar
   // Drag payloads a host's data list sets to let a stored dataset or a database
   // (connector) source be dropped on the canvas to spawn a panel (see
   // setupDatasetDrop / createPanelFromDataset / createPanelFromConnector).
@@ -15073,22 +15184,22 @@ function createBuilder(target, options) {
     // colour (see .cxb-bt-add / -interact / -data in styles.js): "add content"
     // (green), "add interaction" (blue) and "data tools" (amber). Meta controls
     // (title, edit-JSON, undo/redo), + Data and the primary Save stay neutral.
-    addPanelBtn = button('+ Panel', function () { doAddPanel(); }, 'cxb-bt-add');
-    addControlBtn = button('+ Control', function () { doAddControl(); }, 'cxb-bt-interact');
-    addFiltersBtn = button('+ Filters', function () { doAddFilters(); }, 'cxb-bt-interact');
+    addPanelBtn = iconButton('panel', 'Panel', function () { doAddPanel(); }, 'cxb-bt-add');
+    addControlBtn = iconButton('control', 'Control', function () { doAddControl(); }, 'cxb-bt-interact');
+    addFiltersBtn = iconButton('filters', 'Filters', function () { doAddFilters(); }, 'cxb-bt-interact');
     var editJsonBtn = button('✎', function () { doEditJson(); });
     editJsonBtn.setAttribute('title', 'Edit dashboard JSON');
     editJsonBtn.setAttribute('aria-label', 'Edit dashboard JSON');
-    undoBtn = button('↶', function () { undo(); });
+    undoBtn = iconOnlyButton('undo', function () { undo(); });
     undoBtn.setAttribute('title', 'Undo (Ctrl+Z)');
     undoBtn.setAttribute('aria-label', 'Undo');
-    redoBtn = button('↷', function () { redo(); });
+    redoBtn = iconOnlyButton('redo', function () { redo(); });
     redoBtn.setAttribute('title', 'Redo (Ctrl+Shift+Z)');
     redoBtn.setAttribute('aria-label', 'Redo');
     updateHistoryButtons();
     // "+ Function" appears only once the server says it runs data functions
     // for this user (the check is async; hidden until then).
-    addFunctionBtn = button('+ Function', function () { doAddFunction(); }, 'cxb-bt-data');
+    addFunctionBtn = iconButton('braces', 'Function', function () { doAddFunction(); }, 'cxb-bt-data');
     addFunctionBtn.setAttribute('title', 'Add a panel computed by an R / Python data function');
     addFunctionBtn.style.display = 'none';
     functionStatus().then(function (status) {
@@ -15097,35 +15208,52 @@ function createBuilder(target, options) {
     });
     // "Links": how a selection in one panel marks the related rows of panels
     // built on other sources (spec.relationships + spec.markingMode).
-    linksBtn = button('🔗 Links', function () { doEditLinks(); }, 'cxb-bt-data');
+    linksBtn = iconButton('links', 'Links', function () { doEditLinks(); }, 'cxb-bt-data');
     // "ƒx Fields": calculated fields computed once on a source, so every panel,
     // filter, join and link on it can use them (data.<ref>.calculatedFields).
-    fieldsBtn = button('ƒx Fields', function () { doEditFields(); }, 'cxb-bt-data');
+    fieldsBtn = iconButton('fields', 'Fields', function () { doEditFields(); }, 'cxb-bt-data');
     // "Shape data": filter, keep columns or summarize, sort and limit a
     // source's rows (its `pushdown` query; in its database when it has one).
-    shapeBtn = button('▦ Shape data', function () { doShapeData(); }, 'cxb-bt-data');
+    shapeBtn = iconButton('table', 'Shape data', function () { doShapeData(); }, 'cxb-bt-data');
     // Analysis controls (not display filters): a transform toggle that re-expresses
     // a panel's data (log/z-score/normalize), and an FDR threshold slider that
     // recorrects and re-filters every significance panel at once.
-    var addTransformBtn = button('∿ Transform', function () { doAddTransform(); }, 'cxb-bt-interact');
+    addTransformBtn = iconButton('transform', 'Transform', function () { doAddTransform(); }, 'cxb-bt-data');
     addTransformBtn.setAttribute('title', 'Add a transform control (log / z-score / normalize) for a panel');
-    var addFdrBtn = button('FDR slider', function () { doAddFdr(); }, 'cxb-bt-interact');
+    addFdrBtn = iconButton('percent', 'FDR slider', function () { doAddFdr(); }, 'cxb-bt-interact');
     addFdrBtn.setAttribute('title', 'Add an FDR threshold slider that re-filters every significance panel');
     // Significance brackets: author pairwise comparisons (group A vs B + p-value) and a
     // correction method on a graph panel; writes its statInference config.
-    var addSignificanceBtn = button('✴ Significance', function () { doAddSignificance(); }, 'cxb-bt-interact');
+    addSignificanceBtn = iconButton('significance', 'Significance', function () { doAddSignificance(); }, 'cxb-bt-interact');
     addSignificanceBtn.setAttribute('title', 'Add significance brackets (pairwise comparisons + correction) to a graph panel');
-    var createActions = [titleInput, editJsonBtn, undoBtn, redoBtn, addPanelBtn,
-      button('+ Text', function () { doAddText(); }, 'cxb-bt-add'),
-      button('+ Image', function () { doAddImage(); }, 'cxb-bt-add'),
-      button('📈 Code', function () { doAddCodePanel(); }, 'cxb-bt-add'),
-      addControlBtn, addFiltersBtn, addTransformBtn, addFdrBtn, addSignificanceBtn, linksBtn, fieldsBtn, shapeBtn, addFunctionBtn];
-    if (showAddData) createActions.push(button('+ Data', function () { doAddDataSource(); }));
-    createActions.push(button('Save', function () { doSave(); }, 'cxb-btn-primary'));
-    append(row1, createActions);
-    // Row 2: the selected element's configuration. The row is ALWAYS present
-    // (min-height reserved in CSS), so selecting or adding an element never
-    // changes the toolbar height — the stage doesn't jump.
+    // Three drop-downs, one per accent colour: add content / add interaction /
+    // data tools. The buttons are the same elements updateAddPanelState() enables,
+    // disables and retitles; the menus only host them.
+    var addMenu = toolbarMenu('+ Add', 'cxb-bt-add', [addPanelBtn,
+      iconButton('text', 'Text', function () { doAddText(); }, 'cxb-bt-add'),
+      iconButton('image', 'Image', function () { doAddImage(); }, 'cxb-bt-add'),
+      (addCodeBtn = iconButton('code', 'Code', function () { doAddCodePanel(); }, 'cxb-bt-add'))], updateAddPanelState);
+    // Whether this server can convert pasted code decides the Code item's state; the
+    // check is async, so the item stays enabled until it answers (see updateAddPanelState).
+    codeSources().then(function (found) {
+      codeAvailable = found.available.length > 0;
+      updateAddPanelState();
+    });
+    var interactMenu = toolbarMenu('Interact', 'cxb-bt-interact',
+      [addControlBtn, addFiltersBtn, addFdrBtn, addSignificanceBtn], updateAddPanelState);
+    // Data: prepare the data first (calculated fields, shaping, a transform), then
+    // relate and compute across sources.
+    var dataItems = [fieldsBtn, shapeBtn, addTransformBtn, linksBtn, addFunctionBtn];
+    if (showAddData) dataItems.push(iconButton('database', 'Data source', function () { doAddDataSource(); }, 'cxb-bt-data'));
+    var dataMenu = toolbarMenu('Data', 'cxb-bt-data', dataItems, updateAddPanelState);
+    // Left: identity + history. Middle: the three menus. Right: utilities + Save
+    // (the only filled button).
+    append(row1, [titleInput, undoBtn, redoBtn, addMenu, interactMenu, dataMenu,
+      el('span', 'cxb-spacer'), editJsonBtn, button('Save', function () { doSave(); }, 'cxb-btn-primary')]);
+    // Row 2: a contextual strip for the selected element's configuration. It is
+    // ALWAYS present (min-height reserved in CSS), so selecting or adding an
+    // element never changes the toolbar height — the stage doesn't jump. With
+    // nothing selected it shows a one-line hint instead of sitting empty.
     append(toolbarHost, [row1, propsGroup]);
   }
   buildToolbar();
@@ -15346,32 +15474,43 @@ function createBuilder(target, options) {
    * @private
    */
   function doAddCodePanel() {
+    codeSources().then(function (found) {
+      if (!found.fetchImpl) return showError('Converting pasted code needs a server connection.');
+      if (!found.available.length) return showError(CODE_UNAVAILABLE);
+      openCodePanelDialog(found.fetchImpl, found.available);
+    });
+  }
+
+  /** Why the Code item is disabled (also the error when it is clicked anyway). */
+  var CODE_UNAVAILABLE = 'Adding a panel from code is disabled on this server, or ' +
+    'restricted to administrators (it runs pasted code in the sandboxed runtime).';
+
+  /**
+   * Probe which code → panel sources this server can run. Never rejects: a failed
+   * or missing status endpoint (an old server, no network) means "unavailable".
+   * Used both when the Code item is clicked and to set its enabled state up front.
+   * @returns {Promise<{fetchImpl: ?Function, available: object[]}>} The fetch in use
+   *   (null when there is none) and the usable CODE_SOURCES entries.
+   * @private
+   */
+  function codeSources() {
     var fetchImpl = typeof globalThis !== 'undefined' ? globalThis.fetch : undefined;
-    if (typeof fetchImpl !== 'function') {
-      return showError('Converting pasted code needs a server connection.');
-    }
-    // Soft-fetch a status endpoint: any failure (404 on an old server, network)
-    // becomes "unavailable" rather than an error.
+    if (typeof fetchImpl !== 'function') return Promise.resolve({ fetchImpl: null, available: [] });
     function status(path) {
       return fetchImpl(baseUrl + path, { credentials: 'include' })
         .then(function (res) { return res.ok ? res.json() : {}; }, function () { return {}; })
-        .then(function (s) { return s || {}; });
+        .then(function (found) { return found || {}; });
     }
-    Promise.all([status('/api/ggplot/status'), status('/api/cx/status')])
-      .then(function (results) {
-        var gg = results[0];
-        var cx = results[1];
-        var cxLangs = (cx && cx.languages) || [];
-        var available = CODE_SOURCES.filter(function (source) {
-          if (source.key === 'ggplot') return !!(gg.available && gg.canRun);
-          return !!(cx.available && cx.canRun && cxLangs.indexOf(source.language) !== -1);
-        });
-        if (!available.length) {
-          return showError('Adding a panel from code is disabled on this server, or ' +
-            'restricted to administrators (it runs pasted code in the sandboxed runtime).');
-        }
-        openCodePanelDialog(fetchImpl, available);
+    return Promise.all([status('/api/ggplot/status'), status('/api/cx/status')]).then(function (results) {
+      var gg = results[0];
+      var cx = results[1];
+      var cxLangs = (cx && cx.languages) || [];
+      var available = CODE_SOURCES.filter(function (source) {
+        if (source.key === 'ggplot') return !!(gg.available && gg.canRun);
+        return !!(cx.available && cx.canRun && cxLangs.indexOf(source.language) !== -1);
       });
+      return { fetchImpl: fetchImpl, available: available };
+    });
   }
 
   /**
@@ -15713,6 +15852,18 @@ function createBuilder(target, options) {
   }
 
   /**
+   * Whether a panel is a 1D group chart (Boxplot / Violin / Bar) — the only charts
+   * significance brackets render on. A ggplot / code panel has no `config`, so it
+   * never is. Shared by the "Significance" action and its enabled state.
+   * @param {object} panel - A panel definition from `spec.panels`.
+   * @returns {boolean} True when brackets can be added to it.
+   * @private
+   */
+  function isGroupChartPanel(panel) {
+    return !!(panel && panel.config && /^(Boxplot|Violin|Bar)$/.test(panel.config.graphType || ''));
+  }
+
+  /**
    * "✴ Significance": author significance brackets on a graph panel. Resolves the
    * panel's group values, opens the picker (pairwise comparisons + correction +
    * annotate), and writes showStatInference + statInference into the panel config.
@@ -15726,14 +15877,11 @@ function createBuilder(target, options) {
     // panel so clicking "Significance" opens the picker without a manual selection step
     // (it must not silently target a KaplanMeier/Scatter panel, where it is a no-op).
     var panels = spec.panels || {};
-    function isGroupChart(p) {
-      return !!(p && p.config && /^(Boxplot|Violin|Bar)$/.test(p.config.graphType || ''));
-    }
-    var id = selectedId && isGroupChart(panels[selectedId]) ? selectedId : null;
+    var id = selectedId && isGroupChartPanel(panels[selectedId]) ? selectedId : null;
     if (!id) {
       var groupIds = Object.keys(panels);
       for (var gi = 0; gi < groupIds.length; gi++) {
-        if (isGroupChart(panels[groupIds[gi]])) { id = groupIds[gi]; break; }
+        if (isGroupChartPanel(panels[groupIds[gi]])) { id = groupIds[gi]; break; }
       }
     }
     if (!id) {
@@ -16411,6 +16559,10 @@ function createBuilder(target, options) {
    */
   function renderStage() {
     teardownLive();
+    // Drop the previous render's title-bar observers (their elements are about
+    // to be removed) so they don't leak or fire against detached nodes.
+    chromeObservers.forEach(function (observer) { try { observer.disconnect(); } catch (e) { /* noop */ } });
+    chromeObservers = [];
     stage.innerHTML = '';
     cellEls = {};
     instByPanel = {};
@@ -16423,7 +16575,7 @@ function createBuilder(target, options) {
         var hint = el('div', 'cxb-msg');
         hint.textContent = typeof options.emptyHint === 'string'
           ? options.emptyHint
-          : 'Empty dashboard — click “+ Data” then “+ Panel” to begin.';
+          : 'Empty dashboard — drag a dataset here, or use + Add → Panel to begin.';
         stage.appendChild(hint);
       }
       lastRender = Promise.resolve();
@@ -16526,6 +16678,39 @@ function createBuilder(target, options) {
    * @returns {void}
    * @private
    */
+  /**
+   * Vertically centre the floating edit-chrome pill on a panel's title bar using
+   * the bar's measured height, so a larger title font (a taller bar) does not
+   * leave the icons sitting high against the CSS fixed-offset default. Falls back
+   * to the CSS top when the bar has not been laid out yet.
+   * @param {HTMLElement} chrome - The `.cxb-chrome` pill.
+   * @param {HTMLElement} title - The `.cxd-panel-title` bar.
+   * @returns {void}
+   * @private
+   */
+  function centerChromeOnTitle(chrome, title) {
+    function apply() {
+      if (!title.isConnected) return;
+      var barHeight = title.offsetHeight;
+      if (!barHeight) return;   // not laid out yet — wait for the observer
+      chrome.style.top = (title.offsetTop + barHeight / 2) + 'px';
+      chrome.style.transform = 'translateY(-50%)';
+    }
+    apply();
+    // The bar's final height settles AFTER this render (web-font load, layout)
+    // and changes when the panel is resized — re-centre on any size change.
+    if (typeof ResizeObserver === 'function') {
+      var observer = new ResizeObserver(apply);
+      observer.observe(title);
+      chromeObservers.push(observer);
+    } else if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(apply);
+    }
+    if (typeof document !== 'undefined' && document.fonts && document.fonts.ready && document.fonts.ready.then) {
+      document.fonts.ready.then(apply);
+    }
+  }
+
   function decorate(info) {
     var cell = info.cell;
     var panelType = info.type ||
@@ -16606,10 +16791,20 @@ function createBuilder(target, options) {
     if (title) {
       on(title, 'pointerdown', function (ev) { startDrag(ev, info.panelId, cols, rowHeight, gap); });
       on(title, 'click', function () { selectPanel(info.panelId); });
+      // Centre the floating chrome on the title bar's ACTUAL height: a larger
+      // title font makes the bar taller than the default, so the CSS fixed
+      // top offset would leave the icons sitting high. Measured once per render;
+      // panels without a title bar keep the CSS top (top-right float).
+      centerChromeOnTitle(chrome, title);
     }
 
     var resize = el('div', 'cxb-resize');
     resize.setAttribute('title', 'Resize');
+    // The same glyph as the `nwse-resize` cursor shown while dragging: one diagonal
+    // line with an arrowhead at each end, pointing at opposite corners.
+    resize.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">' +
+      '<path d="M6 6l12 12"/><path d="M6 12V6h6"/><path d="M18 12v6h-6"/></svg>';
     on(resize, 'pointerdown', function (ev) { startResize(ev, info.panelId, cols, rowHeight, gap); });
     cell.appendChild(resize);
 
@@ -16991,6 +17186,59 @@ function createBuilder(target, options) {
   }
 
   /**
+   * The "Title" checkbox: show or hide a panel's title bar (`panel.hideTitle`).
+   * Shared by every panel type that has a title bar, so graph, filters, ggplot and
+   * code panels all carry the same control.
+   * @param {object} panel - The selected panel's definition.
+   * @returns {HTMLElement} The labelled checkbox.
+   * @private
+   */
+  function buildTitleToggle(panel) {
+    var toggle = el('label', 'cxb-check');
+    var checkbox = el('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = !panel.hideTitle;
+    on(checkbox, 'change', function () {
+      commit(updatePanel(spec, selectedId, { hideTitle: !checkbox.checked }), false);
+      rerenderPanel(selectedId);   // adding/removing the title bar changes the DOM
+    });
+    var text = el('span');
+    text.textContent = 'Title';
+    toggle.appendChild(checkbox);
+    toggle.appendChild(text);
+    return toggle;
+  }
+
+  /**
+   * The "Method" checkbox: show the auto-derived provenance method line as a
+   * figure footer beneath a panel (`panel.provenance.show`; see provenance.js).
+   * @param {object} panel - The selected panel's definition.
+   * @returns {HTMLElement} The labelled checkbox.
+   * @private
+   */
+  function buildMethodToggle(panel) {
+    var toggle = el('label', 'cxb-check');
+    var box = el('input');
+    box.type = 'checkbox';
+    box.checked = !!(panel.provenance && panel.provenance.show);
+    box.setAttribute('title', 'Show how this panel was computed (method line) as a figure footer');
+    on(box, 'change', function () {
+      var provenance = {};
+      for (var key in (panel.provenance || {})) {
+        if (Object.prototype.hasOwnProperty.call(panel.provenance, key)) provenance[key] = panel.provenance[key];
+      }
+      provenance.show = box.checked;
+      commit(updatePanel(spec, selectedId, { provenance: provenance }), false);
+      rerenderPanel(selectedId);   // adding/removing the footer changes the DOM
+    });
+    var text = el('span');
+    text.textContent = 'Method';
+    toggle.appendChild(box);
+    toggle.appendChild(text);
+    return toggle;
+  }
+
+  /**
    * Render the selected panel's properties inline in the toolbar (label, title,
    * data source, delete). Empty when nothing is selected. Graph styling lives in
    * the per-panel ⚙ customizer, not here.
@@ -17000,7 +17248,15 @@ function createBuilder(target, options) {
     renderFlow();
     if (!propsGroup) return;
     propsGroup.innerHTML = '';
-    if (!selectedId || !spec.panels[selectedId]) return;
+    var hasSelection = !!(selectedId && spec.panels[selectedId]);
+    if (hasSelection) propsGroup.classList.add('cxb-props-active');
+    else propsGroup.classList.remove('cxb-props-active');
+    if (!hasSelection) {
+      var hint = el('span', 'cxb-props-hint');
+      hint.textContent = 'Select a panel to edit its title, data and options — or drag a dataset onto the canvas to add one.';
+      propsGroup.appendChild(hint);
+      return;
+    }
     var panel = spec.panels[selectedId];
     var refs = Object.keys(spec.data || {});
 
@@ -17055,7 +17311,8 @@ function createBuilder(target, options) {
       // The "</> Code" recipe (R code + data) is on the panel's chrome toolbar,
       // same as the data-function panels — not duplicated here. No alignment
       // controls: the chart canvas fills the cell, so align/valign is a no-op.
-      append(propsGroup, [ggLabel, ggNote]);
+      // Title and Method are the same controls every other panel has.
+      append(propsGroup, [titleLabel, titleField, buildTitleToggle(panel), buildMethodToggle(panel), ggLabel, ggNote]);
       return;
     }
 
@@ -17071,7 +17328,8 @@ function createBuilder(target, options) {
         ' package); its data and styling are baked in. Open </> Code on the panel ' +
         'to edit the ' + cxLangLabel + ' and re-convert it.';
       // No alignment controls: the chart canvas fills the cell (align/valign no-op).
-      append(propsGroup, [cxLabel, cxNote]);
+      // Title and Method are the same controls every other panel has.
+      append(propsGroup, [titleLabel, titleField, buildTitleToggle(panel), buildMethodToggle(panel), cxLabel, cxNote]);
       return;
     }
 
@@ -17087,18 +17345,7 @@ function createBuilder(target, options) {
       ? buildLiveFields(panel.dataRef, boundSource) : [];
 
     // A checkbox to show/hide this panel's title bar.
-    var titleToggle = el('label', 'cxb-check');
-    var checkbox = el('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = !panel.hideTitle;
-    on(checkbox, 'change', function () {
-      commit(updatePanel(spec, selectedId, { hideTitle: !checkbox.checked }), false);
-      rerenderPanel(selectedId);   // adding/removing the title bar changes the DOM
-    });
-    var toggleText = el('span');
-    toggleText.textContent = 'Title';
-    titleToggle.appendChild(checkbox);
-    titleToggle.appendChild(toggleText);
+    var titleToggle = buildTitleToggle(panel);
 
     // A Filters panel filters its data source's fields (auto-derived); it has
     // no graph, so no click-to-parameter wiring.
@@ -17130,24 +17377,7 @@ function createBuilder(target, options) {
 
     // A checkbox to show the auto-derived provenance method line as a figure
     // footer beneath this panel (sets panel.provenance.show; see provenance.js).
-    var methodToggle = el('label', 'cxb-check');
-    var methodBox = el('input');
-    methodBox.type = 'checkbox';
-    methodBox.checked = !!(panel.provenance && panel.provenance.show);
-    methodBox.setAttribute('title', 'Show how this panel was computed (method line) as a figure footer');
-    on(methodBox, 'change', function () {
-      var prov = {};
-      for (var k in (panel.provenance || {})) {
-        if (Object.prototype.hasOwnProperty.call(panel.provenance, k)) prov[k] = panel.provenance[k];
-      }
-      prov.show = methodBox.checked;
-      commit(updatePanel(spec, selectedId, { provenance: prov }), false);
-      rerenderPanel(selectedId);   // adding/removing the footer changes the DOM
-    });
-    var methodText = el('span');
-    methodText.textContent = 'Method';
-    methodToggle.appendChild(methodBox);
-    methodToggle.appendChild(methodText);
+    var methodToggle = buildMethodToggle(panel);
 
     // No Delete here — the panel frame already carries a × delete control.
     append(propsGroup, [titleLabel, titleField, dataLabel, dsField, previewBtn].concat(liveFields, crossFilter, [titleToggle, methodToggle]));
@@ -18987,14 +19217,53 @@ function createBuilder(target, options) {
       addPanelBtn.disabled = !canPanel;
       addPanelBtn.title = canPanel ? '' : 'Select a dataset first';
     }
+    // Transform and Significance act on a graph panel's data. ggplot and code panels
+    // carry their own baked-in data (they have a `type` marker, and no `config`), so
+    // they can be neither transformed nor given brackets: these items are enabled only
+    // when a panel they can actually target exists — never offered and then ignored.
+    var panelDefs = spec.panels || {};
+    var panelIds = Object.keys(panelDefs);
+    if (addTransformBtn) {
+      var canTransform = panelIds.some(function (id) { return !panelDefs[id].type; });
+      addTransformBtn.disabled = !canTransform;
+      addTransformBtn.title = canTransform
+        ? 'Add a transform control (log / z-score / normalize) for a panel'
+        : 'Needs a graph panel bound to a data source — ggplot and code panels carry their own data and cannot be transformed';
+    }
+    // Brackets render only on group charts, and the FDR slider only re-filters panels
+    // that carry brackets, so the two share one rule.
+    var canBracket = panelIds.some(function (id) { return isGroupChartPanel(panelDefs[id]); });
+    // A dashboard with ggplot / code panels is made of self-contained charts: a control
+    // or an FDR slider has nothing in them to drive.
+    var hasCodePanel = panelIds.some(function (id) { return panelDefs[id].type === 'ggplot' || panelDefs[id].type === 'cxcode'; });
+    if (addFdrBtn) {
+      addFdrBtn.disabled = !canBracket;
+      addFdrBtn.title = canBracket
+        ? 'Add an FDR threshold slider that re-filters every significance panel'
+        : 'Needs a Boxplot, Violin or Bar panel (the charts that carry significance brackets) — ggplot and code panels cannot';
+    }
+    if (addSignificanceBtn) {
+      addSignificanceBtn.disabled = !canBracket;
+      addSignificanceBtn.title = canBracket
+        ? 'Add significance brackets (pairwise comparisons + correction) to a graph panel'
+        : 'Needs a Boxplot, Violin or Bar panel bound to a data source — ggplot and code panels cannot take significance brackets';
+    }
+    if (addCodeBtn) {
+      addCodeBtn.disabled = codeAvailable === false;
+      addCodeBtn.title = codeAvailable === false ? CODE_UNAVAILABLE : 'Add a panel from ggplot2 / canvasXpress (R or Python) code';
+    }
     if (addControlBtn) {
       var hasGraphPanel = Object.keys(spec.panels || {}).some(function (id) {
         return !spec.panels[id].type;   // graph panels carry no type marker
       });
       var canFilter = hasData && hasGraphPanel;
-      // A query control can also start from the user's database sources (it adds them).
-      addControlBtn.disabled = !(canFilter || (availableConnectors && availableConnectors.length));
-      addControlBtn.title = addControlBtn.disabled ? 'Add a panel with data first' : '';
+      // A query control can also start from the user's database sources (it adds them) —
+      // but not into a dashboard of code panels, which has nothing for it to drive.
+      var canQuery = !!(availableConnectors && availableConnectors.length) && !hasCodePanel;
+      addControlBtn.disabled = !(canFilter || canQuery);
+      addControlBtn.title = !addControlBtn.disabled ? ''
+        : hasCodePanel ? 'Controls drive data-bound graph panels — ggplot and code panels carry their own data'
+          : 'Add a panel with data first';
       if (addFiltersBtn) {
         addFiltersBtn.disabled = !canFilter;
         addFiltersBtn.title = canFilter ? '' : 'Add a panel with data first';
@@ -19336,6 +19605,135 @@ function button(label, handler, extra) {
   b.textContent = label;
   on(b, 'click', handler);
   return b;
+}
+
+/**
+ * Inline SVG icons for the toolbar menu items (24px grid, stroked with
+ * currentColor so each menu can tint them). Static markup, never user input.
+ * @private
+ */
+var TOOLBAR_ICONS = {
+  panel: '<rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/>',
+  text: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>',
+  code: '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 5l-4 14"/>',
+  control: '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+  filters: '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>',
+  transform: '<path d="M3 12c3-8 6-8 9 0s6 8 9 0"/>',
+  percent: '<path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.2"/><circle cx="17" cy="17" r="2.2"/>',
+  significance: '<path d="M12 4v10M7.5 6.5l9 5M16.5 6.5l-9 5"/><path d="M5 20v-3h14v3"/>',
+  links: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  fields: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',
+  table: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/>',
+  braces: '<path d="M8 4c-2 0-3 1-3 3v3c0 1-1 2-2 2 1 0 2 1 2 2v3c0 2 1 3 3 3M16 4c2 0 3 1 3 3v3c0 1 1 2 2 2-1 0-2 1-2 2v3c0 2-1 3-3 3"/>',
+  database: '<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+  // History: a curved arrow with a chevron head, mirrored for redo.
+  undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h9.5a6.5 6.5 0 0 1 0 13H10"/>',
+  redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9h-9.5a6.5 6.5 0 0 0 0 13H14"/>'
+};
+
+/**
+ * An icon-only toolbar button (undo / redo): no visible text, so the accessible
+ * name comes from the caller's `aria-label` / `title`.
+ * @param {string} iconName - A key of TOOLBAR_ICONS.
+ * @param {function} handler - Click handler.
+ * @returns {HTMLElement} The button.
+ * @private
+ */
+function iconOnlyButton(iconName, handler) {
+  var b = button('', handler, 'cxb-icon-btn');
+  var icon = el('span', 'cxb-ic');
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" focusable="false">' + (TOOLBAR_ICONS[iconName] || '') + '</svg>';
+  b.appendChild(icon);
+  return b;
+}
+
+/**
+ * A toolbar action button with a leading icon: the button's own text is the
+ * clean label (so its `textContent` stays exactly the label), and the icon is a
+ * separate child that CSS orders first.
+ * @param {string} iconName - A key of TOOLBAR_ICONS.
+ * @param {string} label - The action's label (no "+" prefix, no emoji).
+ * @param {function} handler - Click handler.
+ * @param {string} [extra] - Extra class names (the `cxb-bt-*` accent).
+ * @returns {HTMLElement} The button.
+ * @private
+ */
+function iconButton(iconName, label, handler, extra) {
+  var b = button(label, handler, extra);
+  var icon = el('span', 'cxb-ic');
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round" focusable="false">' + (TOOLBAR_ICONS[iconName] || '') + '</svg>';
+  b.appendChild(icon);
+  return b;
+}
+
+/** Closes the toolbar menu that is currently open (one at a time), or null. */
+var closeOpenToolbarMenu = null;
+
+/**
+ * Create a toolbar drop-down: a trigger button that opens a panel of actions.
+ * The action buttons are hosted, not owned: they stay the same elements the
+ * builder updates elsewhere (disabled state, tooltips, "hidden until available"),
+ * so closing the menu never detaches them. The panel closes on an outside click,
+ * Escape, or after an action runs.
+ * @param {string} label - Trigger text (a caret is appended).
+ * @param {string} accentClass - The group's `cxb-bt-*` accent class.
+ * @param {HTMLElement[]} items - Action buttons shown in the panel.
+ * @param {function} [onOpen] - Called each time the menu opens, so the items'
+ *   enabled states are current (they follow the dashboard, which may have changed).
+ * @returns {HTMLElement} The menu element (trigger + panel).
+ * @private
+ */
+function toolbarMenu(label, accentClass, items, onOpen) {
+  var wrap = el('div', 'cxb-menu cxb-menu-' + accentClass.replace('cxb-bt-', ''));
+  var trigger = el('button', 'cxb-btn cX-Button cxb-menu-trigger ' + accentClass);
+  trigger.type = 'button';
+  trigger.setAttribute('aria-haspopup', 'menu');
+  trigger.setAttribute('aria-expanded', 'false');
+  trigger.appendChild(document.createTextNode(label));
+  // A drawn chevron (not the small ▾ glyph) so its size is under our control.
+  var caret = el('span', 'cxb-menu-caret');
+  caret.setAttribute('aria-hidden', 'true');
+  caret.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" ' +
+    'stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M6 9l6 6 6-6"/></svg>';
+  trigger.appendChild(caret);
+  var panel = el('div', 'cxb-menu-panel');
+  panel.setAttribute('role', 'menu');
+  items.forEach(function (item) {
+    item.setAttribute('role', 'menuitem');
+    panel.appendChild(item);
+  });
+  wrap.appendChild(trigger);
+  wrap.appendChild(panel);
+
+  function onOutside(ev) { if (!wrap.contains(ev.target)) close(); }
+  function onKey(ev) { if (ev.key === 'Escape') { close(); trigger.focus(); } }
+  function open() {
+    if (closeOpenToolbarMenu) closeOpenToolbarMenu();
+    if (onOpen) onOpen();
+    wrap.classList.add('cxb-menu-open');
+    trigger.setAttribute('aria-expanded', 'true');
+    document.addEventListener('mousedown', onOutside, true);
+    document.addEventListener('keydown', onKey, true);
+    closeOpenToolbarMenu = close;
+  }
+  function close() {
+    wrap.classList.remove('cxb-menu-open');
+    trigger.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('mousedown', onOutside, true);
+    document.removeEventListener('keydown', onKey, true);
+    if (closeOpenToolbarMenu === close) closeOpenToolbarMenu = null;
+  }
+  on(trigger, 'click', function () { if (wrap.classList.contains('cxb-menu-open')) close(); else open(); });
+  // An item's own handler runs first (target phase); this then closes the panel.
+  on(panel, 'click', function (ev) {
+    if (ev.target && ev.target.closest && ev.target.closest('button')) close();
+  });
+  return wrap;
 }
 
 /**

@@ -137,3 +137,29 @@ test('panelProvenanceText: auto vs author-pinned, with notes', function () {
   assert.equal(panelProvenanceText(spec, 'auto'), 'inline data; plotted as Bar — excludes returns');
   assert.equal(panelProvenanceText(spec, 'pinned'), 'Hand-written method');
 });
+
+// --- code panels (ggplot / cxcode): no dataRef, no panel.config ---
+
+test('derivePanelMethod: a ggplot panel names its origin and layers', function () {
+  var spec = { panels: { g: { type: 'ggplot', spec: { isGGPlot: true, geoms: ['GeomPoint', 'GeomSmooth', 'GeomPoint'] } } } };
+  assert.equal(derivePanelMethod(spec, 'g'), 'R ggplot2 code, converted; layers: point, smooth');
+});
+
+test('derivePanelMethod: ggplot geoms may be a single name, or absent', function () {
+  assert.equal(derivePanelMethod({ panels: { g: { type: 'ggplot', spec: { geoms: 'GeomBoxplot' } } } }, 'g'),
+    'R ggplot2 code, converted; layers: boxplot');
+  assert.equal(derivePanelMethod({ panels: { g: { type: 'ggplot', spec: {} } } }, 'g'),
+    'R ggplot2 code, converted');
+});
+
+test('derivePanelMethod: a cxcode panel names its language and graph type', function () {
+  var r = { panels: { c: { type: 'cxcode', spec: { config: { graphType: 'Scatter2D' } } } } };
+  assert.equal(derivePanelMethod(r, 'c'), 'R canvasXpress code, converted; plotted as Scatter2D');
+  var py = { panels: { c: { type: 'cxcode', language: 'python', spec: { config: { graphType: 'Bar' } } } } };
+  assert.equal(derivePanelMethod(py, 'c'), 'Python canvasxpress code, converted; plotted as Bar');
+});
+
+test('panelProvenanceText: a code panel honours a pinned method and notes like any panel', function () {
+  var spec = { panels: { g: { type: 'ggplot', spec: { geoms: ['GeomBar'] }, provenance: { auto: false, method: 'Custom', notes: 'n' } } } };
+  assert.equal(panelProvenanceText(spec, 'g'), 'Custom — n');
+});

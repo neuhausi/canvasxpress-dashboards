@@ -263,6 +263,39 @@ function describeJoinKey(on) {
 }
 
 /**
+ * The method line for a self-contained code panel (`ggplot` / `cxcode`): the code
+ * it was converted from, then what it draws — the ggplot2 layers, or the
+ * CanvasXpress graph type with any statistical overlays.
+ * @param {object} panel - A `ggplot` or `cxcode` panel.
+ * @returns {string} The method line (never empty: the origin is always known).
+ * @private
+ */
+function deriveCodePanelMethod(panel) {
+  var inner = panel.spec || {};
+  var clauses = [];
+  if (panel.type === 'ggplot') {
+    clauses.push('R ggplot2 code, converted');
+    var layers = [];
+    // `geoms` is a list in a real conversion but a single name in some callers.
+    var geoms = Array.isArray(inner.geoms) ? inner.geoms : (inner.geoms ? [inner.geoms] : []);
+    geoms.forEach(function (geom) {
+      // GeomPoint → "point", GeomSmooth → "smooth", GeomBoxplot → "boxplot"
+      var name = String(geom).replace(/^Geom/, '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+      if (name && layers.indexOf(name) === -1) layers.push(name);
+    });
+    if (layers.length) clauses.push('layers: ' + layers.join(', '));
+  } else {
+    clauses.push((panel.language === 'python' ? 'Python canvasxpress' : 'R canvasXpress') + ' code, converted');
+    var config = inner.config || {};
+    if (config.graphType) {
+      var stat = describeStatOptions(config);
+      clauses.push('plotted as ' + config.graphType + (stat ? ' ' + stat : ''));
+    }
+  }
+  return joinClauses(clauses);
+}
+
+/**
  * Derive the full method line for a graph panel: the source's origin and
  * transformations followed by the chart type and any statistical overlays.
  * @param {object} spec - The dashboard spec.
@@ -273,6 +306,9 @@ function describeJoinKey(on) {
 export function derivePanelMethod(spec, panelId) {
   var panel = spec && spec.panels && spec.panels[panelId];
   if (!panel) return '';
+  // Code panels carry their own data and chart (no dataRef / panel.config): their
+  // method is where the chart came from and what it draws.
+  if (panel.type === 'ggplot' || panel.type === 'cxcode') return deriveCodePanelMethod(panel);
   var clauses = [];
   if (panel.dataRef) {
     var sourceLine = describeSource(panel.dataRef, spec);

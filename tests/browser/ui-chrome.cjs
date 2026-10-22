@@ -188,6 +188,9 @@ function builder(specName, buttonText) {
     }, spec(specName));
     await settle(page);
     if (buttonText) {
+      // Toolbar actions live in drop-downs: open the menu that hosts the button first.
+      const menu = page.locator('.cxb-menu', { has: page.locator('button', { hasText: buttonText }) }).first();
+      if (await menu.count()) await menu.locator('.cxb-menu-trigger').click();
       await page.locator('button', { hasText: buttonText }).first().click();
     } else {
       // Select the first cell so the selection chrome (grip, tools, resize handles) shows.
@@ -252,7 +255,7 @@ const CASES = [
     await page.locator('.cxd-code-btn').first().click();
   } },
   { name: 'builder', open: builder('quality-metrics') },
-  { name: 'builder-data-modal', open: builder('quality-metrics', '+ Data') },
+  { name: 'builder-data-modal', open: builder('quality-metrics', 'Data source') },
   { name: 'builder-links-modal', open: builder('quality-metrics', 'Links') },
   { name: 'builder-fields-modal', open: builder('quality-metrics', 'Fields') },
   { name: 'builder-shape-modal', open: builder('quality-metrics', 'Shape data') },
