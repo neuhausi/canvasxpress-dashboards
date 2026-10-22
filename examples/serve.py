@@ -949,6 +949,26 @@ def _seed_demo_sources(store, user):
     _seed_pins_board_source(store, user)
 
 
+_PINS_BOARD_DIR = os.path.join(DATA_DIR, "pins-board")
+
+
+def _allow_pins_board_root():
+    """Let the connector read the demo's own pins folder.
+
+    ``PinsBoardSource`` reads a folder board only under an allowlisted root
+    (``CXC_PINS_FOLDER_ROOTS``; unset means folder boards are disabled), so a user cannot
+    point a source at any directory the server can reach. This launcher publishes one
+    folder itself, so allow exactly that one, keeping any roots the operator already set.
+    Done at start-up, not on a user's first visit, so a scheduled refresh after a restart
+    can read it too."""
+    roots = [r for r in os.environ.get("CXC_PINS_FOLDER_ROOTS", "").split(os.pathsep) if r]
+    if _PINS_BOARD_DIR not in roots:
+        os.environ["CXC_PINS_FOLDER_ROOTS"] = os.pathsep.join(roots + [_PINS_BOARD_DIR])
+
+
+_allow_pins_board_root()
+
+
 def _seed_pins_board_source(store, user):
     """Publish the Palmer Penguins table to a local pins ``board_folder`` (what an
     analyst's ``pin_write()`` produces) and register it as a ``pins`` connector
@@ -962,7 +982,7 @@ def _seed_pins_board_source(store, user):
     except Exception:
         return
     csv_path = os.path.join(HERE, "data", "penguins.csv")
-    board_dir = os.path.join(DATA_DIR, "pins-board")
+    board_dir = _PINS_BOARD_DIR
     if not os.path.isfile(csv_path):
         return
     try:

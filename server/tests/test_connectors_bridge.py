@@ -206,3 +206,30 @@ def test_test_runs_unsaved_sql_read_only_with_bound_params_and_a_cap(demo, wareh
     # The rows are untouched.
     still = client.post("/api/connectors/test", json={"source": "wh", "sql": "SELECT 'all' AS k, count(*) AS n FROM stock"})
     assert still.json()["data"]["y"]["data"] == [[2.0]]
+
+
+def test_the_demo_allows_its_own_pins_folder_and_keeps_the_operators(demo):
+    """The launcher publishes one pins folder itself. The connector reads a folder board only
+    under CXC_PINS_FOLDER_ROOTS (unset = folder boards disabled), so the launcher must allow
+    exactly that folder at start-up, add to (not replace) the operator's roots, and not repeat it."""
+    os.environ["CXC_PINS_FOLDER_ROOTS"] = os.pathsep.join(["/srv/operator-pins"])
+    module = demo()
+    roots = os.environ["CXC_PINS_FOLDER_ROOTS"].split(os.pathsep)
+    assert roots[0] == "/srv/operator-pins" and roots[-1] == module._PINS_BOARD_DIR
+
+    module = demo()                                          # starting again adds nothing new
+    assert os.environ["CXC_PINS_FOLDER_ROOTS"].split(os.pathsep).count(module._PINS_BOARD_DIR) == 1
+
+
+def test_the_pins_example_source_reads_with_no_operator_setting(demo):
+    """The Pins Board (live connector) example: the seeded folder board must be readable on a
+    fresh server where the operator set nothing (the 'Folder pins boards are disabled' error)."""
+    pytest.importorskip("pandas")
+    pytest.importorskip("pins")
+    os.environ.pop("CXC_PINS_FOLDER_ROOTS", None)
+    module = demo()
+    client, status = _sign_in(module, signup=True)
+    assert status == 200
+    response = client.get("/connectors/api/data?source=pins-penguins")
+    assert response.status_code == 200, response.text
+    assert "bill_length_mm" in response.json()["y"]["vars"]
