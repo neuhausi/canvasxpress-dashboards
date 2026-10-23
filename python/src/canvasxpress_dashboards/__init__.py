@@ -10,5 +10,5 @@ from .data import cxd_data
 from .spec import read_spec
 from .widget import Dashboard, dashboard, ENGINE_URL
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = ["Dashboard", "dashboard", "cxd_data", "read_spec", "ENGINE_URL", "__version__"]
