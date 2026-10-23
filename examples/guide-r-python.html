@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en" data-cx-ui-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — Using the R and Python packages</title>
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <style>
+    .guide { max-width: 920px; margin: 0 auto; padding: 8px 24px 56px; line-height: 1.6; }
+    .guide h1 { font-size: 26px; margin: 8px 0 6px; }
+    .guide .lead { color: var(--cx-ui-text-muted); font-size: 15.5px; margin: 0 0 22px; }
+    .guide h2 { font-size: 19px; margin: 34px 0 8px; }
+    .guide .step { background: var(--cx-ui-surface); border: 1px solid var(--cx-ui-border-subtle);
+      border-radius: var(--cx-radius-lg); padding: 16px 18px 18px; margin: 16px 0; }
+    .guide .step h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font-size: 16.5px; }
+    .guide .n { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px;
+      border-radius: var(--cx-radius-pill); background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent);
+      font-size: 13px; font-weight: 600; }
+    .guide p { margin: 6px 0; }
+    .guide img { display: block; width: 100%; height: auto; margin: 10px 0 4px; border: 1px solid var(--cx-ui-border);
+      border-radius: var(--cx-radius-md); }
+    .guide .cap { color: var(--cx-ui-text-muted); font-size: 13px; margin: 0 0 6px; }
+    .guide .tip { background: var(--cx-ui-accent-tint-subtle); border-left: 3px solid var(--cx-ui-accent-strong);
+      border-radius: var(--cx-radius-md); padding: 8px 12px; margin: 10px 0; font-size: 14px; }
+    .guide code, .guide pre { font-family: var(--cx-font-mono); font-size: 13px; }
+    .guide pre { background: var(--cx-ui-surface-sunken); border: 1px solid var(--cx-ui-border-subtle);
+      border-radius: var(--cx-radius-md); padding: 10px 12px; overflow: auto; }
+    .guide table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 8px 0; }
+    .guide th, .guide td { border: 1px solid var(--cx-ui-border-subtle); padding: 6px 10px; text-align: left; vertical-align: top; }
+    .guide th { background: var(--cx-ui-surface-sunken); }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <a href="guide-dashboard-from-table.html">🧬 One table to a dashboard</a>
+    <span class="cxd-here">🐍 R and Python</span>
+  </nav>
+
+  <main class="guide">
+    <h1>Using the R and Python packages</h1>
+    <p class="lead">The same linked dashboards you build in the app render natively from <b>Python</b> and <b>R</b>, with no
+      server: hand the package a data frame and it builds a whole dashboard, or hand it a dashboard spec (one you wrote,
+      saved from the Builder, or returned by the MCP tool) and it renders that. This page shows install, a first
+      dashboard, and where each one runs.</p>
+
+    <div class="tip"><b>What a data frame becomes:</b> the same templates as
+      <a href="guide-dashboard-from-table.html">the Chart from data wizard</a>. A patient table (numeric time and 0/1
+      event columns) gets filters, a Kaplan–Meier curve, a measure by group and against time, and a case card; a
+      per-sample sequencing run-QC table gets filters, depth, mapping against duplication and quality by lane. If no
+      template fits, the page says so instead of guessing: pass a spec.</div>
+
+    <h2>Python</h2>
+    <div class="step">
+      <h3><span class="n">1</span>Install</h3>
+<pre>pip install canvasxpress-dashboards
+pip install "canvasxpress-dashboards[pandas]"   # only needed to pass a pandas DataFrame</pre>
+      <p>There are no required dependencies: the renderer is bundled, and a spec is plain JSON. A dict of columns or a
+        list of records works without pandas.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">2</span>Make a dashboard from a table</h3>
+<pre>from canvasxpress_dashboards import Dashboard
+
+Dashboard(data=trial, id="patient")        # trial: a DataFrame; "patient" is the column of record ids
+Dashboard(data=trial, id="patient").save("dashboard.html")   # a standalone page
+Dashboard(data=trial, id="patient").show()                   # opens it in your browser</pre>
+      <p>Numeric columns are the measures, every other column annotates the records, and rows are the records.</p>
+      <img src="assets/rpy-guide/1-python-dashboard.png" alt="A dashboard built in Python from a data frame: filters, survival curve, boxplot and scatter" />
+      <p class="cap">The page <code>Dashboard(data=trial, id="patient").save(...)</code> writes.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">3</span>Or render a spec</h3>
+<pre>Dashboard("my-dashboard.spec.json")</pre>
+      <p>A spec with a <b>storyboard</b> gets its player bar: here the Cohort Tour example on step 2 of 4.</p>
+      <img src="assets/rpy-guide/3-python-storyboard.png" alt="A dashboard rendered from a spec in Python with the storyboard player on step 2 of 4" />
+      <p class="cap"><code>Dashboard("cohort-tour.spec.json")</code>, with the storyboard bar above the board.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">4</span>Where it runs</h3>
+      <table>
+        <tr><th>Where</th><th>How</th></tr>
+        <tr><td>Jupyter, VS Code, Quarto, Colab</td><td>Evaluate a <code>Dashboard</code> as the last line of a cell. It is an <code>&lt;iframe&gt;</code> that grows with the dashboard.</td></tr>
+        <tr><td>A file</td><td><code>.save("dashboard.html")</code> (standalone, the renderer is inlined) or <code>.show()</code></td></tr>
+        <tr><td>Flask, FastAPI, Django</td><td>Return <code>Dashboard(...).to_html()</code> from a view.</td></tr>
+        <tr><td>Dash</td><td><code>html.Iframe(srcDoc=Dashboard(...).to_html(frame=True), style={"width": "100%", "height": "1400px", "border": "0"})</code></td></tr>
+        <tr><td>Streamlit</td><td><code>st.iframe(Dashboard(...).to_html(), height=1400)</code></td></tr>
+        <tr><td>Shiny for Python</td><td><code>ui.HTML(Dashboard(...).iframe_html(1400))</code></td></tr>
+      </table>
+      <p>Flask and Dash are covered by the package's browser tests; Streamlit (1.66) and Shiny for Python (1.8) were run
+        by hand and each draws the whole dashboard. The page is embedded as-is in a frame that runs JavaScript, so
+        pass it only dashboards you trust.</p>
+      <p>A dashboard shown in a frame tells the page around it what changed (with <code>window.postMessage</code>): for
+        the case-card dashboards, <code>params.case</code> is the patient last clicked.</p>
+    </div>
+
+    <h2>R</h2>
+    <div class="step">
+      <h3><span class="n">1</span>Install</h3>
+      <p>The package is under review for CRAN. Until it is there, install it from the repository:</p>
+<pre>install.packages("remotes")
+remotes::install_github("neuhausi/canvasxpress-dashboards", subdir = "r")</pre>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">2</span>Make a dashboard from a data frame</h3>
+<pre>library(canvasXpressDashboards)
+
+cxdashboard(data = trial, id = "patient")        # an htmlwidget: R Markdown, Quarto, the RStudio viewer, Shiny
+cxdashboard("my-dashboard.spec.json")            # or a spec: a list, a JSON string or a .json file</pre>
+      <img src="assets/rpy-guide/2-r-dashboard.png" alt="A dashboard built in R from a data frame" />
+      <p class="cap">The page saved from <code>cxdashboard(data = trial, id = "patient")</code> with <code>htmlwidgets::saveWidget()</code>.</p>
+      <div class="tip">In a spec you build by hand as an R list, write one-element arrays with <code>I()</code>
+        (<code>xAxis = I("age")</code>, not <code>xAxis = "age"</code>): a length-one vector would otherwise be sent as a
+        string. A spec read from JSON needs no care.</div>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">3</span>Use it in Shiny</h3>
+<pre>ui <- fluidPage(cxdashboardOutput("dash"), actionButton("p18", "Show P018"))
+server <- function(input, output, session) {
+  output$dash <- renderCxdashboard(cxdashboard(data = trial, id = "patient"))
+
+  observe(print(input$dash_params$case))     # the patient last clicked
+  observe(print(input$dash_template))        # "cohort" or "ngs-qc"
+
+  # ...and drive it from R:
+  observeEvent(input$p18, cxd_set_param(cxdashboardProxy("dash"), "case", "P018"))
+}</pre>
+      <p>The dashboard reports back its current parameters and which template was used, and
+        <code>cxd_set_param()</code> changes a parameter from R, for example to load a patient on the case card.</p>
+    </div>
+
+    <h2>Good to know</h2>
+    <ul>
+      <li><b>Engine:</b> dashboards need the CanvasXpress engine. By default both packages load the current release from
+        canvasxpress.org. Python takes <code>engine_url=</code> for a mirror or an offline folder; R takes
+        <code>engine = "canvasXpress"</code> to use the copy bundled with the installed canvasXpress package, which may be
+        older, so some behaviour can differ.</li>
+      <li><b>Not included:</b> the <b>Insights strip</b> (<code>insights</code> in a spec) is computed by the dashboards
+        server, so neither package shows it. Connector, dataset and live data sources need the server too. Inline data,
+        which is what a data frame becomes, works anywhere, including a saved standalone page.</li>
+      <li><b>Size:</b> each page includes the 1 MB dashboards bundle. In Python, <code>bundle_url=</code> loads it from a
+        URL instead, which keeps notebooks small.</li>
+    </ul>
+    <p>The references are the <code>python/README.md</code> and <code>r/README.md</code> files in the repository, and the
+      packages are on <a href="https://pypi.org/project/canvasxpress-dashboards/" target="_blank" rel="noopener">PyPI</a>
+      (Python) and in the repository's <a href="https://github.com/neuhausi/canvasxpress-dashboards/tree/main/r" target="_blank" rel="noopener"><code>r/</code></a> folder (R).</p>
+  </main>
+</body>
+</html>

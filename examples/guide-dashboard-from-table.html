@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en" data-cx-ui-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — How to build a dashboard from one table</title>
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <style>
+    .guide { max-width: 920px; margin: 0 auto; padding: 8px 24px 56px; line-height: 1.6; }
+    .guide h1 { font-size: 26px; margin: 8px 0 6px; }
+    .guide .lead { color: var(--cx-ui-text-muted); font-size: 15.5px; margin: 0 0 22px; }
+    .guide h2 { font-size: 19px; margin: 34px 0 8px; }
+    .guide .step { background: var(--cx-ui-surface); border: 1px solid var(--cx-ui-border-subtle);
+      border-radius: var(--cx-radius-lg); padding: 16px 18px 18px; margin: 16px 0; }
+    .guide .step h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font-size: 16.5px; }
+    .guide .n { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px;
+      border-radius: var(--cx-radius-pill); background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent);
+      font-size: 13px; font-weight: 600; }
+    .guide p { margin: 6px 0; }
+    .guide img { display: block; width: 100%; height: auto; margin: 10px 0 4px; border: 1px solid var(--cx-ui-border);
+      border-radius: var(--cx-radius-md); }
+    .guide .cap { color: var(--cx-ui-text-muted); font-size: 13px; margin: 0 0 6px; }
+    .guide .tip { background: var(--cx-ui-accent-tint-subtle); border-left: 3px solid var(--cx-ui-accent-strong);
+      border-radius: var(--cx-radius-md); padding: 8px 12px; margin: 10px 0; font-size: 14px; }
+    .guide code, .guide pre { font-family: var(--cx-font-mono); font-size: 13px; }
+    .guide pre { background: var(--cx-ui-surface-sunken); border: 1px solid var(--cx-ui-border-subtle);
+      border-radius: var(--cx-radius-md); padding: 10px 12px; overflow: auto; }
+    .guide table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 8px 0; }
+    .guide th, .guide td { border: 1px solid var(--cx-ui-border-subtle); padding: 6px 10px; text-align: left; vertical-align: top; }
+    .guide th { background: var(--cx-ui-surface-sunken); }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <a href="cohort-tour.html">🎬 A finished dashboard</a>
+    <span class="cxd-here">🧬 One table to a dashboard</span>
+  </nav>
+
+  <main class="guide">
+    <h1>How to build a whole dashboard from one table</h1>
+    <p class="lead">Give the <b>Chart from data</b> wizard one table and, when the table is a shape it recognizes, it
+      offers a whole <b>linked dashboard</b> instead of a single chart: a Filters panel and the charts that kind of data
+      calls for, all on the same data, so a selection in one panel selects the same rows in the others. It ends with a
+      <b>case card</b>: click a point and that patient or sample loads in a one-row table. This page builds one from a
+      patient table, step by step. It never changes your data.</p>
+
+    <h2>What it recognizes</h2>
+    <table>
+      <tr><th>Data</th><th>What the table needs</th><th>What you get</th></tr>
+      <tr><td><b>Patient cohort</b> (survival table)</td>
+        <td>A numeric <b>time</b> column (<code>time</code>, <code>os_months</code>, <code>PFS.days</code>,
+          <code>overall_survival_days</code> …) and a numeric <b>event</b> column of 0/1 (<code>event</code>,
+          <code>status</code>, <code>death</code> …). One row per patient; the first column is the patient id.</td>
+        <td>Filters; a Kaplan–Meier curve coloured by the best grouping column (<code>arm</code>, <code>group</code>,
+          <code>treatment</code>, <code>stage</code> … a text column with 2–6 levels) with a log-rank p-value and risk
+          table; a boxplot of another measure by that group; a scatter of that measure against survival time; the case card.</td></tr>
+      <tr><td><b>Sequencing run QC</b></td>
+        <td>One row per sample, with three or more QC metric families among the numeric columns: reads, mapping /
+          alignment, quality (Q30, Q20 …), duplication, GC, insert size, coverage / depth, adapter, contamination. Lane,
+          flowcell or batch columns are used for grouping.</td>
+        <td>Filters; read depth per sample (bars); mapping against duplication (scatter); a quality boxplot; the case card for a sample.</td></tr>
+    </table>
+    <p>Any other table gets the usual single-chart suggestions and nothing changes. A template is only offered when it
+      yields at least three panels.</p>
+
+    <div class="tip"><b>Want to try it?</b> Download the 40-patient sample
+      <a href="assets/table-guide/cohort-sample.csv" download>cohort-sample.csv</a> and use it in step 2 (open it and paste
+      the text, or upload the file). Its columns are <code>Patient, os_months, os_event, age, CD274, arm, stage</code>:
+<pre>Patient,os_months,os_event,age,CD274,arm,stage
+P001,3,0,40,2.0,Placebo,I
+P002,10,1,45,5.0,Drug,II
+P003,17,1,50,8.0,Placebo,III
+…</pre></div>
+
+    <div class="step">
+      <h3><span class="n">1</span>Open the wizard</h3>
+      <p>Go to <b>Dashboards</b> in the left menu and click <b>＋ Chart from data</b>.</p>
+      <img src="assets/table-guide/1-chart-from-data-button.png" alt="The Dashboards page with the Chart from data button outlined" />
+      <p class="cap"><b>Dashboards → ＋ Chart from data</b> (outlined).</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">2</span>Give it the table</h3>
+      <p>Use whichever is easiest: <b>upload a file</b> (CSV, TSV, JSON …), <b>choose a dataset you already have</b>
+        from the list, <b>paste</b> the table (first row = headers), or <b>load it from a URL</b>. Type a title, then
+        click <b>Next: check data</b>.</p>
+      <img src="assets/table-guide/2-upload-or-paste.png" alt="The Upload step with a title and a pasted table, Next: check data outlined" />
+      <p class="cap">A pasted table and a title. The dataset list and file box are on the same step.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">3</span>Check the data</h3>
+      <p>The wizard reads the table with the CanvasXpress engine and lists every column with its type, how many cells are
+        missing, and any cell that doesn't match its column's type (with the row numbers). Fix problems before going on:
+        <b>Transpose</b> flips a table that has samples as columns, and <b>Decimal comma → numbers</b> converts values
+        like <code>3,5</code>. Then click <b>Next: pick a chart</b>.</p>
+      <img src="assets/table-guide/3-check-the-data.png" alt="The Check step listing six columns with their types and no problems" />
+      <p class="cap">Here every cell matches its column type: <code>os_months</code>, <code>os_event</code>, <code>age</code>
+        and <code>CD274</code> are numeric; <code>arm</code> and <code>stage</code> are text.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">4</span>Pick the whole dashboard</h3>
+      <p>When the table is a recognized shape, the first card on the <b>Visualize</b> step is the dashboard, already
+        selected: <b>Cohort overview — whole dashboard</b>. It lists the panels it will make and shows live
+        thumbnails of the charts. The single-chart cards below it are still there if you'd rather have one chart.</p>
+      <img src="assets/table-guide/4-the-cohort-offer.png" alt="The Visualize step with the Cohort overview whole-dashboard card selected" />
+      <p class="cap">The <b>Cohort overview</b> card (selected) above the single-chart suggestions. The thumbnails are small previews of the real charts.</p>
+      <p>Click <b>Next: publish</b>.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">5</span>Publish</h3>
+      <p>The last step says what will happen: it saves the data as a dataset, creates the linked five-panel
+        dashboard, and publishes it (anyone with the link can view). Click <b>Save &amp; publish</b>.</p>
+      <img src="assets/table-guide/5-publish.png" alt="The Publish step with Save and publish outlined" />
+      <p class="cap"><b>Save &amp; publish</b> (outlined).</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">6</span>Share it or embed it</h3>
+      <p>You get a <b>share link</b> to the live dashboard, and ready-made embed code for a page of your own: an
+        <b>iframe</b>, a <b>script</b> tag with a <code>&lt;cxd-embed&gt;</code> element, and a PNG image address for
+        places that cannot run scripts, such as email. There is also an <b>Open in builder</b> button.</p>
+      <img src="assets/table-guide/6-published.png" alt="The published step showing the share link, embed options and Open in builder" />
+      <p class="cap">The share link and embed options. Use <b>Copy iframe</b>, <b>Copy script</b> or <b>Copy image</b>.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">7</span>Use the dashboard</h3>
+      <p>Open the share link. The Filters panel narrows every chart at once, the survival curve compares the groups, and an
+        Insights strip lists what the data shows (see
+        <a href="guide-insights.html">How to add insights</a>). The case card at the bottom starts on the first patient.</p>
+      <img src="assets/table-guide/7-the-dashboard.png" alt="The published dashboard: filters, survival curve, boxplot, scatter, insights strip and case card" />
+      <p class="cap">The published dashboard: Filters, Survival by arm, a boxplot and a scatter, and the case card.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">8</span>Click a point to load a case</h3>
+      <p>Click any point on the scatter. That patient loads on the case card and is picked out in the other charts
+        (the box and the points that show them), while every chart keeps the whole dataset, so the survival curve and
+        the distributions stay meaningful.</p>
+      <img src="assets/table-guide/8-click-a-point.png" alt="After clicking a point, patient P018 is on the case card and highlighted in the other charts" />
+      <p class="cap">After a click: <b>P018</b> is on the case card, and the same patient is highlighted in the boxplot.</p>
+    </div>
+
+    <h2>If you don't see the dashboard offer</h2>
+    <ul>
+      <li>Check the <b>Check</b> step's column types: the time and event columns must be <b>numeric</b>, and the event
+        must be 0/1. A text event such as <code>Dead</code>/<code>Alive</code> is not offered, because the survival
+        curve would be wrong; recode it to 1/0 first.</li>
+      <li>The wizard needs the records as <b>rows</b> and measures as columns. If your table is the other way round,
+        click <b>Transpose</b> on the Check step.</li>
+      <li>For run QC, the table needs three or more QC metric families among its numeric columns.</li>
+    </ul>
+
+    <h2>Then make it yours</h2>
+    <ul>
+      <li>Add a guided tour: <a href="guide-storyboards.html">How to build a storyboard</a>.</li>
+      <li>Add limits you care about to the Insights strip: <a href="guide-insights.html">How to add insights</a>.</li>
+      <li>The same dashboards can be generated from code or an AI agent: see
+        <a href="guide-r-python.html">Using the R and Python packages</a>, and the <code>suggest_canvasxpress_dashboard</code>
+        tool of the canvasxpress MCP server.</li>
+    </ul>
+    <p>The full reference is <code>docs/dashboard-from-data.md</code> in the repository.</p>
+  </main>
+</body>
+</html>
