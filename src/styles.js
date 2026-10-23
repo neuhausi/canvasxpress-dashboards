@@ -709,7 +709,15 @@ export var dashboardCss = [
   '.cxb-links-row span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }',
   '.cxb-links-none { font-size: 13px; color: var(--cxd-muted); }',
   // Only the steps scroll, so the title and Apply stay on screen however many steps a tour has.
-  '.cxb-story-list { max-height: 38vh; overflow-y: auto; }',
+  // The dialog never outgrows the window: the steps take the space that is left and scroll inside it,
+  // so the heading above and Apply / Cancel below stay on screen.
+  '.cxb-story-modal { max-width: 720px; max-height: 92vh; overflow: hidden; }',
+  '.cxb-story-steps { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }',
+  '.cxb-story-list { flex: 1 1 auto; min-height: 120px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: 4px; }',
+  '.cxb-story-modal .cxb-story-row { padding: 10px 8px 10px 10px; gap: 10px; }',
+  '.cxb-story-modal .cxb-story-row input { padding: 9px 11px; font-size: 15px; }',
+  '.cxb-story-modal .cxb-story-row textarea { padding: 9px 11px; font-size: 15px; line-height: 1.45; min-height: 96px; resize: vertical; }',
+  '.cxb-story-modal .cxb-modal-field > input { padding: 9px 11px; font-size: 15px; }',
   '.cxb-story-row { align-items: flex-start; }',
   '.cxb-story-row > span { display: flex; flex-direction: column; gap: 4px; }',
   '.cxb-story-row input, .cxb-story-row textarea { width: 100%; box-sizing: border-box; font: inherit; }',

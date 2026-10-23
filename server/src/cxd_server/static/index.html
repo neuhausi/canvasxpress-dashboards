@@ -3058,13 +3058,39 @@
         paste.rows = 5; paste.placeholder = 'Paste a table (comma-, tab- or semicolon-separated), first row = headers';
         var url = document.createElement('input');
         url.type = 'url'; url.placeholder = 'https://… (CSV, TSV or JSON)';
+        // …or a dataset the user already has (the Data view's list), fetched through the same client.
+        var picker = document.createElement('select');
+        picker.className = 'cxd-wizard-dataset';
+        picker.disabled = true;
+        var known = [];
+        function pickerOption(value, text) {
+          var o = document.createElement('option');
+          o.value = value;
+          o.textContent = text;
+          picker.appendChild(o);
+        }
+        pickerOption('', 'Loading your datasets…');
+        client.listDatasets().then(function (list) {
+          picker.innerHTML = '';
+          known = list || [];
+          pickerOption('', known.length ? '(none: use a file, paste or a URL)' : 'No datasets yet');
+          known.forEach(function (d, i) {
+            var size = d.rows != null && d.cols != null ? ' — ' + Math.max(d.rows, d.cols) + '×' + Math.min(d.rows, d.cols) : '';
+            pickerOption(String(i), (d.title || d.id) + size + (d.shared ? ' (from ' + d.owner + ')' : ''));
+          });
+          picker.disabled = !known.length;
+        }, function () {
+          picker.innerHTML = '';
+          pickerOption('', 'Could not list your datasets');
+        });
         body.appendChild(labeled('Chart title', title));
         body.appendChild(labeled('Upload a file', file));
+        body.appendChild(labeled('…or choose a dataset you already have', picker));
         body.appendChild(labeled('…or paste data', paste));
         body.appendChild(labeled('…or load from a URL', url));
         var note = document.createElement('div');
         note.className = 'cxd-wizard-note';
-        note.textContent = 'Databases and Google Sheets: add them with “+ Database” in Data, then build from the dataset.';
+        note.textContent = 'Databases and Google Sheets: add them with “+ Database” in Data, then choose the dataset here.';
         body.appendChild(note);
         var next = smallButton('Next: check data', function () {
           msg.textContent = '';
@@ -3086,8 +3112,15 @@
               if (!state.title) state.title = base;
               parseWithEngine(textToFile(text, base), parsed, fail);
             }, function (e) { fail('Could not load the URL: ' + e.message + ' (it must allow cross-origin requests)'); });
+          } else if (picker.value !== '' && known[Number(picker.value)]) {
+            var chosen = known[Number(picker.value)];
+            client.getDataset(chosen.id, { store: chosen.store, owner: chosen.shared ? chosen.owner : undefined }).then(function (data) {
+              if (!data || !data.y || !(data.y.vars || []).length) { fail('That dataset has no data to chart.'); return; }
+              if (!state.title) state.title = chosen.title || chosen.id;
+              parsed(JSON.parse(JSON.stringify({ y: data.y, x: data.x || undefined, z: data.z || undefined })));
+            }, function (e) { fail('Could not load that dataset: ' + (e && e.message || e)); });
           } else {
-            fail('Choose a file, paste data or enter a URL.');
+            fail('Choose a dataset, a file, paste data or enter a URL.');
           }
         });
         next.className = 'cX-Button cX-Button--primary';

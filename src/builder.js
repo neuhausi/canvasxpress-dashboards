@@ -5749,7 +5749,7 @@ function openStoryboardDialog(doc, spec, live) {
   var changed = null;
   return new Promise(function (resolve) {
     var overlay = modalOverlay();
-    var modal = el('div', 'cxb-modal');
+    var modal = el('div', 'cxb-modal cxb-story-modal');
     var heading = el('h3', 'cxb-modal-title');
     heading.textContent = 'Storyboard';
     var intro = el('p', 'cxb-links-intro');
@@ -5784,7 +5784,7 @@ function openStoryboardDialog(doc, spec, live) {
         on(title, 'input', function () { if (title.value) step.title = title.value; else delete step.title; });
         var text = el('textarea');
         text.value = step.narration || '';
-        text.setAttribute('rows', '2');
+        text.setAttribute('rows', '4');
         text.setAttribute('placeholder', 'What this step shows');
         on(text, 'input', function () { if (text.value) step.narration = text.value; else delete step.narration; });
         var what = el('span', 'cxb-links-none');
@@ -5825,11 +5825,17 @@ function openStoryboardDialog(doc, spec, live) {
     }, 'cxb-btn-primary');
     var footer = el('div', 'cxb-modal-footer');
     append(footer, [cancelBtn, applyBtn]);
-    append(modal, [heading, intro, field('Title', titleInput), field('Steps', list),
+    var stepsField = field('Steps', list);
+    stepsField.className += ' cxb-story-steps';
+    append(modal, [heading, intro, field('Title', titleInput), stepsField,
       field('Bring this panel into view (for the next step)', focusSel), addBtn, errEl, footer]);
     overlay.appendChild(modal);
     on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
     (doc.body || doc.documentElement).appendChild(overlay);
+    // The page behind must not scroll while the steps do: freeze it for as long as the dialog is open.
+    var scrollers = [doc.documentElement, doc.body].filter(function (node) { return node && node.style; });
+    var frozen = scrollers.map(function (node) { return node.style.overflow; });
+    scrollers.forEach(function (node) { node.style.overflow = 'hidden'; });
 
     /**
      * Close the dialog with a result.
@@ -5837,6 +5843,7 @@ function openStoryboardDialog(doc, spec, live) {
      * @returns {void}
      */
     function close(result) {
+      scrollers.forEach(function (node, i) { node.style.overflow = frozen[i]; });
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
       resolve(result || null);
     }

@@ -729,7 +729,15 @@ var dashboardCss = [
   '.cxb-links-row span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }',
   '.cxb-links-none { font-size: 13px; color: var(--cxd-muted); }',
   // Only the steps scroll, so the title and Apply stay on screen however many steps a tour has.
-  '.cxb-story-list { max-height: 38vh; overflow-y: auto; }',
+  // The dialog never outgrows the window: the steps take the space that is left and scroll inside it,
+  // so the heading above and Apply / Cancel below stay on screen.
+  '.cxb-story-modal { max-width: 720px; max-height: 92vh; overflow: hidden; }',
+  '.cxb-story-steps { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }',
+  '.cxb-story-list { flex: 1 1 auto; min-height: 120px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: 4px; }',
+  '.cxb-story-modal .cxb-story-row { padding: 10px 8px 10px 10px; gap: 10px; }',
+  '.cxb-story-modal .cxb-story-row input { padding: 9px 11px; font-size: 15px; }',
+  '.cxb-story-modal .cxb-story-row textarea { padding: 9px 11px; font-size: 15px; line-height: 1.45; min-height: 96px; resize: vertical; }',
+  '.cxb-story-modal .cxb-modal-field > input { padding: 9px 11px; font-size: 15px; }',
   '.cxb-story-row { align-items: flex-start; }',
   '.cxb-story-row > span { display: flex; flex-direction: column; gap: 4px; }',
   '.cxb-story-row input, .cxb-story-row textarea { width: 100%; box-sizing: border-box; font: inherit; }',
@@ -21734,7 +21742,7 @@ function openStoryboardDialog(doc, spec, live) {
   var changed = null;
   return new Promise(function (resolve) {
     var overlay = modalOverlay();
-    var modal = el('div', 'cxb-modal');
+    var modal = el('div', 'cxb-modal cxb-story-modal');
     var heading = el('h3', 'cxb-modal-title');
     heading.textContent = 'Storyboard';
     var intro = el('p', 'cxb-links-intro');
@@ -21769,7 +21777,7 @@ function openStoryboardDialog(doc, spec, live) {
         on(title, 'input', function () { if (title.value) step.title = title.value; else delete step.title; });
         var text = el('textarea');
         text.value = step.narration || '';
-        text.setAttribute('rows', '2');
+        text.setAttribute('rows', '4');
         text.setAttribute('placeholder', 'What this step shows');
         on(text, 'input', function () { if (text.value) step.narration = text.value; else delete step.narration; });
         var what = el('span', 'cxb-links-none');
@@ -21810,11 +21818,17 @@ function openStoryboardDialog(doc, spec, live) {
     }, 'cxb-btn-primary');
     var footer = el('div', 'cxb-modal-footer');
     append(footer, [cancelBtn, applyBtn]);
-    append(modal, [heading, intro, field('Title', titleInput), field('Steps', list),
+    var stepsField = field('Steps', list);
+    stepsField.className += ' cxb-story-steps';
+    append(modal, [heading, intro, field('Title', titleInput), stepsField,
       field('Bring this panel into view (for the next step)', focusSel), addBtn, errEl, footer]);
     overlay.appendChild(modal);
     on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
     (doc.body || doc.documentElement).appendChild(overlay);
+    // The page behind must not scroll while the steps do: freeze it for as long as the dialog is open.
+    var scrollers = [doc.documentElement, doc.body].filter(function (node) { return node && node.style; });
+    var frozen = scrollers.map(function (node) { return node.style.overflow; });
+    scrollers.forEach(function (node) { node.style.overflow = 'hidden'; });
 
     /**
      * Close the dialog with a result.
@@ -21822,6 +21836,7 @@ function openStoryboardDialog(doc, spec, live) {
      * @returns {void}
      */
     function close(result) {
+      scrollers.forEach(function (node, i) { node.style.overflow = frozen[i]; });
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
       resolve(result || null);
     }
