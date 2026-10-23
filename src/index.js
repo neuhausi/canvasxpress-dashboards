@@ -43,6 +43,10 @@ export { tableFromData, profileColumns, applyDecimalComma, wizardSpec,
   WIZARD_CHART_TYPES, chartFieldsFor, buildChartConfig, chartColumns,
   detectDataShapes, suggestPanelType,
   WIZARD_SCIENCE_TYPES, scientificFieldsFor, buildScientificConfig } from './wizard.js';
+export { suggestDashboard, dashboardSpec } from './suggestDashboard.js';
+export { mountInsights, insightsDrill } from './insights.js';
+export { mountStoryboard, storyboardSteps } from './storyboard.js';
+export { renderPayload } from './renderPayload.js';
 export { transposeCxData } from './join.js';
 export { hypergeometricPValue, benjaminiHochberg, enrich, enrichmentToData } from './enrichment.js';
 export { pAdjust, significanceStars, applyDashboardCorrection, buildPanelStatInference, buildEffectSizeTile } from './statInference.js';

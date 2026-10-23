@@ -21,7 +21,7 @@ var DATA_KINDS = ['inline', 'connector', 'dataset', 'join', 'function', 'live'];
 var FUNCTION_LANGUAGES = ['python', 'r'];
 
 /** @type {string[]} How related panels show marked rows (CanvasXpress highlightMode). */
-var MARKING_MODES = ['focus', 'highlight', 'ghost', 'filter'];
+var SPEC_MARKING_MODES = ['focus', 'highlight', 'ghost', 'filter'];
 
 /** @type {string[]} Where a calculated field lands (CanvasXpress calculatedFields `target`). */
 var CALC_TARGETS = ['variable', 'sampleAnnotation', 'variableAnnotation'];
@@ -364,9 +364,11 @@ export function validateSpec(spec) {
       });
     }
   }
-  if (spec.markingMode != null && MARKING_MODES.indexOf(spec.markingMode) === -1) {
-    errors.push('spec.markingMode must be one of: ' + MARKING_MODES.join(', '));
+  if (spec.markingMode != null && SPEC_MARKING_MODES.indexOf(spec.markingMode) === -1) {
+    errors.push('spec.markingMode must be one of: ' + SPEC_MARKING_MODES.join(', '));
   }
+  checkInsights(spec.insights, spec.data, errors);
+  checkStoryboard(spec, errors);
 
   // --- filter schemes (named Filters-panel states) ---
   if (spec.filterSchemes != null) {
@@ -668,6 +670,117 @@ function checkFunction(src, at, spec, errors) {
   }
   if (src.runtime != null && typeof src.runtime !== 'string') {
     errors.push(at + '.runtime must be a URL string');
+  }
+}
+
+/**
+ * Check the optional `storyboard`: an ordered list of steps, each a complete view of the dashboard.
+ * Mirrors `_check_storyboard` in the server's validate_spec.py.
+ * @param {object} spec - The dashboard spec.
+ * @param {string[]} errors - Collector.
+ * @returns {void}
+ * @private
+ */
+function checkStoryboard(spec, errors) {
+  var board = spec.storyboard;
+  if (board == null) return;
+  if (typeof board !== 'object' || Array.isArray(board)) {
+    errors.push('spec.storyboard must be an object');
+    return;
+  }
+  if (board.title != null && typeof board.title !== 'string') errors.push('spec.storyboard.title must be a string');
+  if (board.seconds != null && (typeof board.seconds !== 'number' || !(board.seconds > 0))) {
+    errors.push('spec.storyboard.seconds must be a number above 0');
+  }
+  if (!Array.isArray(board.steps) || !board.steps.length) {
+    errors.push('spec.storyboard.steps must be a non-empty array');
+    return;
+  }
+  board.steps.forEach(function (step, i) {
+    var at = 'spec.storyboard.steps[' + i + ']';
+    if (step == null || typeof step !== 'object' || Array.isArray(step)) {
+      errors.push(at + ' must be an object');
+      return;
+    }
+    ['title', 'narration'].forEach(function (key) {
+      if (step[key] != null && typeof step[key] !== 'string') errors.push(at + '.' + key + ' must be a string');
+    });
+    if (step.seconds != null && (typeof step.seconds !== 'number' || !(step.seconds > 0))) {
+      errors.push(at + '.seconds must be a number above 0');
+    }
+    if (step.scheme != null) {
+      if (typeof step.scheme !== 'string' || spec.filterSchemes == null || !hasOwn(spec.filterSchemes, step.scheme)) {
+        errors.push(at + '.scheme "' + step.scheme + '" has no matching entry in spec.filterSchemes');
+      }
+      if (step.filters != null) errors.push(at + ' takes either scheme or filters, not both');
+    }
+    if (step.filters != null) {
+      if (!Array.isArray(step.filters)) errors.push(at + '.filters must be an array of filters');
+      else step.filters.forEach(function (p, j) { checkFilterPredicate(p, at + '.filters[' + j + ']', spec.data, errors); });
+    }
+    if (step.params != null) {
+      if (typeof step.params !== 'object' || Array.isArray(step.params)) {
+        errors.push(at + '.params must be an object map');
+      } else {
+        Object.keys(step.params).forEach(function (name) {
+          if (spec.params == null || !hasOwn(spec.params, name)) {
+            errors.push(at + '.params["' + name + '"] is not declared in spec.params');
+          }
+        });
+      }
+    }
+    if (step.focus != null && (spec.panels == null || !hasOwn(spec.panels, step.focus))) {
+      errors.push(at + '.focus "' + step.focus + '" has no matching entry in spec.panels');
+    }
+  });
+}
+
+/**
+ * Check the optional `insights` block: the fixed data checks a dashboard opts into. Mirrors
+ * `_check_insights` in the server's validate_spec.py.
+ * @param {*} insights - `spec.insights`.
+ * @param {object} data - `spec.data` (sources a threshold or `sources` entry may name).
+ * @param {string[]} errors - Collector.
+ * @returns {void}
+ * @private
+ */
+function checkInsights(insights, data, errors) {
+  if (insights == null) return;
+  if (typeof insights !== 'object' || Array.isArray(insights)) {
+    errors.push('spec.insights must be an object');
+    return;
+  }
+  var ops = ['lt', 'le', 'gt', 'ge'];
+  if (insights.thresholds != null) {
+    if (!Array.isArray(insights.thresholds)) {
+      errors.push('spec.insights.thresholds must be an array');
+    } else {
+      insights.thresholds.forEach(function (t, i) {
+        var at = 'spec.insights.thresholds[' + i + ']';
+        if (t == null || typeof t !== 'object' || Array.isArray(t)) { errors.push(at + ' must be an object'); return; }
+        if (typeof t.field !== 'string' || !t.field.length) errors.push(at + '.field must be a non-empty field name');
+        if (ops.indexOf(t.op) === -1) errors.push(at + '.op must be one of: ' + ops.join(', '));
+        if (typeof t.value !== 'number' || !isFinite(t.value)) errors.push(at + '.value must be a number');
+        if (t.label != null && typeof t.label !== 'string') errors.push(at + '.label must be a string');
+        if (t.source != null && (data == null || !Object.prototype.hasOwnProperty.call(data, t.source))) {
+          errors.push(at + '.source "' + t.source + '" has no matching entry in spec.data');
+        }
+      });
+    }
+  }
+  if (insights.sources != null) {
+    if (!Array.isArray(insights.sources)) {
+      errors.push('spec.insights.sources must be an array of source names');
+    } else {
+      insights.sources.forEach(function (ref, i) {
+        if (typeof ref !== 'string' || data == null || !Object.prototype.hasOwnProperty.call(data, ref)) {
+          errors.push('spec.insights.sources[' + i + '] "' + ref + '" has no matching entry in spec.data');
+        }
+      });
+    }
+  }
+  if (insights.max != null && (typeof insights.max !== 'number' || insights.max < 1 || Math.floor(insights.max) !== insights.max)) {
+    errors.push('spec.insights.max must be a positive whole number');
   }
 }
 

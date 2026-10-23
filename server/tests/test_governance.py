@@ -206,6 +206,31 @@ def test_policy_applies_to_share_links_as_anonymous(org):
     assert [r[0] for r in signed_in[1:]] == ["p1", "p3"]
 
 
+def test_share_link_keeps_the_source_settings_the_browser_applies(org):
+    # A dataset source can carry a browser-side pushdown (the case-card drill narrows a copy of the
+    # data to a clicked row), calculated fields and a row axis. Resolving the share into inline
+    # data must keep them — only the stored dataset's identity goes.
+    owner = org["owner"]
+    spec = _spec("drill")
+    spec["params"] = {"case": {"value": "p1"}}
+    pushdown = {"where": [{"column": "smps", "op": "=", "value": "$case"}]}
+    spec["data"]["one"] = {"kind": "dataset", "id": "trial", "pushdown": pushdown,
+                           "axis": "smps", "calculatedFields": [{"name": "double", "formula": "age * 2"}]}
+    assert owner.post("/api/dashboards", json=spec).status_code == 200
+    token = owner.post("/api/dashboards/drill/share", json={"visibility": "public"}
+                       ).json()["dashboard"]["share_token"]
+    shared = TestClient(owner.app).get("/api/shared/" + token).json()["spec"]
+    one = shared["data"]["one"]
+    assert one["kind"] == "inline" and one["value"]
+    assert one["pushdown"] == pushdown
+    assert one["axis"] == "smps"
+    assert one["calculatedFields"] == [{"name": "double", "formula": "age * 2"}]
+    for leaked in ("id", "store", "owner"):               # the dataset's identity is not revealed
+        assert leaked not in one
+    # A source with no extras still resolves to the same bare inline source as before.
+    assert set(shared["data"]["t"]) == {"kind", "value"}
+
+
 def test_share_link_cannot_pin_someone_elses_dataset(org):
     # outsider writes a spec pointing at owner's dataset and shares it publicly.
     outsider = org["outsider"]

@@ -12,7 +12,7 @@
  *
  * Run: `node scripts/build.mjs`
  */
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -26,7 +26,7 @@ var outOverride = process.env.CXD_BUILD_OUT || '';
 var distDir = outOverride || join(root, 'dist');
 
 // Dependency order — leaves first, entry last-ish. index.js only re-exports.
-var MODULES = ['uiTokens.js', 'styles.js', 'spec.js', 'join.js', 'pushdown.js', 'marking.js', 'filters.js', 'comments.js', 'ask.js', 'dataStore.js', 'hash.js', 'zip.js', 'provenance.js', 'exportDashboard.js', 'gridLayout.js', 'validateSpec.js', 'ggplotDashboard.js', 'codePanelsDashboard.js', 'statInference.js', 'transforms.js', 'analysisControls.js', 'renderDashboard.js', 'persistence.js', 'builderModel.js', 'wizard.js', 'enrichment.js', 'vcf.js', 'figureComposer.js', 'builder.js'];
+var MODULES = ['uiTokens.js', 'styles.js', 'spec.js', 'join.js', 'pushdown.js', 'marking.js', 'filters.js', 'comments.js', 'ask.js', 'dataStore.js', 'hash.js', 'zip.js', 'provenance.js', 'exportDashboard.js', 'gridLayout.js', 'validateSpec.js', 'ggplotDashboard.js', 'codePanelsDashboard.js', 'statInference.js', 'transforms.js', 'analysisControls.js', 'renderDashboard.js', 'persistence.js', 'builderModel.js', 'wizard.js', 'suggestDashboard.js', 'insights.js', 'storyboard.js', 'renderPayload.js', 'enrichment.js', 'vcf.js', 'figureComposer.js', 'builder.js'];
 
 // Public API exposed by both bundles: exactly what src/index.js exports (the
 // single source of truth; a hand-kept list drifted from it more than once).
@@ -101,6 +101,14 @@ if (!outOverride) try {
   // examples/builder.html): copy both next to the shell so the served app finds them.
   ['site-themes.css', 'site-theme.js'].forEach(function (f) {
     writeFileSync(join(serverStatic, f), readFileSync(join(root, 'examples', f)));
+  });
+  // The language wrappers ship the same bundle (r/, python/): mirror it on every build so a copy
+  // can never be stale (tests/wrappers.test.js checks they are identical).
+  [join(root, 'r', 'inst', 'htmlwidgets', 'lib', 'canvasxpress-dashboards'),
+   join(root, 'python', 'src', 'canvasxpress_dashboards', 'assets')].forEach(function (dir) {
+    if (!existsSync(dirname(dir))) return;
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'canvasxpress-dashboards.umd.js'), umd);
   });
 } catch (e) {
   // Server package may be absent in a slim checkout — non-fatal.
@@ -199,5 +207,22 @@ function checkModules() {
   });
   if (missing.length) {
     throw new Error('scripts/build.mjs MODULES is out of date: ' + missing.join('; '));
+  }
+  // Every module is inlined into ONE scope, so two modules declaring the same top-level name
+  // collide: the ESM bundle refuses to load ("Identifier ... has already been declared") and the
+  // UMD bundle silently lets the later function replace the earlier one in BOTH modules.
+  var declaredIn = {};
+  var clashes = [];
+  MODULES.forEach(function (name) {
+    var code = readFileSync(join(srcDir, name), 'utf8');
+    var re = /^(?:export\s+)?(?:async\s+)?(?:function|var|const|let|class)\s+([A-Za-z_$][\w$]*)/gm;
+    var m;
+    while ((m = re.exec(code))) {
+      if (declaredIn[m[1]] && declaredIn[m[1]] !== name) clashes.push(m[1] + ' (' + declaredIn[m[1]] + ' and ' + name + ')');
+      else declaredIn[m[1]] = name;
+    }
+  });
+  if (clashes.length) {
+    throw new Error('top-level names declared in more than one module (rename one): ' + clashes.join('; '));
   }
 }

@@ -57,7 +57,7 @@ div#cxd-genomics-oncology-panel-samples-meter-0-cX-Container-Viewer [15,225 329x
 div#cxd-genomics-oncology-panel-samples-meter-0-cX-Canvas-Container [15,225 329x260] 
 div#cxd-genomics-oncology-panel-samples-meter-0-cX-Container-Workflow [15,485 329x0] 
 div#cxd-genomics-oncology-panel-samples-meter-0-cX-Version-Info-Trigger [15,225 25x25] z=10000
-div#cxd-genomics-oncology-panel-samples-meter-0-cX-Version-Info-Container [47,257 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-genomics-oncology-panel-samples-meter-0-cX-Version-Info-Container [47,257 157x78] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
 table#cxd-genomics-oncology-panel-samples-meter-0-cX-a11y-table [14,224 2857x86] 
 table#cxd-genomics-oncology-panel-samples-meter-0-cX-a11y-table>caption [14,224 2857x18] 
 table#cxd-genomics-oncology-panel-samples-meter-0-cX-a11y-table>thead [16,244 2853x20] 
@@ -261,7 +261,7 @@ div#cxd-genomics-oncology-panel-events-meter-1-cX-Container-Viewer [362,225 329x
 div#cxd-genomics-oncology-panel-events-meter-1-cX-Canvas-Container [362,225 329x260] 
 div#cxd-genomics-oncology-panel-events-meter-1-cX-Container-Workflow [362,485 329x0] 
 div#cxd-genomics-oncology-panel-events-meter-1-cX-Version-Info-Trigger [362,225 25x25] z=10000
-div#cxd-genomics-oncology-panel-events-meter-1-cX-Version-Info-Container [394,257 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-genomics-oncology-panel-events-meter-1-cX-Version-Info-Container [394,257 157x78] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
 table#cxd-genomics-oncology-panel-events-meter-1-cX-a11y-table [361,224 2857x86] 
 table#cxd-genomics-oncology-panel-events-meter-1-cX-a11y-table>caption [361,224 2857x18] 
 table#cxd-genomics-oncology-panel-events-meter-1-cX-a11y-table>thead [363,244 2853x20] 
@@ -465,7 +465,7 @@ div#cxd-genomics-oncology-panel-clinical-bar-2-cX-Container-Viewer [709,225 676x
 div#cxd-genomics-oncology-panel-clinical-bar-2-cX-Canvas-Container [709,225 676x260] 
 div#cxd-genomics-oncology-panel-clinical-bar-2-cX-Container-Workflow [709,485 676x0] 
 div#cxd-genomics-oncology-panel-clinical-bar-2-cX-Version-Info-Trigger [709,225 25x25] z=10000
-div#cxd-genomics-oncology-panel-clinical-bar-2-cX-Version-Info-Container [741,257 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-genomics-oncology-panel-clinical-bar-2-cX-Version-Info-Container [741,257 157x78] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
 table#cxd-genomics-oncology-panel-clinical-bar-2-cX-a11y-table [708,224 140x130] 
 table#cxd-genomics-oncology-panel-clinical-bar-2-cX-a11y-table>caption [708,224 140x18] 
 table#cxd-genomics-oncology-panel-clinical-bar-2-cX-a11y-table>thead [710,244 136x20] 
@@ -543,7 +543,7 @@ div#cxd-genomics-oncology-panel-heatmap-3-cX-Container-Viewer [15,537 791x416] c
 div#cxd-genomics-oncology-panel-heatmap-3-cX-Canvas-Container [15,537 791x416] 
 div#cxd-genomics-oncology-panel-heatmap-3-cX-Container-Workflow [15,953 791x0] 
 div#cxd-genomics-oncology-panel-heatmap-3-cX-Version-Info-Trigger [15,537 25x25] z=10000
-div#cxd-genomics-oncology-panel-heatmap-3-cX-Version-Info-Container [47,569 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-genomics-oncology-panel-heatmap-3-cX-Version-Info-Container [47,569 157x78] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
 table#cxd-genomics-oncology-panel-heatmap-3-cX-a11y-table [14,536 2683x1362] 
 table#cxd-genomics-oncology-panel-heatmap-3-cX-a11y-table>caption [14,536 2683x18] 
 table#cxd-genomics-oncology-panel-heatmap-3-cX-a11y-table>thead [16,556 2679x20] 
@@ -3642,7 +3642,7 @@ div#cxd-genomics-oncology-panel-umap-4-cX-Container-Viewer [825,537 560x416] col
 div#cxd-genomics-oncology-panel-umap-4-cX-Canvas-Container [825,537 560x416] 
 div#cxd-genomics-oncology-panel-umap-4-cX-Container-Workflow [825,953 560x0] 
 div#cxd-genomics-oncology-panel-umap-4-cX-Version-Info-Trigger [825,537 25x25] z=10000
-div#cxd-genomics-oncology-panel-umap-4-cX-Version-Info-Container [857,569 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-genomics-oncology-panel-umap-4-cX-Version-Info-Container [857,569 157x78] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
 table#cxd-genomics-oncology-panel-umap-4-cX-a11y-table [824,536 463x4442] 
 table#cxd-genomics-oncology-panel-umap-4-cX-a11y-table>caption [824,536 463x18] 
 table#cxd-genomics-oncology-panel-umap-4-cX-a11y-table>thead [826,556 459x20] 
@@ -4504,7 +4504,7 @@ div#cxd-genomics-oncology-panel-volcano-5-cX-Container-Viewer [15,1057 444x364] 
 div#cxd-genomics-oncology-panel-volcano-5-cX-Canvas-Container [15,1057 444x364] 
 div#cxd-genomics-oncology-panel-volcano-5-cX-Container-Workflow [15,1421 444x0] 
 div#cxd-genomics-oncology-panel-volcano-5-cX-Version-Info-Trigger [15,1057 25x25] z=10000
-div#cxd-genomics-oncology-panel-volcano-5-cX-Version-Info-Container [47,1089 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-genomics-oncology-panel-volcano-5-cX-Version-Info-Container [47,1089 157x78] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
 table#cxd-genomics-oncology-panel-volcano-5-cX-a11y-table [14,1056 463x4442] 
 table#cxd-genomics-oncology-panel-volcano-5-cX-a11y-table>caption [14,1056 463x18] 
 table#cxd-genomics-oncology-panel-volcano-5-cX-a11y-table>thead [16,1076 459x20] 
@@ -5357,7 +5357,7 @@ div#cxd-genomics-oncology-panel-ma-6-cX-Container-Viewer [478,1057 444x364] colo
 div#cxd-genomics-oncology-panel-ma-6-cX-Canvas-Container [478,1057 444x364] 
 div#cxd-genomics-oncology-panel-ma-6-cX-Container-Workflow [478,1421 444x0] 
 div#cxd-genomics-oncology-panel-ma-6-cX-Version-Info-Trigger [478,1057 25x25] z=10000
-div#cxd-genomics-oncology-panel-ma-6-cX-Version-Info-Container [510,1089 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-genomics-oncology-panel-ma-6-cX-Version-Info-Container [510,1089 157x78] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
 table#cxd-genomics-oncology-panel-ma-6-cX-a11y-table [477,1056 463x4442] 
 table#cxd-genomics-oncology-panel-ma-6-cX-a11y-table>caption [477,1056 463x18] 
 table#cxd-genomics-oncology-panel-ma-6-cX-a11y-table>thead [479,1076 459x20] 
@@ -6210,7 +6210,7 @@ div#cxd-genomics-oncology-panel-contrast-7-cX-Container-Viewer [941,1057 444x364
 div#cxd-genomics-oncology-panel-contrast-7-cX-Canvas-Container [941,1057 444x364] 
 div#cxd-genomics-oncology-panel-contrast-7-cX-Container-Workflow [941,1421 444x0] 
 div#cxd-genomics-oncology-panel-contrast-7-cX-Version-Info-Trigger [941,1057 25x25] z=10000
-div#cxd-genomics-oncology-panel-contrast-7-cX-Version-Info-Container [973,1089 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-genomics-oncology-panel-contrast-7-cX-Version-Info-Container [973,1089 157x78] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
 table#cxd-genomics-oncology-panel-contrast-7-cX-a11y-table [940,1056 463x4442] 
 table#cxd-genomics-oncology-panel-contrast-7-cX-a11y-table>caption [940,1056 463x18] 
 table#cxd-genomics-oncology-panel-contrast-7-cX-a11y-table>thead [942,1076 459x20] 
@@ -7022,9 +7022,9 @@ table#cxd-genomics-oncology-panel-contrast-7-cX-a11y-table>tbody>tr:200>td:2 [12
 div#cxd-genomics-oncology-panel-contrast-7-cX-a11y-live [940,1056 1x1] 
 div#host>div.cxd-grid>div.cxd-annctl-cell.cxd-panel:12 [12,1436 1376x40] radius=10px; z=3
 div#host>div.cxd-grid>div.cxd-annctl-cell.cxd-panel:12>div.cxd-panel-body [12,1436 1376x40] 
-div#host>div.cxd-grid>div.cxd-annctl-cell.cxd-panel:12>div.cxd-panel-body>div.cxd-annctl:2 [12,1436 347x39] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=14px; line-height=18.2px; padding=5px 0px 5px 0px
+div#host>div.cxd-grid>div.cxd-annctl-cell.cxd-panel:12>div.cxd-panel-body>div.cxd-annctl:2 [12,1436 350x38] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=14px; line-height=18.2px; padding=5px 0px 5px 0px
 div#host>div.cxd-grid>div.cxd-annctl-cell.cxd-panel:12>div.cxd-panel-body>div.cxd-annctl:2>span.cxd-annctl-label [12,1446 237x18] font-weight=600
-div#host>div.cxd-grid>div.cxd-annctl-cell.cxd-panel:12>div.cxd-panel-body>div.cxd-annctl:2>select.cxd-annctl-select [257,1441 102x29] line-height=normal; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=4px 7px 4px 7px; bg=rgb(27, 30, 36)
+div#host>div.cxd-grid>div.cxd-annctl-cell.cxd-panel:12>div.cxd-panel-body>div.cxd-annctl:2>select.cxd-annctl-select [257,1441 105x28] border=1px / solid / rgb(58, 65, 76); radius=6px; padding=4px 30px 4px 7px; bg=rgb(27, 30, 36); background-image=linear-gradient(45deg, rgba(0, 0, 0, 0) 40%, rgb(230, 232, 236) 40%, rgb(230, 232, 236) 60%, rgba(0, 0, 0, 0) 60%), linear-gradient(-45deg, rgba(0, 0, 0, 0) 40%, rgb(230, 232, 236) 40%, rgb(230, 232, 236) 60%, rgba(0, 0, 0, 0) 60%)
 div#host>div.cxd-grid>div.cxd-panel:13 [12,1488 682x404] border=1px / solid / rgb(58, 65, 76); radius=10px; bg=rgb(27, 30, 36)
 div#host>div.cxd-grid>div.cxd-panel:13>div.cxd-panel-title:1 [13,1489 680x34] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-weight=600; line-height=20.8px; border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(58, 65, 76) rgb(230, 232, 236); padding=6px 10px 6px 10px; bg=rgb(14, 16, 19)
 div#host>div.cxd-grid>div.cxd-panel:13>div.cxd-panel-body:2 [13,1523 680x368] 
@@ -7070,7 +7070,7 @@ div#cxd-genomics-oncology-panel-km-8-cX-Container-Viewer [15,1525 676x364] color
 div#cxd-genomics-oncology-panel-km-8-cX-Canvas-Container [15,1525 676x364] 
 div#cxd-genomics-oncology-panel-km-8-cX-Container-Workflow [15,1889 676x0] 
 div#cxd-genomics-oncology-panel-km-8-cX-Version-Info-Trigger [15,1525 25x25] z=10000
-div#cxd-genomics-oncology-panel-km-8-cX-Version-Info-Container [47,1557 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-genomics-oncology-panel-km-8-cX-Version-Info-Container [47,1557 157x78] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
 table#cxd-genomics-oncology-panel-km-8-cX-a11y-table [14,1524 462x4442] 
 table#cxd-genomics-oncology-panel-km-8-cX-a11y-table>caption [14,1524 462x18] 
 table#cxd-genomics-oncology-panel-km-8-cX-a11y-table>thead [16,1544 458x20] 
@@ -7925,7 +7925,7 @@ div#cxd-genomics-oncology-panel-km-stage-9-cX-Container-Viewer [709,1525 676x364
 div#cxd-genomics-oncology-panel-km-stage-9-cX-Canvas-Container [709,1525 676x364] 
 div#cxd-genomics-oncology-panel-km-stage-9-cX-Container-Workflow [709,1889 676x0] 
 div#cxd-genomics-oncology-panel-km-stage-9-cX-Version-Info-Trigger [709,1525 25x25] z=10000
-div#cxd-genomics-oncology-panel-km-stage-9-cX-Version-Info-Container [741,1557 160x78] font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
+div#cxd-genomics-oncology-panel-km-stage-9-cX-Version-Info-Container [741,1557 157x78] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=17px; border=1px / solid / rgb(123, 140, 255); radius=10px; padding=8px; bg=rgb(27, 30, 36); z=1001; opacity=0
 table#cxd-genomics-oncology-panel-km-stage-9-cX-a11y-table [708,1524 462x4442] 
 table#cxd-genomics-oncology-panel-km-stage-9-cX-a11y-table>caption [708,1524 462x18] 
 table#cxd-genomics-oncology-panel-km-stage-9-cX-a11y-table>thead [710,1544 458x20] 

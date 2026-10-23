@@ -7,7 +7,7 @@
  */
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderDashboard, annotationValues, annotationNames } from '../src/renderDashboard.js';
+import { renderDashboard, annotationValues, annotationNames, extractClickValue } from '../src/renderDashboard.js';
 import { installDom } from './helpers/dom-stub.js';
 
 var SPEC = {
@@ -1455,4 +1455,122 @@ test('pushdown: Filters-panel picks and params re-query the database; the panel 
     { column: 'region', op: 'in', value: ['APAC', 'EMEA'] }]);
   assert.deepEqual(bar.updates[bar.updates.length - 1].y.data, [[70, 100]]);
   handle.destroy();
+});
+
+// --- click payload rows (the drill-through / clickParam value) ---
+
+test('extractClickValue: the clicked row follows the panel\'s row axis, not a fixed sample-first order', function () {
+  // A scatter-type panel transposes its data: the patient is a VARIABLE and the plotted columns are
+  // the samples (the payload CanvasXpress sends for a scatter point, captured from a real click).
+  var scatterPoint = { y: { smps: ['age', 'os_months'], vars: ['S4'] }, z: { arm: ['Drug'], stage: ['II'] }, x: {} };
+  assert.equal(extractClickValue(scatterPoint, null, 'vars'), 'S4');
+  // Per-point annotations of a transposed panel arrive under `z`.
+  assert.equal(extractClickValue(scatterPoint, 'arm', 'vars'), 'Drug');
+  // A bar: the sample is the row.
+  var bar = { y: { smps: ['S4'], vars: ['total_reads'] }, x: { lane: ['L2'] }, z: {} };
+  assert.equal(extractClickValue(bar, null, 'smps'), 'S4');
+  assert.equal(extractClickValue(bar, 'lane', 'smps'), 'L2');
+  // Without an axis the historical order stands (samples first) — which, for the scatter payload,
+  // is a column name: exactly what the axis is there to avoid.
+  assert.equal(extractClickValue(scatterPoint, null), 'age');
+  assert.equal(extractClickValue({ smps: ['A'], vars: ['B'] }, null), 'A');
+  assert.equal(extractClickValue({ smps: ['A'], vars: ['B'] }, null, 'vars'), 'B');
+  assert.equal(extractClickValue({}, null, 'smps'), null);
+  assert.equal(extractClickValue(null, null, 'smps'), null);
+});
+
+test('a click action on a transposing panel sets the param to the clicked ROW, not a plotted column', async function () {
+  var made = [];
+  function Stub(id, data, config, events) {
+    var inst = { id: id, data: data, config: config, events: events, updateData: function () {} };
+    made.push(inst);
+    return inst;
+  }
+  var changes = [];
+  var spec = {
+    id: 'drill',
+    params: { 'case': { value: '' } },
+    layout: { cols: 12, items: [
+      { panel: 'dots', x: 0, y: 0, w: 6, h: 3 },
+      { panel: 'bars', x: 6, y: 0, w: 6, h: 3 }
+    ] },
+    data: { t: { kind: 'inline', value: { y: { vars: ['age', 'os_months'], smps: ['P1', 'P2', 'P3'], data: [[40, 50, 60], [5, 9, 3]] } } } },
+    panels: {
+      dots: { dataRef: 't', actions: [{ on: 'click', setParam: { name: 'case' } }],
+        config: { graphType: 'Scatter2D', xAxis: ['age'], yAxis: ['os_months'] } },
+      bars: { dataRef: 't', actions: [{ on: 'click', setParam: { name: 'case' } }],
+        config: { graphType: 'Bar', xAxis: ['age'] } }
+    }
+  };
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var handle = await renderDashboard(spec, container, {
+    CanvasXpress: Stub,
+    onParamChange: function (name, value) { changes.push([name, value]); }
+  });
+  await handle.ready;
+  var dots = made.find(function (m) { return m.config.graphType === 'Scatter2D'; });
+  var bars = made.find(function (m) { return m.config.graphType === 'Bar'; });
+  // The renderer transposed the scatter's data: its variables are now the patients.
+  assert.deepEqual(dots.data.y.vars, ['P1', 'P2', 'P3']);
+  assert.deepEqual(bars.data.y.smps, ['P1', 'P2', 'P3']);
+
+  // As the engine calls it: `this` is the instance. The scatter payload names the patient in vars.
+  dots.events.click.call(dots, { y: { smps: ['age', 'os_months'], vars: ['P2'] } }, {}, null);
+  bars.events.click.call(bars, { y: { smps: ['P3'], vars: ['age'] } }, {}, null);
+  assert.deepEqual(changes, [['case', 'P2'], ['case', 'P3']]);
+});
+
+test('a case card (pushdown on a param) follows the param and rebuilds its table grid', async function () {
+  var made = [];
+  function Stub(id, data, config, events) {
+    var inst = { id: id, data: data, config: config, events: events, view: config.view, updates: [], grid: 0, masked: false };
+    inst.updateData = function (d) { inst.updates.push(d); };
+    // The engine's table view takes the data on updateData but only repaints its grid when asked —
+    // and the rebuild leaves its loader mask on until hideMask().
+    inst.resetDataTableRowsCols = function () { inst.grid++; inst.masked = true; };
+    inst.hideMask = function () { inst.masked = false; };
+    made.push(inst);
+    return inst;
+  }
+  var table = { y: { vars: ['age', 'os_months'], smps: ['P1', 'P2', 'P3'], data: [[40, 50, 60], [5, 9, 3]] }, x: { arm: ['A', 'B', 'A'] } };
+  var spec = {
+    id: 'card',
+    params: { 'case': { value: 'P1' } },
+    layout: { cols: 12, items: [
+      { panel: 'chart', x: 0, y: 0, w: 6, h: 3 },
+      { panel: 'card', x: 6, y: 0, w: 6, h: 3 }
+    ] },
+    data: {
+      all: { kind: 'inline', value: table },
+      one: { kind: 'inline', value: table, pushdown: { where: [{ column: 'smps', op: '=', value: '$case' }] } }
+    },
+    panels: {
+      chart: { dataRef: 'all', config: { graphType: 'Bar', xAxis: ['age'] } },
+      card: { dataRef: 'one', config: { graphType: 'Bar', view: 'table' } }
+    }
+  };
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var handle = await renderDashboard(spec, container, { CanvasXpress: Stub });
+  await handle.ready;
+  var card = made.find(function (m) { return m.view === 'table'; });
+  var chart = made.find(function (m) { return m.view !== 'table'; });
+  assert.deepEqual(card.data.y.smps, ['P1'], 'starts on the param default');
+  assert.deepEqual(card.data.x.arm, ['A']);
+
+  await handle.setParam('case', 'P2');
+  assert.equal(card.updates.length, 1);
+  assert.deepEqual(card.updates[0].y.smps, ['P2']);
+  assert.deepEqual(card.updates[0].y.data, [[50], [9]]);
+  assert.deepEqual(card.updates[0].x.arm, ['B']);
+  assert.equal(card.grid, 1, 'the table grid was rebuilt for the new row');
+  assert.equal(card.masked, false, 'the loader mask the rebuild switched on is switched off again');
+  // The chart on the full source is left alone, and is never asked to rebuild a grid.
+  assert.equal(chart.updates.length, 0);
+  assert.equal(chart.grid, 0);
+
+  await handle.setParam('case', 'P3');
+  assert.deepEqual(card.updates[1].y.smps, ['P3']);
+  assert.equal(card.grid, 2);
 });

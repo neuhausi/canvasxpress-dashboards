@@ -680,7 +680,16 @@ export function renderDashboard(spec, target, options) {
         // Remote (URL) source: rebuild the instance to reload+parse the new URL.
         try { b.instance = b.rebuild(data); } catch (e) { /* keep others */ }
       } else if (b.instance && typeof b.instance.updateData === 'function') {
-        try { b.instance.updateData(b.prepare ? b.prepare(data) : data, true, false); } catch (e) { /* keep others */ }
+        try {
+          b.instance.updateData(b.prepare ? b.prepare(data) : data, true, false);
+          // The engine's table view takes the new data but does not repaint its grid on
+          // updateData (in any draw mode), so a table panel would keep showing the old rows.
+          if (b.instance.view === 'table' && typeof b.instance.resetDataTableRowsCols === 'function') {
+            b.instance.resetDataTableRowsCols(true);
+            // The rebuild switches the engine's loader mask on and nothing switches it off.
+            if (typeof b.instance.hideMask === 'function') b.instance.hideMask();
+          }
+        } catch (e) { /* keep others */ }
       }
     });
   }
@@ -762,17 +771,25 @@ export function renderDashboard(spec, target, options) {
   // Run one declarative click action (spec 1.4 drill-through) against a clicked mark.
   // setParam reuses the clickParam path; setFilter writes a values predicate into the
   // global filter model; focusPanel scrolls the target panel into view.
-  function runClickAction(action, clicked) {
+  function runClickAction(action, clicked, instance) {
     if (!action) return;
+    var rowAxis = clickedRowAxis(instance);
     if (action.setParam && action.setParam.name) {
-      var pv = extractClickValue(clicked, action.setParam.field);
+      var pv = extractClickValue(clicked, action.setParam.field, rowAxis);
       if (pv != null) applyParamChange(action.setParam.name, pv);
     } else if (action.setFilter && action.setFilter.dataRef && action.setFilter.field) {
-      var fv = extractClickValue(clicked, action.setFilter.field);
+      var fv = extractClickValue(clicked, action.setFilter.field, rowAxis);
       if (fv != null) setFilterPredicate(action.setFilter.dataRef, action.setFilter.field, { values: [String(fv)] });
     } else if (action.focusPanel) {
       focusPanelById(action.focusPanel);
     }
+  }
+
+  // The axis a clicked instance shows its source's rows along (flipped when its panel
+  // transposes the data), or null for an instance with no bound source.
+  function clickedRowAxis(instance) {
+    var found = instance ? bindingOf(instance) : null;
+    return found ? instanceAxis(found.binding, found.ref) : null;
   }
 
   // Scroll a panel into view by its id — the focusPanel action.
@@ -803,11 +820,11 @@ export function renderDashboard(spec, target, options) {
       var authorClick = events.click;
       merged.click = function (clicked, mouseEvent, target) {
         if (clicks) {
-          var value = extractClickValue(clicked, panel.clickField);
+          var value = extractClickValue(clicked, panel.clickField, clickedRowAxis(this));
           if (value != null) applyParamChange(panel.clickParam, value);
         }
         for (var ai = 0; ai < clickActions.length; ai++) {
-          runClickAction(clickActions[ai], clicked);
+          runClickAction(clickActions[ai], clicked, this);
         }
         if (typeof authorClick === 'function') authorClick.call(this, clicked, mouseEvent, target);
       };
@@ -1511,7 +1528,33 @@ export function renderDashboard(spec, target, options) {
     filterState = normalizeState(state);
     activeScheme = scheme;
     renderFilterPanels();
-    applyFilterChange();
+    return applyFilterChange();
+  }
+
+  /**
+   * Put the dashboard into a complete, named view: the filters, every parameter and the focused
+   * panel. Absolute, not incremental, so a storyboard can step back as well as forward: filters not
+   * given are cleared, and parameters not given return to their spec defaults.
+   * @param {object} view - `{scheme?, filters?, params?, focus?}`; `scheme` names a filter scheme.
+   * @returns {Promise<void>} Resolves once the panels hold the new view.
+   */
+  function applyView(view) {
+    view = view || {};
+    var work = [];
+    var state = [];
+    var scheme = view.scheme != null && Object.prototype.hasOwnProperty.call(filterSchemes, view.scheme) ? view.scheme : null;
+    if (scheme !== null) state = filterSchemes[scheme];
+    else if (Array.isArray(view.filters)) state = view.filters;
+    work.push(replaceFilterState(state, scheme));
+    var given = view.params || {};
+    Object.keys(paramsSpec).forEach(function (name) {
+      var def = paramsSpec[name];
+      var dflt = def && typeof def === 'object' ? def.value : def;
+      var target = Object.prototype.hasOwnProperty.call(given, name) ? given[name] : dflt;
+      if (paramState[name] !== target) work.push(applyParamChange(name, target));
+    });
+    if (view.focus) focusPanelById(view.focus);
+    return Promise.all(work).then(function () {});
   }
 
   /**
@@ -2766,6 +2809,23 @@ export function renderDashboard(spec, target, options) {
       return applyParamChange(name, value);
     },
     /**
+     * Put the dashboard into a complete view (filters, parameters, focused panel); what a storyboard
+     * step does. Filters not named are cleared and parameters not named return to their defaults.
+     * @param {object} view - `{scheme?, filters?, params?, focus?}`.
+     * @returns {Promise<void>} Resolves once the panels hold the new view.
+     */
+    applyView: function (view) {
+      return applyView(view);
+    },
+    /**
+     * Scroll a panel into view by its id (what a `focusPanel` click action does).
+     * @param {string} panelId - The panel id.
+     * @returns {void}
+     */
+    focusPanel: function (panelId) {
+      focusPanelById(panelId);
+    },
+    /**
      * The Filters-panel state: a serializable list of predicates
      * `{dataRef, field, values? | min? / max? | text?}` (see filters.js).
      * @returns {object[]} A copy of the current state.
@@ -3594,22 +3654,35 @@ function listen(node, type, handler) {
 /**
  * Best-effort extraction of a value from a CanvasXpress click payload, for the
  * chart-click cross-filter. The payload shape varies by graph type, so this
- * tries, in order: an explicit annotation field the panel named (`field`), the
+ * tries, in order: an explicit annotation field the panel named (`field`; a
+ * transposed panel carries its per-point annotations under `z`), the clicked
+ * ROW along the axis the panel shows the source's rows on (`rowAxis`), then the
  * clicked sample name(s), then the clicked variable name(s). Returns null when
  * nothing usable is found (the click then sets no parameter).
+ *
+ * `rowAxis` matters for a panel that transposes its data (scatter-type graphs):
+ * it names the clicked rows in `y.vars` and the plotted columns in `y.smps`, so
+ * the default sample-first order would return a column name instead of the row.
  * @param {object} clicked - The object CanvasXpress passes to a click handler.
  * @param {string} [field] - An annotation/field name to prefer, when the payload
  *   carries per-point annotations (`clicked.x[field]` / `clicked[field]`).
+ * @param {string} [rowAxis] - `"smps"` or `"vars"`: the axis the clicked panel
+ *   shows its source's rows along (see instanceAxis); omitted when unknown.
  * @returns {*} The extracted value, or null.
  * @private
  */
-function extractClickValue(clicked, field) {
+export function extractClickValue(clicked, field, rowAxis) {
   if (!clicked || typeof clicked !== 'object') return null;
   function first(v) { return Array.isArray(v) ? (v.length ? v[0] : null) : v; }
   if (field) {
     if (clicked.x && clicked.x[field] != null) return first(clicked.x[field]);
+    if (clicked.z && clicked.z[field] != null) return first(clicked.z[field]);
     if (clicked[field] != null) return first(clicked[field]);
     if (clicked.y && clicked.y[field] != null) return first(clicked.y[field]);
+  }
+  if (rowAxis === 'smps' || rowAxis === 'vars') {
+    if (clicked[rowAxis] != null) return first(clicked[rowAxis]);
+    if (clicked.y && clicked.y[rowAxis] != null) return first(clicked.y[rowAxis]);
   }
   if (clicked.smps != null) return first(clicked.smps);
   if (clicked.y && clicked.y.smps != null) return first(clicked.y.smps);

@@ -88,7 +88,7 @@ export function describePushdown(pushdown) {
     var conds = [];
     for (var w = 0; w < where.length; w++) {
       var c = where[w];
-      if (c && c.column) conds.push(c.column + ' ' + (c.op || '=') + ' ' + formatValue(c.value));
+      if (c && c.column) conds.push(c.column + ' ' + (c.op || '=') + ' ' + formatProvenanceValue(c.value));
     }
     if (conds.length) clauses.push('filtered where ' + conds.join(' and '));
   }
@@ -120,7 +120,7 @@ function orderByName(o) {
  * @returns {string} A short display string.
  * @private
  */
-function formatValue(value) {
+function formatProvenanceValue(value) {
   if (Array.isArray(value)) return '[' + value.join(', ') + ']';
   if (value == null) return '';
   return String(value);

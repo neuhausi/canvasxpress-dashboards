@@ -101,6 +101,58 @@
       "description": "Named filter states offered by Filters panels (type:filters). Each is an array of saved filters.",
       "additionalProperties": { "type": "array", "items": { "$ref": "#/definitions/savedFilter" } }
     },
+    "insights": {
+      "type": "object",
+      "description": "Opt in to proactive insights: a fixed set of deterministic checks over the dashboard's data (Tukey outliers, group differences by Kruskal-Wallis corrected for multiple testing, and the thresholds declared here), shown as captions that carry their figures. Computed server-side with the viewer's row/column security; no model is involved. An empty object turns the data-derived checks on.",
+      "additionalProperties": false,
+      "properties": {
+        "thresholds": {
+          "type": "array",
+          "description": "Conditions that count as a failure. Never inferred: only what is declared here is checked.",
+          "items": {
+            "type": "object",
+            "required": ["field", "op", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "field": { "type": "string", "description": "A numeric measure or annotation." },
+              "op": { "type": "string", "enum": ["lt", "le", "gt", "ge"], "description": "The condition that is a failure: lt (below), le (at or below), gt (above), ge (at or above)." },
+              "value": { "type": "number" },
+              "label": { "type": "string", "description": "Shown before the caption, e.g. \"Q30 below 85%\"." },
+              "source": { "type": "string", "description": "Limit the check to one data source (default: every checked source that has the field)." }
+            }
+          }
+        },
+        "sources": { "type": "array", "items": { "type": "string" }, "description": "Data sources to check (default: every source that is not a narrowed copy, i.e. has no pushdown)." },
+        "max": { "type": "integer", "minimum": 1, "description": "The most insights to show (default 6)." }
+      }
+    },
+    "storyboard": {
+      "type": "object",
+      "description": "A guided tour: an ordered list of steps, each a complete view of the dashboard (filters, parameters, a panel to bring into view) with a title and a line of narration. A player bar (previous, play, next) steps through them. Each step is absolute: filters not given are cleared and parameters not given return to their defaults.",
+      "required": ["steps"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string" },
+        "seconds": { "type": "number", "exclusiveMinimum": 0, "description": "Default seconds a step is shown while playing (8)." },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "title": { "type": "string" },
+              "narration": { "type": "string", "description": "Plain text shown under the title." },
+              "scheme": { "type": "string", "description": "A name in filterSchemes. Use this or filters." },
+              "filters": { "type": "array", "items": { "$ref": "#/definitions/savedFilter" } },
+              "params": { "type": "object", "description": "Parameter name -> value; each name must be declared in params." },
+              "focus": { "type": "string", "description": "A panel id to bring into view." },
+              "seconds": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        }
+      }
+    },
     "markingMode": {
       "type": "string",
       "enum": ["focus", "highlight", "ghost", "filter"],
@@ -591,7 +643,10 @@
                 "required": ["name"],
                 "properties": {
                   "name": { "type": "string" },
-                  "field": { "type": "string" }
+                  "field": {
+                    "type": "string",
+                    "description": "Annotation/field of the clicked mark to take. Omitted, the value is the clicked ROW (sample or variable) along the axis the panel shows its source's rows on — for a scatter-type panel, which the renderer transposes, that is the patient / sample plotted, not one of the plotted columns."
+                  }
                 }
               },
               "setFilter": {

@@ -1,0 +1,2 @@
+This R package is GPL-3. It bundles the MIT-licensed canvasxpress-dashboards JavaScript
+(inst/htmlwidgets/lib/canvasxpress-dashboards/, Copyright (c) 2026 Isaac Neuhaus; see LICENSE.dashboards-js).

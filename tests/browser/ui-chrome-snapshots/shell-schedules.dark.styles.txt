@@ -28,56 +28,56 @@ span#rail-user [54,854 84x18]
 a#rail-auth [148,855 53x17] font-size=14px
 div.app>main.content [220,0 1180x900] 
 div.app>main.content>div.topstrip:1 [220,0 1180x102] border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(42, 47, 54) rgb(230, 232, 236); padding=10px 20px 10px 20px; bg=rgb(27, 30, 36)
-div#toolbar [240,38 1140x25] 
-div#toolbar>div [240,38 1140x25] 
-div#toolbar>div>h2.view-title [240,41 79x18] font-weight=600
-span#sched-new-host [925,38 455x25] 
-span#sched-new-host>button.cX-Button:1 [925,38 150x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
-span#sched-new-host>button.cX-Button:2 [1082,38 137x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
-span#sched-new-host>button.cX-Button:3 [1224,38 156x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
-div#view [220,102 1180x400] padding=16px 20px 32px 20px
-div#view>div [240,118 1100x344] 
+div#toolbar [240,30 1140x42] 
+div#toolbar>div [240,30 1140x42] 
+div#toolbar>div>h2.view-title [240,42 79x18] font-weight=600
+span#sched-new-host [803,30 577x42] 
+span#sched-new-host>button.cta:1 [803,30 190x42] color=rgb(14, 16, 19); font-family=Arial; font-weight=600; radius=6px; padding=10px 18px 10px 18px; bg=rgb(138, 153, 255)
+span#sched-new-host>button.cta:2 [1000,30 175x42] color=rgb(14, 16, 19); font-family=Arial; font-weight=600; radius=6px; padding=10px 18px 10px 18px; bg=rgb(138, 153, 255)
+span#sched-new-host>button.cta:3 [1181,30 199x42] color=rgb(14, 16, 19); font-family=Arial; font-weight=600; radius=6px; padding=10px 18px 10px 18px; bg=rgb(138, 153, 255)
+div#view [220,102 1180x407] padding=16px 20px 32px 20px
+div#view>div [240,118 1100x351] 
 div#view>div>p [240,118 1100x36] color=rgb(138, 144, 153); font-size=15px
-div#sched-status [240,164 1100x29] font-size=15px
-div#sched-status>label [240,164 508x29] 
-input#sched-email [508,164 240x29] color=rgb(255, 255, 255); font-family=Arial; border=2px / inset / rgb(133, 133, 133); padding=4px 8px 4px 8px; bg=rgb(59, 59, 59)
-button#sched-email-save [758,165 56x28] color=rgb(255, 255, 255); font-family=Arial; font-size=14px; border=2px / outset / rgb(255, 255, 255); padding=4px 10px 4px 10px; bg=rgb(107, 107, 107)
-span#sched-email-msg [824,170 81x17] color=rgb(76, 175, 80); font-size=14px
-div#sched-status>span:2 [915,179 79x0] 
-div#sched-status>span:3 [1004,168 117x22] color=rgb(76, 175, 80); font-size=13px; border=1px / solid / rgb(42, 47, 54); radius=999px; padding=2px 10px 2px 10px
-div#sched-status>span:4 [1131,168 69x22] color=rgb(76, 175, 80); font-size=13px; border=1px / solid / rgb(42, 47, 54); radius=999px; padding=2px 10px 2px 10px
-div#sched-status>span:5 [1210,168 130x22] color=rgb(76, 175, 80); font-size=13px; border=1px / solid / rgb(42, 47, 54); radius=999px; padding=2px 10px 2px 10px
-div#sched-list [240,207 1100x255] 
-div#sched-list>div.data-item:1 [250,207 1080x130] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=10px 12px 10px 12px
-div#sched-list>div.data-item:1>div:1 [263,218 1054x75] 
-div#sched-list>div.data-item:1>div:1>div:1 [263,218 23x22] font-size=22px; line-height=22px
-div#sched-list>div.data-item:1>div:1>div:2 [296,218 1021x75] 
-div#sched-list>div.data-item:1>div:1>div:2>div:1 [296,218 1021x18] font-weight=600
-div#sched-list>div.data-item:1>div:1>div:2>div:2 [296,238 1021x17] font-size=14px
-div#sched-list>div.data-item:1>div:1>div:2>div:2>b [350,238 99x17] font-weight=700
-div#sched-list>div.data-item:1>div:1>div:2>div:2>code [486,239 244x16] font-family=monospace
-div#sched-list>div.data-item:1>div:1>div:2>div:3 [296,257 1021x17] color=rgb(138, 144, 153); font-size=14px
-div#sched-list>div.data-item:1>div:1>div:2>div:3>span [699,257 16x17] color=rgb(76, 175, 80); font-weight=600
-div#sched-list>div.data-item:1>div:1>div:2>div:4 [296,276 1021x17] font-size=14px
-div#sched-list>div.data-item:1>div:2 [295,301 1022x25] 
-div#sched-list>div.data-item:1>div:2>button.cX-Button:1 [295,301 79x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
-div#sched-list>div.data-item:1>div:2>button.cX-Button:2 [380,301 48x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
-div#sched-list>div.data-item:1>div:2>button.cX-Button:3 [433,301 62x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
-div#sched-list>div.data-item:1>div:2>button.cX-Button:4 [501,301 70x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
-div#sched-list>div.data-item:1>div:2>button.cX-Button:5 [577,301 65x25] color=rgb(240, 113, 103); font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
-div#sched-list>div.data-item:2 [250,345 1080x117] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=10px 12px 10px 12px
-div#sched-list>div.data-item:2>div:1 [263,356 1054x62] 
-div#sched-list>div.data-item:2>div:1>div:1 [263,356 23x22] font-size=22px; line-height=22px
-div#sched-list>div.data-item:2>div:1>div:2 [296,356 1021x62] 
-div#sched-list>div.data-item:2>div:1>div:2>div:1 [296,356 1021x18] font-weight=600
-div#sched-list>div.data-item:2>div:1>div:2>div:1>span:1 [404,356 65x18] color=rgb(138, 144, 153); font-weight=400
-div#sched-list>div.data-item:2>div:1>div:2>div:1>span:2 [473,357 33x17] color=rgb(138, 144, 153); font-size=14px; font-weight=400
-div#sched-list>div.data-item:2>div:1>div:2>div:2 [296,376 1021x23] font-size=14px
-div#sched-list>div.data-item:2>div:1>div:2>div:2>b:1 [352,380 59x17] font-weight=700
-div#sched-list>div.data-item:2>div:1>div:2>div:2>b:2 [616,380 99x17] font-weight=700
-div#sched-list>div.data-item:2>div:1>div:2>div:3 [296,401 1021x17] color=rgb(138, 144, 153); font-size=14px
-div#sched-list>div.data-item:2>div:1>div:2>div:3>span [638,401 73x17] font-weight=600
-div#sched-list>div.data-item:2>div:2 [295,426 1022x25] 
-div#sched-list>div.data-item:2>div:2>button.cX-Button:1 [295,426 79x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
-div#sched-list>div.data-item:2>div:2>button.cX-Button:2 [380,426 70x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
-div#sched-list>div.data-item:2>div:2>button.cX-Button:3 [455,426 65x25] color=rgb(240, 113, 103); font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
+div#sched-status [240,164 1100x36] font-size=15px
+div#sched-status>label [240,164 508x36] 
+input#sched-email [508,164 240x36] font-size=14px; line-height=19.6px; border=1px / solid / rgb(42, 47, 54); radius=6px; padding=0px 10px 0px 10px; bg=rgb(27, 30, 36)
+button#sched-email-save [758,164 66x36] color=rgb(14, 16, 19); font-size=14px; font-weight=600; line-height=14px; border=1px / solid / rgba(0, 0, 0, 0); radius=6px; padding=0px 16px 0px 16px; bg=rgb(138, 153, 255)
+span#sched-email-msg [835,174 81x17] color=rgb(76, 175, 80); font-size=14px
+div#sched-status>span:2 [926,182 68x0] 
+div#sched-status>span:3 [1004,171 117x22] color=rgb(76, 175, 80); font-size=13px; border=1px / solid / rgb(42, 47, 54); radius=999px; padding=2px 10px 2px 10px
+div#sched-status>span:4 [1131,171 69x22] color=rgb(76, 175, 80); font-size=13px; border=1px / solid / rgb(42, 47, 54); radius=999px; padding=2px 10px 2px 10px
+div#sched-status>span:5 [1210,171 130x22] color=rgb(76, 175, 80); font-size=13px; border=1px / solid / rgb(42, 47, 54); radius=999px; padding=2px 10px 2px 10px
+div#sched-list [240,214 1100x255] 
+div#sched-list>div.data-item:1 [250,214 1080x130] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=10px 12px 10px 12px
+div#sched-list>div.data-item:1>div:1 [263,225 1054x75] 
+div#sched-list>div.data-item:1>div:1>div:1 [263,225 23x22] font-size=22px; line-height=22px
+div#sched-list>div.data-item:1>div:1>div:2 [296,225 1021x75] 
+div#sched-list>div.data-item:1>div:1>div:2>div:1 [296,225 1021x18] font-weight=600
+div#sched-list>div.data-item:1>div:1>div:2>div:2 [296,245 1021x17] font-size=14px
+div#sched-list>div.data-item:1>div:1>div:2>div:2>b [350,245 99x17] font-weight=700
+div#sched-list>div.data-item:1>div:1>div:2>div:2>code [486,246 244x16] font-family=monospace
+div#sched-list>div.data-item:1>div:1>div:2>div:3 [296,264 1021x17] color=rgb(138, 144, 153); font-size=14px
+div#sched-list>div.data-item:1>div:1>div:2>div:3>span [699,264 16x17] color=rgb(76, 175, 80); font-weight=600
+div#sched-list>div.data-item:1>div:1>div:2>div:4 [296,283 1021x17] font-size=14px
+div#sched-list>div.data-item:1>div:2 [295,308 1022x25] 
+div#sched-list>div.data-item:1>div:2>button.cX-Button:1 [295,308 79x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
+div#sched-list>div.data-item:1>div:2>button.cX-Button:2 [380,308 48x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
+div#sched-list>div.data-item:1>div:2>button.cX-Button:3 [433,308 62x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
+div#sched-list>div.data-item:1>div:2>button.cX-Button:4 [501,308 70x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
+div#sched-list>div.data-item:1>div:2>button.cX-Button:5 [577,308 65x25] color=rgb(240, 113, 103); font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
+div#sched-list>div.data-item:2 [250,352 1080x117] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=10px 12px 10px 12px
+div#sched-list>div.data-item:2>div:1 [263,363 1054x62] 
+div#sched-list>div.data-item:2>div:1>div:1 [263,363 23x22] font-size=22px; line-height=22px
+div#sched-list>div.data-item:2>div:1>div:2 [296,363 1021x62] 
+div#sched-list>div.data-item:2>div:1>div:2>div:1 [296,363 1021x18] font-weight=600
+div#sched-list>div.data-item:2>div:1>div:2>div:1>span:1 [404,363 65x18] color=rgb(138, 144, 153); font-weight=400
+div#sched-list>div.data-item:2>div:1>div:2>div:1>span:2 [473,364 33x17] color=rgb(138, 144, 153); font-size=14px; font-weight=400
+div#sched-list>div.data-item:2>div:1>div:2>div:2 [296,383 1021x23] font-size=14px
+div#sched-list>div.data-item:2>div:1>div:2>div:2>b:1 [352,387 59x17] font-weight=700
+div#sched-list>div.data-item:2>div:1>div:2>div:2>b:2 [616,387 99x17] font-weight=700
+div#sched-list>div.data-item:2>div:1>div:2>div:3 [296,408 1021x17] color=rgb(138, 144, 153); font-size=14px
+div#sched-list>div.data-item:2>div:1>div:2>div:3>span [638,408 73x17] font-weight=600
+div#sched-list>div.data-item:2>div:2 [295,433 1022x25] 
+div#sched-list>div.data-item:2>div:2>button.cX-Button:1 [295,433 79x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
+div#sched-list>div.data-item:2>div:2>button.cX-Button:2 [380,433 70x25] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
+div#sched-list>div.data-item:2>div:2>button.cX-Button:3 [455,433 65x25] color=rgb(240, 113, 103); font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)

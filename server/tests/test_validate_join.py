@@ -59,7 +59,7 @@ def test_relationships_axis_and_marking_mode():
     assert 'spec.data["a"].axis must be "smps" or "vars"' in errors
     assert 'spec.relationships[0].right "ghost" has no matching entry in spec.data' in errors
     assert "spec.relationships[1] must be an object" in errors
-    assert 'spec.markingMode must be "focus", "highlight", or "ghost"' in errors
+    assert "spec.markingMode must be one of: focus, highlight, ghost, filter" in errors
 
 
 def test_filters_panel_and_schemes():
@@ -136,3 +136,92 @@ def test_pushdown_runs_anywhere_but_live():
     assert any("pushdown is not supported on a live source" in e for e in validate_spec(live)["errors"])
     boolean = _spec({"a": dict(_INLINE, pushdown=True)}, ref="a")
     assert any("pushdown must be an object" in e for e in validate_spec(boolean)["errors"])
+
+
+# ---- controls the JS validator accepts (the Python one used to reject them) ----------------------
+def test_range_style_and_transform_controls_are_valid():
+    base = _spec({"a": _INLINE}, ref="a")
+    base["params"] = {"p": {"value": 1}}
+    base["panels"]["fdr"] = {"type": "control", "mode": "param", "param": "p", "style": "range"}
+    base["panels"]["tx"] = {"type": "control", "mode": "transform", "target": "bar",
+                            "options": [{"label": "log2", "transform": "log2"}]}
+    assert validate_spec(base) == {"valid": True, "errors": []}
+    bad = _spec({"a": _INLINE}, ref="a")
+    bad["panels"]["tx"] = {"type": "control", "mode": "transform", "target": "ghost", "options": []}
+    errors = validate_spec(bad)["errors"]
+    assert 'spec.panels["tx"].target "ghost" has no matching entry in spec.panels' in errors
+    assert 'spec.panels["tx"] of mode "transform" requires a non-empty options array' in errors
+
+
+# ---- the insights block (mirrors checkInsights in validateSpec.js) -------------------------------
+def test_insights_block():
+    ok = _spec({"a": _INLINE}, ref="a")
+    ok["insights"] = {"thresholds": [{"field": "q30", "op": "lt", "value": 85, "label": "Q30 below 85%", "source": "a"}],
+                      "sources": ["a"], "max": 4}
+    assert validate_spec(ok) == {"valid": True, "errors": []}
+    ok["insights"] = {}
+    assert validate_spec(ok) == {"valid": True, "errors": []}
+
+    bad = _spec({"a": _INLINE}, ref="a")
+    bad["insights"] = {"thresholds": [{"field": "", "op": "near", "value": "x", "label": 3, "source": "nope"}, "x"],
+                       "sources": ["ghost", 7], "max": 0}
+    errors = validate_spec(bad)["errors"]
+    assert "spec.insights.thresholds[0].field must be a non-empty field name" in errors
+    assert "spec.insights.thresholds[0].op must be one of: lt, le, gt, ge" in errors
+    assert "spec.insights.thresholds[0].value must be a number" in errors
+    assert "spec.insights.thresholds[0].label must be a string" in errors
+    assert 'spec.insights.thresholds[0].source "nope" has no matching entry in spec.data' in errors
+    assert "spec.insights.thresholds[1] must be an object" in errors
+    assert 'spec.insights.sources[0] "ghost" has no matching entry in spec.data' in errors
+    assert "spec.insights.max must be a positive whole number" in errors
+
+    for wrong in ([1], "yes", 3):
+        spec = _spec({"a": _INLINE}, ref="a")
+        spec["insights"] = wrong
+        assert validate_spec(spec)["errors"] == ["spec.insights must be an object"]
+
+
+# ---- the storyboard (mirrors checkStoryboard in validateSpec.js) ----------------------------------
+def test_storyboard():
+    ok = _spec({"a": _INLINE}, ref="a")
+    ok["params"] = {"case": {"value": "P1"}}
+    ok["filterSchemes"] = {"Drug arm": [{"dataRef": "a", "field": "arm", "values": ["Drug"]}]}
+    first_panel = next(iter(ok["panels"]))
+    ok["storyboard"] = {"title": "Tour", "seconds": 5, "steps": [
+        {"title": "All", "narration": "Everyone."},
+        {"scheme": "Drug arm", "focus": first_panel},
+        {"filters": [{"dataRef": "a", "field": "arm", "values": ["Placebo"]}], "params": {"case": "P7"}, "seconds": 3}]}
+    assert validate_spec(ok) == {"valid": True, "errors": []}
+
+    bad = _spec({"a": _INLINE}, ref="a")
+    bad["params"] = ok["params"]
+    bad["filterSchemes"] = ok["filterSchemes"]
+    bad["storyboard"] = {"title": 3, "seconds": 0, "steps": [
+        {"title": 1, "narration": [], "seconds": -1},
+        {"scheme": "nope"},
+        {"scheme": "Drug arm", "filters": []},
+        {"filters": "x", "params": {"ghost": 1}, "focus": "missing"},
+        {"filters": [{"dataRef": "zz", "field": "a"}], "params": [1]},
+        "x"]}
+    errors = validate_spec(bad)["errors"]
+    for message in (
+        "spec.storyboard.title must be a string",
+        "spec.storyboard.seconds must be a number above 0",
+        "spec.storyboard.steps[0].title must be a string",
+        "spec.storyboard.steps[0].narration must be a string",
+        "spec.storyboard.steps[0].seconds must be a number above 0",
+        'spec.storyboard.steps[1].scheme "nope" has no matching entry in spec.filterSchemes',
+        "spec.storyboard.steps[2] takes either scheme or filters, not both",
+        "spec.storyboard.steps[3].filters must be an array of filters",
+        'spec.storyboard.steps[3].params["ghost"] is not declared in spec.params',
+        'spec.storyboard.steps[3].focus "missing" has no matching entry in spec.panels',
+        "spec.storyboard.steps[4].filters[0].dataRef has no matching entry in spec.data",
+        "spec.storyboard.steps[4].params must be an object map",
+        "spec.storyboard.steps[5] must be an object",
+    ):
+        assert message in errors, message
+    empty = _spec({"a": _INLINE}, ref="a")
+    empty["storyboard"] = {"steps": []}
+    assert validate_spec(empty)["errors"] == ["spec.storyboard.steps must be a non-empty array"]
+    empty["storyboard"] = [1]
+    assert validate_spec(empty)["errors"] == ["spec.storyboard must be an object"]

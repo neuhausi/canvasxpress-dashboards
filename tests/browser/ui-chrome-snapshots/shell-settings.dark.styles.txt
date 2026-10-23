@@ -1,4 +1,4 @@
-div.app [0,0 1400x1376] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto
+div.app [0,0 1400x1370] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto
 div.app>aside.rail [0,0 220x900] border=0px 1px 0px 0px / none solid none none / rgb(230, 232, 236) rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236); padding=14px 10px 14px 10px; bg=rgb(27, 30, 36)
 div.app>aside.rail>a.brand [10,14 199x54] padding=6px 8px 16px 8px
 div.app>aside.rail>a.brand>img [18,20 32x32] 
@@ -26,13 +26,13 @@ div#rail-foot [10,839 199x47] color=rgb(138, 144, 153); border=1px 0px 0px 0px /
 span#rail-avatar [18,850 26x26] color=rgb(14, 16, 19); font-size=14px; font-weight=700; radius=50%; bg=rgb(138, 153, 255)
 span#rail-user [54,854 84x18] 
 a#rail-auth [148,855 53x17] font-size=14px
-div.app>main.content [220,0 1180x1376] 
+div.app>main.content [220,0 1180x1370] 
 div.app>main.content>div.topstrip:1 [220,0 1180x102] border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(42, 47, 54) rgb(230, 232, 236); padding=10px 20px 10px 20px; bg=rgb(27, 30, 36)
 div#toolbar [240,42 1140x18] 
 div#toolbar>h2.view-title [240,42 1140x18] font-weight=600
-div#view [220,102 1180x1274] padding=16px 20px 32px 20px
-div#view>div.settings [240,118 1140x1226] 
-div#view>div.settings>div.settings-form:1 [240,118 320x1226] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=10px; bg=rgb(27, 30, 36)
+div#view [220,102 1180x1268] padding=16px 20px 32px 20px
+div#view>div.settings [240,118 1140x1220] 
+div#view>div.settings>div.settings-form:1 [240,118 320x1220] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=10px; bg=rgb(27, 30, 36)
 div#view>div.settings>div.settings-form:1>div.settings-card:1 [251,129 298x322] border=1px / solid / rgb(58, 65, 76); radius=10px; padding=12px; bg=rgb(27, 30, 36)
 div#view>div.settings>div.settings-form:1>div.settings-card:1>h4.settings-cat [264,142 272x18] font-size=15px; font-weight=700
 div#view>div.settings>div.settings-form:1>div.settings-card:1>label:1 [264,172 272x55] color=rgb(138, 144, 153); font-size=14px; font-weight=700
@@ -61,26 +61,27 @@ div#view>div.settings>div.settings-form:1>div.settings-card:3>label:3 [264,882 2
 input#s-cols [264,903 272x31] font-weight=400; border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 8px 6px 8px; bg=rgb(27, 30, 36)
 div#view>div.settings>div.settings-form:1>div.settings-card:3>label:4 [264,946 272x52] color=rgb(138, 144, 153); font-size=14px; font-weight=700
 input#s-inset [264,967 272x31] font-weight=400; border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 8px 6px 8px; bg=rgb(27, 30, 36)
-div#view>div.settings>div.settings-form:1>div.settings-card:4 [251,1023 298x310] border=1px / solid / rgb(58, 65, 76); radius=10px; padding=12px; bg=rgb(27, 30, 36)
+div#view>div.settings>div.settings-form:1>div.settings-card:4 [251,1023 298x304] border=1px / solid / rgb(58, 65, 76); radius=10px; padding=12px; bg=rgb(27, 30, 36)
 div#view>div.settings>div.settings-form:1>div.settings-card:4>h4.settings-cat [264,1036 272x18] font-size=15px; font-weight=700
-div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:1 [264,1066 272x55] 
+div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:1 [264,1066 272x53] 
 div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:1>div.settings-inline [264,1066 272x17] 
 div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:1>div.settings-inline>label.settings-lbl:1 [264,1066 52x17] color=rgb(138, 144, 153); font-size=14px; font-weight=700
 div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:1>div.settings-inline>label.settings-check:2 [326,1066 93x17] font-size=14px
 input#s-bgcoord [326,1067 16x16] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(107, 114, 128); radius=4px; bg=rgb(27, 30, 36)
-select#s-theme [264,1087 272x34] border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 8px 6px 8px; bg=rgb(27, 30, 36)
-div#view>div.settings>div.settings-form:1>div.settings-card:4>label:1 [264,1133 272x54] color=rgb(138, 144, 153); font-size=14px; font-weight=700
-select#s-colors [264,1154 272x33] font-weight=400; border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 8px 6px 8px; bg=rgb(27, 30, 36)
-div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:2 [264,1199 272x55] 
-div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:2>div.settings-inline:1 [264,1199 272x17] 
-div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:2>div.settings-inline:1>label.settings-lbl:1 [264,1199 104x17] color=rgb(138, 144, 153); font-size=14px; font-weight=700
-div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:2>div.settings-inline:1>label.settings-check:2 [378,1199 143x17] font-size=14px
-input#s-panelcoord [378,1200 16x16] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(107, 114, 128); radius=4px; bg=rgb(27, 30, 36)
-div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:2>div.settings-inline:2 [264,1220 272x34] 
-input#s-panel [264,1220 50x34] border=1px / solid / rgb(42, 47, 54); radius=6px; padding=2px; bg=rgb(27, 30, 36)
-input#s-paneltext [324,1221 212x32] border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 8px 6px 8px; bg=rgb(27, 30, 36)
-div#view>div.settings>div.settings-form:1>div.settings-card:4>label:2 [264,1266 272x54] color=rgb(138, 144, 153); font-size=14px; font-weight=700
-select#s-font [264,1287 272x33] font-weight=400; border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 8px 6px 8px; bg=rgb(27, 30, 36)
-div#view>div.settings>div.settings-preview:2 [580,118 800x56] 
-div#s-preview [580,118 800x56] border=1px / dashed / rgb(42, 47, 54); radius=10px; padding=12px; bg=rgb(14, 16, 19)
-div#s-preview>div.cxd-grid [593,131 774x30] 
+select#s-theme [264,1087 272x32] border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 30px 6px 8px; bg=rgb(27, 30, 36); background-image=linear-gradient(45deg, rgba(0, 0, 0, 0) 40%, rgb(230, 232, 236) 40%, rgb(230, 232, 236) 60%, rgba(0, 0, 0, 0) 60%), linear-gradient(-45deg, rgba(0, 0, 0, 0) 40%, rgb(230, 232, 236) 40%, rgb(230, 232, 236) 60%, rgba(0, 0, 0, 0) 60%)
+div#view>div.settings>div.settings-form:1>div.settings-card:4>label:1 [264,1131 272x52] color=rgb(138, 144, 153); font-size=14px; font-weight=700
+select#s-colors [264,1152 272x31] font-weight=400; border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 30px 6px 8px; bg=rgb(27, 30, 36); background-image=linear-gradient(45deg, rgba(0, 0, 0, 0) 40%, rgb(138, 144, 153) 40%, rgb(138, 144, 153) 60%, rgba(0, 0, 0, 0) 60%), linear-gradient(-45deg, rgba(0, 0, 0, 0) 40%, rgb(138, 144, 153) 40%, rgb(138, 144, 153) 60%, rgba(0, 0, 0, 0) 60%)
+div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:2 [264,1195 272x55] 
+div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:2>div.settings-inline:1 [264,1195 272x17] 
+div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:2>div.settings-inline:1>label.settings-lbl:1 [264,1195 104x17] color=rgb(138, 144, 153); font-size=14px; font-weight=700
+div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:2>div.settings-inline:1>label.settings-check:2 [378,1195 143x17] font-size=14px
+input#s-panelcoord [378,1196 16x16] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(107, 114, 128); radius=4px; bg=rgb(27, 30, 36)
+div#view>div.settings>div.settings-form:1>div.settings-card:4>div.settings-field:2>div.settings-inline:2 [264,1216 272x34] 
+input#s-panel [264,1216 50x34] border=1px / solid / rgb(42, 47, 54); radius=6px; padding=2px; bg=rgb(27, 30, 36)
+input#s-paneltext [324,1217 212x32] border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 8px 6px 8px; bg=rgb(27, 30, 36)
+div#view>div.settings>div.settings-form:1>div.settings-card:4>label:2 [264,1262 272x52] color=rgb(138, 144, 153); font-size=14px; font-weight=700
+select#s-font [264,1283 272x31] font-weight=400; border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 30px 6px 8px; bg=rgb(27, 30, 36); background-image=linear-gradient(45deg, rgba(0, 0, 0, 0) 40%, rgb(138, 144, 153) 40%, rgb(138, 144, 153) 60%, rgba(0, 0, 0, 0) 60%), linear-gradient(-45deg, rgba(0, 0, 0, 0) 40%, rgb(138, 144, 153) 40%, rgb(138, 144, 153) 60%, rgba(0, 0, 0, 0) 60%)
+div#view>div.settings>div.cxd-left-resizer:2 [575,118 10x1220] z=10
+div#view>div.settings>div.settings-preview:3 [600,118 780x56] 
+div#s-preview [600,118 780x56] border=1px / dashed / rgb(42, 47, 54); radius=10px; padding=12px; bg=rgb(14, 16, 19)
+div#s-preview>div.cxd-grid [613,131 754x30] 

@@ -5,6 +5,102 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Fix: the ESM bundle did not load, and the UMD bundle silently swapped four helpers
+Every module is inlined into one scope and four top-level names were declared in two modules:
+`isMissing` (pushdown / wizard), `isNumeric` (wizard / builder), `formatValue` (provenance / builder)
+and `MARKING_MODES` (builderModel / validateSpec). `import`-ing `canvasxpress-dashboards.esm.js`
+threw "Identifier 'isMissing' has already been declared", and in the UMD bundle the later module's
+function replaced the earlier one's in both: a pushdown `not_null` over values like `NA` or `""`
+dropped rows (the wizard's looser `isMissing` was in force), and provenance footers used the builder's
+formatter. Each helper is now module-local, the build refuses a top-level name declared in two
+modules, and `tests/bundle.test.js` loads both bundles on every `npm test`.
+
+### Fix: the wizard suggested a Kaplan–Meier for a text event column
+A survival table whose event is `Dead` / `Alive` was suggested a Kaplan–Meier, but the engine reads
+the event from a numeric column and draws a silently wrong curve (flat steps, p = 1). The suggestion
+now needs a numeric 0/1 event; recode a text event first.
+
+### Fix: the builder changed an unedited ggplot or code-panel dashboard on save
+Opening a dashboard with ggplot or code panels (which carry their spec in `panel.spec`, no `config`)
+and saving without edits added an empty `config: {}` to each. The live-config capture now skips a
+panel with no authored config and nothing captured; `test:roundtrip` passes for every example.
+
+### A whole linked dashboard from one dataset
+The data wizard now offers a **whole dashboard** above its single charts when the data is a
+recognised analysis shape: a patient cohort with survival columns (filters, Kaplan–Meier curve,
+a measure by group and against time) or a per-sample sequencing run-QC table (filters, depth per
+sample, mapping vs duplication, quality by lane / batch). Every panel is bound to the one dataset,
+so a selection in one panel selects the same rows in the rest. It is preselected, one click picks a
+single chart instead, and nothing is offered for a table that matches no shape. New helpers
+`suggestDashboard(data)` and `dashboardSpec(suggestion, opts)`; the same recognition is the
+`suggest_canvasxpress_dashboard` tool in canvasxpress-mcp. Guide: `docs/dashboard-from-data.md`.
+
+### Storyboards: a guided tour of a dashboard
+A spec's `storyboard` is an ordered list of steps (title, narration, a filter scheme or explicit filters,
+parameter values, a panel to bring into view, optional seconds). A player bar above the board steps through
+them with previous / play / next and a dot per step; every step is the whole view, so going back works.
+New: `mountStoryboard`, `storyboardSteps`, `handle.applyView(view)`; validation in both the JS and server
+validators; schema entry; **Data → Storyboard** in the builder snapshots the live filters and parameters as
+a step; the viewer, shared and wrapper pages mount the player. Guide: `docs/storyboards.md`.
+
+### Dashboards from R and Python
+Two thin wrappers, in `r/` and `python/`, render a dashboard natively — no server — from a spec or from a
+data frame (the wizard's templates: a patient cohort, a sequencing run-QC table). **R** (`canvasXpressDashboards`,
+`cxdashboard()`): an htmlwidget for R Markdown, Quarto and Shiny, with `cxdashboardOutput()` /
+`renderCxdashboard()`, the dashboard's state back as `input$<id>_params` and `input$<id>_template`, and a proxy
+(`cxd_set_param()`, `cxd_focus_panel()`). **Python** (`canvasxpress-dashboards`, `Dashboard`): a notebook cell
+output (an `<iframe>` that follows the dashboard and `postMessage`s the host its parameters), `save()` /
+`show()`, and pages for Flask, Dash, Streamlit and Shiny for Python. Both are data-frame in, dashboard out
+(`cxd_data()`), report invalid specs and unmatched data in words, and bundle the renderer. New in the bundle:
+`renderPayload(el, payload, opts)`, the one boot routine the wrappers share (so none re-implements it).
+Guides: `r/README.md`, `python/README.md`.
+
+### Proactive insights: fixed, deterministic findings above a dashboard
+A dashboard can opt in (`insights` in the spec; the generated cohort and run-QC dashboards do) to a
+strip of captions that point at what stands out in its data: records that fail a threshold **you
+declare** (never inferred), measures that differ between groups (Kruskal–Wallis per measure ×
+category, Benjamini–Hochberg-corrected for every test run, shown only for a large effect) and outliers
+(Tukey fences). Each caption is filled from a fixed template and carries its figures; flagged
+records load into the case card on click. Computed server-side over the rows the viewer may see
+(`GET /api/dashboards/{id}/insights`, `GET /api/shared/{token}/insights`), so it works on share
+links with no login, no model and no credits; the statistics are validated against R in the tests.
+New `mountInsights`, `insightsDrill`, the handle's `focusPanel(id)` and the spec `insights` block
+(schema + both validators). Guide: `docs/insights.md`.
+
+The server's spec validator was behind the browser's: it rejected `markingMode: "filter"`, controls with
+`style: "range"` and `mode: "transform"`; it accepts them now. The case card is no longer heat-coloured
+by themes that colour tables (a single record's values are not a scale).
+
+### A case drill on the generated dashboards, and the fixes it exposed
+The cohort and run-QC dashboards end with a **case card** (a one-row table): click a patient's
+point (or a sample's bar) and the card loads that row's record while every chart keeps the whole
+dataset and picks the case out. It is a `case` param, a second source narrowed to it by a
+browser-side `pushdown` on the row id, and a `setParam` click action — plain spec, usable on any
+dashboard (`docs/dashboard-from-data.md`). Building it fixed four things:
+- **A click action's value on a scatter was a plotted column** (`age`), not the patient: a
+  scatter-type panel is transposed by the renderer, so the clicked row is in `y.vars`. `setParam` /
+  `setFilter` / `clickParam` without a `field` now take the clicked row along the panel's own row axis,
+  and a `field` is looked up under `z` as well as `x` (a transposed panel's annotations).
+- **A table-view panel never repainted when its source changed** (the engine's table takes new data
+  but not a new grid). The renderer now rebuilds the grid after a live update and clears the loader
+  mask that rebuild leaves on.
+- **A shared dashboard lost the source settings the browser acts on.** Resolving a shared dataset
+  source replaced it with bare inline data, dropping `pushdown`, `calculatedFields` and `axis`, so a
+  shared view could differ from its owner's. Only the dataset's identity (`id`, `store`, `owner`) is
+  dropped now.
+- Grouped boxplots need the engine's grouped-mark highlight fix to pick out the clicked case's own
+  group; older engines light the group whose index equals the sample's.
+
+### Fix: wizard-published scatter and survival charts drew wrong
+The wizard published a chart config carrying the engine's `transposeData` even for the scatter-type
+graphs the dashboard renderer already transposes, so the data was flipped twice: a Kaplan–Meier
+panel failed and a Scatter2D plotted the wrong axes (y labelled with a sample name). The flag is now
+dropped exactly when the renderer will transpose (`panelConfigFor`; `wizardSpec` takes the data).
+
+### Survival columns like `os_months`, `PFS.days`, `overall_survival_days` are recognised
+Survival detection (the wizard's Kaplan–Meier suggestion) only matched a bare `time` / `months` /
+`days` header; prefixed forms now match too.
+
 ### Security: a stored source login is never shown again
 `GET /api/connectors/source` (the read-back behind the Builder's **Edit**) used to return a
 source's stored login to the owner's browser. It now masks every secret as `********`: the

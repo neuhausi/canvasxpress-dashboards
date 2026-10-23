@@ -1,4 +1,4 @@
-div.app [0,0 1400x945] color=rgb(27, 30, 36); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto
+div.app [0,0 1400x905] color=rgb(27, 30, 36); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto
 div.app>aside.rail [0,0 220x900] border=0px 1px 0px 0px / none solid none none / rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36) rgb(27, 30, 36); padding=14px 10px 14px 10px; bg=rgb(255, 255, 255)
 div.app>aside.rail>a.brand [10,14 199x54] padding=6px 8px 16px 8px
 div.app>aside.rail>a.brand>img [18,20 32x32] 
@@ -26,57 +26,73 @@ div#rail-foot [10,839 199x47] color=rgb(87, 96, 106); border=1px 0px 0px 0px / s
 span#rail-avatar [18,850 26x26] color=rgb(255, 255, 255); font-size=14px; font-weight=700; radius=50%; bg=rgb(61, 88, 255)
 span#rail-user [54,854 84x18] 
 a#rail-auth [148,855 53x17] font-size=14px
-div.app>main.content [220,0 1180x945] 
-div.app>main.content>div.topstrip:1 [220,0 1180x147] border=0px 0px 1px 0px / none none solid none / rgb(27, 30, 36) rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36); padding=10px 20px 10px 20px; bg=rgb(255, 255, 255)
-div#toolbar [240,10 1140x126] 
-div#toolbar>div.cxb-trow:1 [240,10 1140x80] 
-div#toolbar>div.cxb-trow:1>input.cxb-title-input [240,15 204x30] font-weight=600; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=5px 8px 5px 8px; bg=rgb(255, 255, 255)
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:1 [452,14 43x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:2 [503,14 42x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:3 [552,14 42x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:4 [602,14 83x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:5 [693,14 73x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:6 [774,14 88x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:7 [870,14 97x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:8 [975,14 88x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:9 [1070,10 91x40] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:10 [1169,14 90x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:11 [240,58 130x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:12 [378,58 107x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
-div#toolbar>div.cxb-trow:1>button.cX-Button.cX-Button--primary.cxb-btn.cxb-btn-primary:13 [492,58 64x32] color=rgb(255, 255, 255); font-weight=500; border=1px / solid / rgb(61, 88, 255); radius=6px; padding=6px 13px 6px 13px; bg=rgb(61, 88, 255)
-div#toolbar>div.cxb-props.cxb-tgroup:2 [240,102 1140x34] 
-div#view [220,147 1180x798] padding=16px 20px 32px 20px
-div#view>div [240,163 1140x750] 
-div#chat-panel [240,163 320x750] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=10px; bg=rgb(255, 255, 255)
-div#chat-panel>div.data-dropzone:1 [251,174 298x200] color=rgb(87, 96, 106); line-height=24px; border=1px / solid / rgb(208, 212, 218); radius=10px; padding=12px; bg=rgb(255, 255, 255)
-div#chat-panel>div.data-dropzone:1>div [264,187 272x24] font-weight=600
-div#chat-panel>div.data-dropzone:1>strong:1 [264,220 105x18] font-weight=700
-div#chat-panel>div.data-dropzone:1>strong:2 [391,340 57x18] font-weight=700
-div#chat-datasets [251,384 298x250] border=1px / solid / rgb(208, 212, 218); radius=10px; padding=10px 12px 10px 12px; bg=rgb(255, 255, 255)
-div#chat-datasets>div:1 [264,395 272x16] color=rgb(87, 96, 106); font-size=13px; font-weight=600
-input#chat-dataset-search [264,415 272x38] color=rgb(0, 0, 0); font-size=15px; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=9px 10px 9px 10px; bg=rgb(255, 255, 255)
-div#chat-dataset-list [264,459 272x164] padding=2px 0px 2px 0px
-div#chat-dataset-list>label.chat-ds-row:1 [264,461 272x18] 
-div#chat-dataset-list>label.chat-ds-row:1>input.chat-ds [264,462 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
-div#chat-dataset-list>label.chat-ds-row:1>span [286,461 150x18] 
-div#chat-dataset-list>label.chat-ds-row:2 [264,486 272x18] 
-div#chat-dataset-list>label.chat-ds-row:2>input.chat-ds [264,487 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
-div#chat-dataset-list>label.chat-ds-row:2>span [286,486 185x18] 
-div#chat-dataset-list>label.chat-ds-row:3 [264,511 272x18] 
-div#chat-dataset-list>label.chat-ds-row:3>input.chat-cs [264,512 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
-div#chat-dataset-list>label.chat-ds-row:3>span [286,511 133x18] 
-div#chat-dataset-list>label.chat-ds-row:3>span>span [378,511 41x18] 
-div#chat-dataset-list>label.chat-ds-row:4 [264,536 272x18] 
-div#chat-dataset-list>label.chat-ds-row:4>input.chat-cs [264,537 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
-div#chat-dataset-list>label.chat-ds-row:4>span [286,536 142x18] 
-div#chat-dataset-list>label.chat-ds-row:4>span>span [387,536 41x18] 
-div#chat-splitter [251,644 298x8] border=1px 0px 1px 0px / solid none solid none / rgb(230, 232, 236) rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36); background-image=repeating-linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 4px, rgb(230, 232, 236) 4px, rgb(230, 232, 236) 8px)
-div#chat-section [251,662 298x250] border=1px / solid / rgb(208, 212, 218); radius=10px; bg=rgb(255, 255, 255)
-div#chat-log [252,663 296x143] padding=12px
-div#chat-section>div:2 [252,806 296x105] border=1px 0px 0px 0px / solid none none none / rgb(230, 232, 236) rgb(27, 30, 36) rgb(27, 30, 36) rgb(27, 30, 36); padding=8px
-textarea#chat-input [260,815 211x88] color=rgb(0, 0, 0); border=1px / solid / rgb(118, 118, 118); padding=7px; bg=rgb(255, 255, 255)
-button#chat-send [477,815 63x88] color=rgb(255, 255, 255); font-family=Arial; font-weight=600; radius=6px; padding=6px 12px 6px 12px; bg=rgb(61, 88, 255)
-div#builder-host [572,163 808x42] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=0px 12px 12px 12px; bg=rgb(255, 255, 255)
-div#builder-host>div.cxb [585,164 782x28] 
-div#builder-host>div.cxb>div.cxb-stage:1 [585,164 782x0] 
-div#builder-host>div.cxb>div.cxb-msg:2 [585,174 782x18] color=rgb(87, 96, 106)
+div.app>main.content [220,0 1180x905] 
+div.app>main.content>div.topstrip:1 [220,0 1180x107] border=0px 0px 1px 0px / none none solid none / rgb(27, 30, 36) rgb(27, 30, 36) rgb(230, 232, 236) rgb(27, 30, 36); padding=10px 20px 10px 20px; bg=rgb(255, 255, 255)
+div#toolbar [240,10 1140x86] 
+div#toolbar>div.cxb-trow:1 [240,10 1140x34] 
+div#toolbar>div.cxb-trow:1>input.cxb-title-input [240,12 320x30] font-weight=600; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=5px 8px 5px 8px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn.cxb-icon-btn:1 [568,10 48x34] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn.cxb-icon-btn:1>span.cxb-ic [582,17 20x20] 
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn.cxb-icon-btn:1>span.cxb-ic>svg [582,17 20x20] fill=none; stroke=rgb(27, 30, 36)
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn.cxb-icon-btn:2 [624,10 48x34] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255); opacity=0.5
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn.cxb-icon-btn:2>span.cxb-ic [638,17 20x20] 
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn.cxb-icon-btn:2>span.cxb-ic>svg [638,17 20x20] fill=none; stroke=rgb(27, 30, 36)
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-add:1 [680,11 124x32] 
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-add:1>button.cX-Button.cxb-bt-add.cxb-btn.cxb-menu-trigger [680,11 124x32] font-weight=500; border=1px 1px 1px 4px / solid / rgb(208, 212, 218) rgb(208, 212, 218) rgb(208, 212, 218) rgb(0, 180, 223); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-add:1>button.cX-Button.cxb-bt-add.cxb-btn.cxb-menu-trigger>span.cxb-menu-caret [772,18 18x18] opacity=0.8
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-add:1>button.cX-Button.cxb-bt-add.cxb-btn.cxb-menu-trigger>span.cxb-menu-caret>svg [772,18 18x18] fill=none; stroke=rgb(27, 30, 36)
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-interact:2 [812,11 124x32] 
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-interact:2>button.cX-Button.cxb-bt-interact.cxb-btn.cxb-menu-trigger [812,11 124x32] font-weight=500; border=1px 1px 1px 4px / solid / rgb(208, 212, 218) rgb(208, 212, 218) rgb(208, 212, 218) rgb(255, 170, 79); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-interact:2>button.cX-Button.cxb-bt-interact.cxb-btn.cxb-menu-trigger>span.cxb-menu-caret [904,18 18x18] opacity=0.8
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-interact:2>button.cX-Button.cxb-bt-interact.cxb-btn.cxb-menu-trigger>span.cxb-menu-caret>svg [904,18 18x18] fill=none; stroke=rgb(27, 30, 36)
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-data:3 [944,11 124x32] 
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-data:3>button.cX-Button.cxb-bt-data.cxb-btn.cxb-menu-trigger [944,11 124x32] font-weight=500; border=1px 1px 1px 4px / solid / rgb(208, 212, 218) rgb(208, 212, 218) rgb(208, 212, 218) rgb(235, 0, 0); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-data:3>button.cX-Button.cxb-bt-data.cxb-btn.cxb-menu-trigger>span.cxb-menu-caret [1036,18 18x18] opacity=0.8
+div#toolbar>div.cxb-trow:1>div.cxb-menu.cxb-menu-data:3>button.cX-Button.cxb-bt-data.cxb-btn.cxb-menu-trigger>span.cxb-menu-caret>svg [1036,18 18x18] fill=none; stroke=rgb(27, 30, 36)
+div#toolbar>div.cxb-trow:1>span.cxb-spacer [1076,27 182x0] 
+div#toolbar>div.cxb-trow:1>button.cX-Button.cxb-btn:3 [1266,11 43x32] font-weight=500; border=1px / solid / rgb(208, 212, 218); radius=6px; padding=6px 13px 6px 13px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-trow:1>button.cX-Button.cX-Button--primary.cxb-btn.cxb-btn-primary:4 [1316,11 64x32] color=rgb(255, 255, 255); font-weight=500; border=1px / solid / rgb(61, 88, 255); radius=6px; padding=6px 13px 6px 13px; bg=rgb(61, 88, 255)
+div#toolbar>div.cxb-props.cxb-tgroup:2 [240,52 1140x44] border=1px / dashed / rgb(208, 212, 218); radius=6px; padding=5px 12px 5px 12px; bg=rgb(255, 255, 255)
+div#toolbar>div.cxb-props.cxb-tgroup:2>span.cxb-props-hint [253,66 612x17] color=rgb(87, 96, 106); font-size=14px
+div#view [220,107 1180x798] padding=16px 20px 32px 20px
+div#view>div [240,123 1140x750] 
+div#chat-panel [240,123 320x750] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=10px; bg=rgb(255, 255, 255)
+div#chat-panel>div.data-dropzone:1 [251,134 298x200] color=rgb(87, 96, 106); line-height=24px; border=1px / solid / rgb(208, 212, 218); radius=10px; padding=12px; bg=rgb(255, 255, 255)
+div#chat-panel>div.data-dropzone:1>div [264,147 272x24] font-weight=600
+div#chat-panel>div.data-dropzone:1>strong:1 [264,180 105x18] font-weight=700
+div#chat-panel>div.data-dropzone:1>strong:2 [364,300 111x18] font-weight=700
+div#chat-datasets [251,344 298x250] border=1px / solid / rgb(208, 212, 218); radius=10px; padding=10px 12px 10px 12px; bg=rgb(255, 255, 255)
+div#chat-datasets>div:1 [264,355 272x16] color=rgb(87, 96, 106); font-size=13px; font-weight=600
+input#chat-dataset-search [264,375 272x38] color=rgb(0, 0, 0); font-size=15px; border=1px / solid / rgb(230, 232, 236); radius=6px; padding=9px 10px 9px 10px; bg=rgb(255, 255, 255)
+div#chat-dataset-list [264,419 272x164] padding=2px 0px 2px 0px
+div#chat-dataset-list>label.chat-ds-row.data-item:1 [264,421 272x59] border=1px / solid / rgb(230, 232, 236); radius=6px; padding=10px 12px 10px 12px
+div#chat-dataset-list>label.chat-ds-row.data-item:1>input.chat-ds [277,443 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
+div#chat-dataset-list>label.chat-ds-row.data-item:1>div [301,432 222x37] 
+div#chat-dataset-list>label.chat-ds-row.data-item:1>div>div.data-item-title:1 [301,432 222x18] font-weight=600
+div#chat-dataset-list>label.chat-ds-row.data-item:1>div>div.data-item-meta:2 [301,452 222x17] color=rgb(87, 96, 106); font-size=14px
+div#chat-dataset-list>label.chat-ds-row.data-item:2 [264,487 272x59] border=1px / solid / rgb(230, 232, 236); radius=6px; padding=10px 12px 10px 12px
+div#chat-dataset-list>label.chat-ds-row.data-item:2>input.chat-ds [277,509 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
+div#chat-dataset-list>label.chat-ds-row.data-item:2>div [301,498 222x37] 
+div#chat-dataset-list>label.chat-ds-row.data-item:2>div>div.data-item-title:1 [301,498 222x18] font-weight=600
+div#chat-dataset-list>label.chat-ds-row.data-item:2>div>div.data-item-meta:2 [301,518 222x17] color=rgb(87, 96, 106); font-size=14px
+div#chat-dataset-list>label.chat-ds-row.data-item:3 [264,553 272x59] border=1px / solid / rgb(230, 232, 236); radius=6px; padding=10px 12px 10px 12px
+div#chat-dataset-list>label.chat-ds-row.data-item:3>input.chat-cs [277,575 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
+div#chat-dataset-list>label.chat-ds-row.data-item:3>div [301,564 222x37] 
+div#chat-dataset-list>label.chat-ds-row.data-item:3>div>div.data-item-title:1 [301,564 222x18] font-weight=600
+div#chat-dataset-list>label.chat-ds-row.data-item:3>div>div.data-item-meta:2 [301,584 222x17] color=rgb(87, 96, 106); font-size=14px
+div#chat-dataset-list>label.chat-ds-row.data-item:4 [264,619 272x59] border=1px / solid / rgb(230, 232, 236); radius=6px; padding=10px 12px 10px 12px
+div#chat-dataset-list>label.chat-ds-row.data-item:4>input.chat-cs [277,641 16x16] color=rgb(0, 0, 0); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(138, 144, 153); radius=4px; bg=rgb(255, 255, 255)
+div#chat-dataset-list>label.chat-ds-row.data-item:4>div [301,630 222x37] 
+div#chat-dataset-list>label.chat-ds-row.data-item:4>div>div.data-item-title:1 [301,630 222x18] font-weight=600
+div#chat-dataset-list>label.chat-ds-row.data-item:4>div>div.data-item-meta:2 [301,650 222x17] color=rgb(87, 96, 106); font-size=14px
+div#chat-splitter [251,604 298x10] 
+div#chat-section [251,624 298x250] border=1px / solid / rgb(208, 212, 218); radius=10px; bg=rgb(255, 255, 255)
+div#chat-log [252,625 296x143] padding=12px
+div#chat-section>div:2 [252,768 296x105] border=1px 0px 0px 0px / solid none none none / rgb(230, 232, 236) rgb(27, 30, 36) rgb(27, 30, 36) rgb(27, 30, 36); padding=8px
+textarea#chat-input [260,777 211x88] color=rgb(0, 0, 0); border=1px / solid / rgb(118, 118, 118); padding=7px; bg=rgb(255, 255, 255)
+button#chat-send [477,777 63x88] color=rgb(255, 255, 255); font-family=Arial; font-weight=600; radius=6px; padding=6px 12px 6px 12px; bg=rgb(61, 88, 255)
+div#view>div>div.cxd-left-resizer:2 [567,123 10x750] z=10
+div#builder-host [584,123 796x42] border=1px / solid / rgb(230, 232, 236); radius=10px; padding=0px 12px 12px 12px; bg=rgb(255, 255, 255)
+div#builder-host>div.cxb [597,124 770x28] 
+div#builder-host>div.cxb>div.cxb-stage:1 [597,124 770x0] 
+div#builder-host>div.cxb>div.cxb-msg:3 [597,134 770x18] color=rgb(87, 96, 106)

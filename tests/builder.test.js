@@ -960,3 +960,50 @@ test('data-flow card: a param control shows what it sets, the source it fills an
   assert.notEqual(card().style.display, 'none', 'a close lasts only while that element stays selected');
 });
 
+
+test('Storyboard dialog: steps are snapshotted, edited, reordered and written to the spec; Cancel and an empty list behave', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var start = twoSourceSpec();
+  start.params = { 'case': { value: 'p1' } };
+  var builder = createBuilder(container, { spec: start, CanvasXpress: makeCX([]) });
+  await builder.whenReady();
+
+  buttonNamed(container, 'Storyboard').dispatchEvent('click');
+  var modal = document.body.querySelector('.cxb-modal');
+  assert.ok(modal, 'the Storyboard dialog opened');
+  assert.equal(modal.querySelector('.cxb-links-none').textContent, 'No steps yet.');
+  buttonNamed(modal, '+ Step from the current view').dispatchEvent('click');
+  buttonNamed(modal, '+ Step from the current view').dispatchEvent('click');
+  var rows = modal.querySelectorAll('.cxb-story-row');
+  assert.equal(rows.length, 2);
+  var first = rows[0].querySelector('input');
+  first.value = 'The cohort';
+  first.dispatchEvent('input');
+  var narration = rows[0].querySelector('textarea');
+  narration.value = 'Everyone, before filtering.';
+  narration.dispatchEvent('input');
+  buttonNamed(rows[1], '↑').dispatchEvent('click');
+  buttonNamed(modal, 'Apply').dispatchEvent('click');
+  await builder.whenReady();
+
+  var spec = builder.getSpec();
+  assert.deepEqual(spec.storyboard.steps.map(function (s) { return s.title; }), ['Step 2', 'The cohort'], 'second step moved up');
+  assert.equal(spec.storyboard.steps[1].narration, 'Everyone, before filtering.');
+  assert.deepEqual(validateSpec(spec).errors, []);
+
+  buttonNamed(container, 'Storyboard').dispatchEvent('click');
+  modal = document.body.querySelector('.cxb-modal');
+  assert.equal(modal.querySelectorAll('.cxb-story-row').length, 2, 'the saved steps come back');
+  buttonNamed(modal.querySelector('.cxb-story-row'), '×').dispatchEvent('click');
+  buttonNamed(modal, 'Cancel').dispatchEvent('click');
+  assert.equal(builder.getSpec().storyboard.steps.length, 2, 'Cancel discards the edit');
+
+  buttonNamed(container, 'Storyboard').dispatchEvent('click');
+  modal = document.body.querySelector('.cxb-modal');
+  buttonNamed(modal.querySelector('.cxb-story-row'), '×').dispatchEvent('click');
+  buttonNamed(modal.querySelector('.cxb-story-row'), '×').dispatchEvent('click');
+  buttonNamed(modal, 'Apply').dispatchEvent('click');
+  await builder.whenReady();
+  assert.equal(Object.prototype.hasOwnProperty.call(builder.getSpec(), 'storyboard'), false, 'no steps removes the block');
+});

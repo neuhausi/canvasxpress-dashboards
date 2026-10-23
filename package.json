@@ -33,6 +33,10 @@
     "test:embed": "node tests/browser/embed.cjs",
     "test:figure": "node tests/browser/figure.cjs",
     "test:wizard": "node tests/browser/wizard.cjs",
+    "test:wizard-dashboard": "node tests/browser/wizard-dashboard.cjs",
+    "test:r": "node tests/browser/r-wrapper.cjs",
+    "test:storyboard": "node tests/browser/storyboard.cjs",
+    "test:python": "node tests/browser/python-wrapper.cjs",
     "tokens": "node scripts/gen-ui-tokens.mjs",
     "tokens:check": "node scripts/gen-ui-tokens.mjs --check"
   },

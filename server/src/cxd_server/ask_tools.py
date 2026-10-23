@@ -25,6 +25,7 @@ so it is unit-tested directly.
 
 from __future__ import annotations
 
+import math
 from typing import Any, Dict, List, Optional
 
 
@@ -218,12 +219,253 @@ def _round(value: Any) -> Any:
     return round(value, 4) if isinstance(value, float) else value
 
 
+# ---------------------------------------------------------------------------
+# Deterministic analysis checks (the "insights" layer)
+#
+# Fixed statistical checks over one data object. Like every tool here they are plain, stdlib-only
+# functions: no eval, no model, and the same input always gives the same figures. Their numbers are
+# validated against R (quantile type 7, kruskal.test, p.adjust "BH") in test_ask_tools.py.
+# ---------------------------------------------------------------------------
+
+def _quantile(sorted_values: List[float], p: float) -> float:
+    """The ``p`` quantile of sorted values by linear interpolation (R's ``quantile`` type 7)."""
+    h = (len(sorted_values) - 1) * p
+    lo = int(math.floor(h))
+    hi = int(math.ceil(h))
+    return sorted_values[lo] + (h - lo) * (sorted_values[hi] - sorted_values[lo])
+
+
+def _median(values: List[float]) -> float:
+    return _quantile(sorted(values), 0.5)
+
+
+def outliers(data: Dict[str, Any], measure: str, rows: Optional[List[Dict[str, Any]]] = None,
+             k: float = 1.5, far: float = 3.0, min_n: int = 8, max_ids: int = 10) -> Optional[Dict[str, Any]]:
+    """Values of ``measure`` outside Tukey's fences (``Q1 - k*IQR`` / ``Q3 + k*IQR``).
+
+    :param data: A CanvasXpress data object.
+    :param measure: A measure (numeric) field.
+    :param rows: Pre-filtered rows to test instead of the whole object.
+    :param k: The fence multiplier (1.5 is Tukey's convention).
+    :param far: The multiplier beyond which a value is "far out" (3.0 is Tukey's convention).
+    :param min_n: The fewest numeric values worth testing.
+    :param max_ids: How many flagged records to list (most extreme first).
+    :returns: ``None`` when there are too few values or no spread (IQR 0); otherwise
+        ``{measure, n, median, q1, q3, iqr, low_fence, high_fence, count, far_count, outliers}``
+        where ``outliers`` is ``[{id, value, side, beyond}]`` and ``beyond`` is how far past the
+        nearest fence the value lies, in IQRs.
+    """
+    source = rows if rows is not None else to_rows(data)
+    pairs = [(r.get("id"), _num(r.get(measure))) for r in source]
+    pairs = [(i, v) for i, v in pairs if v is not None]
+    if len(pairs) < min_n:
+        return None
+    values = sorted(v for _, v in pairs)
+    q1, q3 = _quantile(values, 0.25), _quantile(values, 0.75)
+    iqr = q3 - q1
+    if iqr <= 0:
+        return None
+    low, high = q1 - k * iqr, q3 + k * iqr
+    flagged = []
+    for rid, v in pairs:
+        if v < low:
+            flagged.append({"id": rid, "value": _round(v), "side": "low", "beyond": _round((low - v) / iqr)})
+        elif v > high:
+            flagged.append({"id": rid, "value": _round(v), "side": "high", "beyond": _round((v - high) / iqr)})
+    flagged.sort(key=lambda d: -d["beyond"])
+    far_beyond = (far - k)
+    return {
+        "measure": measure, "n": len(pairs), "median": _round(_quantile(values, 0.5)),
+        "q1": _round(q1), "q3": _round(q3), "iqr": _round(iqr),
+        "low_fence": _round(low), "high_fence": _round(high),
+        "count": len(flagged), "far_count": sum(1 for d in flagged if d["beyond"] > far_beyond),
+        "outliers": flagged[:max(0, int(max_ids))],
+    }
+
+
+def _ranks(values: List[float]) -> List[float]:
+    """1-based ranks, ties given the average of the ranks they span (R's ``rank``)."""
+    order = sorted(range(len(values)), key=lambda i: values[i])
+    ranks = [0.0] * len(values)
+    i = 0
+    while i < len(order):
+        j = i
+        while j + 1 < len(order) and values[order[j + 1]] == values[order[i]]:
+            j += 1
+        average = (i + j) / 2.0 + 1.0
+        for t in range(i, j + 1):
+            ranks[order[t]] = average
+        i = j + 1
+    return ranks
+
+
+def _gamma_q(a: float, x: float) -> float:
+    """The regularized upper incomplete gamma function ``Q(a, x)`` (series / continued fraction)."""
+    if x <= 0:
+        return 1.0
+    log_front = -x + a * math.log(x) - math.lgamma(a)
+    if x < a + 1.0:
+        term = total = 1.0 / a
+        ap = a
+        for _ in range(2000):
+            ap += 1.0
+            term *= x / ap
+            total += term
+            if abs(term) < abs(total) * 1e-16:
+                break
+        return max(0.0, 1.0 - total * math.exp(log_front))
+    tiny = 1e-300
+    b = x + 1.0 - a
+    c = 1.0 / tiny
+    d = 1.0 / b
+    h = d
+    for i in range(1, 2000):
+        an = -i * (i - a)
+        b += 2.0
+        d = an * d + b
+        d = tiny if abs(d) < tiny else d
+        c = b + an / c
+        c = tiny if abs(c) < tiny else c
+        d = 1.0 / d
+        delta = d * c
+        h *= delta
+        if abs(delta - 1.0) < 1e-16:
+            break
+    return min(1.0, math.exp(log_front) * h)
+
+
+def _chi2_sf(x: float, df: int) -> float:
+    """The chi-square survival function ``P(X > x)``."""
+    return _gamma_q(df / 2.0, x / 2.0)
+
+
+def kruskal_wallis(groups: List[List[float]]) -> Optional[Dict[str, float]]:
+    """The Kruskal-Wallis rank-sum test across groups (tie-corrected, chi-square p; as R's
+    ``kruskal.test``).
+
+    :param groups: One list of numbers per group (at least two non-empty groups).
+    :returns: ``{H, df, p, epsilon2}`` or ``None`` when every value is identical.
+        ``epsilon2`` is the rank effect size ``H / (N - 1)``.
+    """
+    groups = [g for g in groups if g]
+    if len(groups) < 2:
+        return None
+    pooled = [v for g in groups for v in g]
+    n = len(pooled)
+    ranks = _ranks(pooled)
+    h = 0.0
+    start = 0
+    for g in groups:
+        rank_sum = sum(ranks[start:start + len(g)])
+        h += rank_sum * rank_sum / len(g)
+        start += len(g)
+    h = 12.0 / (n * (n + 1.0)) * h - 3.0 * (n + 1.0)
+    ties: Dict[float, int] = {}
+    for v in pooled:
+        ties[v] = ties.get(v, 0) + 1
+    correction = 1.0 - sum(t ** 3 - t for t in ties.values()) / float(n ** 3 - n)
+    if correction <= 0:
+        return None
+    h /= correction
+    df = len(groups) - 1
+    return {"H": h, "df": df, "p": _chi2_sf(h, df), "epsilon2": h / (n - 1.0)}
+
+
+def benjamini_hochberg(p_values: List[float]) -> List[float]:
+    """Benjamini-Hochberg adjusted p-values, in the input order (R's ``p.adjust(p, "BH")``)."""
+    n = len(p_values)
+    order = sorted(range(n), key=lambda i: p_values[i], reverse=True)
+    adjusted = [0.0] * n
+    running = 1.0
+    for position, idx in enumerate(order):
+        rank = n - position
+        running = min(running, p_values[idx] * n / rank)
+        adjusted[idx] = min(1.0, running)
+    return adjusted
+
+
+def group_difference(data: Dict[str, Any], group_by: str, measure: str,
+                     rows: Optional[List[Dict[str, Any]]] = None, min_group: int = 3,
+                     max_groups: int = 6) -> Optional[Dict[str, Any]]:
+    """Whether ``measure`` differs between the groups of ``group_by`` (Kruskal-Wallis).
+
+    Groups with fewer than ``min_group`` values are left out; the test needs at least two groups
+    left and no more than ``max_groups`` levels to begin with (a many-level field is an identifier,
+    not a grouping).
+
+    :param data: A CanvasXpress data object.
+    :param group_by: A category field.
+    :param measure: A measure (numeric) field.
+    :param rows: Pre-filtered rows to test instead of the whole object.
+    :param min_group: The fewest values a group needs to be compared.
+    :param max_groups: The most levels a grouping field may have.
+    :returns: ``None`` when the test cannot be run; otherwise ``{group_by, measure, n, groups, H,
+        df, p, epsilon2, highest, lowest}`` with ``groups`` = ``[{group, n, median, mean}]``
+        ordered by median, highest first.
+    """
+    source = rows if rows is not None else to_rows(data)
+    buckets: Dict[str, List[float]] = {}
+    for r in source:
+        key, v = r.get(group_by), _num(r.get(measure))
+        if key is None or key == "" or v is None:
+            continue
+        buckets.setdefault(str(key), []).append(v)
+    if len(buckets) > max_groups:
+        return None
+    kept = {k: v for k, v in buckets.items() if len(v) >= min_group}
+    if len(kept) < 2:
+        return None
+    test = kruskal_wallis(list(kept.values()))
+    if test is None:
+        return None
+    groups = [{"group": k, "n": len(v), "median": _round(_median(v)), "mean": _round(sum(v) / len(v))}
+              for k, v in kept.items()]
+    groups.sort(key=lambda g: -g["median"])
+    return {"group_by": group_by, "measure": measure, "n": sum(g["n"] for g in groups),
+            "groups": groups, "H": test["H"], "df": test["df"], "p": test["p"],
+            "epsilon2": test["epsilon2"], "highest": groups[0]["group"], "lowest": groups[-1]["group"]}
+
+
+_THRESHOLD_OPS = ("lt", "le", "gt", "ge")
+
+
+def threshold_check(data: Dict[str, Any], field: str, op: str, value: Any,
+                    rows: Optional[List[Dict[str, Any]]] = None, max_ids: int = 10) -> Dict[str, Any]:
+    """Records whose ``field`` violates a declared threshold (``field op value``).
+
+    :param data: A CanvasXpress data object.
+    :param field: A numeric measure or annotation.
+    :param op: ``lt``, ``le``, ``gt`` or ``ge`` — the condition that counts as a failure.
+    :param value: The threshold.
+    :param rows: Pre-filtered rows to test instead of the whole object.
+    :param max_ids: How many failing records to list (worst first).
+    :returns: ``{field, op, value, n, count, share, ids}`` where ``ids`` is ``[{id, value}]``.
+    :raises ValueError: On an unsupported operator or a non-numeric threshold.
+    """
+    if op not in _THRESHOLD_OPS:
+        raise ValueError("threshold op must be one of: %s" % ", ".join(_THRESHOLD_OPS))
+    limit = _num(value)
+    if limit is None:
+        raise ValueError("threshold value must be a number")
+    source = rows if rows is not None else to_rows(data)
+    numeric = [(r.get("id"), _num(r.get(field))) for r in source]
+    numeric = [(i, v) for i, v in numeric if v is not None]
+    failing = [(i, v) for i, v in numeric if _OPS[op](v, limit)]
+    failing.sort(key=lambda t: t[1], reverse=op in ("gt", "ge"))
+    return {"field": field, "op": op, "value": _round(limit), "n": len(numeric), "count": len(failing),
+            "share": _round(len(failing) / len(numeric)) if numeric else None,
+            "ids": [{"id": i, "value": _round(v)} for i, v in failing[:max(0, int(max_ids))]]}
+
+
 # The tool surface exposed to the model (name -> callable(data, **args)).
 TOOLS = {
     "describe": lambda data, **a: describe(data),
     "filter": lambda data, field, op, value, **a: {"rows": filter_rows(data, field, op, value)},
     "aggregate": lambda data, group_by, measure, agg="sum", **a: {"groups": aggregate(data, group_by, measure, agg)},
     "top_n": lambda data, measure, n=5, ascending=False, **a: {"top": top_n(data, measure, n, ascending)},
+    "outliers": lambda data, measure, **a: {"outliers": outliers(data, measure)},
+    "group_difference": lambda data, group_by, measure, **a: {"difference": group_difference(data, group_by, measure)},
+    "threshold_check": lambda data, field, op, value, **a: {"check": threshold_check(data, field, op, value)},
 }
 
 

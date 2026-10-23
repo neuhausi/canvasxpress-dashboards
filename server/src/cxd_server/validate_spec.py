@@ -20,7 +20,7 @@ import re
 from typing import Any, Optional
 
 _FIT = ("contain", "cover", "fill", "none", "scale-down")
-_STYLE = ("auto", "dropdown", "radio", "buttons", "search", "slider")
+_STYLE = ("auto", "dropdown", "radio", "buttons", "search", "slider", "range")
 _ALIGN = ("left", "center", "right")
 _VALIGN = ("top", "middle", "bottom")
 _PARAM_TYPES = ("string", "number", "boolean")
@@ -29,7 +29,7 @@ _FUNCTION_LANGUAGES = ("python", "r")
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _JOIN_TYPES = ("inner", "left", "right", "outer")
 _AXES = ("smps", "vars")
-_MARKING_MODES = ("focus", "highlight", "ghost")
+_MARKING_MODES = ("focus", "highlight", "ghost", "filter")
 _FIELD_KINDS = ("values", "range", "search")
 _CALC_TARGETS = ("variable", "sampleAnnotation", "variableAnnotation")
 _BIN_METHODS = ("equalWidth", "quantile", "percentile", "custom")
@@ -94,7 +94,9 @@ def validate_spec(spec: Any) -> dict:
     _check_data(data, params, errors, warnings if status == "newer-minor" else None)
     _check_relationships(spec.get("relationships"), data, errors)
     if spec.get("markingMode") is not None and spec.get("markingMode") not in _MARKING_MODES:
-        errors.append('spec.markingMode must be "focus", "highlight", or "ghost"')
+        errors.append("spec.markingMode must be one of: " + ", ".join(_MARKING_MODES))
+    _check_insights(spec.get("insights"), data, errors)
+    _check_storyboard(spec, errors)
     _check_filter_schemes(spec.get("filterSchemes"), data, errors)
     _check_params(params, errors)
     _check_controls(spec.get("controls"), data, errors)
@@ -195,6 +197,10 @@ def _check_panels(panels: Any, data: Any, params: Any, errors: list) -> None:
             or panel.get("optionsFrom") is not None
             or panel.get("style") == "search")
         is_config_control = ptype == "control" and panel.get("mode") == "config"
+        # Analysis controls need no data of their own: a transform control drives a target panel's
+        # data; an FDR-threshold range slider drives a param.
+        is_transform_control = ptype == "control" and panel.get("mode") == "transform"
+        is_range_param = ptype == "control" and panel.get("mode") == "param" and panel.get("style") == "range"
         # A ggplot panel carries a self-contained isGGPlot spec (embedding its own
         # data) from the R converter, so it needs no dataRef / inline data.
         is_ggplot = ptype == "ggplot"
@@ -202,7 +208,8 @@ def _check_panels(panels: Any, data: Any, params: Any, errors: list) -> None:
             errors.append(at + ' of type "ggplot" requires a spec with isGGPlot:true')
 
         if (ptype not in ("text", "image", "filters") and not param_with_options
-                and not is_config_control and not is_ggplot
+                and not is_config_control and not is_transform_control and not is_range_param
+                and not is_ggplot
                 and panel.get("dataRef") is None and panel.get("data") is None):
             errors.append(at + " must have either a dataRef or inline data")
 
@@ -245,11 +252,23 @@ def _check_control_panel(panel: dict, panels: Any, data: Any, params: Any,
         errors.append(at + '.compartment must be "x" (samples) or "z" (variables)')
 
     if panel.get("style") is not None and panel.get("style") not in _STYLE:
-        errors.append(at + '.style must be "auto", "dropdown", "radio", "buttons", "search", or "slider"')
+        errors.append(at + '.style must be "auto", "dropdown", "radio", "buttons", "search", "slider", or "range"')
 
     mode = panel.get("mode")
-    if mode is not None and mode not in ("filter", "param", "config"):
-        errors.append(at + '.mode must be "filter", "param", or "config"')
+    if mode is not None and mode not in ("filter", "param", "config", "transform"):
+        errors.append(at + '.mode must be "filter", "param", "config", or "transform"')
+
+    if mode == "transform":
+        # A transform control (analysis control) drives a target panel's data: it needs a target
+        # panel id and a non-empty options list.
+        target = panel.get("target")
+        if not _is_str(target) or not target:
+            errors.append(at + ' of mode "transform" requires a target panel id string')
+        elif not _is_obj(panels) or target not in panels:
+            errors.append(at + '.target "%s" has no matching entry in spec.panels' % target)
+        options = panel.get("options")
+        if not isinstance(options, list) or not options:
+            errors.append(at + ' of mode "transform" requires a non-empty options array')
 
     if mode == "config":
         target = panel.get("target")
@@ -650,6 +669,110 @@ def _check_filters_panel(panel: dict, at: str, data: Any, errors: list) -> None:
             errors.append(fat + '.kind must be "values", "range", or "search"')
 
 
+def _check_storyboard(spec: dict, errors: list) -> None:
+    """Check the optional ``storyboard`` (mirrors ``checkStoryboard`` in validateSpec.js)."""
+    board = spec.get("storyboard")
+    if board is None:
+        return
+    if not _is_obj(board):
+        errors.append("spec.storyboard must be an object")
+        return
+    if board.get("title") is not None and not _is_str(board.get("title")):
+        errors.append("spec.storyboard.title must be a string")
+    if board.get("seconds") is not None and not _positive_number(board.get("seconds")):
+        errors.append("spec.storyboard.seconds must be a number above 0")
+    steps = board.get("steps")
+    if not isinstance(steps, list) or not steps:
+        errors.append("spec.storyboard.steps must be a non-empty array")
+        return
+    data = spec.get("data")
+    schemes = spec.get("filterSchemes")
+    params = spec.get("params")
+    panels = spec.get("panels")
+    for i, step in enumerate(steps):
+        at = "spec.storyboard.steps[%d]" % i
+        if not _is_obj(step):
+            errors.append(at + " must be an object")
+            continue
+        for key in ("title", "narration"):
+            if step.get(key) is not None and not _is_str(step.get(key)):
+                errors.append("%s.%s must be a string" % (at, key))
+        if step.get("seconds") is not None and not _positive_number(step.get("seconds")):
+            errors.append(at + ".seconds must be a number above 0")
+        scheme = step.get("scheme")
+        if scheme is not None:
+            if not _is_str(scheme) or not _is_obj(schemes) or scheme not in schemes:
+                errors.append('%s.scheme "%s" has no matching entry in spec.filterSchemes' % (at, scheme))
+            if step.get("filters") is not None:
+                errors.append(at + " takes either scheme or filters, not both")
+        filters = step.get("filters")
+        if filters is not None:
+            if not isinstance(filters, list):
+                errors.append(at + ".filters must be an array of filters")
+            else:
+                for j, p in enumerate(filters):
+                    _check_filter_predicate(p, "%s.filters[%d]" % (at, j), data, errors)
+        step_params = step.get("params")
+        if step_params is not None:
+            if not _is_obj(step_params):
+                errors.append(at + ".params must be an object map")
+            else:
+                for name in step_params:
+                    if not _is_obj(params) or name not in params:
+                        errors.append('%s.params["%s"] is not declared in spec.params' % (at, name))
+        focus = step.get("focus")
+        if focus is not None and (not _is_obj(panels) or focus not in panels):
+            errors.append('%s.focus "%s" has no matching entry in spec.panels' % (at, focus))
+
+
+def _positive_number(value: Any) -> bool:
+    return (isinstance(value, (int, float)) and not isinstance(value, bool)
+            and value == value and value > 0)
+
+
+def _check_insights(insights: Any, data: Any, errors: list) -> None:
+    """Check the optional ``insights`` block (mirrors ``checkInsights`` in validateSpec.js)."""
+    if insights is None:
+        return
+    if not isinstance(insights, dict):
+        errors.append("spec.insights must be an object")
+        return
+    ops = ("lt", "le", "gt", "ge")
+    thresholds = insights.get("thresholds")
+    if thresholds is not None:
+        if not isinstance(thresholds, list):
+            errors.append("spec.insights.thresholds must be an array")
+        else:
+            for i, t in enumerate(thresholds):
+                at = "spec.insights.thresholds[%d]" % i
+                if not isinstance(t, dict):
+                    errors.append(at + " must be an object")
+                    continue
+                if not isinstance(t.get("field"), str) or not t.get("field"):
+                    errors.append(at + ".field must be a non-empty field name")
+                if t.get("op") not in ops:
+                    errors.append(at + ".op must be one of: " + ", ".join(ops))
+                value = t.get("value")
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or value != value \
+                        or value in (float("inf"), float("-inf")):
+                    errors.append(at + ".value must be a number")
+                if t.get("label") is not None and not isinstance(t.get("label"), str):
+                    errors.append(at + ".label must be a string")
+                if t.get("source") is not None and (not isinstance(data, dict) or t["source"] not in data):
+                    errors.append(at + '.source "%s" has no matching entry in spec.data' % t["source"])
+    sources = insights.get("sources")
+    if sources is not None:
+        if not isinstance(sources, list):
+            errors.append("spec.insights.sources must be an array of source names")
+        else:
+            for i, ref in enumerate(sources):
+                if not isinstance(ref, str) or not isinstance(data, dict) or ref not in data:
+                    errors.append('spec.insights.sources[%d] "%s" has no matching entry in spec.data' % (i, ref))
+    limit = insights.get("max")
+    if limit is not None and (isinstance(limit, bool) or not isinstance(limit, int) or limit < 1):
+        errors.append("spec.insights.max must be a positive whole number")
+
+
 def _check_filter_schemes(schemes: Any, data: Any, errors: list) -> None:
     """Validate spec.filterSchemes: name -> array of saved filters."""
     if schemes is None:
@@ -663,23 +786,27 @@ def _check_filter_schemes(schemes: Any, data: Any, errors: list) -> None:
             errors.append(at + " must be an array of filters")
             continue
         for i, p in enumerate(scheme):
-            pat = at + "[%d]" % i
-            if not _is_obj(p):
-                errors.append(pat + " must be an object")
-                continue
-            if not _is_str(p.get("dataRef")) or not _is_obj(data) or p.get("dataRef") not in data:
-                errors.append(pat + ".dataRef has no matching entry in spec.data")
-            if not _is_str(p.get("field")) or not p.get("field"):
-                errors.append(pat + ".field must be a non-empty string")
-            if p.get("values") is not None and not isinstance(p.get("values"), list):
-                errors.append(pat + ".values must be an array")
-            for k in ("min", "max"):
-                v = p.get(k)
-                if v is not None and (isinstance(v, bool) or not isinstance(v, (int, float))
-                                      or v != v or v in (float("inf"), float("-inf"))):
-                    errors.append(pat + ".%s must be a number" % k)
-            if p.get("text") is not None and not _is_str(p.get("text")):
-                errors.append(pat + ".text must be a string")
+            _check_filter_predicate(p, at + "[%d]" % i, data, errors)
+
+
+def _check_filter_predicate(p: Any, pat: str, data: Any, errors: list) -> None:
+    """Validate one saved filter predicate (mirrors ``checkFilterPredicate`` in validateSpec.js)."""
+    if not _is_obj(p):
+        errors.append(pat + " must be an object")
+        return
+    if not _is_str(p.get("dataRef")) or not _is_obj(data) or p.get("dataRef") not in data:
+        errors.append(pat + ".dataRef has no matching entry in spec.data")
+    if not _is_str(p.get("field")) or not p.get("field"):
+        errors.append(pat + ".field must be a non-empty string")
+    if p.get("values") is not None and not isinstance(p.get("values"), list):
+        errors.append(pat + ".values must be an array")
+    for k in ("min", "max"):
+        v = p.get(k)
+        if v is not None and (isinstance(v, bool) or not isinstance(v, (int, float))
+                              or v != v or v in (float("inf"), float("-inf"))):
+            errors.append(pat + ".%s must be a number" % k)
+    if p.get("text") is not None and not _is_str(p.get("text")):
+        errors.append(pat + ".text must be a string")
 
 
 def _check_relationships(relationships: Any, data: Any, errors: list) -> None:

@@ -23,6 +23,8 @@ database) · [live-data controls](docs/live-data-controls.md) ·
 [ask](docs/ask.md) (view-time Q&A of the data, computed not hallucinated) ·
 [reproducibility](docs/reproducibility.md) (provenance method lines + a reproducible bundle: spec, data, R/Python, methods) ·
 [science panels](docs/science-panels.md) (auto-detect survival / oncoprint / Manhattan / volcano / heatmap and suggest the matching panel) ·
+[dashboard from data](docs/dashboard-from-data.md) (a whole linked dashboard from one dataset, with a click-to-load case card: patient cohort, sequencing run QC) ·
+[insights](docs/insights.md) (a strip of fixed, deterministic findings above a dashboard: threshold failures, group differences, outliers — each with its figures) ·
 [ggplot panels](docs/ggplot-panels.md) (build a dashboard from a folder of R/ggplot2 code — converted once to native interactive panels) ·
 [CanvasXpress code panels](docs/code-panels.md) (paste R `canvasXpress` or Python `canvasxpress` code — or build from a folder with `cxd-cx` — converted once to native interactive panels) ·
 [publication figures](docs/figure-composer.md) (compose panels into one multi-panel vector SVG/PDF with A/B/C labels, sized to a journal column at print DPI) ·
@@ -581,17 +583,44 @@ four steps:
    common problems in place.
 3. **Visualize** — the canvasxpress-mcp **chart selector** ranks chart types
    for the columns (structural + column-name scoring; an optional goal sharpens
-   it) and each suggestion is drawn live with your data. The **editorial**
-   theme is preselected. Without the MCP service (`CXD_MCP_*`), the full chart
-   picker is offered instead.
-4. **Publish** — stores the dataset, saves a one-chart dashboard, shares it and
-   shows the link plus the embed codes (see below); open it in the builder to
-   keep editing.
+   it) and each suggestion is drawn live with your data. When the data is a
+   recognised analysis shape (a patient cohort with survival columns, or a
+   sequencing run-QC table) a **whole dashboard** is offered first, above the
+   single charts — see [dashboard from data](docs/dashboard-from-data.md). The
+   **editorial** theme is preselected. Without the MCP service (`CXD_MCP_*`),
+   the full chart picker is offered instead.
+4. **Publish** — stores the dataset, saves a one-chart dashboard (or the
+   linked multi-panel one, if you took the offer), shares it and shows the link
+   plus the embed codes (see below); open it in the builder to keep editing.
 
 API: `POST /api/wizard/suggest {rows, intent?}` →
 `{source: 'mcp'|'none', suggestions: [{graphType, score, reason, config}]}`;
-helpers `tableFromData`, `profileColumns`, `applyDecimalComma`, `wizardSpec`
-(and the existing `transposeCxData`).
+helpers `tableFromData`, `profileColumns`, `applyDecimalComma`, `wizardSpec`,
+`suggestDashboard` and `dashboardSpec` (and the existing `transposeCxData`).
+
+## Storyboards
+
+Add a `storyboard` to a spec for a guided tour: steps that each set the filters, parameters and panel in
+view, with a line of narration and a play / next bar. See [docs/storyboards.md](docs/storyboards.md).
+
+## From R and Python
+
+The same dashboards render natively in both languages, with no server: pass a spec, or hand over a data
+frame and get a whole linked dashboard (the [templates](docs/dashboard-from-data.md) below the wizard use).
+
+```r
+library(canvasXpressDashboards)                     # r/  — an htmlwidget: R Markdown, Quarto, Shiny
+cxdashboard(data = trial, id = "patient")           # or cxdashboard("my-dashboard.spec.json")
+```
+
+```python
+from canvasxpress_dashboards import Dashboard       # python/ — Jupyter, VS Code, Dash, Streamlit, Flask
+Dashboard(data=trial, id="patient")                 # or Dashboard("my-dashboard.spec.json")
+```
+
+Shiny apps get the dashboard's state back (`input$dash_params`, the patient last clicked) and can drive it
+(`cxd_set_param()`); a notebook or Dash page hears the same through `postMessage`. See [`r/`](r/README.md)
+and [`python/`](python/README.md). Both ship the bundle built here and the build keeps their copies in step.
 
 ## Publish & embed a chart (server)
 
@@ -927,11 +956,16 @@ npm run build     # regenerate dist/ (ESM + UMD) from src/
 npm test          # node --test unit + renderer smoke tests
 npm run test:embed  # browser: real server + host page, iframe and <cxd-embed> resize to content
 npm run test:wizard # browser: the data-first wizard end to end (paste → check → suggest → publish)
+npm run test:wizard-dashboard # browser: the whole-dashboard offer end to end (publish, render, filter)
+npm run test:r      # browser: the R wrapper, driven by real R (static pages and a live Shiny app)
+npm run test:python # browser: the Python wrapper, driven by real Python (pages, notebook iframe, Flask, Dash)
+(cd r && Rscript -e 'devtools::test()')   # the R wrapper's unit tests;  (cd python && python -m pytest)  for Python's
 ```
 
-The browser gates (`test:roundtrip`, `test:ui`, `test:embed`, `test:wizard`) need Playwright
+The browser gates (`test:roundtrip`, `test:ui`, `test:embed`, `test:wizard`, `test:wizard-dashboard`, `test:r`, `test:python`) need Playwright
 (`PLAYWRIGHT_MODULE` can point at an installed copy); `test:embed` also needs a
-Python with the server deps (`CXD_PYTHON`) and runs on ports 8899/8898 (`test:wizard`: 8899).
+Python with the server deps (`CXD_PYTHON`) and runs on ports 8899/8898 (`test:wizard`: 8899;
+`test:wizard-dashboard` picks a free port, or `CXD_WIZARD_PORT`).
 
 The source is authored as small ES modules under `src/`; `scripts/build.mjs` is a
 zero-dependency bundler that inlines them into `dist/*.esm.js` and `dist/*.umd.js`.

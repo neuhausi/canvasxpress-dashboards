@@ -160,6 +160,18 @@ test('chartColumns: measures and annotations on the column axis', function () {
 
 import { detectDataShapes, suggestPanelType } from '../src/wizard.js';
 
+test('detectDataShapes: a text-labelled event (Dead / Alive) is not suggested a Kaplan–Meier', function () {
+  // The engine's Kaplan–Meier reads the event from a numeric column; for a text one the curve is
+  // silently wrong (flat steps, p = 1), so the wizard must not offer it.
+  var n = 30, smps = [], time = [], vital = [], arm = [];
+  for (var i = 0; i < n; i++) { smps.push('P' + i); time.push(1 + i); vital.push(i % 2 ? 'Dead' : 'Alive'); arm.push(i % 3 ? 'A' : 'B'); }
+  var textEvent = { y: { vars: ['time'], smps: smps, data: [time] }, x: { vital: vital, arm: arm } };
+  assert.equal(detectDataShapes(textEvent).filter(function (s) { return s.graphType === 'KaplanMeier'; }).length, 0);
+  // The same table with the event coded 0/1 IS a survival table.
+  var numeric = { y: { vars: ['time', 'vital'], smps: smps, data: [time, vital.map(function (v) { return v === 'Dead' ? 1 : 0; })] }, x: { arm: arm } };
+  assert.equal(suggestPanelType(numeric).graphType, 'KaplanMeier');
+});
+
 test('detectDataShapes: survival table (time + binary event) suggests KaplanMeier', function () {
   var surv = {
     y: { vars: ['time', 'status'], smps: ['p1', 'p2', 'p3', 'p4'],

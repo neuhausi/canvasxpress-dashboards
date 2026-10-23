@@ -322,6 +322,10 @@
     .cxd-wizard-card { border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); padding: 6px; cursor: pointer; font-size: 13px; }
     .cxd-wizard-card.cxd-wizard-card--chosen { border-color: var(--cx-ui-accent); box-shadow: var(--cx-shadow-sm); }
     .cxd-wizard-card-host { height: 150px; }
+    .cxd-wizard-offer { margin-bottom: 8px; }
+    .cxd-wizard-minis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+    .cxd-wizard-mini { min-width: 0; font-size: 12px; color: var(--cx-ui-text-muted); }
+    .cxd-wizard-mini-host { height: 110px; }
     .cxd-dbsrc-cols { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; max-height: 150px; overflow-y: auto; font-size: 13px; }
     .cxd-dbsrc-col { font: 13px var(--cx-font-mono); padding: 3px 8px; border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); background-color: var(--cx-ui-surface); color: inherit; cursor: pointer; }
     .cxd-dbsrc-col small { color: var(--cx-ui-text-muted); font-family: var(--cx-font-sans); }
@@ -3167,15 +3171,69 @@
         });
         typeSel.onchange = function () {
           if (!typeSel.value) { suggest(); return; }
+          offerDeclined = true;
           drawCards([{ graphType: typeSel.value, reason: 'You chose this type.', config: { graphType: typeSel.value } }]);
           state.config = CXD.orientConfig({ graphType: typeSel.value }, state.data);
+          state.dashboard = null;
+          Array.prototype.forEach.call(offerHost.children, function (el) { el.classList.remove('cxd-wizard-card--chosen'); });
         };
         body.appendChild(labeled('Chart type', typeSel));
 
+        // A whole-dashboard offer (filters + the panels a recognised data shape calls for),
+        // shown above the single-chart cards; best-effort, never blocks the chart flow.
+        var offer = null;
+        try { offer = CXD.suggestDashboard(state.data); } catch (e) { offer = null; }
+        state.dashboard = null;
+        var offerDeclined = false;
+        var offerHost = document.createElement('div');
+        offerHost.className = 'cxd-wizard-offer';
+        body.appendChild(offerHost);
         var cards = document.createElement('div');
         cards.className = 'cxd-wizard-cards';
         body.appendChild(cards);
         var lastSuggestions = [];
+
+        function chooseDashboard(card) {
+          offerDeclined = false;
+          state.dashboard = offer;
+          card.classList.add('cxd-wizard-card--chosen');
+          Array.prototype.forEach.call(cards.children, function (el) { el.classList.remove('cxd-wizard-card--chosen'); });
+        }
+        function drawDashboardOffer() {
+          offerHost.innerHTML = '';
+          if (!offer) return;
+          var card = document.createElement('div');
+          card.className = 'cxd-wizard-card';
+          card.innerHTML = '<b>' + esc(offer.label) + ' — whole dashboard</b> — <span class="cxd-wizard-note">' + esc(offer.reason) + '</span>';
+          var minis = document.createElement('div');
+          minis.className = 'cxd-wizard-minis';
+          card.appendChild(minis);
+          offer.panels.forEach(function (panel) {
+            var mini = document.createElement('div');
+            mini.className = 'cxd-wizard-mini';
+            minis.appendChild(mini);
+            // The Filters panel and the case card have no chart to preview (the card is a table over
+            // a one-row source, so the whole dataset would misrepresent it).
+            if (!panel.config || panel.card) {
+              mini.textContent = (panel.title || 'Filters') + (panel.fields ? ': ' + panel.fields.join(', ') : '');
+              return;
+            }
+            var label = document.createElement('div');
+            label.textContent = panel.title;
+            mini.appendChild(label);
+            var host = document.createElement('div');
+            host.className = 'cxd-wizard-mini-host';
+            mini.appendChild(host);
+            try {
+              instances.push(new window.CanvasXpress(newCanvas(host, 110), state.data,
+                Object.assign(withTheme(panel.config), { resizable: false, showLegend: false }), {}));
+            } catch (e) { host.textContent = 'Preview unavailable.'; }
+          });
+          // Capture phase, as the chart cards: a click on a preview chart is the chart's own.
+          card.addEventListener('click', function () { chooseDashboard(card); }, true);
+          offerHost.appendChild(card);
+          if (!offerDeclined) chooseDashboard(card);
+        }
 
         function withTheme(config) {
           var c = JSON.parse(JSON.stringify(config || {}));
@@ -3201,6 +3259,9 @@
             // (CanvasXpress stops it there), so the card must see it first.
             card.addEventListener('click', function () {
               state.config = s.config;
+              offerDeclined = true;
+              state.dashboard = null;
+              Array.prototype.forEach.call(offerHost.children, function (el) { el.classList.remove('cxd-wizard-card--chosen'); });
               Array.prototype.forEach.call(cards.children, function (el) { el.classList.remove('cxd-wizard-card--chosen'); });
               card.classList.add('cxd-wizard-card--chosen');
             }, true);
@@ -3214,6 +3275,7 @@
             state.config = suggestions[0].config;
             cards.firstChild.classList.add('cxd-wizard-card--chosen');
           }
+          drawDashboardOffer();
         }
         function fallback(reason) {
           msg.textContent = '';
@@ -3238,7 +3300,7 @@
         intent.onchange = suggest;
         var back = smallButton('Back', stepCheck);
         var next = smallButton('Next: publish', function () {
-          if (!state.config) { msg.textContent = 'Pick a chart first.'; return; }
+          if (!state.config && !state.dashboard) { msg.textContent = 'Pick a chart first.'; return; }
           stepPublish();
         });
         next.className = 'cX-Button cX-Button--primary';
@@ -3251,7 +3313,9 @@
         var msg = frame(3);
         var status = document.createElement('div');
         status.className = 'cxd-wizard-note';
-        status.textContent = 'Saves the data as a dataset, creates a one-chart dashboard, and publishes it (anyone with the link can view).';
+        status.textContent = state.dashboard
+          ? 'Saves the data as a dataset, creates a linked ' + state.dashboard.panels.length + '-panel dashboard, and publishes it (anyone with the link can view).'
+          : 'Saves the data as a dataset, creates a one-chart dashboard, and publishes it (anyone with the link can view).';
         body.appendChild(status);
         var box = document.createElement('div');
         body.appendChild(box);
@@ -3260,12 +3324,14 @@
           publish.disabled = true;
           msg.textContent = '';
           status.textContent = 'Saving the dataset…';
-          var title = state.title || 'Chart';
-          var config = JSON.parse(JSON.stringify(state.config));
+          var title = state.title || (state.dashboard ? state.dashboard.label : 'Chart');
+          var config = state.config ? JSON.parse(JSON.stringify(state.config)) : null;
           var slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'chart';
           client.uploadDataset(state.data, { format: 'cx', title: title }).then(function (dataset) {
-            var spec = CXD.wizardSpec({ id: slug + '-' + Date.now().toString(36), title: title,
-              datasetId: dataset.id, store: dataset.store, config: config });
+            var specId = slug + '-' + Date.now().toString(36);
+            var spec = state.dashboard
+              ? CXD.dashboardSpec(state.dashboard, { id: specId, title: title, datasetId: dataset.id, store: dataset.store })
+              : CXD.wizardSpec({ id: specId, title: title, datasetId: dataset.id, store: dataset.store, config: config, data: state.data });
             if (state.editorial) spec.theme = 'editorial';
             status.textContent = 'Saving the dashboard…';
             return client.save(spec).then(function () {

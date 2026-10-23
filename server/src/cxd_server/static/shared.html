@@ -53,10 +53,20 @@
         var spec = result.spec;
         document.getElementById('message').style.display = 'none';
         if (result.owner) document.getElementById('owner').textContent = 'shared by ' + result.owner;
-        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard').then(function () {
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard').then(function (handle) {
           // The page chrome follows the dashboard's light/dark theme, not only the OS
           document.documentElement.setAttribute('data-cx-ui-theme',
             document.getElementById('dashboard').getAttribute('data-cx-ui-theme') || 'auto');
+          // A storyboard (spec.storyboard) gets its player above the board.
+          if (CanvasXpressDashboards.mountStoryboard && spec.storyboard) {
+            CanvasXpressDashboards.mountStoryboard({ spec: spec, handle: handle, before: document.getElementById('dashboard') });
+          }
+          // Proactive insights (a spec opts in with `insights`): a strip above the board, from fixed,
+          // deterministic checks the server runs over the rows this link's viewer may see.
+          if (CanvasXpressDashboards.mountInsights && spec.insights) {
+            CanvasXpressDashboards.mountInsights({ baseUrl: location.pathname.replace(/\/[^/]*$/, ''), token: token,
+              spec: spec, handle: handle, before: document.getElementById('dashboard') });
+          }
         });
       }).catch(function (err) {
         if (err.status === 401) fail('This dashboard requires you to be logged in to view it.');

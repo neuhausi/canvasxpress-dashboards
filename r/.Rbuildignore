@@ -1,0 +1,4 @@
+^tools$
+^\.Rproj\.user$
+^.*\.Rproj$
+^README\.md$

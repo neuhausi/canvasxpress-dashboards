@@ -11,6 +11,7 @@
  */
 
 import { blankSpec, addPanel, setDataSource, setParam } from './builderModel.js';
+import { shouldTranspose } from './renderDashboard.js';
 // Transpose is the existing join helper (vars <-> smps, x <-> z): transposeCxData in join.js.
 
 /**
@@ -166,9 +167,32 @@ export function applyDecimalComma(data) {
 }
 
 /**
+ * A chart config as a dashboard panel must carry it. {@link orientConfig} sets the
+ * engine's `transposeData` so a chart drawn on its own (the wizard's previews) resolves
+ * its axes; inside a dashboard the renderer already transposes row-per-sample data for
+ * scatter-type panels ({@link shouldTranspose}), so the same flag would flip the data
+ * back — the engine then fails (KaplanMeier) or plots the wrong axes (Scatter2D). The
+ * flag is dropped exactly when the renderer will transpose, and kept for the graph types
+ * the renderer leaves alone (Histogram, Ridgeline, ...). Note the kept flag is not free in a
+ * multi-panel dashboard: the engine transposes the data object in place, and the panels of
+ * one source share it — so a dashboard assembled from several panels must not emit it.
+ * @param {object} config - A CanvasXpress config, as {@link orientConfig} returned it.
+ * @param {object} data - The CanvasXpress data object the panel will be bound to.
+ * @returns {object} A copy of the config fit to publish in a dashboard.
+ * @public
+ */
+export function panelConfigFor(config, data) {
+  var out = JSON.parse(JSON.stringify(config || {}));
+  if (out.transposeData && shouldTranspose({ config: out }, data)) delete out.transposeData;
+  return out;
+}
+
+/**
  * The one-panel dashboard the wizard publishes: a full-width chart bound to
  * the stored dataset.
- * @param {object} opts - `{id, title, datasetId, store?, config}`.
+ * @param {object} opts - `{id, title, datasetId, store?, config, data?}`. `data` (the
+ *   dataset's CanvasXpress data object) lets the config be made dashboard-ready
+ *   ({@link panelConfigFor}); without it the config is published as given.
  * @returns {object} A valid dashboard spec.
  * @public
  */
@@ -182,7 +206,8 @@ export function wizardSpec(opts) {
     id: 'chart',
     title: opts.chartTitle || '',
     dataRef: 'data',
-    config: opts.config || { graphType: 'Bar' },
+    config: opts.data ? panelConfigFor(opts.config || { graphType: 'Bar' }, opts.data)
+      : opts.config || { graphType: 'Bar' },
     x: 0, y: 0, w: cols, h: 14
   });
 }
@@ -412,7 +437,7 @@ export function chartColumns(data) {
 // and its column profile; no DOM, no engine.
 
 // Column-name hints, matched case-insensitively against the whole header.
-var SURVIVAL_TIME_RE = /^(time|t|surv(ival)?|os|pfs|dfs|efs|tte|duration|follow[\s._-]?up|fu|days?|months?|weeks?|years?)$/i;
+var SURVIVAL_TIME_RE = /^(time|t|surv(ival)?|os|pfs|dfs|efs|tte|duration|follow[\s._-]?up|fu|days?|months?|weeks?|years?)$|^(os|pfs|dfs|efs|rfs|dss|ttp)[\s._-]?(time|months?|days?|weeks?|years?|duration)$|^(overall|progression[\s._-]?free|disease[\s._-]?free|event[\s._-]?free|relapse[\s._-]?free)[\s._-]?survival[\s._-]?(time|months?|days?|weeks?|years?)$/i;
 var SURVIVAL_EVENT_RE = /(event|status|dead|death|censor|vital|outcome|relapse|progress|recur)/i;
 var GENOME_CHR_RE = /^(chr(om(osome)?)?)$/i;
 var GENOME_POS_RE = /^(pos(ition)?|bp|loc(ation)?|coord(inate)?|start)$/i;
@@ -482,16 +507,19 @@ function looksLikeEvent(cells) {
  * confidence (0–1); the wizard offers them, it never rewrites silently.
  *
  * Recognises, by column name and value shape:
- *  - survival table → `KaplanMeier` (a time measure + a binary/status event,
- *    optional grouping factor);
+ *  - survival table → `KaplanMeier` (a numeric time measure + a numeric 0/1 event,
+ *    optional grouping factor; a text event such as Dead / Alive is not suggested — the engine's
+ *    curve is wrong for it);
  *  - GWAS summary → `Manhattan` (chromosome + position + p-value);
  *  - differential-expression table → `Volcano` (log-fold-change + p-value);
  *  - alteration matrix → `Oncoprint` (matrix cells are alteration tokens);
  *  - numeric gene×sample matrix → `Heatmap` (clustered expression matrix).
  *
  * @param {object} data - CanvasXpress data object.
- * @returns {Array<{graphType: string, reason: string, confidence: number}>}
+ * @returns {Array<{graphType: string, reason: string, confidence: number, columns?: object}>}
  *   Suggestions, highest confidence first ([] when nothing scientific fits).
+ *   `columns` names the matched fields (the keys of {@link scientificFieldsFor}) for the
+ *   column-driven shapes (KaplanMeier, Manhattan, Volcano).
  * @public
  */
 export function detectDataShapes(data) {
@@ -508,12 +536,16 @@ export function detectDataShapes(data) {
   });
   var suggestions = [];
 
-  // Survival: a time-like numeric column + an event-like column.
+  // Survival: a time-like numeric column + an event-like NUMERIC column. The engine's Kaplan–Meier
+  // reads the event from a numeric measure; a text event (Dead / Alive) is an annotation and draws
+  // a silently wrong curve (flat steps, p = 1), so it is not suggested.
   var timeCol = findHeader(headers, SURVIVAL_TIME_RE);
   var eventCol = findHeader(headers, SURVIVAL_EVENT_RE);
   if (timeCol !== -1 && profile[timeCol].type === 'numeric' && eventCol !== -1 &&
-      eventCol !== timeCol && looksLikeEvent(columnCells(rows, eventCol))) {
+      eventCol !== timeCol && profile[eventCol].type === 'numeric' &&
+      looksLikeEvent(columnCells(rows, eventCol))) {
     suggestions.push({ graphType: 'KaplanMeier', confidence: 0.9,
+      columns: { time: String(headers[timeCol]), event: String(headers[eventCol]) },
       reason: 'Survival table: time column "' + headers[timeCol] + '" + event column "' +
         headers[eventCol] + '".' });
   }
@@ -525,6 +557,7 @@ export function detectDataShapes(data) {
   if (chrCol !== -1 && posCol !== -1 && pCol !== -1 &&
       profile[posCol].type === 'numeric' && profile[pCol].type === 'numeric') {
     suggestions.push({ graphType: 'Manhattan', confidence: 0.9,
+      columns: { chr: String(headers[chrCol]), pos: String(headers[posCol]), p: String(headers[pCol]) },
       reason: 'GWAS summary: chromosome "' + headers[chrCol] + '", position "' +
         headers[posCol] + '", p-value "' + headers[pCol] + '".' });
   }
@@ -534,6 +567,7 @@ export function detectDataShapes(data) {
   if (fcCol !== -1 && pCol !== -1 && fcCol !== pCol &&
       profile[fcCol].type === 'numeric' && profile[pCol].type === 'numeric') {
     suggestions.push({ graphType: 'Volcano', confidence: 0.8,
+      columns: { fc: String(headers[fcCol]), p: String(headers[pCol]) },
       reason: 'Differential expression: fold-change "' + headers[fcCol] + '" + p-value "' +
         headers[pCol] + '".' });
   }

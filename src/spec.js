@@ -85,7 +85,7 @@ var TOP_LEVEL_ORDER = [
   '$schema', 'schemaVersion', 'id', 'title', 'version', 'theme', 'broadcastGroup',
   'background', 'backgroundImage', 'canvasInset', 'width', 'height', 'maxWidth',
   'layout', 'data', 'relationships', 'markingMode', 'panels', 'controls', 'params',
-  'filterSchemes'
+  'filterSchemes', 'insights', 'storyboard'
 ];
 
 /**

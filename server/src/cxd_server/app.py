@@ -40,6 +40,7 @@ from . import billing
 from . import ggplot_convert
 from . import cx_convert
 from . import ask as ask_qa
+from .insights import compute_insights
 from .join import join_data
 from .billing import EntitlementStore, TokenPool
 from .datasets import DatasetStore, reshape_to_cx, filter_cx_data
@@ -1634,6 +1635,25 @@ def create_dashboards_app(
             raise HTTPException(status_code=503, detail="AI is not configured on this server")
         return await run_in_threadpool(_ask_work, request, user, spec_owner, dashboard_id, question)
 
+    # ---- proactive insights: fixed deterministic checks, captions that carry their figures ----
+    @app.get("/api/dashboards/{dashboard_id}/insights")
+    def dashboard_insights(request: Request, dashboard_id: str, owner: Optional[str] = None):
+        """The dashboard's insights (``spec.insights`` opts in). Computed server-side from the data
+        the viewer is allowed to see — no model, no credits; needs only view access."""
+        user = require_user(request)
+        spec_owner = resolve_viewable_owner(user, dashboard_id, owner)
+        spec = store.get_dashboard(spec_owner, dashboard_id)
+        if spec is None:
+            raise HTTPException(status_code=404, detail="No such dashboard")
+        return insights_for(spec, spec_owner, user)
+
+    @app.get("/api/shared/{token}/insights")
+    def shared_insights(request: Request, token: str):
+        """The insights of a shared dashboard, for any viewer of the link (row/column security
+        applies as for the share itself: anonymous unless signed in)."""
+        shared = resolve_shared(request, token)
+        return insights_for(shared["spec"], shared["owner"], request.session.get("user"))
+
     @app.get("/api/dashboards/{dashboard_id}/asks")
     def list_asks(request: Request, dashboard_id: str, owner: Optional[str] = None):
         """The persisted Q&A history for a dashboard (newest first), for anyone
@@ -1679,11 +1699,14 @@ def create_dashboards_app(
         note(request, owner=target, pinned_ask=ask_id, panel=pid)
         return {"panel": pid}
 
-    def _ask_work(request: Request, user: str, spec_owner: str, dashboard_id: str, question: str) -> dict:
-        spec = store.get_dashboard(spec_owner, dashboard_id)
-        if spec is None:
-            raise HTTPException(status_code=404, detail="No such dashboard")
-        viewer = request.session.get("user")
+    def inspectable_sources(spec: dict, spec_owner: str, viewer: Optional[str]) -> dict:
+        """The inline data of every source of a spec that can be inspected server-side, keyed by ref.
+
+        Dataset sources are read from the owner's store with row/column security applied for
+        ``viewer``; a ``join`` is blended server-side (same semantics as the browser) from its
+        resolved inputs. A source that cannot be resolved is left out. Shared by view-time Ask and
+        the proactive insights, so both see exactly the rows the viewer is allowed to see.
+        """
         sources = spec.get("data") or {}
         resolved: dict = {}
 
@@ -1725,6 +1748,29 @@ def create_dashboards_app(
             data = resolve_ref(ref)
             if isinstance(data, dict) and data.get("y"):
                 data_by_ref[ref] = data
+        return data_by_ref
+
+    def insights_for(spec: dict, spec_owner: str, viewer: Optional[str]) -> dict:
+        """The proactive insights of a dashboard: ``{enabled, insights, more, checked}``.
+
+        Opt-in: a spec without an ``insights`` block reports ``enabled: false`` and runs nothing.
+        The checks are deterministic (:mod:`cxd_server.insights`) over the viewer's own view of the
+        data; sources that are narrowed copies of another (a ``pushdown``) are not checked twice.
+        """
+        config = spec.get("insights")
+        if not isinstance(config, dict):
+            return {"enabled": False, "insights": [], "more": 0, "checked": {}}
+        narrowed = [ref for ref, source in (spec.get("data") or {}).items()
+                    if isinstance(source, dict) and source.get("pushdown")]
+        result = compute_insights(inspectable_sources(spec, spec_owner, viewer), config, narrowed=narrowed)
+        result["enabled"] = True
+        return result
+
+    def _ask_work(request: Request, user: str, spec_owner: str, dashboard_id: str, question: str) -> dict:
+        spec = store.get_dashboard(spec_owner, dashboard_id)
+        if spec is None:
+            raise HTTPException(status_code=404, detail="No such dashboard")
+        data_by_ref = inspectable_sources(spec, spec_owner, request.session.get("user"))
         if not data_by_ref:
             raise HTTPException(status_code=422, detail="This dashboard has no inspectable data")
         # Hosted-Cloud AI metering: a view-time ask spends one AI credit. Self-host
@@ -1826,7 +1872,12 @@ def create_dashboards_app(
             if data is not None:
                 data = secured(data, viewer, data_owner, source.get("store"), source.get("id"))
             if data is not None:
-                spec["data"][ref] = {"kind": "inline", "value": data}
+                # Keep what the browser acts on for an inline source (a pushdown, calculated
+                # fields, the row axis ...) so a shared view shows what its owner sees; drop only
+                # what names the stored dataset, which a share link must not reveal.
+                resolved = {k: v for k, v in source.items() if k not in ("kind", "id", "store", "owner")}
+                resolved.update({"kind": "inline", "value": data})
+                spec["data"][ref] = resolved
         if brand:
             apply_brand(spec, brand)
         return {"spec": spec, "owner": shared["owner"], "visibility": shared["visibility"]}

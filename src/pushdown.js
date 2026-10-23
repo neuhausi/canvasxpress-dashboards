@@ -197,7 +197,7 @@ function normalizeMeasure(m) {
  */
 function measure(m, rows, column) {
   if (m.fn === 'count' && !m.column) return rows.length;
-  var values = rows.map(function (row) { return column(m.column)[row]; }).filter(function (v) { return !isMissing(v); });
+  var values = rows.map(function (row) { return column(m.column)[row]; }).filter(function (v) { return !isNullValue(v); });
   if (m.fn === 'count') return values.length;
   if (m.fn === 'count_distinct') {
     var seen = {};
@@ -223,20 +223,20 @@ function measure(m, rows, column) {
  */
 function predicate(op, value) {
   switch (op) {
-    case '=': return value == null ? isMissing : function (v) { return !isMissing(v) && equal(v, value); };
-    case '!=': return value == null ? function (v) { return !isMissing(v); } : function (v) { return !isMissing(v) && !equal(v, value); };
-    case '<': return function (v) { return !isMissing(v) && compare(v, value) < 0; };
-    case '<=': return function (v) { return !isMissing(v) && compare(v, value) <= 0; };
-    case '>': return function (v) { return !isMissing(v) && compare(v, value) > 0; };
-    case '>=': return function (v) { return !isMissing(v) && compare(v, value) >= 0; };
-    case 'in': return function (v) { return !isMissing(v) && list(value).some(function (x) { return equal(v, x); }); };
-    case 'not_in': return function (v) { return !isMissing(v) && !list(value).some(function (x) { return equal(v, x); }); };
+    case '=': return value == null ? isNullValue : function (v) { return !isNullValue(v) && equal(v, value); };
+    case '!=': return value == null ? function (v) { return !isNullValue(v); } : function (v) { return !isNullValue(v) && !equal(v, value); };
+    case '<': return function (v) { return !isNullValue(v) && compare(v, value) < 0; };
+    case '<=': return function (v) { return !isNullValue(v) && compare(v, value) <= 0; };
+    case '>': return function (v) { return !isNullValue(v) && compare(v, value) > 0; };
+    case '>=': return function (v) { return !isNullValue(v) && compare(v, value) >= 0; };
+    case 'in': return function (v) { return !isNullValue(v) && list(value).some(function (x) { return equal(v, x); }); };
+    case 'not_in': return function (v) { return !isNullValue(v) && !list(value).some(function (x) { return equal(v, x); }); };
     case 'between': return function (v) {
       var range = list(value);
-      return !isMissing(v) && compare(v, range[0]) >= 0 && compare(v, range[1]) <= 0;
+      return !isNullValue(v) && compare(v, range[0]) >= 0 && compare(v, range[1]) <= 0;
     };
-    case 'is_null': return isMissing;
-    case 'not_null': return function (v) { return !isMissing(v); };
+    case 'is_null': return isNullValue;
+    case 'not_null': return function (v) { return !isNullValue(v); };
     default: throw new Error('Unknown filter operator "' + op + '"');
   }
 }
@@ -259,8 +259,8 @@ function sortRows(rows, orderBy, outputs, valueOf) {
     for (var k = 0; k < keys.length; k++) {
       var va = valueOf(keys[k].column, a.row);
       var vb = valueOf(keys[k].column, b.row);
-      if (isMissing(va) !== isMissing(vb)) return isMissing(va) ? 1 : -1;   // nulls last
-      if (isMissing(va)) continue;
+      if (isNullValue(va) !== isNullValue(vb)) return isNullValue(va) ? 1 : -1;   // nulls last
+      if (isNullValue(va)) continue;
       var c = compare(va, vb);
       if (c) return keys[k].desc ? -c : c;
     }
@@ -303,7 +303,7 @@ export function rowsToCx(header, rows) {
  * @param {*} v - Cell.
  * @returns {boolean} True when missing.
  */
-function isMissing(v) {
+function isNullValue(v) {
   return v == null || (typeof v === 'number' && isNaN(v));
 }
 

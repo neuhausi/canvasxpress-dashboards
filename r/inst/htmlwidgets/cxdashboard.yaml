@@ -1,0 +1,5 @@
+dependencies:
+  - name: canvasxpress-dashboards
+    version: 0.13.0
+    src: "htmlwidgets/lib/canvasxpress-dashboards"
+    script: canvasxpress-dashboards.umd.js

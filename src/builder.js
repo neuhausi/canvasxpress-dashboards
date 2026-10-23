@@ -98,7 +98,7 @@ function isMeasureColumn(bodyRows, col) {
   for (var i = 0; i < bodyRows.length; i++) {
     var cell = bodyRows[i][col];
     if (isBlank(cell)) continue;
-    if (isNumeric(cell)) { sawNumber = true; } else { return false; }
+    if (isNumericText(cell)) { sawNumber = true; } else { return false; }
   }
   return sawNumber;
 }
@@ -161,7 +161,7 @@ function parseCsv(text) {
  * @returns {boolean} True when numeric.
  * @private
  */
-function isNumeric(value) {
+function isNumericText(value) {
   if (value == null) return false;
   var trimmed = String(value).trim();
   if (trimmed === '') return false;
@@ -236,6 +236,7 @@ export function createBuilder(target, options) {
   var canAuthorFunctions = false;     // may this user write / edit data functions?
   var addFiltersBtn = null; // same rule as addControlBtn
   var linksBtn = null;      // disabled until there are two data sources to link
+  var storyboardBtn = null; // the guided tour editor (spec.storyboard)
   var fieldsBtn = null;     // disabled until there is a (non-live) data source
   var shapeBtn = null;      // same rule as fieldsBtn
   var addTransformBtn = null;     // disabled until a graph panel (one bound to data) exists to transform
@@ -364,6 +365,9 @@ export function createBuilder(target, options) {
     // "Links": how a selection in one panel marks the related rows of panels
     // built on other sources (spec.relationships + spec.markingMode).
     linksBtn = iconButton('links', 'Links', function () { doEditLinks(); }, 'cxb-bt-data');
+    // "Storyboard": a guided tour of saved views, each step a snapshot of the live filters and
+    // parameters plus a line of narration (spec.storyboard).
+    storyboardBtn = iconButton('storyboard', 'Storyboard', function () { doEditStoryboard(); }, 'cxb-bt-data');
     // "ƒx Fields": calculated fields computed once on a source, so every panel,
     // filter, join and link on it can use them (data.<ref>.calculatedFields).
     fieldsBtn = iconButton('fields', 'Fields', function () { doEditFields(); }, 'cxb-bt-data');
@@ -398,7 +402,7 @@ export function createBuilder(target, options) {
       [addControlBtn, addFiltersBtn, addFdrBtn, addSignificanceBtn], updateAddPanelState);
     // Data: prepare the data first (calculated fields, shaping, a transform), then
     // relate and compute across sources.
-    var dataItems = [fieldsBtn, shapeBtn, addTransformBtn, linksBtn, addFunctionBtn];
+    var dataItems = [fieldsBtn, shapeBtn, addTransformBtn, linksBtn, storyboardBtn, addFunctionBtn];
     if (showAddData) dataItems.push(iconButton('database', 'Data source', function () { doAddDataSource(); }, 'cxb-bt-data'));
     var dataMenu = toolbarMenu('Data', 'cxb-bt-data', dataItems, updateAddPanelState);
     // Left: identity + history. Middle: the three menus. Right: utilities + Save
@@ -1299,6 +1303,35 @@ export function createBuilder(target, options) {
       commit(next, false);
       rebuild();
       setMsg(describeLinkCount(next));
+    });
+  }
+
+  /**
+   * "Storyboard": edit the guided tour. The dialog can snapshot the live view (the filters and
+   * parameters as they are on screen right now) as a step; applying writes `spec.storyboard`
+   * (a spec-only change, so no rebuild).
+   * @returns {void}
+   * @private
+   */
+  function doEditStoryboard() {
+    var doc = container.ownerDocument || document;
+    var current = rawSpec();
+    var live = {
+      filters: liveHandle && typeof liveHandle.getFilterState === 'function' ? liveHandle.getFilterState() : [],
+      params: liveHandle && typeof liveHandle.getParams === 'function' ? liveHandle.getParams() : {}
+    };
+    openStoryboardDialog(doc, current, live).then(function (edited) {
+      if (!edited) return;
+      var next = rawSpec();
+      if (edited.steps.length) {
+        next.storyboard = { steps: edited.steps };
+        if (edited.title) next.storyboard.title = edited.title;
+        if (current.storyboard && current.storyboard.seconds) next.storyboard.seconds = current.storyboard.seconds;
+      } else {
+        delete next.storyboard;
+      }
+      commit(next, false);
+      setMsg(edited.steps.length ? 'Storyboard: ' + edited.steps.length + (edited.steps.length === 1 ? ' step' : ' steps') : 'Storyboard removed');
     });
   }
 
@@ -4233,6 +4266,9 @@ export function createBuilder(target, options) {
           }
           merged[k] = live[k];
         }
+        // A self-contained panel (ggplot / cxcode: its spec travels in `panel.spec`) has no authored
+        // config; with nothing captured, writing `{}` back would change a spec that was not edited.
+        if (!spec.panels[id].config && !Object.keys(merged).length) return;
         spec = updatePanel(spec, id, { config: merged });
       } catch (e) { /* keep going */ }
     });
@@ -4777,6 +4813,7 @@ var TOOLBAR_ICONS = {
   transform: '<path d="M3 12c3-8 6-8 9 0s6 8 9 0"/>',
   percent: '<path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.2"/><circle cx="17" cy="17" r="2.2"/>',
   significance: '<path d="M12 4v10M7.5 6.5l9 5M16.5 6.5l-9 5"/><path d="M5 20v-3h14v3"/>',
+  storyboard: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4.5-2.5z"/>',
   links: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   fields: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',
   table: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/>',
@@ -5664,6 +5701,132 @@ function openLinksDialog(doc, spec, dataOf) {
 
     append(modal, [heading, intro, field('When you select marks', modeSel), field('Links', list),
       field('Link this source and key', leftRow), field('to this source and key', rightRow), linkBtn, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+
+    /**
+     * Close the dialog with a result.
+     * @param {*} result - Resolution value.
+     * @returns {void}
+     */
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
+ * What a storyboard step applies, as one line ("filters: 2 · case = P007 · focus: case").
+ * @param {object} step - A storyboard step.
+ * @returns {string} The summary.
+ * @private
+ */
+function describeStoryStep(step) {
+  var parts = [];
+  if (step.scheme) parts.push('filters: scheme "' + step.scheme + '"');
+  else if (step.filters && step.filters.length) parts.push('filters: ' + step.filters.length);
+  else parts.push('no filters');
+  Object.keys(step.params || {}).forEach(function (name) { parts.push(name + ' = ' + step.params[name]); });
+  if (step.focus) parts.push('focus: ' + step.focus);
+  return parts.join(' · ');
+}
+
+/**
+ * The "Storyboard" dialog: the steps of a guided tour (title, narration, what each applies), each
+ * reorderable and removable, and "+ Step from the current view" to snapshot the live filters and
+ * parameters. Edits apply to a working copy.
+ * @param {Document} doc - The owning document.
+ * @param {object} spec - The current spec (not modified).
+ * @param {{filters: object[], params: object}} live - The live view to snapshot.
+ * @returns {Promise<?{title: string, steps: object[]}>} The new storyboard, or null when cancelled.
+ * @private
+ */
+function openStoryboardDialog(doc, spec, live) {
+  var board = spec.storyboard || {};
+  var steps = JSON.parse(JSON.stringify(board.steps || []));
+  var changed = null;
+  return new Promise(function (resolve) {
+    var overlay = modalOverlay();
+    var modal = el('div', 'cxb-modal');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Storyboard';
+    var intro = el('p', 'cxb-links-intro');
+    intro.textContent = 'A guided tour of this dashboard. Set the filters and parameters you want to show, then ' +
+      'add a step from the current view and write what it shows. Every step is the whole view, so going back works.';
+    var titleInput = el('input');
+    titleInput.type = 'text';
+    titleInput.value = board.title || '';
+    titleInput.setAttribute('placeholder', 'Tour title (optional)');
+    var list = el('div', 'cxb-links-list');
+    var focusSel = selectField([''].concat(Object.keys(spec.panels || {})), '', function () {});
+    var errEl = el('div', 'cxb-modal-err');
+
+    /**
+     * Redraw the steps.
+     * @returns {void}
+     */
+    function renderList() {
+      list.innerHTML = '';
+      if (!steps.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = 'No steps yet.';
+        list.appendChild(none);
+      }
+      steps.forEach(function (step, i) {
+        var row = el('div', 'cxb-links-row cxb-story-row');
+        var body = el('span');
+        var title = el('input');
+        title.type = 'text';
+        title.value = step.title || '';
+        title.setAttribute('placeholder', 'Step ' + (i + 1) + ' title');
+        on(title, 'input', function () { if (title.value) step.title = title.value; else delete step.title; });
+        var text = el('textarea');
+        text.value = step.narration || '';
+        text.setAttribute('rows', '2');
+        text.setAttribute('placeholder', 'What this step shows');
+        on(text, 'input', function () { if (text.value) step.narration = text.value; else delete step.narration; });
+        var what = el('span', 'cxb-links-none');
+        what.textContent = describeStoryStep(step);
+        append(body, [title, text, what]);
+        var up = button('↑', function () { if (i > 0) { steps.splice(i - 1, 0, steps.splice(i, 1)[0]); renderList(); } });
+        var down = button('↓', function () { if (i < steps.length - 1) { steps.splice(i + 1, 0, steps.splice(i, 1)[0]); renderList(); } });
+        var remove = button('×', function () { steps.splice(i, 1); renderList(); });
+        up.setAttribute('title', 'Move up');
+        down.setAttribute('title', 'Move down');
+        remove.setAttribute('title', 'Remove this step');
+        remove.setAttribute('aria-label', 'Remove step ' + (i + 1));
+        append(row, [body, up, down, remove]);
+        list.appendChild(row);
+      });
+    }
+    renderList();
+
+    var addBtn = button('+ Step from the current view', function () {
+      var step = { title: 'Step ' + (steps.length + 1) };
+      var given = {};
+      Object.keys(live.params || {}).forEach(function (name) {
+        var def = (spec.params || {})[name];
+        var dflt = def && typeof def === 'object' ? def.value : def;
+        if (live.params[name] !== dflt) given[name] = live.params[name];
+      });
+      if (Object.keys(given).length) step.params = given;
+      if (live.filters && live.filters.length) step.filters = JSON.parse(JSON.stringify(live.filters));
+      if (focusSel.value) step.focus = focusSel.value;
+      steps.push(step);
+      renderList();
+    });
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var applyBtn = button('Apply', function () {
+      changed = { title: titleInput.value.trim(), steps: steps };
+      close(changed);
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, applyBtn]);
+    append(modal, [heading, intro, field('Title', titleInput), field('Steps', list),
+      field('Bring this panel into view (for the next step)', focusSel), addBtn, errEl, footer]);
     overlay.appendChild(modal);
     on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
     (doc.body || doc.documentElement).appendChild(overlay);

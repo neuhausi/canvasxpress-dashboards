@@ -1,4 +1,4 @@
-div.wrap [210,0 980x2874] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto; padding=40px 24px 64px 24px
+div.wrap [210,0 980x4358] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto; padding=40px 24px 64px 24px
 div.wrap>nav.cxd-topnav [234,40 932x48] font-size=13.5px; border=1px / solid / rgb(42, 47, 54); radius=10px; padding=8px 14px 8px 14px; bg=rgb(27, 30, 36)
 div.wrap>nav.cxd-topnav>span.cxd-brand:1 [249,56 173x16] color=rgb(138, 144, 153)
 div.wrap>nav.cxd-topnav>span.cxd-brand:1>b [342,56 80x16] color=rgb(230, 232, 236); font-weight=700
@@ -21,218 +21,394 @@ div.wrap>div.cards:2>a.card>div.tags:2>span.tag:1 [253,549 36x17] color=rgb(138,
 div.wrap>div.cards:2>a.card>div.tags:2>span.tag:2 [295,549 62x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
 div.wrap>div.cards:2>a.card>div.tags:2>span.tag:3 [364,549 72x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
 div.wrap>h2:2 [234,619 932x18] color=rgb(138, 144, 153); font-size=15px; font-weight=700
-div.wrap>div.cards:3 [234,651 932x2084] 
-div.wrap>div.cards:3>a.card:1 [234,651 300x299] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3 [234,651 932x3568] 
+div.wrap>div.cards:3>a.card:1 [234,651 300x338] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
 div.wrap>div.cards:3>a.card:1>div.ic:1 [253,670 262x34] font-size=26px
 div.wrap>div.cards:3>a.card:1>h3 [253,714 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:1>h3>span [323,714 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:1>p [253,738 262x163] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:1>p>b:1 [368,740 81x16] font-weight=700
-div.wrap>div.cards:3>a.card:1>p>code [258,761 89x15] font-family=monospace
-div.wrap>div.cards:3>a.card:1>p>b:2 [253,822 62x16] font-weight=700
-div.wrap>div.cards:3>a.card:1>div.tags:2 [253,913 262x17] 
-div.wrap>div.cards:3>a.card:1>div.tags:2>span.tag:1 [253,913 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:1>div.tags:2>span.tag:2 [293,913 70x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:1>div.tags:2>span.tag:3 [370,913 35x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:1>div.tags:2>span.tag:4 [410,913 96x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:2 [550,651 300x299] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:1>h3>span [416,714 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:1>p [253,738 262x183] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:1>p>b:1 [253,740 248x16] font-weight=700
+div.wrap>div.cards:3>a.card:1>p>b:2 [281,760 112x16] font-weight=700
+div.wrap>div.cards:3>a.card:1>p>b:3 [253,780 241x36] font-weight=700
+div.wrap>div.cards:3>a.card:1>p>code [253,822 89x15] font-family=monospace
+div.wrap>div.cards:3>a.card:1>div.tags:2 [253,933 262x17] 
+div.wrap>div.cards:3>a.card:1>div.tags:2>span.tag:1 [253,933 39x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:1>div.tags:2>span.tag:2 [298,933 43x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:1>div.tags:2>span.tag:3 [347,933 66x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:1>div.tags:2>span.tag:4 [419,933 41x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:2 [550,651 300x338] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
 div.wrap>div.cards:3>a.card:2>div.ic:1 [569,670 262x34] font-size=26px
 div.wrap>div.cards:3>a.card:2>h3 [569,714 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:2>h3>span [666,714 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:2>p [569,738 262x142] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:2>p>b:1 [569,760 110x16] font-weight=700
-div.wrap>div.cards:3>a.card:2>p>b:2 [683,800 49x16] font-weight=700
-div.wrap>div.cards:3>a.card:2>p>b:3 [569,841 40x16] font-weight=700
-div.wrap>div.cards:3>a.card:2>p>b:4 [735,841 24x16] font-weight=700
-div.wrap>div.cards:3>a.card:2>div.tags:2 [569,891 262x40] 
-div.wrap>div.cards:3>a.card:2>div.tags:2>span.tag:1 [569,891 107x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:2>div.tags:2>span.tag:2 [682,891 72x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:2>div.tags:2>span.tag:3 [569,914 86x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:2>div.tags:2>span.tag:4 [661,914 35x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:3 [866,651 300x299] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:2>h3>span [782,714 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:2>p [569,738 262x205] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:2>p>b:1 [569,740 232x36] font-weight=700
+div.wrap>div.cards:3>a.card:2>p>b:2 [672,760 112x16] font-weight=700
+div.wrap>div.cards:3>a.card:2>p>b:3 [710,780 28x16] font-weight=700
+div.wrap>div.cards:3>a.card:2>p>code:1 [569,801 89x15] font-family=monospace
+div.wrap>div.cards:3>a.card:2>p>b:4 [754,800 23x16] font-weight=700
+div.wrap>div.cards:3>a.card:2>p>code:2 [596,823 122x15] font-family=monospace
+div.wrap>div.cards:3>a.card:2>div.tags:2 [569,954 262x17] 
+div.wrap>div.cards:3>a.card:2>div.tags:2>span.tag:1 [569,954 39x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:2>div.tags:2>span.tag:2 [614,954 71x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:2>div.tags:2>span.tag:3 [691,954 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:2>div.tags:2>span.tag:4 [732,954 43x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:3 [866,651 300x338] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
 div.wrap>div.cards:3>a.card:3>div.ic:1 [885,670 262x34] font-size=26px
 div.wrap>div.cards:3>a.card:3>h3 [885,714 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:3>h3>span [1011,714 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:3>p [885,738 262x143] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:3>p>b:1 [1013,760 41x16] font-weight=700
-div.wrap>div.cards:3>a.card:3>p>code [885,781 81x15] font-family=monospace
-div.wrap>div.cards:3>a.card:3>p>b:2 [1032,780 47x16] font-weight=700
-div.wrap>div.cards:3>a.card:3>p>b:3 [1050,801 82x16] font-weight=700
-div.wrap>div.cards:3>a.card:3>p>b:4 [1038,822 102x16] font-weight=700
-div.wrap>div.cards:3>a.card:3>div.tags:2 [885,892 262x40] 
-div.wrap>div.cards:3>a.card:3>div.tags:2>span.tag:1 [885,892 35x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:3>div.tags:2>span.tag:2 [926,892 86x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:3>div.tags:2>span.tag:3 [1018,892 82x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:3>div.tags:2>span.tag:4 [885,915 70x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:3>div.tags:2>span.tag:5 [961,915 58x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:4 [234,965 300x300] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:4>div.ic:1 [253,984 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:4>h3 [253,1028 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:4>h3>span [388,1028 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:4>p [253,1052 262x144] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:4>p>b [409,1095 38x16] font-weight=700
-div.wrap>div.cards:3>a.card:4>p>code:1 [344,1157 105x15] font-family=monospace
-div.wrap>div.cards:3>a.card:4>p>code:2 [299,1178 97x15] font-family=monospace
-div.wrap>div.cards:3>a.card:4>div.tags:2 [253,1208 262x40] 
-div.wrap>div.cards:3>a.card:4>div.tags:2>span.tag:1 [253,1208 56x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:4>div.tags:2>span.tag:2 [315,1208 77x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:4>div.tags:2>span.tag:3 [398,1208 46x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:4>div.tags:2>span.tag:4 [253,1231 94x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:5 [550,965 300x300] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:5>div.ic:1 [569,984 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:5>h3 [569,1028 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:5>h3>span [771,1028 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:5>p [569,1052 262x124] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:5>p>code:1 [631,1055 89x15] font-family=monospace
-div.wrap>div.cards:3>a.card:5>p>code:2 [569,1158 122x15] font-family=monospace
-div.wrap>div.cards:3>a.card:5>div.tags:2 [569,1188 262x17] 
-div.wrap>div.cards:3>a.card:5>div.tags:2>span.tag:1 [569,1188 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:5>div.tags:2>span.tag:2 [609,1188 91x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:5>div.tags:2>span.tag:3 [706,1188 45x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:5>div.tags:2>span.tag:4 [757,1188 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:6 [866,965 300x300] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:6>div.ic:1 [885,984 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:6>h3 [885,1028 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:6>h3>span [1090,1028 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:6>p [885,1052 262x82] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:6>p>code [947,1055 89x15] font-family=monospace
-div.wrap>div.cards:3>a.card:6>div.tags:2 [885,1146 262x17] 
-div.wrap>div.cards:3>a.card:6>div.tags:2>span.tag:1 [885,1146 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:6>div.tags:2>span.tag:2 [925,1146 91x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:6>div.tags:2>span.tag:3 [1022,1146 45x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:6>div.tags:2>span.tag:4 [1073,1146 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:7 [234,1281 300x233] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:7>div.ic:1 [253,1300 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:7>h3 [253,1344 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:7>h3>span [454,1344 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:7>p [253,1368 262x62] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:7>p>code [315,1371 89x15] font-family=monospace
-div.wrap>div.cards:3>a.card:7>div.tags:2 [253,1442 262x17] 
-div.wrap>div.cards:3>a.card:7>div.tags:2>span.tag:1 [253,1442 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:7>div.tags:2>span.tag:2 [293,1442 91x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:7>div.tags:2>span.tag:3 [390,1442 45x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:8 [550,1281 300x233] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:8>div.ic:1 [569,1300 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:8>h3 [569,1344 262x36] font-weight=700
-div.wrap>div.cards:3>a.card:8>h3>span [569,1362 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:8>p [569,1386 262x82] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:8>p>code [631,1389 113x15] font-family=monospace
-div.wrap>div.cards:3>a.card:8>div.tags:2 [569,1480 262x17] 
-div.wrap>div.cards:3>a.card:8>div.tags:2>span.tag:1 [569,1480 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:8>div.tags:2>span.tag:2 [609,1480 91x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:8>div.tags:2>span.tag:3 [706,1480 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:9 [866,1281 300x233] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:9>div.ic:1 [885,1300 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:9>h3 [885,1344 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:9>h3>span [1110,1344 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:9>p [885,1368 262x82] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:9>p>code [947,1371 73x15] font-family=monospace
-div.wrap>div.cards:3>a.card:9>div.tags:2 [885,1462 262x17] 
-div.wrap>div.cards:3>a.card:9>div.tags:2>span.tag:1 [885,1462 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:9>div.tags:2>span.tag:2 [925,1462 91x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:9>div.tags:2>span.tag:3 [1022,1462 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:9>div.tags:2>span.tag:4 [1062,1462 43x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:10 [234,1530 300x363] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:10>div.ic:1 [253,1549 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:10>h3 [253,1593 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:10>h3>span [375,1593 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:10>p [253,1617 262x142] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:10>div.tags:2 [253,1771 262x17] 
-div.wrap>div.cards:3>a.card:10>div.tags:2>span.tag:1 [253,1771 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:10>div.tags:2>span.tag:2 [313,1771 35x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:10>div.tags:2>span.tag:3 [354,1771 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:10>div.tags:2>span.tag:4 [394,1771 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:10>span.open-builder [253,1800 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:11 [550,1530 300x363] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:11>div.ic:1 [569,1549 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:11>h3 [569,1593 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:11>h3>span [710,1593 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:11>p [569,1617 262x142] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:11>div.tags:2 [569,1771 262x17] 
-div.wrap>div.cards:3>a.card:11>div.tags:2>span.tag:1 [569,1771 57x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:11>div.tags:2>span.tag:2 [632,1771 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:11>div.tags:2>span.tag:3 [692,1771 63x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:11>div.tags:2>span.tag:4 [761,1771 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:11>span.open-builder [569,1800 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:12 [866,1530 300x363] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:12>div.ic:1 [885,1549 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:12>h3 [885,1593 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:12>h3>span [1101,1593 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:12>p [885,1617 262x162] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:12>div.tags:2 [885,1791 262x40] 
-div.wrap>div.cards:3>a.card:12>div.tags:2>span.tag:1 [885,1791 69x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:12>div.tags:2>span.tag:2 [960,1791 63x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:12>div.tags:2>span.tag:3 [1029,1791 58x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:12>div.tags:2>span.tag:4 [885,1814 88x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:12>span.open-builder [885,1843 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:13 [234,1909 300x320] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:13>div.ic:1 [253,1928 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:13>h3 [253,1972 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:13>h3>span [375,1972 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:13>p [253,1996 262x81] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:13>div.tags:2 [253,2089 262x17] 
-div.wrap>div.cards:3>a.card:13>div.tags:2>span.tag:1 [253,2089 72x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:13>div.tags:2>span.tag:2 [331,2089 71x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:13>span.open-builder [253,2118 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:14 [550,1909 300x320] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:14>div.ic:1 [569,1928 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:14>h3 [569,1972 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:14>h3>span [676,1972 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:14>p [569,1996 262x101] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:14>div.tags:2 [569,2109 262x17] 
-div.wrap>div.cards:3>a.card:14>div.tags:2>span.tag:1 [569,2109 72x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:14>div.tags:2>span.tag:2 [647,2109 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:14>span.open-builder [569,2138 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:15 [866,1909 300x320] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:15>div.ic:1 [885,1928 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:15>h3 [885,1972 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:15>h3>span [1086,1972 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:15>p [885,1996 262x142] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:15>div.tags:2 [885,2150 262x17] 
-div.wrap>div.cards:3>a.card:15>div.tags:2>span.tag:1 [885,2150 41x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:15>div.tags:2>span.tag:2 [932,2150 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:15>div.tags:2>span.tag:3 [991,2150 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:15>div.tags:2>span.tag:4 [1052,2150 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:15>span.open-builder [885,2179 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:16 [234,2245 300x259] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:16>div.ic:1 [253,2264 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:16>h3 [253,2308 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:16>h3>span [334,2308 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:16>p [253,2332 262x103] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:16>p>code:1 [258,2375 178x15] font-family=monospace
-div.wrap>div.cards:3>a.card:16>p>code:2 [253,2397 73x15] font-family=monospace
-div.wrap>div.cards:3>a.card:16>div.tags:2 [253,2447 262x40] 
-div.wrap>div.cards:3>a.card:16>div.tags:2>span.tag:1 [253,2447 66x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:16>div.tags:2>span.tag:2 [325,2447 46x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:16>div.tags:2>span.tag:3 [377,2447 71x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:16>div.tags:2>span.tag:4 [253,2470 76x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:17 [550,2245 300x259] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:17>div.ic:1 [569,2264 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:17>h3 [569,2308 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:17>h3>span [714,2308 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:17>p [569,2332 262x123] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:17>p>code [569,2396 243x15] font-family=monospace
-div.wrap>div.cards:3>a.card:17>div.tags:2 [569,2466 262x17] 
-div.wrap>div.cards:3>a.card:17>div.tags:2>span.tag:1 [569,2466 66x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:17>div.tags:2>span.tag:2 [641,2466 78x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:17>div.tags:2>span.tag:3 [725,2466 76x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:18 [866,2245 300x259] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:18>div.ic:1 [885,2264 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:18>h3 [885,2308 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:18>h3>span [1044,2308 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:18>p [885,2332 262x101] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:18>div.tags:2 [885,2445 262x17] 
-div.wrap>div.cards:3>a.card:18>div.tags:2>span.tag:1 [885,2445 69x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:18>div.tags:2>span.tag:2 [960,2445 99x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>div.cards:3>a.card:19 [234,2520 300x214] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
-div.wrap>div.cards:3>a.card:19>div.ic:1 [253,2539 262x34] font-size=26px
-div.wrap>div.cards:3>a.card:19>h3 [253,2583 262x18] font-weight=700
-div.wrap>div.cards:3>a.card:19>h3>span [381,2583 15x18] color=rgb(138, 153, 255)
-div.wrap>div.cards:3>a.card:19>p [253,2607 262x81] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
-div.wrap>div.cards:3>a.card:19>div.tags:2 [253,2700 262x17] 
-div.wrap>div.cards:3>a.card:19>div.tags:2>span.tag [253,2700 44x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
-div.wrap>footer [234,2778 932x32] color=rgb(138, 144, 153); font-size=13px
-div.wrap>footer>code:1 [304,2778 143x17] font-family=monospace; radius=4px; padding=1px 5px 1px 5px; bg=rgb(42, 47, 54)
-div.wrap>footer>code:2 [471,2778 143x17] font-family=monospace; radius=4px; padding=1px 5px 1px 5px; bg=rgb(42, 47, 54)
-div.wrap>footer>code:3 [826,2778 166x17] font-family=monospace; radius=4px; padding=1px 5px 1px 5px; bg=rgb(42, 47, 54)
-div.wrap>footer>code:4 [345,2794 18x17] font-family=monospace; radius=4px; padding=1px 5px 1px 5px; bg=rgb(42, 47, 54)
+div.wrap>div.cards:3>a.card:3>h3>span [998,714 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:3>p [885,738 262x184] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:3>p>b:1 [885,740 240x16] font-weight=700
+div.wrap>div.cards:3>a.card:3>p>code:1 [1007,801 130x15] font-family=monospace
+div.wrap>div.cards:3>a.card:3>p>b:2 [1001,822 120x16] font-weight=700
+div.wrap>div.cards:3>a.card:3>p>code:2 [1065,883 81x15] font-family=monospace
+div.wrap>div.cards:3>a.card:3>div.tags:2 [885,934 262x17] 
+div.wrap>div.cards:3>a.card:3>div.tags:2>span.tag:1 [885,934 58x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:3>div.tags:2>span.tag:2 [949,934 24x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:3>div.tags:2>span.tag:3 [979,934 75x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:3>div.tags:2>span.tag:4 [1060,934 62x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:4 [234,1004 300x340] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:4>div.ic:1 [253,1023 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:4>h3 [253,1067 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:4>h3>span [471,1067 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:4>p [253,1091 262x207] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:4>p>b:1 [253,1093 256x36] font-weight=700
+div.wrap>div.cards:3>a.card:4>p>b:2 [454,1113 52x16] font-weight=700
+div.wrap>div.cards:3>a.card:4>p>code:1 [335,1135 97x15] font-family=monospace
+div.wrap>div.cards:3>a.card:4>p>code:2 [339,1156 97x15] font-family=monospace
+div.wrap>div.cards:3>a.card:4>p>b:3 [253,1196 238x36] font-weight=700
+div.wrap>div.cards:3>a.card:4>p>b:4 [379,1237 55x16] font-weight=700
+div.wrap>div.cards:3>a.card:4>p>code:3 [391,1258 81x15] font-family=monospace
+div.wrap>div.cards:3>a.card:4>p>code:4 [253,1279 49x15] font-family=monospace
+div.wrap>div.cards:3>a.card:4>div.tags:2 [253,1310 262x17] 
+div.wrap>div.cards:3>a.card:4>div.tags:2>span.tag:1 [253,1310 58x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:4>div.tags:2>span.tag:2 [317,1310 91x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:4>div.tags:2>span.tag:3 [415,1310 24x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:4>div.tags:2>span.tag:4 [444,1310 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:5 [550,1004 300x340] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:5>div.ic:1 [569,1023 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:5>h3 [569,1067 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:5>h3>span [665,1067 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:5>p [569,1091 262x143] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:5>p>b:1 [569,1093 89x16] font-weight=700
+div.wrap>div.cards:3>a.card:5>p>b:2 [683,1113 46x16] font-weight=700
+div.wrap>div.cards:3>a.card:5>p>code [569,1135 162x15] font-family=monospace
+div.wrap>div.cards:3>a.card:5>p>b:3 [728,1155 47x16] font-weight=700
+div.wrap>div.cards:3>a.card:5>p>b:4 [569,1195 243x36] font-weight=700
+div.wrap>div.cards:3>a.card:5>div.tags:2 [569,1246 262x40] 
+div.wrap>div.cards:3>a.card:5>div.tags:2>span.tag:1 [569,1246 76x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:5>div.tags:2>span.tag:2 [651,1246 86x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:5>div.tags:2>span.tag:3 [743,1246 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:5>div.tags:2>span.tag:4 [569,1269 62x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:6 [866,1004 300x340] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:6>div.ic:1 [885,1023 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:6>h3 [885,1067 262x36] font-weight=700
+div.wrap>div.cards:3>a.card:6>h3>span [974,1085 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:6>p [885,1109 262x143] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:6>p>code [950,1112 162x15] font-family=monospace
+div.wrap>div.cards:3>a.card:6>p>b:1 [956,1132 62x16] font-weight=700
+div.wrap>div.cards:3>a.card:6>p>b:2 [1088,1193 59x16] font-weight=700
+div.wrap>div.cards:3>a.card:6>div.tags:2 [885,1264 262x40] 
+div.wrap>div.cards:3>a.card:6>div.tags:2>span.tag:1 [885,1264 76x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:6>div.tags:2>span.tag:2 [967,1264 69x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:6>div.tags:2>span.tag:3 [1042,1264 63x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:6>div.tags:2>span.tag:4 [885,1287 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:7 [234,1360 300x296] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:7>div.ic:1 [253,1379 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:7>h3 [253,1423 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:7>h3>span [478,1423 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:7>p [253,1447 262x123] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:7>p>code [253,1490 186x15] font-family=monospace
+div.wrap>div.cards:3>a.card:7>p>b [277,1510 54x16] font-weight=700
+div.wrap>div.cards:3>a.card:7>div.tags:2 [253,1581 262x17] 
+div.wrap>div.cards:3>a.card:7>div.tags:2>span.tag:1 [253,1581 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:7>div.tags:2>span.tag:2 [319,1581 63x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:7>div.tags:2>span.tag:3 [388,1581 86x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:8 [550,1360 300x296] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:8>div.ic:1 [569,1379 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:8>h3 [569,1423 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:8>h3>span [769,1423 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:8>p [569,1447 262x123] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:8>p>code [569,1470 154x15] font-family=monospace
+div.wrap>div.cards:3>a.card:8>p>b [569,1490 73x16] font-weight=700
+div.wrap>div.cards:3>a.card:8>div.tags:2 [569,1581 262x17] 
+div.wrap>div.cards:3>a.card:8>div.tags:2>span.tag:1 [569,1581 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:8>div.tags:2>span.tag:2 [635,1581 47x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:8>div.tags:2>span.tag:3 [688,1581 86x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:9 [866,1360 300x296] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:9>div.ic:1 [885,1379 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:9>h3 [885,1423 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:9>h3>span [955,1423 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:9>p [885,1447 262x163] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:9>p>b:1 [1000,1449 81x16] font-weight=700
+div.wrap>div.cards:3>a.card:9>p>code [890,1470 89x15] font-family=monospace
+div.wrap>div.cards:3>a.card:9>p>b:2 [885,1531 62x16] font-weight=700
+div.wrap>div.cards:3>a.card:9>div.tags:2 [885,1622 262x17] 
+div.wrap>div.cards:3>a.card:9>div.tags:2>span.tag:1 [885,1622 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:9>div.tags:2>span.tag:2 [925,1622 70x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:9>div.tags:2>span.tag:3 [1002,1622 35x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:9>div.tags:2>span.tag:4 [1042,1622 96x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:10 [234,1672 300x300] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:10>div.ic:1 [253,1691 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:10>h3 [253,1735 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:10>h3>span [350,1735 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:10>p [253,1759 262x142] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:10>p>b:1 [253,1781 110x16] font-weight=700
+div.wrap>div.cards:3>a.card:10>p>b:2 [367,1821 49x16] font-weight=700
+div.wrap>div.cards:3>a.card:10>p>b:3 [253,1862 40x16] font-weight=700
+div.wrap>div.cards:3>a.card:10>p>b:4 [419,1862 24x16] font-weight=700
+div.wrap>div.cards:3>a.card:10>div.tags:2 [253,1912 262x40] 
+div.wrap>div.cards:3>a.card:10>div.tags:2>span.tag:1 [253,1912 107x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:10>div.tags:2>span.tag:2 [366,1912 72x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:10>div.tags:2>span.tag:3 [253,1935 86x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:10>div.tags:2>span.tag:4 [345,1935 35x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:11 [550,1672 300x300] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:11>div.ic:1 [569,1691 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:11>h3 [569,1735 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:11>h3>span [695,1735 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:11>p [569,1759 262x143] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:11>p>b:1 [697,1781 41x16] font-weight=700
+div.wrap>div.cards:3>a.card:11>p>code [569,1802 81x15] font-family=monospace
+div.wrap>div.cards:3>a.card:11>p>b:2 [716,1801 47x16] font-weight=700
+div.wrap>div.cards:3>a.card:11>p>b:3 [734,1822 82x16] font-weight=700
+div.wrap>div.cards:3>a.card:11>p>b:4 [722,1843 102x16] font-weight=700
+div.wrap>div.cards:3>a.card:11>div.tags:2 [569,1913 262x40] 
+div.wrap>div.cards:3>a.card:11>div.tags:2>span.tag:1 [569,1913 35x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:11>div.tags:2>span.tag:2 [610,1913 86x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:11>div.tags:2>span.tag:3 [702,1913 82x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:11>div.tags:2>span.tag:4 [569,1936 70x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:11>div.tags:2>span.tag:5 [645,1936 58x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:12 [866,1672 300x300] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:12>div.ic:1 [885,1691 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:12>h3 [885,1735 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:12>h3>span [1020,1735 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:12>p [885,1759 262x144] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:12>p>b [1041,1801 38x16] font-weight=700
+div.wrap>div.cards:3>a.card:12>p>code:1 [976,1863 105x15] font-family=monospace
+div.wrap>div.cards:3>a.card:12>p>code:2 [931,1884 97x15] font-family=monospace
+div.wrap>div.cards:3>a.card:12>div.tags:2 [885,1914 262x40] 
+div.wrap>div.cards:3>a.card:12>div.tags:2>span.tag:1 [885,1914 56x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:12>div.tags:2>span.tag:2 [947,1914 77x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:12>div.tags:2>span.tag:3 [1030,1914 46x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:12>div.tags:2>span.tag:4 [885,1937 94x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:13 [234,1987 300x257] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:13>div.ic:1 [253,2006 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:13>h3 [253,2050 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:13>h3>span [455,2050 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:13>p [253,2074 262x124] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:13>p>code:1 [315,2077 89x15] font-family=monospace
+div.wrap>div.cards:3>a.card:13>p>code:2 [253,2180 122x15] font-family=monospace
+div.wrap>div.cards:3>a.card:13>div.tags:2 [253,2210 262x17] 
+div.wrap>div.cards:3>a.card:13>div.tags:2>span.tag:1 [253,2210 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:13>div.tags:2>span.tag:2 [293,2210 91x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:13>div.tags:2>span.tag:3 [390,2210 45x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:13>div.tags:2>span.tag:4 [441,2210 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:14 [550,1987 300x257] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:14>div.ic:1 [569,2006 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:14>h3 [569,2050 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:14>h3>span [774,2050 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:14>p [569,2074 262x82] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:14>p>code [631,2077 89x15] font-family=monospace
+div.wrap>div.cards:3>a.card:14>div.tags:2 [569,2168 262x17] 
+div.wrap>div.cards:3>a.card:14>div.tags:2>span.tag:1 [569,2168 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:14>div.tags:2>span.tag:2 [609,2168 91x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:14>div.tags:2>span.tag:3 [706,2168 45x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:14>div.tags:2>span.tag:4 [757,2168 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:15 [866,1987 300x257] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:15>div.ic:1 [885,2006 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:15>h3 [885,2050 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:15>h3>span [1086,2050 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:15>p [885,2074 262x62] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:15>p>code [947,2077 89x15] font-family=monospace
+div.wrap>div.cards:3>a.card:15>div.tags:2 [885,2148 262x17] 
+div.wrap>div.cards:3>a.card:15>div.tags:2>span.tag:1 [885,2148 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:15>div.tags:2>span.tag:2 [925,2148 91x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:15>div.tags:2>span.tag:3 [1022,2148 45x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:16 [234,2260 300x320] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:16>div.ic:1 [253,2279 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:16>h3 [253,2323 262x36] font-weight=700
+div.wrap>div.cards:3>a.card:16>h3>span [253,2341 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:16>p [253,2365 262x82] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:16>p>code [315,2368 113x15] font-family=monospace
+div.wrap>div.cards:3>a.card:16>div.tags:2 [253,2459 262x17] 
+div.wrap>div.cards:3>a.card:16>div.tags:2>span.tag:1 [253,2459 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:16>div.tags:2>span.tag:2 [293,2459 91x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:16>div.tags:2>span.tag:3 [390,2459 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:17 [550,2260 300x320] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:17>div.ic:1 [569,2279 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:17>h3 [569,2323 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:17>h3>span [794,2323 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:17>p [569,2347 262x82] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:17>p>code [631,2350 73x15] font-family=monospace
+div.wrap>div.cards:3>a.card:17>div.tags:2 [569,2441 262x17] 
+div.wrap>div.cards:3>a.card:17>div.tags:2>span.tag:1 [569,2441 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:17>div.tags:2>span.tag:2 [609,2441 91x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:17>div.tags:2>span.tag:3 [706,2441 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:17>div.tags:2>span.tag:4 [746,2441 43x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:18 [866,2260 300x320] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:18>div.ic:1 [885,2279 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:18>h3 [885,2323 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:18>h3>span [1007,2323 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:18>p [885,2347 262x142] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:18>div.tags:2 [885,2501 262x17] 
+div.wrap>div.cards:3>a.card:18>div.tags:2>span.tag:1 [885,2501 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:18>div.tags:2>span.tag:2 [945,2501 35x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:18>div.tags:2>span.tag:3 [986,2501 34x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:18>div.tags:2>span.tag:4 [1026,2501 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:18>span.open-builder [885,2530 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:19 [234,2596 300x363] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:19>div.ic:1 [253,2615 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:19>h3 [253,2659 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:19>h3>span [394,2659 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:19>p [253,2683 262x142] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:19>div.tags:2 [253,2836 262x17] 
+div.wrap>div.cards:3>a.card:19>div.tags:2>span.tag:1 [253,2836 57x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:19>div.tags:2>span.tag:2 [316,2836 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:19>div.tags:2>span.tag:3 [376,2836 63x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:19>div.tags:2>span.tag:4 [445,2836 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:19>span.open-builder [253,2865 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:20 [550,2596 300x363] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:20>div.ic:1 [569,2615 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:20>h3 [569,2659 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:20>h3>span [785,2659 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:20>p [569,2683 262x162] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:20>div.tags:2 [569,2857 262x40] 
+div.wrap>div.cards:3>a.card:20>div.tags:2>span.tag:1 [569,2857 69x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:20>div.tags:2>span.tag:2 [644,2857 63x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:20>div.tags:2>span.tag:3 [713,2857 58x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:20>div.tags:2>span.tag:4 [569,2880 88x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:20>span.open-builder [569,2909 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:21 [866,2596 300x363] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:21>div.ic:1 [885,2615 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:21>h3 [885,2659 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:21>h3>span [1009,2659 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:21>p [885,2683 262x142] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:21>div.tags:2 [885,2836 262x17] 
+div.wrap>div.cards:3>a.card:21>div.tags:2>span.tag:1 [885,2836 58x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:21>div.tags:2>span.tag:2 [949,2836 88x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:21>div.tags:2>span.tag:3 [1042,2836 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:21>span.open-builder [885,2865 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:22 [234,2975 300x321] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:22>div.ic:1 [253,2994 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:22>h3 [253,3038 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:22>h3>span [414,3038 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:22>p [253,3062 262x122] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:22>div.tags:2 [253,3195 262x17] 
+div.wrap>div.cards:3>a.card:22>div.tags:2>span.tag:1 [253,3195 69x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:22>div.tags:2>span.tag:2 [328,3195 68x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:22>div.tags:2>span.tag:3 [402,3195 64x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:22>span.open-builder [253,3224 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:23 [550,2975 300x321] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:23>div.ic:1 [569,2994 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:23>h3 [569,3038 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:23>h3>span [711,3038 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:23>p [569,3062 262x122] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:23>div.tags:2 [569,3195 262x17] 
+div.wrap>div.cards:3>a.card:23>div.tags:2>span.tag:1 [569,3195 69x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:23>div.tags:2>span.tag:2 [644,3195 65x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:23>div.tags:2>span.tag:3 [715,3195 76x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:23>span.open-builder [569,3224 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:24 [866,2975 300x321] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:24>div.ic:1 [885,2994 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:24>h3 [885,3038 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:24>h3>span [1047,3038 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:24>p [885,3062 262x143] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:24>p>code:1 [885,3146 49x15] font-family=monospace
+div.wrap>div.cards:3>a.card:24>p>code:2 [938,3146 65x15] font-family=monospace
+div.wrap>div.cards:3>a.card:24>div.tags:2 [885,3216 262x17] 
+div.wrap>div.cards:3>a.card:24>div.tags:2>span.tag:1 [885,3216 69x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:24>div.tags:2>span.tag:2 [960,3216 78x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:24>div.tags:2>span.tag:3 [1043,3216 65x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:24>span.open-builder [885,3245 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:25 [234,3311 300x300] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:25>div.ic:1 [253,3330 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:25>h3 [253,3374 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:25>h3>span [356,3374 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:25>p [253,3398 262x122] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:25>div.tags:2 [253,3532 262x17] 
+div.wrap>div.cards:3>a.card:25>div.tags:2>span.tag:1 [253,3532 69x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:25>div.tags:2>span.tag:2 [328,3532 33x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:25>div.tags:2>span.tag:3 [367,3532 66x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:25>span.open-builder [253,3561 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:26 [550,3311 300x300] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:26>div.ic:1 [569,3330 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:26>h3 [569,3374 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:26>h3>span [691,3374 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:26>p [569,3398 262x81] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:26>div.tags:2 [569,3491 262x17] 
+div.wrap>div.cards:3>a.card:26>div.tags:2>span.tag:1 [569,3491 72x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:26>div.tags:2>span.tag:2 [647,3491 71x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:26>span.open-builder [569,3520 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:27 [866,3311 300x300] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:27>div.ic:1 [885,3330 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:27>h3 [885,3374 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:27>h3>span [992,3374 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:27>p [885,3398 262x101] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:27>div.tags:2 [885,3512 262x17] 
+div.wrap>div.cards:3>a.card:27>div.tags:2>span.tag:1 [885,3512 72x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:27>div.tags:2>span.tag:2 [963,3512 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:27>span.open-builder [885,3541 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:28 [234,3627 300x320] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:28>div.ic:1 [253,3646 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:28>h3 [253,3690 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:28>h3>span [455,3690 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:28>p [253,3714 262x142] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:28>p>b:1 [253,3736 79x16] font-weight=700
+div.wrap>div.cards:3>a.card:28>p>b:2 [315,3777 135x16] font-weight=700
+div.wrap>div.cards:3>a.card:28>div.tags:2 [253,3868 262x17] 
+div.wrap>div.cards:3>a.card:28>div.tags:2>span.tag:1 [253,3868 80x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:28>div.tags:2>span.tag:2 [339,3868 94x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:28>div.tags:2>span.tag:3 [439,3868 51x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:28>span.open-builder [253,3897 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:29 [550,3627 300x320] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:29>div.ic:1 [569,3646 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:29>h3 [569,3690 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:29>h3>span [770,3690 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:29>p [569,3714 262x142] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:29>div.tags:2 [569,3868 262x17] 
+div.wrap>div.cards:3>a.card:29>div.tags:2>span.tag:1 [569,3868 41x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:29>div.tags:2>span.tag:2 [616,3868 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:29>div.tags:2>span.tag:3 [675,3868 54x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:29>div.tags:2>span.tag:4 [736,3868 60x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:29>span.open-builder [569,3897 135x33] color=rgb(138, 153, 255); font-size=12.5px; font-weight=600; border=1px / solid / rgba(123, 140, 255, 0.2); radius=6px; padding=5px 10px 5px 10px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:30 [866,3627 300x320] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:30>div.ic:1 [885,3646 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:30>h3 [885,3690 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:30>h3>span [966,3690 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:30>p [885,3714 262x103] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:30>p>code:1 [890,3757 178x15] font-family=monospace
+div.wrap>div.cards:3>a.card:30>p>code:2 [885,3779 73x15] font-family=monospace
+div.wrap>div.cards:3>a.card:30>div.tags:2 [885,3829 262x40] 
+div.wrap>div.cards:3>a.card:30>div.tags:2>span.tag:1 [885,3829 66x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:30>div.tags:2>span.tag:2 [957,3829 46x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:30>div.tags:2>span.tag:3 [1009,3829 71x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:30>div.tags:2>span.tag:4 [885,3852 76x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:31 [234,3963 300x256] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:31>div.ic:1 [253,3982 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:31>h3 [253,4026 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:31>h3>span [398,4026 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:31>p [253,4050 262x123] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:31>p>code [253,4113 243x15] font-family=monospace
+div.wrap>div.cards:3>a.card:31>div.tags:2 [253,4184 262x17] 
+div.wrap>div.cards:3>a.card:31>div.tags:2>span.tag:1 [253,4184 66x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:31>div.tags:2>span.tag:2 [325,4184 78x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:31>div.tags:2>span.tag:3 [409,4184 76x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:32 [550,3963 300x256] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:32>div.ic:1 [569,3982 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:32>h3 [569,4026 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:32>h3>span [728,4026 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:32>p [569,4050 262x101] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:32>div.tags:2 [569,4163 262x17] 
+div.wrap>div.cards:3>a.card:32>div.tags:2>span.tag:1 [569,4163 69x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:32>div.tags:2>span.tag:2 [644,4163 99x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>div.cards:3>a.card:33 [866,3963 300x256] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=18px 18px 16px 18px; bg=rgb(27, 30, 36)
+div.wrap>div.cards:3>a.card:33>div.ic:1 [885,3982 262x34] font-size=26px
+div.wrap>div.cards:3>a.card:33>h3 [885,4026 262x18] font-weight=700
+div.wrap>div.cards:3>a.card:33>h3>span [1013,4026 15x18] color=rgb(138, 153, 255)
+div.wrap>div.cards:3>a.card:33>p [885,4050 262x81] color=rgb(138, 144, 153); font-size=13.5px; line-height=20.25px
+div.wrap>div.cards:3>a.card:33>div.tags:2 [885,4143 262x17] 
+div.wrap>div.cards:3>a.card:33>div.tags:2>span.tag [885,4143 44x17] color=rgb(138, 153, 255); font-size=11.5px; radius=99px; padding=2px 8px 2px 8px; bg=rgba(123, 140, 255, 0.2)
+div.wrap>footer [234,4262 932x32] color=rgb(138, 144, 153); font-size=13px
+div.wrap>footer>code:1 [304,4262 143x17] font-family=monospace; radius=4px; padding=1px 5px 1px 5px; bg=rgb(42, 47, 54)
+div.wrap>footer>code:2 [471,4262 143x17] font-family=monospace; radius=4px; padding=1px 5px 1px 5px; bg=rgb(42, 47, 54)
+div.wrap>footer>code:3 [826,4262 166x17] font-family=monospace; radius=4px; padding=1px 5px 1px 5px; bg=rgb(42, 47, 54)
+div.wrap>footer>code:4 [345,4278 18x17] font-family=monospace; radius=4px; padding=1px 5px 1px 5px; bg=rgb(42, 47, 54)

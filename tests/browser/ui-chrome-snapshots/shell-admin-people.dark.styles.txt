@@ -1,4 +1,4 @@
-div.app [0,0 1400x1309] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto
+div.app [0,0 1400x1307] color=rgb(230, 232, 236); font-family=system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif; font-size=16px; font-weight=400; font-style=normal; line-height=normal; accent-color=auto
 div.app>aside.rail [0,0 220x900] border=0px 1px 0px 0px / none solid none none / rgb(230, 232, 236) rgb(42, 47, 54) rgb(230, 232, 236) rgb(230, 232, 236); padding=14px 10px 14px 10px; bg=rgb(27, 30, 36)
 div.app>aside.rail>a.brand [10,14 199x54] padding=6px 8px 16px 8px
 div.app>aside.rail>a.brand>img [18,20 32x32] 
@@ -26,17 +26,17 @@ div#rail-foot [10,839 199x47] color=rgb(138, 144, 153); border=1px 0px 0px 0px /
 span#rail-avatar [18,850 26x26] color=rgb(14, 16, 19); font-size=14px; font-weight=700; radius=50%; bg=rgb(138, 153, 255)
 span#rail-user [54,854 84x18] 
 a#rail-auth [148,855 53x17] font-size=14px
-div.app>main.content [220,0 1180x1309] 
+div.app>main.content [220,0 1180x1307] 
 div.app>main.content>div.topstrip:1 [220,0 1180x102] border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(42, 47, 54) rgb(230, 232, 236); padding=10px 20px 10px 20px; bg=rgb(27, 30, 36)
 div#toolbar [240,42 1140x18] 
 div#toolbar>h2.view-title [240,42 1140x18] font-weight=600
-div#view [220,102 1180x1207] padding=16px 20px 32px 20px
+div#view [220,102 1180x1205] padding=16px 20px 32px 20px
 div#view>div.admin-tabs:1 [240,118 1140x36] border=0px 0px 1px 0px / none none solid none / rgb(230, 232, 236) rgb(230, 232, 236) rgb(42, 47, 54) rgb(230, 232, 236)
 div#view>div.admin-tabs:1>button.active.admin-tab:1 [240,118 182x36] color=rgb(138, 153, 255); font-size=15px; font-weight=600; border=0px 0px 2px 0px / none none solid none / rgb(138, 153, 255); padding=8px 14px 8px 14px
 div#view>div.admin-tabs:1>button.admin-tab:2 [426,118 84x36] color=rgb(138, 144, 153); font-size=15px; font-weight=600; border=0px 0px 2px 0px / none none solid none / rgb(138, 144, 153) rgb(138, 144, 153) rgba(0, 0, 0, 0) rgb(138, 144, 153); padding=8px 14px 8px 14px
 div#view>div.admin-tabs:1>button.admin-tab:3 [514,118 152x36] color=rgb(138, 144, 153); font-size=15px; font-weight=600; border=0px 0px 2px 0px / none none solid none / rgb(138, 144, 153) rgb(138, 144, 153) rgba(0, 0, 0, 0) rgb(138, 144, 153); padding=8px 14px 8px 14px
 div#view>div.admin-tabs:1>button.admin-tab:4 [670,118 92x36] color=rgb(138, 144, 153); font-size=15px; font-weight=600; border=0px 0px 2px 0px / none none solid none / rgb(138, 144, 153) rgb(138, 144, 153) rgba(0, 0, 0, 0) rgb(138, 144, 153); padding=8px 14px 8px 14px
-div#view>div.admin-pane:2 [240,170 1140x1107] 
+div#view>div.admin-pane:2 [240,170 1140x1105] 
 div#view>div.admin-pane:2>h3:1 [240,170 1140x22] font-size=18.72px; font-weight=700
 div#view>div.admin-pane:2>div.settings:1 [240,200 1140x250] 
 div#view>div.admin-pane:2>div.settings:1>div.settings-form:1 [240,200 280x250] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=10px; bg=rgb(27, 30, 36)
@@ -59,10 +59,10 @@ div#admin-users>div.data-item:1>span [1085,232 63x17] color=rgb(138, 144, 153); 
 div#admin-users>div.data-item:1>button.cX-Button:1 [1158,227 65x27] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=4px 8px 4px 8px; bg=rgb(27, 30, 36)
 div#admin-users>div.data-item:1>button.cX-Button:2 [1233,227 123x27] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=4px 8px 4px 8px; bg=rgb(27, 30, 36)
 div#admin-users>div.data-item:2 [551,280 818x76] border=1px / solid / rgb(42, 47, 54); radius=6px; padding=10px 12px 10px 12px
-div#admin-users>div.data-item:2>div [564,291 223x54] 
-div#admin-users>div.data-item:2>div>div.data-item-title:1 [564,291 223x18] font-weight=600
-div#admin-users>div.data-item:2>div>div.data-item-meta:2 [564,311 223x34] color=rgb(138, 144, 153); font-size=14px
-div#admin-users>div.data-item:2>select [797,305 173x26] color=rgb(255, 255, 255); font-family=Arial; font-size=14px; border=1px / solid / rgb(133, 133, 133); padding=3px 4px 3px 4px; bg=rgb(59, 59, 59)
+div#admin-users>div.data-item:2>div [564,291 217x54] 
+div#admin-users>div.data-item:2>div>div.data-item-title:1 [564,291 217x18] font-weight=600
+div#admin-users>div.data-item:2>div>div.data-item-meta:2 [564,311 217x34] color=rgb(138, 144, 153); font-size=14px
+div#admin-users>div.data-item:2>select [791,306 179x24] color=rgb(255, 255, 255); font-family=Arial; font-size=14px; border=1px / solid / rgb(133, 133, 133); padding=3px 28px 3px 6px; bg=rgb(59, 59, 59); background-image=linear-gradient(45deg, rgba(0, 0, 0, 0) 40%, rgb(255, 255, 255) 40%, rgb(255, 255, 255) 60%, rgba(0, 0, 0, 0) 60%), linear-gradient(-45deg, rgba(0, 0, 0, 0) 40%, rgb(255, 255, 255) 40%, rgb(255, 255, 255) 60%, rgba(0, 0, 0, 0) 60%)
 div#admin-users>div.data-item:2>button.cX-Button:1 [980,305 97x27] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=4px 8px 4px 8px; bg=rgb(27, 30, 36)
 div#admin-users>div.data-item:2>button.cX-Button:2 [1087,305 65x27] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=4px 8px 4px 8px; bg=rgb(27, 30, 36)
 div#admin-users>div.data-item:2>button.cX-Button:3 [1162,305 123x27] font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=4px 8px 4px 8px; bg=rgb(27, 30, 36)
@@ -105,24 +105,24 @@ div#gov-roles>div.data-item:3>button.cX-Button:1 [1234,724 48x25] font-size=14px
 div#gov-roles>div.data-item:3>button.cX-Button:2 [1291,724 65x25] color=rgb(240, 113, 103); font-size=14px; font-weight=500; line-height=16.8px; border=1px / solid / rgb(58, 65, 76); radius=6px; padding=3px 10px 3px 10px; bg=rgb(27, 30, 36)
 div#view>div.admin-pane:2>h3:3 [240,840 1140x22] font-size=18.72px; font-weight=700
 div#view>div.admin-pane:2>p:2 [240,866 1140x17] color=rgb(138, 144, 153); font-size=14px
-div#view>div.admin-pane:2>div.settings:4 [240,891 1140x386] 
-div#view>div.admin-pane:2>div.settings:4>div.settings-form:1 [240,891 280x386] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=10px; bg=rgb(27, 30, 36)
+div#view>div.admin-pane:2>div.settings:4 [240,891 1140x384] 
+div#view>div.admin-pane:2>div.settings:4>div.settings-form:1 [240,891 280x384] border=1px / solid / rgb(42, 47, 54); radius=10px; padding=10px; bg=rgb(27, 30, 36)
 h3#group-form-title [251,902 258x18] font-weight=700
 div#view>div.admin-pane:2>div.settings:4>div.settings-form:1>label:1 [251,936 258x52] color=rgb(138, 144, 153); font-size=14px; font-weight=700
 input#group-name [251,957 258x31] font-weight=400; border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 8px 6px 8px; bg=rgb(27, 30, 36)
 div#view>div.admin-pane:2>div.settings:4>div.settings-form:1>label:2 [251,1000 258x52] color=rgb(138, 144, 153); font-size=14px; font-weight=700
 input#group-desc [251,1021 258x31] font-weight=400; border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 8px 6px 8px; bg=rgb(27, 30, 36)
-div#view>div.admin-pane:2>div.settings:4>div.settings-form:1>label:3 [251,1064 258x54] color=rgb(138, 144, 153); font-size=14px; font-weight=700
-select#group-role [251,1085 258x33] font-weight=400; border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 8px 6px 8px; bg=rgb(27, 30, 36)
-div#view>div.admin-pane:2>div.settings:4>div.settings-form:1>div:1 [251,1136 258x17] font-size=14px
-div#group-members [251,1167 258x39] font-size=14px
-div#group-members>label:1 [251,1167 258x18] 
-div#group-members>label:1>input [251,1169 16x16] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(107, 114, 128); radius=4px; bg=rgb(27, 30, 36)
-div#group-members>label:1>span [275,1167 30x17] 
-div#group-members>label:2 [251,1188 258x18] 
-div#group-members>label:2>input [251,1190 16x16] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(107, 114, 128); radius=4px; bg=rgb(27, 30, 36)
-div#group-members>label:2>span [275,1188 25x17] 
-button#group-save [251,1228 258x38] color=rgb(14, 16, 19); font-family=Arial; font-weight=600; radius=6px; padding=10px 18px 10px 18px; bg=rgb(138, 153, 255)
+div#view>div.admin-pane:2>div.settings:4>div.settings-form:1>label:3 [251,1064 258x52] color=rgb(138, 144, 153); font-size=14px; font-weight=700
+select#group-role [251,1085 258x31] font-weight=400; border=1px / solid / rgb(42, 47, 54); radius=6px; padding=6px 30px 6px 8px; bg=rgb(27, 30, 36); background-image=linear-gradient(45deg, rgba(0, 0, 0, 0) 40%, rgb(138, 144, 153) 40%, rgb(138, 144, 153) 60%, rgba(0, 0, 0, 0) 60%), linear-gradient(-45deg, rgba(0, 0, 0, 0) 40%, rgb(138, 144, 153) 40%, rgb(138, 144, 153) 60%, rgba(0, 0, 0, 0) 60%)
+div#view>div.admin-pane:2>div.settings:4>div.settings-form:1>div:1 [251,1134 258x17] font-size=14px
+div#group-members [251,1165 258x39] font-size=14px
+div#group-members>label:1 [251,1165 258x18] 
+div#group-members>label:1>input [251,1167 16x16] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(107, 114, 128); radius=4px; bg=rgb(27, 30, 36)
+div#group-members>label:1>span [275,1165 30x17] 
+div#group-members>label:2 [251,1186 258x18] 
+div#group-members>label:2>input [251,1188 16x16] color=rgb(255, 255, 255); font-family=Arial; font-size=13.3333px; border=1px / solid / rgb(107, 114, 128); radius=4px; bg=rgb(27, 30, 36)
+div#group-members>label:2>span [275,1186 25x17] 
+button#group-save [251,1226 258x38] color=rgb(14, 16, 19); font-family=Arial; font-weight=600; radius=6px; padding=10px 18px 10px 18px; bg=rgb(138, 153, 255)
 div#view>div.admin-pane:2>div.settings:4>div.settings-preview:2 [540,891 840x166] 
 div#view>div.admin-pane:2>div.settings:4>div.settings-preview:2>div.data-list [540,891 840x166] border=1px / solid / rgb(42, 47, 54); radius=10px; bg=rgb(27, 30, 36)
 div#gov-groups [541,902 838x144] 

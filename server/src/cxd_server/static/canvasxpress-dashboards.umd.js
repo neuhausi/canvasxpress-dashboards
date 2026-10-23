@@ -171,6 +171,38 @@ var dashboardCss = [
   '.cxd-comments-send { align-self: flex-end; padding: 5px 14px; border: none; border-radius: var(--cx-radius-md);',
   '  background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent); font: 600 12.5px/1.4 var(--cxd-font); cursor: pointer; }',
   '.cxd-comments-send:disabled { opacity: .5; cursor: default; }',
+  /* Proactive insights: a strip of captions above the dashboard, each with the figures behind it. */
+  '.cxd-storyboard { margin: 0 0 12px; padding: 10px 14px; background: var(--cxd-panel-bg); border: 1px solid var(--cxd-border);',
+  '  border-radius: var(--cx-radius-md); font-family: var(--cxd-font); position: sticky; top: 0; z-index: var(--cx-z-raised); }',
+  '.cxd-sb-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }',
+  '.cxd-sb-btn { min-width: 28px; height: 28px; padding: 0 8px; background: var(--cxd-ctrl-bg); color: var(--cxd-muted);',
+  '  border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-md); cursor: pointer; font: inherit; }',
+  '.cxd-sb-btn:disabled { opacity: 0.4; cursor: default; }',
+  '.cxd-sb-count { color: var(--cxd-muted); font-size: 12px; }',
+  '.cxd-sb-title { font-weight: 600; }',
+  '.cxd-sb-dots { display: inline-flex; gap: 6px; margin-left: auto; }',
+  '.cxd-sb-dot { width: 10px; height: 10px; padding: 0; border: 1px solid var(--cxd-muted); border-radius: var(--cx-radius-pill);',
+  '  background: transparent; cursor: pointer; }',
+  '.cxd-sb-dot--on { background: var(--cx-ui-accent-strong); border-color: var(--cx-ui-accent-strong); }',
+  '.cxd-sb-text { margin: 8px 0 0; line-height: 1.5; }',
+  '.cxd-insights { margin: 0 0 12px; padding: 10px 14px; background: var(--cxd-panel-bg); border: 1px solid var(--cxd-border);',
+  '  border-radius: var(--cx-radius-md); font: 13px/1.5 var(--cxd-font); color: inherit; }',
+  '.cxd-insights-head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; }',
+  '.cxd-insights-title { font-weight: 600; }',
+  '.cxd-insights-note { color: var(--cxd-muted); font-size: 12px; }',
+  '.cxd-insights-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }',
+  '.cxd-insight { display: flex; gap: 8px; align-items: flex-start; }',
+  '.cxd-insight-dot { flex: 0 0 auto; width: 8px; height: 8px; margin-top: 7px; border-radius: var(--cx-radius-pill); background: var(--cx-ui-accent); }',
+  '.cxd-insight--warn .cxd-insight-dot { background: var(--cxd-error); }',
+  '.cxd-insight-body { min-width: 0; }',
+  '.cxd-insight-ids { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 6px; vertical-align: baseline; }',
+  '.cxd-insight-id { padding: 0 8px; border: 1px solid var(--cxd-border); border-radius: var(--cx-radius-pill); background: var(--cxd-title-bg);',
+  '  color: inherit; font: 600 12px/1.6 var(--cxd-font); cursor: pointer; }',
+  '.cxd-insight-id:hover { background: var(--cx-ui-accent); color: var(--cx-ui-on-accent); border-color: var(--cx-ui-accent); }',
+  '.cxd-insight-id:focus { outline: 2px solid var(--cx-ui-focus); outline-offset: 1px; }',
+  '.cxd-insight details { margin-top: 2px; color: var(--cxd-muted); font-size: 12px; }',
+  '.cxd-insight summary { cursor: pointer; }',
+  '.cxd-insight-figures { margin: 4px 0 0; white-space: pre-wrap; font: 12px/1.5 var(--cx-font-mono, ui-monospace, monospace); }',
   /* View-time Q&A: the "Ask" toggle + popover. */
   '.cxd-ask-toggle { position: fixed; left: 150px; bottom: var(--cxd-pill-bottom, 16px); z-index: var(--cx-z-modal);',
   '  display: inline-flex; align-items: center; gap: 7px;',
@@ -696,6 +728,9 @@ var dashboardCss = [
   '  background: var(--cx-ui-surface-sunken); font-size: 14px; }',
   '.cxb-links-row span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }',
   '.cxb-links-none { font-size: 13px; color: var(--cxd-muted); }',
+  '.cxb-story-row { align-items: flex-start; }',
+  '.cxb-story-row > span { display: flex; flex-direction: column; gap: 4px; }',
+  '.cxb-story-row input, .cxb-story-row textarea { width: 100%; box-sizing: border-box; font: inherit; }',
   '.cxb-modal .cxb-links-pick { display: flex; gap: 6px; align-items: center; width: 100%; }',
   // Selects keep a readable width next to a text box (which takes the rest).
   '.cxb-modal .cxb-links-pick select { width: auto; min-width: 120px; flex: 1 1 0; }',
@@ -809,7 +844,7 @@ var TOP_LEVEL_ORDER = [
   '$schema', 'schemaVersion', 'id', 'title', 'version', 'theme', 'broadcastGroup',
   'background', 'backgroundImage', 'canvasInset', 'width', 'height', 'maxWidth',
   'layout', 'data', 'relationships', 'markingMode', 'panels', 'controls', 'params',
-  'filterSchemes'
+  'filterSchemes', 'insights', 'storyboard'
 ];
 
 /**
@@ -1958,7 +1993,7 @@ function normalizeMeasure(m) {
  */
 function measure(m, rows, column) {
   if (m.fn === 'count' && !m.column) return rows.length;
-  var values = rows.map(function (row) { return column(m.column)[row]; }).filter(function (v) { return !isMissing(v); });
+  var values = rows.map(function (row) { return column(m.column)[row]; }).filter(function (v) { return !isNullValue(v); });
   if (m.fn === 'count') return values.length;
   if (m.fn === 'count_distinct') {
     var seen = {};
@@ -1984,20 +2019,20 @@ function measure(m, rows, column) {
  */
 function predicate(op, value) {
   switch (op) {
-    case '=': return value == null ? isMissing : function (v) { return !isMissing(v) && equal(v, value); };
-    case '!=': return value == null ? function (v) { return !isMissing(v); } : function (v) { return !isMissing(v) && !equal(v, value); };
-    case '<': return function (v) { return !isMissing(v) && compare(v, value) < 0; };
-    case '<=': return function (v) { return !isMissing(v) && compare(v, value) <= 0; };
-    case '>': return function (v) { return !isMissing(v) && compare(v, value) > 0; };
-    case '>=': return function (v) { return !isMissing(v) && compare(v, value) >= 0; };
-    case 'in': return function (v) { return !isMissing(v) && list(value).some(function (x) { return equal(v, x); }); };
-    case 'not_in': return function (v) { return !isMissing(v) && !list(value).some(function (x) { return equal(v, x); }); };
+    case '=': return value == null ? isNullValue : function (v) { return !isNullValue(v) && equal(v, value); };
+    case '!=': return value == null ? function (v) { return !isNullValue(v); } : function (v) { return !isNullValue(v) && !equal(v, value); };
+    case '<': return function (v) { return !isNullValue(v) && compare(v, value) < 0; };
+    case '<=': return function (v) { return !isNullValue(v) && compare(v, value) <= 0; };
+    case '>': return function (v) { return !isNullValue(v) && compare(v, value) > 0; };
+    case '>=': return function (v) { return !isNullValue(v) && compare(v, value) >= 0; };
+    case 'in': return function (v) { return !isNullValue(v) && list(value).some(function (x) { return equal(v, x); }); };
+    case 'not_in': return function (v) { return !isNullValue(v) && !list(value).some(function (x) { return equal(v, x); }); };
     case 'between': return function (v) {
       var range = list(value);
-      return !isMissing(v) && compare(v, range[0]) >= 0 && compare(v, range[1]) <= 0;
+      return !isNullValue(v) && compare(v, range[0]) >= 0 && compare(v, range[1]) <= 0;
     };
-    case 'is_null': return isMissing;
-    case 'not_null': return function (v) { return !isMissing(v); };
+    case 'is_null': return isNullValue;
+    case 'not_null': return function (v) { return !isNullValue(v); };
     default: throw new Error('Unknown filter operator "' + op + '"');
   }
 }
@@ -2020,8 +2055,8 @@ function sortRows(rows, orderBy, outputs, valueOf) {
     for (var k = 0; k < keys.length; k++) {
       var va = valueOf(keys[k].column, a.row);
       var vb = valueOf(keys[k].column, b.row);
-      if (isMissing(va) !== isMissing(vb)) return isMissing(va) ? 1 : -1;   // nulls last
-      if (isMissing(va)) continue;
+      if (isNullValue(va) !== isNullValue(vb)) return isNullValue(va) ? 1 : -1;   // nulls last
+      if (isNullValue(va)) continue;
       var c = compare(va, vb);
       if (c) return keys[k].desc ? -c : c;
     }
@@ -2064,7 +2099,7 @@ function rowsToCx(header, rows) {
  * @param {*} v - Cell.
  * @returns {boolean} True when missing.
  */
-function isMissing(v) {
+function isNullValue(v) {
   return v == null || (typeof v === 'number' && isNaN(v));
 }
 
@@ -4303,7 +4338,7 @@ function describePushdown(pushdown) {
     var conds = [];
     for (var w = 0; w < where.length; w++) {
       var c = where[w];
-      if (c && c.column) conds.push(c.column + ' ' + (c.op || '=') + ' ' + formatValue(c.value));
+      if (c && c.column) conds.push(c.column + ' ' + (c.op || '=') + ' ' + formatProvenanceValue(c.value));
     }
     if (conds.length) clauses.push('filtered where ' + conds.join(' and '));
   }
@@ -4335,7 +4370,7 @@ function orderByName(o) {
  * @returns {string} A short display string.
  * @private
  */
-function formatValue(value) {
+function formatProvenanceValue(value) {
   if (Array.isArray(value)) return '[' + value.join(', ') + ']';
   if (value == null) return '';
   return String(value);
@@ -5553,7 +5588,7 @@ var DATA_KINDS = ['inline', 'connector', 'dataset', 'join', 'function', 'live'];
 var FUNCTION_LANGUAGES = ['python', 'r'];
 
 /** @type {string[]} How related panels show marked rows (CanvasXpress highlightMode). */
-var MARKING_MODES = ['focus', 'highlight', 'ghost', 'filter'];
+var SPEC_MARKING_MODES = ['focus', 'highlight', 'ghost', 'filter'];
 
 /** @type {string[]} Where a calculated field lands (CanvasXpress calculatedFields `target`). */
 var CALC_TARGETS = ['variable', 'sampleAnnotation', 'variableAnnotation'];
@@ -5896,9 +5931,11 @@ function validateSpec(spec) {
       });
     }
   }
-  if (spec.markingMode != null && MARKING_MODES.indexOf(spec.markingMode) === -1) {
-    errors.push('spec.markingMode must be one of: ' + MARKING_MODES.join(', '));
+  if (spec.markingMode != null && SPEC_MARKING_MODES.indexOf(spec.markingMode) === -1) {
+    errors.push('spec.markingMode must be one of: ' + SPEC_MARKING_MODES.join(', '));
   }
+  checkInsights(spec.insights, spec.data, errors);
+  checkStoryboard(spec, errors);
 
   // --- filter schemes (named Filters-panel states) ---
   if (spec.filterSchemes != null) {
@@ -6200,6 +6237,117 @@ function checkFunction(src, at, spec, errors) {
   }
   if (src.runtime != null && typeof src.runtime !== 'string') {
     errors.push(at + '.runtime must be a URL string');
+  }
+}
+
+/**
+ * Check the optional `storyboard`: an ordered list of steps, each a complete view of the dashboard.
+ * Mirrors `_check_storyboard` in the server's validate_spec.py.
+ * @param {object} spec - The dashboard spec.
+ * @param {string[]} errors - Collector.
+ * @returns {void}
+ * @private
+ */
+function checkStoryboard(spec, errors) {
+  var board = spec.storyboard;
+  if (board == null) return;
+  if (typeof board !== 'object' || Array.isArray(board)) {
+    errors.push('spec.storyboard must be an object');
+    return;
+  }
+  if (board.title != null && typeof board.title !== 'string') errors.push('spec.storyboard.title must be a string');
+  if (board.seconds != null && (typeof board.seconds !== 'number' || !(board.seconds > 0))) {
+    errors.push('spec.storyboard.seconds must be a number above 0');
+  }
+  if (!Array.isArray(board.steps) || !board.steps.length) {
+    errors.push('spec.storyboard.steps must be a non-empty array');
+    return;
+  }
+  board.steps.forEach(function (step, i) {
+    var at = 'spec.storyboard.steps[' + i + ']';
+    if (step == null || typeof step !== 'object' || Array.isArray(step)) {
+      errors.push(at + ' must be an object');
+      return;
+    }
+    ['title', 'narration'].forEach(function (key) {
+      if (step[key] != null && typeof step[key] !== 'string') errors.push(at + '.' + key + ' must be a string');
+    });
+    if (step.seconds != null && (typeof step.seconds !== 'number' || !(step.seconds > 0))) {
+      errors.push(at + '.seconds must be a number above 0');
+    }
+    if (step.scheme != null) {
+      if (typeof step.scheme !== 'string' || spec.filterSchemes == null || !hasOwn(spec.filterSchemes, step.scheme)) {
+        errors.push(at + '.scheme "' + step.scheme + '" has no matching entry in spec.filterSchemes');
+      }
+      if (step.filters != null) errors.push(at + ' takes either scheme or filters, not both');
+    }
+    if (step.filters != null) {
+      if (!Array.isArray(step.filters)) errors.push(at + '.filters must be an array of filters');
+      else step.filters.forEach(function (p, j) { checkFilterPredicate(p, at + '.filters[' + j + ']', spec.data, errors); });
+    }
+    if (step.params != null) {
+      if (typeof step.params !== 'object' || Array.isArray(step.params)) {
+        errors.push(at + '.params must be an object map');
+      } else {
+        Object.keys(step.params).forEach(function (name) {
+          if (spec.params == null || !hasOwn(spec.params, name)) {
+            errors.push(at + '.params["' + name + '"] is not declared in spec.params');
+          }
+        });
+      }
+    }
+    if (step.focus != null && (spec.panels == null || !hasOwn(spec.panels, step.focus))) {
+      errors.push(at + '.focus "' + step.focus + '" has no matching entry in spec.panels');
+    }
+  });
+}
+
+/**
+ * Check the optional `insights` block: the fixed data checks a dashboard opts into. Mirrors
+ * `_check_insights` in the server's validate_spec.py.
+ * @param {*} insights - `spec.insights`.
+ * @param {object} data - `spec.data` (sources a threshold or `sources` entry may name).
+ * @param {string[]} errors - Collector.
+ * @returns {void}
+ * @private
+ */
+function checkInsights(insights, data, errors) {
+  if (insights == null) return;
+  if (typeof insights !== 'object' || Array.isArray(insights)) {
+    errors.push('spec.insights must be an object');
+    return;
+  }
+  var ops = ['lt', 'le', 'gt', 'ge'];
+  if (insights.thresholds != null) {
+    if (!Array.isArray(insights.thresholds)) {
+      errors.push('spec.insights.thresholds must be an array');
+    } else {
+      insights.thresholds.forEach(function (t, i) {
+        var at = 'spec.insights.thresholds[' + i + ']';
+        if (t == null || typeof t !== 'object' || Array.isArray(t)) { errors.push(at + ' must be an object'); return; }
+        if (typeof t.field !== 'string' || !t.field.length) errors.push(at + '.field must be a non-empty field name');
+        if (ops.indexOf(t.op) === -1) errors.push(at + '.op must be one of: ' + ops.join(', '));
+        if (typeof t.value !== 'number' || !isFinite(t.value)) errors.push(at + '.value must be a number');
+        if (t.label != null && typeof t.label !== 'string') errors.push(at + '.label must be a string');
+        if (t.source != null && (data == null || !Object.prototype.hasOwnProperty.call(data, t.source))) {
+          errors.push(at + '.source "' + t.source + '" has no matching entry in spec.data');
+        }
+      });
+    }
+  }
+  if (insights.sources != null) {
+    if (!Array.isArray(insights.sources)) {
+      errors.push('spec.insights.sources must be an array of source names');
+    } else {
+      insights.sources.forEach(function (ref, i) {
+        if (typeof ref !== 'string' || data == null || !Object.prototype.hasOwnProperty.call(data, ref)) {
+          errors.push('spec.insights.sources[' + i + '] "' + ref + '" has no matching entry in spec.data');
+        }
+      });
+    }
+  }
+  if (insights.max != null && (typeof insights.max !== 'number' || insights.max < 1 || Math.floor(insights.max) !== insights.max)) {
+    errors.push('spec.insights.max must be a positive whole number');
   }
 }
 
@@ -7859,7 +8007,16 @@ function renderDashboard(spec, target, options) {
         // Remote (URL) source: rebuild the instance to reload+parse the new URL.
         try { b.instance = b.rebuild(data); } catch (e) { /* keep others */ }
       } else if (b.instance && typeof b.instance.updateData === 'function') {
-        try { b.instance.updateData(b.prepare ? b.prepare(data) : data, true, false); } catch (e) { /* keep others */ }
+        try {
+          b.instance.updateData(b.prepare ? b.prepare(data) : data, true, false);
+          // The engine's table view takes the new data but does not repaint its grid on
+          // updateData (in any draw mode), so a table panel would keep showing the old rows.
+          if (b.instance.view === 'table' && typeof b.instance.resetDataTableRowsCols === 'function') {
+            b.instance.resetDataTableRowsCols(true);
+            // The rebuild switches the engine's loader mask on and nothing switches it off.
+            if (typeof b.instance.hideMask === 'function') b.instance.hideMask();
+          }
+        } catch (e) { /* keep others */ }
       }
     });
   }
@@ -7941,17 +8098,25 @@ function renderDashboard(spec, target, options) {
   // Run one declarative click action (spec 1.4 drill-through) against a clicked mark.
   // setParam reuses the clickParam path; setFilter writes a values predicate into the
   // global filter model; focusPanel scrolls the target panel into view.
-  function runClickAction(action, clicked) {
+  function runClickAction(action, clicked, instance) {
     if (!action) return;
+    var rowAxis = clickedRowAxis(instance);
     if (action.setParam && action.setParam.name) {
-      var pv = extractClickValue(clicked, action.setParam.field);
+      var pv = extractClickValue(clicked, action.setParam.field, rowAxis);
       if (pv != null) applyParamChange(action.setParam.name, pv);
     } else if (action.setFilter && action.setFilter.dataRef && action.setFilter.field) {
-      var fv = extractClickValue(clicked, action.setFilter.field);
+      var fv = extractClickValue(clicked, action.setFilter.field, rowAxis);
       if (fv != null) setFilterPredicate(action.setFilter.dataRef, action.setFilter.field, { values: [String(fv)] });
     } else if (action.focusPanel) {
       focusPanelById(action.focusPanel);
     }
+  }
+
+  // The axis a clicked instance shows its source's rows along (flipped when its panel
+  // transposes the data), or null for an instance with no bound source.
+  function clickedRowAxis(instance) {
+    var found = instance ? bindingOf(instance) : null;
+    return found ? instanceAxis(found.binding, found.ref) : null;
   }
 
   // Scroll a panel into view by its id — the focusPanel action.
@@ -7982,11 +8147,11 @@ function renderDashboard(spec, target, options) {
       var authorClick = events.click;
       merged.click = function (clicked, mouseEvent, target) {
         if (clicks) {
-          var value = extractClickValue(clicked, panel.clickField);
+          var value = extractClickValue(clicked, panel.clickField, clickedRowAxis(this));
           if (value != null) applyParamChange(panel.clickParam, value);
         }
         for (var ai = 0; ai < clickActions.length; ai++) {
-          runClickAction(clickActions[ai], clicked);
+          runClickAction(clickActions[ai], clicked, this);
         }
         if (typeof authorClick === 'function') authorClick.call(this, clicked, mouseEvent, target);
       };
@@ -8690,7 +8855,33 @@ function renderDashboard(spec, target, options) {
     filterState = normalizeState(state);
     activeScheme = scheme;
     renderFilterPanels();
-    applyFilterChange();
+    return applyFilterChange();
+  }
+
+  /**
+   * Put the dashboard into a complete, named view: the filters, every parameter and the focused
+   * panel. Absolute, not incremental, so a storyboard can step back as well as forward: filters not
+   * given are cleared, and parameters not given return to their spec defaults.
+   * @param {object} view - `{scheme?, filters?, params?, focus?}`; `scheme` names a filter scheme.
+   * @returns {Promise<void>} Resolves once the panels hold the new view.
+   */
+  function applyView(view) {
+    view = view || {};
+    var work = [];
+    var state = [];
+    var scheme = view.scheme != null && Object.prototype.hasOwnProperty.call(filterSchemes, view.scheme) ? view.scheme : null;
+    if (scheme !== null) state = filterSchemes[scheme];
+    else if (Array.isArray(view.filters)) state = view.filters;
+    work.push(replaceFilterState(state, scheme));
+    var given = view.params || {};
+    Object.keys(paramsSpec).forEach(function (name) {
+      var def = paramsSpec[name];
+      var dflt = def && typeof def === 'object' ? def.value : def;
+      var target = Object.prototype.hasOwnProperty.call(given, name) ? given[name] : dflt;
+      if (paramState[name] !== target) work.push(applyParamChange(name, target));
+    });
+    if (view.focus) focusPanelById(view.focus);
+    return Promise.all(work).then(function () {});
   }
 
   /**
@@ -9945,6 +10136,23 @@ function renderDashboard(spec, target, options) {
       return applyParamChange(name, value);
     },
     /**
+     * Put the dashboard into a complete view (filters, parameters, focused panel); what a storyboard
+     * step does. Filters not named are cleared and parameters not named return to their defaults.
+     * @param {object} view - `{scheme?, filters?, params?, focus?}`.
+     * @returns {Promise<void>} Resolves once the panels hold the new view.
+     */
+    applyView: function (view) {
+      return applyView(view);
+    },
+    /**
+     * Scroll a panel into view by its id (what a `focusPanel` click action does).
+     * @param {string} panelId - The panel id.
+     * @returns {void}
+     */
+    focusPanel: function (panelId) {
+      focusPanelById(panelId);
+    },
+    /**
      * The Filters-panel state: a serializable list of predicates
      * `{dataRef, field, values? | min? / max? | text?}` (see filters.js).
      * @returns {object[]} A copy of the current state.
@@ -10773,22 +10981,35 @@ function listen(node, type, handler) {
 /**
  * Best-effort extraction of a value from a CanvasXpress click payload, for the
  * chart-click cross-filter. The payload shape varies by graph type, so this
- * tries, in order: an explicit annotation field the panel named (`field`), the
+ * tries, in order: an explicit annotation field the panel named (`field`; a
+ * transposed panel carries its per-point annotations under `z`), the clicked
+ * ROW along the axis the panel shows the source's rows on (`rowAxis`), then the
  * clicked sample name(s), then the clicked variable name(s). Returns null when
  * nothing usable is found (the click then sets no parameter).
+ *
+ * `rowAxis` matters for a panel that transposes its data (scatter-type graphs):
+ * it names the clicked rows in `y.vars` and the plotted columns in `y.smps`, so
+ * the default sample-first order would return a column name instead of the row.
  * @param {object} clicked - The object CanvasXpress passes to a click handler.
  * @param {string} [field] - An annotation/field name to prefer, when the payload
  *   carries per-point annotations (`clicked.x[field]` / `clicked[field]`).
+ * @param {string} [rowAxis] - `"smps"` or `"vars"`: the axis the clicked panel
+ *   shows its source's rows along (see instanceAxis); omitted when unknown.
  * @returns {*} The extracted value, or null.
  * @private
  */
-function extractClickValue(clicked, field) {
+function extractClickValue(clicked, field, rowAxis) {
   if (!clicked || typeof clicked !== 'object') return null;
   function first(v) { return Array.isArray(v) ? (v.length ? v[0] : null) : v; }
   if (field) {
     if (clicked.x && clicked.x[field] != null) return first(clicked.x[field]);
+    if (clicked.z && clicked.z[field] != null) return first(clicked.z[field]);
     if (clicked[field] != null) return first(clicked[field]);
     if (clicked.y && clicked.y[field] != null) return first(clicked.y[field]);
+  }
+  if (rowAxis === 'smps' || rowAxis === 'vars') {
+    if (clicked[rowAxis] != null) return first(clicked[rowAxis]);
+    if (clicked.y && clicked.y[rowAxis] != null) return first(clicked.y[rowAxis]);
   }
   if (clicked.smps != null) return first(clicked.smps);
   if (clicked.y && clicked.y.smps != null) return first(clicked.y.smps);
@@ -13389,6 +13610,7 @@ function addQueryControl(spec, opts) {
  * Pure functions (no DOM), so they are unit-tested in node.
  */
 
+
 // Transpose is the existing join helper (vars <-> smps, x <-> z): transposeCxData in join.js.
 
 /**
@@ -13544,9 +13766,32 @@ function applyDecimalComma(data) {
 }
 
 /**
+ * A chart config as a dashboard panel must carry it. {@link orientConfig} sets the
+ * engine's `transposeData` so a chart drawn on its own (the wizard's previews) resolves
+ * its axes; inside a dashboard the renderer already transposes row-per-sample data for
+ * scatter-type panels ({@link shouldTranspose}), so the same flag would flip the data
+ * back — the engine then fails (KaplanMeier) or plots the wrong axes (Scatter2D). The
+ * flag is dropped exactly when the renderer will transpose, and kept for the graph types
+ * the renderer leaves alone (Histogram, Ridgeline, ...). Note the kept flag is not free in a
+ * multi-panel dashboard: the engine transposes the data object in place, and the panels of
+ * one source share it — so a dashboard assembled from several panels must not emit it.
+ * @param {object} config - A CanvasXpress config, as {@link orientConfig} returned it.
+ * @param {object} data - The CanvasXpress data object the panel will be bound to.
+ * @returns {object} A copy of the config fit to publish in a dashboard.
+ * @public
+ */
+function panelConfigFor(config, data) {
+  var out = JSON.parse(JSON.stringify(config || {}));
+  if (out.transposeData && shouldTranspose({ config: out }, data)) delete out.transposeData;
+  return out;
+}
+
+/**
  * The one-panel dashboard the wizard publishes: a full-width chart bound to
  * the stored dataset.
- * @param {object} opts - `{id, title, datasetId, store?, config}`.
+ * @param {object} opts - `{id, title, datasetId, store?, config, data?}`. `data` (the
+ *   dataset's CanvasXpress data object) lets the config be made dashboard-ready
+ *   ({@link panelConfigFor}); without it the config is published as given.
  * @returns {object} A valid dashboard spec.
  * @public
  */
@@ -13560,7 +13805,8 @@ function wizardSpec(opts) {
     id: 'chart',
     title: opts.chartTitle || '',
     dataRef: 'data',
-    config: opts.config || { graphType: 'Bar' },
+    config: opts.data ? panelConfigFor(opts.config || { graphType: 'Bar' }, opts.data)
+      : opts.config || { graphType: 'Bar' },
     x: 0, y: 0, w: cols, h: 14
   });
 }
@@ -13790,7 +14036,7 @@ function chartColumns(data) {
 // and its column profile; no DOM, no engine.
 
 // Column-name hints, matched case-insensitively against the whole header.
-var SURVIVAL_TIME_RE = /^(time|t|surv(ival)?|os|pfs|dfs|efs|tte|duration|follow[\s._-]?up|fu|days?|months?|weeks?|years?)$/i;
+var SURVIVAL_TIME_RE = /^(time|t|surv(ival)?|os|pfs|dfs|efs|tte|duration|follow[\s._-]?up|fu|days?|months?|weeks?|years?)$|^(os|pfs|dfs|efs|rfs|dss|ttp)[\s._-]?(time|months?|days?|weeks?|years?|duration)$|^(overall|progression[\s._-]?free|disease[\s._-]?free|event[\s._-]?free|relapse[\s._-]?free)[\s._-]?survival[\s._-]?(time|months?|days?|weeks?|years?)$/i;
 var SURVIVAL_EVENT_RE = /(event|status|dead|death|censor|vital|outcome|relapse|progress|recur)/i;
 var GENOME_CHR_RE = /^(chr(om(osome)?)?)$/i;
 var GENOME_POS_RE = /^(pos(ition)?|bp|loc(ation)?|coord(inate)?|start)$/i;
@@ -13860,16 +14106,19 @@ function looksLikeEvent(cells) {
  * confidence (0–1); the wizard offers them, it never rewrites silently.
  *
  * Recognises, by column name and value shape:
- *  - survival table → `KaplanMeier` (a time measure + a binary/status event,
- *    optional grouping factor);
+ *  - survival table → `KaplanMeier` (a numeric time measure + a numeric 0/1 event,
+ *    optional grouping factor; a text event such as Dead / Alive is not suggested — the engine's
+ *    curve is wrong for it);
  *  - GWAS summary → `Manhattan` (chromosome + position + p-value);
  *  - differential-expression table → `Volcano` (log-fold-change + p-value);
  *  - alteration matrix → `Oncoprint` (matrix cells are alteration tokens);
  *  - numeric gene×sample matrix → `Heatmap` (clustered expression matrix).
  *
  * @param {object} data - CanvasXpress data object.
- * @returns {Array<{graphType: string, reason: string, confidence: number}>}
+ * @returns {Array<{graphType: string, reason: string, confidence: number, columns?: object}>}
  *   Suggestions, highest confidence first ([] when nothing scientific fits).
+ *   `columns` names the matched fields (the keys of {@link scientificFieldsFor}) for the
+ *   column-driven shapes (KaplanMeier, Manhattan, Volcano).
  * @public
  */
 function detectDataShapes(data) {
@@ -13886,12 +14135,16 @@ function detectDataShapes(data) {
   });
   var suggestions = [];
 
-  // Survival: a time-like numeric column + an event-like column.
+  // Survival: a time-like numeric column + an event-like NUMERIC column. The engine's Kaplan–Meier
+  // reads the event from a numeric measure; a text event (Dead / Alive) is an annotation and draws
+  // a silently wrong curve (flat steps, p = 1), so it is not suggested.
   var timeCol = findHeader(headers, SURVIVAL_TIME_RE);
   var eventCol = findHeader(headers, SURVIVAL_EVENT_RE);
   if (timeCol !== -1 && profile[timeCol].type === 'numeric' && eventCol !== -1 &&
-      eventCol !== timeCol && looksLikeEvent(columnCells(rows, eventCol))) {
+      eventCol !== timeCol && profile[eventCol].type === 'numeric' &&
+      looksLikeEvent(columnCells(rows, eventCol))) {
     suggestions.push({ graphType: 'KaplanMeier', confidence: 0.9,
+      columns: { time: String(headers[timeCol]), event: String(headers[eventCol]) },
       reason: 'Survival table: time column "' + headers[timeCol] + '" + event column "' +
         headers[eventCol] + '".' });
   }
@@ -13903,6 +14156,7 @@ function detectDataShapes(data) {
   if (chrCol !== -1 && posCol !== -1 && pCol !== -1 &&
       profile[posCol].type === 'numeric' && profile[pCol].type === 'numeric') {
     suggestions.push({ graphType: 'Manhattan', confidence: 0.9,
+      columns: { chr: String(headers[chrCol]), pos: String(headers[posCol]), p: String(headers[pCol]) },
       reason: 'GWAS summary: chromosome "' + headers[chrCol] + '", position "' +
         headers[posCol] + '", p-value "' + headers[pCol] + '".' });
   }
@@ -13912,6 +14166,7 @@ function detectDataShapes(data) {
   if (fcCol !== -1 && pCol !== -1 && fcCol !== pCol &&
       profile[fcCol].type === 'numeric' && profile[pCol].type === 'numeric') {
     suggestions.push({ graphType: 'Volcano', confidence: 0.8,
+      columns: { fc: String(headers[fcCol]), p: String(headers[pCol]) },
       reason: 'Differential expression: fold-change "' + headers[fcCol] + '" + p-value "' +
         headers[pCol] + '".' });
   }
@@ -14055,6 +14310,883 @@ function buildScientificConfig(graphType, fields, extra, data) {
     if (Object.prototype.hasOwnProperty.call(more, k)) config[k] = more[k];
   }
   return orientConfig(config, data);
+}
+
+/* ==== src/suggestDashboard.js ==== */
+/**
+ * Dashboard-from-one-dataset assembly: given a parsed dataset, recognise a known
+ * analysis shape (a patient cohort, an NGS run QC table) and SUGGEST a whole linked
+ * dashboard — filters plus the panels that shape calls for — instead of one chart.
+ *
+ * Builds on the wizard's detection ({@link detectDataShapes}) and config builders
+ * ({@link buildScientificConfig}, {@link buildChartConfig}); nothing here re-derives a
+ * column match. Like the wizard it only ever *suggests*: it returns `null` when no
+ * template fits (the caller keeps the single-chart flow) and never rewrites the data.
+ * Every panel binds the one dataset, so the engine's broadcast links selections across
+ * them. Pure functions (no DOM), unit-tested in node.
+ *
+ * @module suggestDashboard
+ */
+
+
+// NGS run-QC metric families, matched case-insensitively against a numeric column header.
+var QC_METRICS = {
+  reads: /(^|[\s._-])(total[\s._-]?)?reads?($|[\s._-])|read[\s._-]?(pairs?|count)|^n[\s._-]?reads$|fragments?/i,
+  mapping: /(mapped|mapping|aligned|alignment)/i,
+  quality: /(q30|q20|phred|base[\s._-]?qual|mean[\s._-]?qual)/i,
+  duplication: /(dup|duplicat)/i,
+  gc: /(^|[\s._-])gc($|[\s._-])|gc[\s._-]?(content|pct|percent)/i,
+  insert: /insert[\s._-]?size/i,
+  coverage: /(coverage|depth|cov[\s._-]?x)/i,
+  adapter: /adapter/i,
+  contamination: /(contamin|freemix)/i
+};
+
+// Column names that usually carry the grouping a QC table or a cohort is compared by.
+var BATCH_RE = /(lane|flow[\s._-]?cell|batch|run|plate|library|prep|instrument|machine|seq)/i;
+var COHORT_GROUP_RE = /(arm|group|treat|cohort|stage|condition|sex|subtype|genotype)/i;
+
+var MIN_PANELS = 3;
+var MAX_FILTER_FIELDS = 6;
+var GRID_H = 12;
+var CARD_H = 4;
+
+// The case drill: a click on a panel whose marks are single rows sets this param to the clicked
+// row; the case card is a table over a second source of the same data, narrowed to that row.
+var CASE_PARAM = 'case';
+var CASE_SOURCE = 'case';
+// A one-row table: no banner / toolbar / status bar / paging, shrunk to its rows, and no heat-colouring:
+// the engine re-derives dataTableColored from the UI style (it is on for editorial and most others, and
+// the config key is ignored), and the colours of a single record's values mean nothing — so their
+// strength is set to 0, which IS honoured.
+var CASE_CARD_CONFIG = { graphType: 'Bar', view: 'table', title: false, dataTableBannerShow: false,
+  dataTableToolbarShow: false, dataTableStatusShow: false, dataTablePaginationShow: false,
+  dataTableFitHeight: true, dataTableColorTransparency: 0 };
+
+/**
+ * Describe each non-id column of a dataset.
+ * @param {object} data - CanvasXpress data object.
+ * @returns {Array<{name: string, type: string, unique: number}>} Column name, profile
+ *   type (`numeric` | `date` | `text`) and distinct-value count.
+ * @private
+ */
+function describeColumns(data) {
+  return profileColumns(tableFromData(data)).slice(1).map(function (p) {
+    return { name: p.name, type: p.type, unique: p.unique };
+  });
+}
+
+/**
+ * The best grouping column: a text column with a few levels, preferring a name that
+ * looks like one.
+ * @param {Array} columns - From {@link describeColumns}.
+ * @param {RegExp} preferred - Name hint.
+ * @param {Array<string>} exclude - Column names that must not be picked.
+ * @returns {(string|null)} The column name, or null.
+ * @private
+ */
+function pickGroup(columns, preferred, exclude) {
+  var candidates = columns.filter(function (c) {
+    return c.type === 'text' && c.unique >= 2 && c.unique <= 6 && exclude.indexOf(c.name) === -1;
+  });
+  for (var i = 0; i < candidates.length; i++) {
+    if (preferred.test(candidates[i].name)) return candidates[i].name;
+  }
+  return candidates.length ? candidates[0].name : null;
+}
+
+/**
+ * The fields a Filters panel should offer: low-cardinality text columns first, then
+ * numeric measures (range sliders), capped.
+ * @param {Array} columns - From {@link describeColumns}.
+ * @param {Array<string>} skip - Column names to leave out.
+ * @returns {Array<string>} Field names.
+ * @private
+ */
+function filterFields(columns, skip) {
+  var categories = columns.filter(function (c) {
+    return c.type === 'text' && c.unique >= 2 && c.unique <= 12 && skip.indexOf(c.name) === -1;
+  });
+  var measures = columns.filter(function (c) {
+    return c.type === 'numeric' && skip.indexOf(c.name) === -1;
+  });
+  return categories.concat(measures).slice(0, MAX_FILTER_FIELDS).map(function (c) { return c.name; });
+}
+
+/**
+ * Cohort template: a survival table with a grouping factor. Filters down the left, the
+ * Kaplan–Meier curve across the top, and a measure compared by group and against time.
+ * @param {object} data - CanvasXpress data object.
+ * @param {Array} columns - From {@link describeColumns}.
+ * @param {{time: string, event: string}} survival - The matched survival columns.
+ * @returns {(object|null)} A suggestion, or null when the event column is not numeric or the
+ *   template would have too few panels.
+ * @private
+ */
+function cohortTemplate(data, columns, survival) {
+  // The engine's Kaplan–Meier reads the event from a NUMERIC column. A text event (Dead / Alive)
+  // is an annotation: the curve then draws silently wrong (flat steps, p = 1), so offer nothing.
+  var eventColumn = columns.filter(function (c) { return c.name === survival.event; })[0];
+  if (!eventColumn || eventColumn.type !== 'numeric') return null;
+  var used = [survival.time, survival.event];
+  var group = pickGroup(columns, COHORT_GROUP_RE, used);
+  var measures = columns.filter(function (c) {
+    return c.type === 'numeric' && used.indexOf(c.name) === -1;
+  });
+  var measure = measures.length ? measures[0].name : null;
+  var panels = [{ id: 'filters', type: 'filters', title: 'Filters',
+    fields: filterFields(columns, used), x: 0, y: 0, w: 3, h: GRID_H * 2 }];
+  panels.push({ id: 'km', title: group ? 'Survival by ' + group : 'Survival',
+    config: withoutTitle(buildScientificConfig('KaplanMeier',
+      { time: survival.time, event: survival.event, group: group }, null, data)),
+    x: 3, y: 0, w: 9, h: GRID_H });
+  if (measure) {
+    panels.push({ id: 'compare', title: measure + (group ? ' by ' + group : ''),
+      config: withoutTitle(buildChartConfig('Boxplot', { x: measure, group: group, color: group },
+        { graphOrientation: 'vertical', showBoxplotOriginalData: true }, data)),
+      x: 3, y: GRID_H, w: 4, h: GRID_H });
+    panels.push({ id: 'vs-time', title: measure + ' vs ' + survival.time,
+      config: withoutTitle(buildChartConfig('Scatter2D', { x: measure, y: survival.time, color: group },
+        { dataPointSize: 'auto' }, data)),
+      x: 7, y: GRID_H, w: 5, h: GRID_H });
+  }
+  if (panels.length < MIN_PANELS) return null;
+  return withCaseDrill({ template: 'cohort', label: 'Cohort overview', panels: withDashboardConfigs(panels, data),
+    reason: 'Survival table (time "' + survival.time + '", event "' + survival.event + '")' +
+      (group ? ' with grouping "' + group + '"' : '') + ': filters, a Kaplan–Meier curve and the ' +
+      'measures that move with it; click a point to load that patient\'s record.' },
+  data, 'Patient record — click a point to load', ['vs-time']);
+}
+
+/**
+ * Names of the NGS QC metric families a header list covers, with the column that
+ * represents each (first match wins).
+ * @param {Array} columns - From {@link describeColumns}.
+ * @returns {object} family -> column name.
+ * @private
+ */
+function qcMetricColumns(columns) {
+  var found = {};
+  columns.forEach(function (c) {
+    if (c.type !== 'numeric') return;
+    for (var family in QC_METRICS) {
+      if (Object.prototype.hasOwnProperty.call(QC_METRICS, family) && !found[family] &&
+          QC_METRICS[family].test(c.name)) {
+        found[family] = c.name;
+        return;
+      }
+    }
+  });
+  return found;
+}
+
+/**
+ * NGS run-QC template: a per-sample QC table. Filters, depth per sample, mapping against
+ * duplication, and the quality metric by lane / batch.
+ * @param {object} data - CanvasXpress data object.
+ * @param {Array} columns - From {@link describeColumns}.
+ * @param {object} metrics - From {@link qcMetricColumns}.
+ * @returns {(object|null)} A suggestion, or null when it would have too few panels.
+ * @private
+ */
+function qcTemplate(data, columns, metrics) {
+  var metricNames = Object.keys(metrics).map(function (k) { return metrics[k]; });
+  var batch = pickGroup(columns, BATCH_RE, []);
+  var depth = metrics.reads || metrics.coverage || metricNames[0];
+  var scatterX = metrics.mapping || metricNames[0];
+  var scatterY = metrics.duplication || metricNames.filter(function (n) { return n !== scatterX; })[0];
+  var quality = metrics.quality || metricNames.filter(function (n) { return n !== depth; })[0];
+  var panels = [{ id: 'filters', type: 'filters', title: 'Filters',
+    fields: filterFields(columns, []), x: 0, y: 0, w: 3, h: GRID_H * 2 }];
+  panels.push({ id: 'depth', title: depth + ' per sample',
+    config: withoutTitle(buildChartConfig('Bar', { x: depth, color: batch },
+      { graphOrientation: 'vertical', smpLabelRotate: 45 }, data)),
+    x: 3, y: 0, w: 9, h: GRID_H });
+  if (scatterX && scatterY) {
+    panels.push({ id: 'quality-scatter', title: scatterX + ' vs ' + scatterY,
+      config: withoutTitle(buildChartConfig('Scatter2D', { x: scatterX, y: scatterY, color: batch },
+        { dataPointSize: 'auto' }, data)),
+      x: 3, y: GRID_H, w: 5, h: GRID_H });
+  }
+  if (quality) {
+    // Always a Boxplot, grouped by batch when there is one: a Histogram needs the engine's
+    // transposeData, which transposes the dataset IN PLACE — and every panel of the dashboard
+    // shares that one data object, so the sibling panels would be drawn flipped.
+    var byBatch = buildChartConfig('Boxplot', { x: quality, group: batch, color: batch },
+      { graphOrientation: 'vertical', showBoxplotOriginalData: true }, data);
+    panels.push({ id: 'quality-spread', title: quality + (batch ? ' by ' + batch : ''),
+      config: withoutTitle(byBatch), x: 8, y: GRID_H, w: 4, h: GRID_H });
+  }
+  if (panels.length < MIN_PANELS) return null;
+  return withCaseDrill({ template: 'ngs-qc', label: 'Sequencing run QC', panels: withDashboardConfigs(panels, data),
+    reason: 'Per-sample QC table (' + Object.keys(metrics).join(', ') + '): filters, depth per ' +
+      'sample, mapping against duplication and the quality spread' +
+      (batch ? ' by "' + batch + '"' : '') + '; click a bar or point to load that sample\'s record.' },
+  data, 'Sample record — click a bar or point to load', ['depth', 'quality-scatter']);
+}
+
+/**
+ * Drop the config title (the panel header already shows it).
+ * @param {object} config - A CanvasXpress config.
+ * @returns {object} The same config with `title: false`.
+ * @private
+ */
+function withoutTitle(config) {
+  config.title = false;
+  return config;
+}
+
+/**
+ * Add each chart panel's dashboard form of its config. `config` is what the chart needs to
+ * draw standalone (the wizard's previews); `dashboardConfig` is what the published dashboard
+ * carries ({@link panelConfigFor}), set only where it differs.
+ * @param {Array<object>} panels - Panel descriptors.
+ * @param {object} data - The dataset's CanvasXpress data object.
+ * @returns {Array<object>} The same panels.
+ * @private
+ */
+function withDashboardConfigs(panels, data) {
+  panels.forEach(function (panel) {
+    if (!panel.config) return;
+    var forDashboard = panelConfigFor(panel.config, data);
+    if (JSON.stringify(forDashboard) !== JSON.stringify(panel.config)) panel.dashboardConfig = forDashboard;
+  });
+  return panels;
+}
+
+/**
+ * Add the case drill to a suggestion: the click action on each panel whose marks are single
+ * rows (a scatter point, a sample bar — NOT a box or a curve, whose click names a group), the
+ * `drill` description (param, second source, the row the card starts on) and the case card
+ * panel under everything. The card is added after the template's own size check, so it never
+ * counts toward the minimum.
+ * @param {object} suggestion - A template's suggestion.
+ * @param {object} data - The dataset's CanvasXpress data object.
+ * @param {string} cardTitle - The card's panel title.
+ * @param {Array<string>} rowPanels - Ids of the panels a click on which names one row.
+ * @returns {object} The same suggestion.
+ * @private
+ */
+function withCaseDrill(suggestion, data, cardTitle, rowPanels) {
+  suggestion.panels.forEach(function (panel) {
+    if (rowPanels.indexOf(panel.id) !== -1) {
+      panel.actions = [{ on: 'click', setParam: { name: CASE_PARAM } }];
+    }
+  });
+  suggestion.panels.push({ id: 'case', card: true, title: cardTitle,
+    config: JSON.parse(JSON.stringify(CASE_CARD_CONFIG)), x: 0, y: GRID_H * 2, w: 12, h: CARD_H });
+  suggestion.drill = { param: CASE_PARAM, source: CASE_SOURCE, initial: String(data.y.smps[0]) };
+  return suggestion;
+}
+
+/**
+ * Suggest a whole linked dashboard for a dataset, if it matches a known analysis shape.
+ *
+ * Recognises:
+ *  - a survival table → `cohort` (filters + Kaplan–Meier + measure by group / vs time);
+ *  - a per-sample sequencing QC table (three or more QC metric families among the numeric
+ *    columns) → `ngs-qc` (filters + depth + mapping vs duplication + quality by batch).
+ *
+ * No published panel carries the engine's `transposeData`: it transposes the dataset in
+ * place, and all the panels share one data object (see {@link panelConfigFor}).
+ *
+ * Only the standard orientation is handled (variables are the measures, rows are the samples);
+ * a table stored the other way round gets no suggestion.
+ *
+ * Each template ends with a **case drill**: clicking a point (or sample bar) loads that row's
+ * record into a case card — see `drill` on the result and {@link dashboardSpec}.
+ *
+ * A suggestion only: the result is plain data (panel descriptors), turned into a spec by
+ * {@link dashboardSpec} once the caller chooses it. A chart panel's `config` draws standalone
+ * (previews); where the published dashboard must carry something different, `dashboardConfig`
+ * holds it ({@link panelConfigFor}). A template that would yield fewer than
+ * three panels is not offered.
+ *
+ * @param {object} data - CanvasXpress data object.
+ * @returns {({template: string, label: string, reason: string, panels: Array<object>}|null)}
+ *   The best suggestion, or null when nothing fits (keep the single-chart flow).
+ * @public
+ */
+function suggestDashboard(data) {
+  if (!data || !data.y || !(data.y.vars || []).length) return null;
+  // Standard orientation only: the measures are the variables, the rows the samples. A table
+  // stored the other way round (more variables than samples, annotations in `z`) needs its source
+  // row axis declared and per-panel transposes, and draws wrong without them — so offer nothing.
+  if (data.y.vars.length > (data.y.smps || []).length) return null;
+  var columns = describeColumns(data);
+  if (!columns.length) return null;
+  var shapes = detectDataShapes(data);
+  var survival = null;
+  shapes.forEach(function (s) { if (s.graphType === 'KaplanMeier' && s.columns) survival = s.columns; });
+  var cohort = survival ? cohortTemplate(data, columns, survival) : null;
+  if (cohort) return cohort;
+  var metrics = qcMetricColumns(columns);
+  if (Object.keys(metrics).length >= 3) return qcTemplate(data, columns, metrics);
+  return null;
+}
+
+/**
+ * The linked dashboard spec for a chosen suggestion: every panel bound to one data
+ * source, so a selection in one panel selects the same rows in the rest.
+ * @param {object} suggestion - From {@link suggestDashboard}.
+ * @param {object} opts - `{id, title?, datasetId?, store?, source?, thresholds?}`. `source` (a
+ *   spec data source) wins; otherwise the stored dataset `datasetId`. `thresholds` are failure
+ *   conditions the caller declares (`{field, op, value, label?}`); they are never inferred.
+ * @returns {object} A dashboard spec that opts in to proactive insights (`insights`: the
+ *   data-derived checks, plus any `thresholds`). With a `drill`: a `case` param, a second source of the
+ *   same data narrowed (browser-side pushdown on the row id) to that param, the card panel
+ *   bound to it, and `setParam` click actions on the row-mark panels.
+ * @public
+ */
+function dashboardSpec(suggestion, opts) {
+  var spec = blankSpec(opts.id, opts.title || suggestion.label);
+  spec.insights = opts.thresholds && opts.thresholds.length ? { thresholds: JSON.parse(JSON.stringify(opts.thresholds)) } : {};
+  var source = opts.source;
+  if (!source) {
+    source = { kind: 'dataset', id: opts.datasetId };
+    if (opts.store) source.store = opts.store;
+  }
+  spec = setDataSource(spec, 'data', source);
+  var drill = suggestion.drill;
+  if (drill) {
+    spec = setParam(spec, drill.param, { value: drill.initial });
+    var caseSource = JSON.parse(JSON.stringify(source));
+    caseSource.pushdown = { where: [{ column: 'smps', op: '=', value: '$' + drill.param }] };
+    spec = setDataSource(spec, drill.source, caseSource);
+  }
+  suggestion.panels.forEach(function (panel) {
+    var copy = JSON.parse(JSON.stringify(panel));
+    if (copy.dashboardConfig) copy.config = copy.dashboardConfig;
+    delete copy.dashboardConfig;
+    copy.dataRef = copy.card && drill ? drill.source : 'data';
+    var actions = copy.actions;
+    delete copy.card;
+    delete copy.actions;
+    spec = addPanel(spec, copy);
+    if (actions) spec = updatePanel(spec, copy.id, { actions: actions });
+  });
+  return spec;
+}
+
+/* ==== src/insights.js ==== */
+/**
+ * Proactive insights: a strip above the dashboard that shows what the server's fixed, deterministic
+ * checks found in the data (outliers, group differences, declared threshold failures). Every caption
+ * carries its figures (expand "Figures") and names the records involved; clicking a record loads it
+ * into the dashboard's case card when it has one.
+ *
+ * The statistics are computed server-side (`cxd_server/insights.py`) with the viewer's row/column
+ * security, from fixed templates — nothing here, or there, is free-form narration. A dashboard opts
+ * in with a top-level `insights` block; without one this mounts nothing.
+ *
+ * @module insights
+ */
+
+/**
+ * Create an element with an optional class and text (named `insEl` so it does not collide with the
+ * other modules' helpers in the concatenated bundle).
+ * @param {Document} doc - Owning document.
+ * @param {string} tag - Tag name.
+ * @param {string} [cls] - Class name.
+ * @param {string} [text] - Text content.
+ * @returns {HTMLElement} The new element.
+ * @private
+ */
+function insEl(doc, tag, cls, text) {
+  var node = doc.createElement(tag);
+  if (cls) node.className = cls;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+/**
+ * A figure value as it reads: numbers to 5 significant digits, the rest as text.
+ * @param {*} value - A figure value.
+ * @returns {string} The text.
+ * @private
+ */
+function insValue(value) {
+  return typeof value === 'number' && isFinite(value) ? String(+value.toPrecision(5)) : String(value);
+}
+
+/**
+ * The figures behind an insight as readable lines: its scalar figures, and each list of records or
+ * groups as `key=value` entries (capped), so the caption's numbers can be checked.
+ * @param {object} figures - An insight's `figures`.
+ * @returns {string[]} Lines of text.
+ * @private
+ */
+function insFigureLines(figures) {
+  var lines = [];
+  Object.keys(figures || {}).forEach(function (key) {
+    var value = figures[key];
+    if (value == null) return;
+    if (Array.isArray(value)) {
+      if (!value.length) return;
+      lines.push(key + ':');
+      value.slice(0, 12).forEach(function (item) {
+        lines.push('  ' + (item && typeof item === 'object'
+          ? Object.keys(item).map(function (k) { return k + '=' + insValue(item[k]); }).join(' ')
+          : insValue(item)));
+      });
+    } else if (typeof value !== 'object') {
+      lines.push(key + ': ' + insValue(value));
+    }
+  });
+  return lines;
+}
+
+/**
+ * Where a click on a record should go: the dashboard's `case` param and the panel (the case card)
+ * whose source reads it. Null when the spec has no such drill.
+ * @param {object} spec - The dashboard spec.
+ * @returns {({param: string, panel: (string|null)}|null)} The drill target, or null.
+ * @public
+ */
+function insightsDrill(spec) {
+  var param = 'case';
+  if (!spec || !spec.params || !Object.prototype.hasOwnProperty.call(spec.params, param)) return null;
+  var panel = null;
+  Object.keys(spec.panels || {}).forEach(function (id) {
+    var ref = spec.panels[id] && spec.panels[id].dataRef;
+    if (!panel && ref && spec.data && spec.data[ref] && sourceUsesParam(spec.data[ref], param)) panel = id;
+  });
+  return { param: param, panel: panel };
+}
+
+/**
+ * Where the insights come from: the share link's endpoint, or the signed-in dashboard's.
+ * @param {object} opts - `{baseUrl?, token?, dashboardId?, owner?}`.
+ * @returns {string} The URL.
+ * @private
+ */
+function insightsUrl(opts) {
+  var base = (opts.baseUrl || '').replace(/\/$/, '');
+  if (opts.token) return base + '/api/shared/' + encodeURIComponent(opts.token) + '/insights';
+  return base + '/api/dashboards/' + encodeURIComponent(opts.dashboardId) + '/insights' +
+    (opts.owner ? '?owner=' + encodeURIComponent(opts.owner) : '');
+}
+
+/**
+ * Fetch a dashboard's insights and show them in a strip. Resolves to the strip's element, or null
+ * when there is nothing to show (not opted in, nothing found, or the request failed — insights are
+ * optional chrome and never get in the way of the dashboard).
+ * @param {object} opts - Options.
+ * @param {string} [opts.baseUrl] - The app root the API lives under.
+ * @param {string} [opts.token] - A share token (public/shared view).
+ * @param {string} [opts.dashboardId] - The dashboard id (signed-in view).
+ * @param {string} [opts.owner] - The owner, for a dashboard shared with the viewer.
+ * @param {object} [opts.spec] - The dashboard spec, to find the case card.
+ * @param {object} [opts.handle] - The `renderDashboard` handle (`setParam`, `focusPanel`).
+ * @param {HTMLElement} [opts.before] - The element to insert the strip before (default: the end of
+ *   `document.body`).
+ * @param {function} [opts.fetch] - A fetch implementation (tests).
+ * @param {Document} [opts.document] - The owning document.
+ * @returns {Promise<(HTMLElement|null)>} The strip, or null.
+ * @public
+ */
+function mountInsights(opts) {
+  var doc = opts.document || (typeof document !== 'undefined' ? document : null);
+  var doFetch = opts.fetch || (typeof fetch !== 'undefined' ? fetch : null);
+  if (!doc || !doFetch) return Promise.resolve(null);
+  return doFetch(insightsUrl(opts), { credentials: 'include' }).then(function (response) {
+    return response && response.ok ? response.json() : null;
+  }).then(function (body) {
+    if (!body || !body.enabled || !body.insights || !body.insights.length) return null;
+    var drill = opts.handle ? insightsDrill(opts.spec) : null;
+    var strip = insEl(doc, 'section', 'cxd-insights');
+    strip.setAttribute('aria-label', 'Insights');
+    var head = insEl(doc, 'div', 'cxd-insights-head');
+    head.appendChild(insEl(doc, 'span', 'cxd-insights-title', 'Insights'));
+    head.appendChild(insEl(doc, 'span', 'cxd-insights-note',
+      'computed from the data by fixed checks' + (body.checked && body.checked.tests
+        ? ' (' + body.checked.tests + ' group comparisons, corrected for multiple testing)' : '')));
+    strip.appendChild(head);
+    var list = insEl(doc, 'ul', 'cxd-insights-list');
+    body.insights.forEach(function (insight) {
+      var item = insEl(doc, 'li', 'cxd-insight cxd-insight--' + (insight.severity || 'info'));
+      item.setAttribute('data-insight', insight.id);
+      item.appendChild(insEl(doc, 'span', 'cxd-insight-dot'));
+      var text = insEl(doc, 'div', 'cxd-insight-body');
+      text.appendChild(insEl(doc, 'span', 'cxd-insight-caption', insight.caption));
+      if (drill && insight.ids && insight.ids.length) {
+        var ids = insEl(doc, 'span', 'cxd-insight-ids');
+        insight.ids.slice(0, 5).forEach(function (id) {
+          var button = insEl(doc, 'button', 'cxd-insight-id', id);
+          button.type = 'button';
+          button.title = 'Load ' + id + ' into the case card';
+          button.addEventListener('click', function () {
+            var done = opts.handle.setParam(drill.param, id);
+            if (drill.panel && typeof opts.handle.focusPanel === 'function') opts.handle.focusPanel(drill.panel);
+            return done;
+          });
+          ids.appendChild(button);
+        });
+        text.appendChild(ids);
+      }
+      var lines = insFigureLines(insight.figures);
+      if (lines.length) {
+        var details = insEl(doc, 'details');
+        details.appendChild(insEl(doc, 'summary', null, 'Figures'));
+        details.appendChild(insEl(doc, 'pre', 'cxd-insight-figures', lines.join('\n')));
+        text.appendChild(details);
+      }
+      item.appendChild(text);
+      list.appendChild(item);
+    });
+    strip.appendChild(list);
+    if (body.more > 0) strip.appendChild(insEl(doc, 'div', 'cxd-insights-note', '+' + body.more + ' more not shown'));
+    var parent = (opts.before && opts.before.parentNode) || doc.body;
+    parent.insertBefore(strip, opts.before || null);
+    return strip;
+  }).catch(function () { return null; });
+}
+
+/* ==== src/storyboard.js ==== */
+/**
+ * Storyboards: a dashboard's guided tour. A spec's `storyboard` is an ordered list of steps; each
+ * step is a complete view (a named filter scheme or explicit filters, parameter values, a panel to
+ * bring into view) with a title and a line of narration. The player is a bar with previous / play /
+ * next and a dot per step; stepping applies the view through the dashboard handle, so every step is
+ * the dashboard's own state (filters, case card, highlighting), never a picture of it.
+ *
+ * Narration is plain text written by the author; nothing is generated and it is never parsed as HTML.
+ *
+ * @module storyboard
+ */
+
+/**
+ * Create an element with an optional class and text (named `sbEl` so it does not collide with the
+ * other modules' helpers in the concatenated bundle).
+ * @param {Document} doc - Owning document.
+ * @param {string} tag - Tag name.
+ * @param {string} [cls] - Class name.
+ * @param {string} [text] - Text content.
+ * @returns {HTMLElement} The new element.
+ * @private
+ */
+function sbEl(doc, tag, cls, text) {
+  var node = doc.createElement(tag);
+  if (cls) node.className = cls;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+/**
+ * The steps of a spec's storyboard (an empty list when it has none).
+ * @param {object} spec - A dashboard spec.
+ * @returns {object[]} The step objects.
+ * @public
+ */
+function storyboardSteps(spec) {
+  var board = spec && spec.storyboard;
+  return board && Array.isArray(board.steps) ? board.steps.filter(function (step) {
+    return step && typeof step === 'object';
+  }) : [];
+}
+
+/**
+ * Mount the storyboard player for a rendered dashboard. Nothing is mounted for a spec without steps.
+ * Step 1 is applied on mount only when `opts.start` is true; by default the dashboard stays as the
+ * author left it until the viewer presses play or next.
+ * @param {object} opts - Options.
+ * @param {object} opts.spec - The dashboard spec.
+ * @param {object} opts.handle - The `renderDashboard` handle (`applyView`).
+ * @param {HTMLElement} [opts.container] - Where to put the bar: first child of this element.
+ * @param {HTMLElement} [opts.before] - Or: the element to insert the bar before.
+ * @param {boolean} [opts.start=false] - Apply the first step now.
+ * @param {Document} [opts.document] - The owning document.
+ * @param {function} [opts.setTimer] - `setTimeout` replacement (tests).
+ * @param {function} [opts.clearTimer] - `clearTimeout` replacement (tests).
+ * @returns {(object|null)} The player `{element, go(i), next(), prev(), play(), pause(), index(), destroy()}`,
+ *   or null when there is nothing to play.
+ * @public
+ */
+function mountStoryboard(opts) {
+  var steps = storyboardSteps(opts.spec);
+  var doc = opts.document || (typeof document !== 'undefined' ? document : null);
+  if (!steps.length || !doc || !opts.handle || typeof opts.handle.applyView !== 'function') return null;
+  var setTimer = opts.setTimer || function (fn, ms) { return setTimeout(fn, ms); };
+  var clearTimer = opts.clearTimer || function (id) { clearTimeout(id); };
+  var board = opts.spec.storyboard;
+
+  var bar = sbEl(doc, 'section', 'cxd-storyboard');
+  bar.setAttribute('aria-label', board.title || 'Storyboard');
+  bar.tabIndex = 0;
+  var head = sbEl(doc, 'div', 'cxd-sb-head');
+  var prevBtn = sbEl(doc, 'button', 'cxd-sb-btn', '‹');
+  var playBtn = sbEl(doc, 'button', 'cxd-sb-btn cxd-sb-play', '▶');
+  var nextBtn = sbEl(doc, 'button', 'cxd-sb-btn', '›');
+  prevBtn.type = playBtn.type = nextBtn.type = 'button';
+  prevBtn.title = 'Previous step';
+  nextBtn.title = 'Next step';
+  var count = sbEl(doc, 'span', 'cxd-sb-count');
+  var title = sbEl(doc, 'span', 'cxd-sb-title');
+  var dots = sbEl(doc, 'span', 'cxd-sb-dots');
+  head.appendChild(prevBtn);
+  head.appendChild(playBtn);
+  head.appendChild(nextBtn);
+  head.appendChild(count);
+  head.appendChild(title);
+  head.appendChild(dots);
+  var narration = sbEl(doc, 'p', 'cxd-sb-text');
+  narration.setAttribute('aria-live', 'polite');
+  bar.appendChild(head);
+  bar.appendChild(narration);
+
+  var current = -1;
+  var playing = false;
+  var timer = null;
+  var token = 0;
+  var dotButtons = steps.map(function (step, i) {
+    var dot = sbEl(doc, 'button', 'cxd-sb-dot');
+    dot.type = 'button';
+    dot.title = step.title || ('Step ' + (i + 1));
+    dot.addEventListener('click', function () { player.pause(); player.go(i); });
+    dots.appendChild(dot);
+    return dot;
+  });
+
+  function paint() {
+    var step = steps[current];
+    count.textContent = current < 0 ? steps.length + (steps.length === 1 ? ' step' : ' steps') : (current + 1) + ' / ' + steps.length;
+    title.textContent = step ? (step.title || '') : (board.title || '');
+    narration.textContent = step ? (step.narration || '') : '';
+    narration.style.display = step && step.narration ? '' : 'none';
+    dotButtons.forEach(function (dot, i) {
+      dot.className = 'cxd-sb-dot' + (i === current ? ' cxd-sb-dot--on' : '');
+    });
+    playBtn.textContent = playing ? '❚❚' : '▶';
+    playBtn.title = playing ? 'Pause' : 'Play';
+    prevBtn.disabled = current <= 0;
+    nextBtn.disabled = current >= steps.length - 1;
+  }
+
+  function schedule() {
+    if (timer !== null) { clearTimer(timer); timer = null; }
+    if (!playing) return;
+    var step = steps[current];
+    var seconds = step && step.seconds > 0 ? step.seconds : (board.seconds > 0 ? board.seconds : 8);
+    timer = setTimer(function () {
+      timer = null;
+      if (current >= steps.length - 1) { player.pause(); return; }
+      player.go(current + 1);
+    }, seconds * 1000);
+  }
+
+  var player = {
+    element: bar,
+    index: function () { return current; },
+    go: function (i) {
+      if (i < 0 || i >= steps.length) return Promise.resolve();
+      current = i;
+      var mine = ++token;
+      paint();
+      var step = steps[i];
+      var done = opts.handle.applyView({
+        scheme: step.scheme, filters: step.filters, params: step.params, focus: step.focus
+      });
+      // Count the dwell time from when the panels hold the step, not from the click.
+      Promise.resolve(done).catch(function () {}).then(function () { if (mine === token) schedule(); });
+      return done;
+    },
+    next: function () { return player.go(current + 1); },
+    prev: function () { return player.go(current - 1); },
+    play: function () {
+      playing = true;
+      if (current < 0 || current >= steps.length - 1) current = -1;
+      paint();
+      return player.go(current + 1);
+    },
+    pause: function () {
+      playing = false;
+      if (timer !== null) { clearTimer(timer); timer = null; }
+      paint();
+    },
+    destroy: function () {
+      player.pause();
+      token++;
+      if (bar.parentNode) bar.parentNode.removeChild(bar);
+    }
+  };
+
+  prevBtn.addEventListener('click', function () { player.pause(); player.prev(); });
+  nextBtn.addEventListener('click', function () { player.pause(); player.next(); });
+  playBtn.addEventListener('click', function () { if (playing) player.pause(); else player.play(); });
+  bar.addEventListener('keydown', function (event) {
+    if (event.key === 'ArrowRight') { player.pause(); player.next(); event.preventDefault(); }
+    else if (event.key === 'ArrowLeft') { player.pause(); player.prev(); event.preventDefault(); }
+  });
+
+  if (opts.container) opts.container.insertBefore(bar, opts.container.firstChild);
+  else if (opts.before && opts.before.parentNode) opts.before.parentNode.insertBefore(bar, opts.before);
+  else doc.body.insertBefore(bar, doc.body.firstChild);
+  paint();
+  if (opts.start) player.go(0);
+  return player;
+}
+
+/* ==== src/renderPayload.js ==== */
+/**
+ * Render a dashboard from a language wrapper's payload: the one boot routine the R widget, the Python
+ * package and any other thin wrapper share, so none of them re-implements it.
+ *
+ * A payload is plain JSON strings plus a few flags, because that is what a wrapper can produce without
+ * a JavaScript engine:
+ *
+ *   { suggest: false, specJson: "<a dashboard spec>" }            render the spec as written
+ *   { suggest: true,  dataJson: "<a CanvasXpress data object>" }  suggest a dashboard for the data
+ *   title, theme                                                   optional overrides
+ *
+ * Failures never leave a blank page: an invalid spec, data no template fits, or an engine that did not
+ * load are each reported inside the container, in words.
+ *
+ * @module renderPayload
+ */
+
+/**
+ * Show a message in the container in place of a dashboard.
+ * @param {HTMLElement} el - The container.
+ * @param {string} text - What to say.
+ * @returns {void}
+ * @private
+ */
+function rpMessage(el, text) {
+  var doc = el.ownerDocument;
+  el.innerHTML = '';
+  var note = doc.createElement('div');
+  note.className = 'cxdashboard-message';
+  note.style.cssText = 'padding:16px;color:var(--cx-ui-text-muted,inherit);font:14px var(--cx-font-sans,system-ui,sans-serif);white-space:pre-wrap';
+  note.textContent = text;
+  el.appendChild(note);
+}
+
+/**
+ * Wait (bounded) until something is ready. A wrapper's engine may still be arriving when it first
+ * renders — a Shiny app injects its dependencies dynamically, a notebook may load a CDN script late.
+ * @param {function} ready - `function(): boolean`.
+ * @param {number} limitMs - How long to wait.
+ * @param {function} done - Called with true when ready, false when the wait ran out.
+ * @returns {void}
+ * @private
+ */
+function rpWhen(ready, limitMs, done) {
+  var waited = 0;
+  (function poll() {
+    if (ready()) { done(true); return; }
+    if (waited >= limitMs) { done(false); return; }
+    waited += 50;
+    setTimeout(poll, 50);
+  })();
+}
+
+/**
+ * Build the spec a payload describes.
+ * @param {object} api - The dashboards API (`suggestDashboard`, `dashboardSpec`).
+ * @param {object} payload - The payload.
+ * @param {string} idPrefix - A prefix for a suggested dashboard's id.
+ * @param {function} [onTemplate] - Called with the matched template name.
+ * @returns {({spec: object}|{message: string})} The spec, or what to tell the user.
+ * @private
+ */
+function rpSpec(api, payload, idPrefix, onTemplate) {
+  var spec;
+  try {
+    if (payload.suggest) {
+      var data = JSON.parse(payload.dataJson);
+      var suggestion = api.suggestDashboard(data);
+      if (!suggestion) {
+        return { message: 'No dashboard template matched these data (a survival cohort, or a sequencing run-QC ' +
+          'table, with records as rows). Pass a spec instead.' };
+      }
+      spec = api.dashboardSpec(suggestion, {
+        id: idPrefix, title: payload.title || suggestion.label, source: { kind: 'inline', value: data }
+      });
+      if (typeof onTemplate === 'function') onTemplate(suggestion.template);
+    } else {
+      spec = JSON.parse(payload.specJson);
+      if (payload.title) spec.title = payload.title;
+    }
+    if (payload.theme) spec.theme = payload.theme;
+  } catch (e) {
+    return { message: 'Could not read the dashboard: ' + (e && e.message || e) };
+  }
+  return { spec: spec };
+}
+
+/**
+ * Render a payload into a container.
+ * @param {HTMLElement} el - The container (it gets a fresh dashboard, or a message).
+ * @param {object} payload - `{suggest, specJson?, dataJson?, title?, theme?}`.
+ * @param {object} [opts] - Options.
+ * @param {object} [opts.api] - The dashboards API (default: `window.CanvasXpressDashboards`).
+ * @param {function} [opts.isEngineReady] - `function(): boolean` (default: `window.CanvasXpress` exists).
+ * @param {number} [opts.timeoutMs=20000] - How long to wait for the bundle and engine.
+ * @param {string} [opts.idPrefix] - Prefix for a suggested dashboard's id.
+ * @param {function} [opts.onTemplate] - Called with `"cohort"` / `"ngs-qc"` when a template matched.
+ * @param {function} [opts.onParamChange] - `function(name, value, done, handle)`, called when a dashboard
+ *   parameter changes; `done` resolves once the panels hold the new data.
+ * @param {function} [opts.isCurrent] - `function(): boolean`; false once a newer render superseded this one
+ *   (the result is then discarded).
+ * @param {object} [opts.renderOptions] - Extra options for `renderDashboard`.
+ * @returns {Promise<(object|null)>} The dashboard handle, or null when a message was shown instead.
+ * @public
+ */
+function renderPayload(el, payload, opts) {
+  opts = opts || {};
+  var win = typeof window !== 'undefined' ? window : {};
+  var current = typeof opts.isCurrent === 'function' ? opts.isCurrent : function () { return true; };
+  var handle = null;
+  el.innerHTML = '';
+  return new Promise(function (resolve) {
+    rpWhen(function () {
+      var api = opts.api || win.CanvasXpressDashboards;
+      var engine = typeof opts.isEngineReady === 'function' ? opts.isEngineReady() : !!win.CanvasXpress;
+      return !!(api && engine);
+    }, opts.timeoutMs == null ? 20000 : opts.timeoutMs, function (ready) {
+      if (!current()) { resolve(null); return; }
+      var api = opts.api || win.CanvasXpressDashboards;
+      if (!ready) {
+        rpMessage(el, api
+          ? 'The CanvasXpress engine did not load (check the network).'
+          : 'canvasxpress-dashboards did not load.');
+        resolve(null);
+        return;
+      }
+      var built = rpSpec(api, payload, opts.idPrefix || ('cxdashboard-' + (el.id || 'x')), opts.onTemplate);
+      if (built.message) { rpMessage(el, built.message); resolve(null); return; }
+      // renderDashboard THROWS (synchronously) for an invalid spec and rejects for a data failure:
+      // either way say what is wrong instead of leaving a blank page.
+      var rendering;
+      try {
+        var renderOptions = {};
+        var extra = opts.renderOptions || {};
+        for (var key in extra) { if (Object.prototype.hasOwnProperty.call(extra, key)) renderOptions[key] = extra[key]; }
+        if (typeof opts.onParamChange === 'function') {
+          renderOptions.onParamChange = function (name, value, done) {
+            opts.onParamChange(name, value, done, handle);
+          };
+        }
+        rendering = api.renderDashboard(built.spec, el, renderOptions);
+      } catch (e) {
+        rpMessage(el, 'Could not render the dashboard: ' + (e && e.message || e));
+        resolve(null);
+        return;
+      }
+      rendering.then(function (h) {
+        if (!current()) { if (h && typeof h.destroy === 'function') h.destroy(); resolve(null); return; }
+        handle = h;
+        // A spec with a storyboard gets its player above the board (nothing mounts otherwise).
+        if (typeof api.mountStoryboard === 'function') {
+          try { api.mountStoryboard({ spec: built.spec, handle: h, container: el }); } catch (e) { /* optional chrome */ }
+        }
+        resolve(h);
+      }, function (e) {
+        rpMessage(el, 'Could not render the dashboard: ' + (e && e.message || e));
+        resolve(null);
+      });
+    });
+  });
 }
 
 /* ==== src/enrichment.js ==== */
@@ -14949,7 +16081,7 @@ function isMeasureColumn(bodyRows, col) {
   for (var i = 0; i < bodyRows.length; i++) {
     var cell = bodyRows[i][col];
     if (isBlank(cell)) continue;
-    if (isNumeric(cell)) { sawNumber = true; } else { return false; }
+    if (isNumericText(cell)) { sawNumber = true; } else { return false; }
   }
   return sawNumber;
 }
@@ -15012,7 +16144,7 @@ function parseCsv(text) {
  * @returns {boolean} True when numeric.
  * @private
  */
-function isNumeric(value) {
+function isNumericText(value) {
   if (value == null) return false;
   var trimmed = String(value).trim();
   if (trimmed === '') return false;
@@ -15087,6 +16219,7 @@ function createBuilder(target, options) {
   var canAuthorFunctions = false;     // may this user write / edit data functions?
   var addFiltersBtn = null; // same rule as addControlBtn
   var linksBtn = null;      // disabled until there are two data sources to link
+  var storyboardBtn = null; // the guided tour editor (spec.storyboard)
   var fieldsBtn = null;     // disabled until there is a (non-live) data source
   var shapeBtn = null;      // same rule as fieldsBtn
   var addTransformBtn = null;     // disabled until a graph panel (one bound to data) exists to transform
@@ -15215,6 +16348,9 @@ function createBuilder(target, options) {
     // "Links": how a selection in one panel marks the related rows of panels
     // built on other sources (spec.relationships + spec.markingMode).
     linksBtn = iconButton('links', 'Links', function () { doEditLinks(); }, 'cxb-bt-data');
+    // "Storyboard": a guided tour of saved views, each step a snapshot of the live filters and
+    // parameters plus a line of narration (spec.storyboard).
+    storyboardBtn = iconButton('storyboard', 'Storyboard', function () { doEditStoryboard(); }, 'cxb-bt-data');
     // "ƒx Fields": calculated fields computed once on a source, so every panel,
     // filter, join and link on it can use them (data.<ref>.calculatedFields).
     fieldsBtn = iconButton('fields', 'Fields', function () { doEditFields(); }, 'cxb-bt-data');
@@ -15249,7 +16385,7 @@ function createBuilder(target, options) {
       [addControlBtn, addFiltersBtn, addFdrBtn, addSignificanceBtn], updateAddPanelState);
     // Data: prepare the data first (calculated fields, shaping, a transform), then
     // relate and compute across sources.
-    var dataItems = [fieldsBtn, shapeBtn, addTransformBtn, linksBtn, addFunctionBtn];
+    var dataItems = [fieldsBtn, shapeBtn, addTransformBtn, linksBtn, storyboardBtn, addFunctionBtn];
     if (showAddData) dataItems.push(iconButton('database', 'Data source', function () { doAddDataSource(); }, 'cxb-bt-data'));
     var dataMenu = toolbarMenu('Data', 'cxb-bt-data', dataItems, updateAddPanelState);
     // Left: identity + history. Middle: the three menus. Right: utilities + Save
@@ -16150,6 +17286,35 @@ function createBuilder(target, options) {
       commit(next, false);
       rebuild();
       setMsg(describeLinkCount(next));
+    });
+  }
+
+  /**
+   * "Storyboard": edit the guided tour. The dialog can snapshot the live view (the filters and
+   * parameters as they are on screen right now) as a step; applying writes `spec.storyboard`
+   * (a spec-only change, so no rebuild).
+   * @returns {void}
+   * @private
+   */
+  function doEditStoryboard() {
+    var doc = container.ownerDocument || document;
+    var current = rawSpec();
+    var live = {
+      filters: liveHandle && typeof liveHandle.getFilterState === 'function' ? liveHandle.getFilterState() : [],
+      params: liveHandle && typeof liveHandle.getParams === 'function' ? liveHandle.getParams() : {}
+    };
+    openStoryboardDialog(doc, current, live).then(function (edited) {
+      if (!edited) return;
+      var next = rawSpec();
+      if (edited.steps.length) {
+        next.storyboard = { steps: edited.steps };
+        if (edited.title) next.storyboard.title = edited.title;
+        if (current.storyboard && current.storyboard.seconds) next.storyboard.seconds = current.storyboard.seconds;
+      } else {
+        delete next.storyboard;
+      }
+      commit(next, false);
+      setMsg(edited.steps.length ? 'Storyboard: ' + edited.steps.length + (edited.steps.length === 1 ? ' step' : ' steps') : 'Storyboard removed');
     });
   }
 
@@ -19084,6 +20249,9 @@ function createBuilder(target, options) {
           }
           merged[k] = live[k];
         }
+        // A self-contained panel (ggplot / cxcode: its spec travels in `panel.spec`) has no authored
+        // config; with nothing captured, writing `{}` back would change a spec that was not edited.
+        if (!spec.panels[id].config && !Object.keys(merged).length) return;
         spec = updatePanel(spec, id, { config: merged });
       } catch (e) { /* keep going */ }
     });
@@ -19628,6 +20796,7 @@ var TOOLBAR_ICONS = {
   transform: '<path d="M3 12c3-8 6-8 9 0s6 8 9 0"/>',
   percent: '<path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.2"/><circle cx="17" cy="17" r="2.2"/>',
   significance: '<path d="M12 4v10M7.5 6.5l9 5M16.5 6.5l-9 5"/><path d="M5 20v-3h14v3"/>',
+  storyboard: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4.5-2.5z"/>',
   links: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   fields: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',
   table: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/>',
@@ -20515,6 +21684,132 @@ function openLinksDialog(doc, spec, dataOf) {
 
     append(modal, [heading, intro, field('When you select marks', modeSel), field('Links', list),
       field('Link this source and key', leftRow), field('to this source and key', rightRow), linkBtn, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+
+    /**
+     * Close the dialog with a result.
+     * @param {*} result - Resolution value.
+     * @returns {void}
+     */
+    function close(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
+ * What a storyboard step applies, as one line ("filters: 2 · case = P007 · focus: case").
+ * @param {object} step - A storyboard step.
+ * @returns {string} The summary.
+ * @private
+ */
+function describeStoryStep(step) {
+  var parts = [];
+  if (step.scheme) parts.push('filters: scheme "' + step.scheme + '"');
+  else if (step.filters && step.filters.length) parts.push('filters: ' + step.filters.length);
+  else parts.push('no filters');
+  Object.keys(step.params || {}).forEach(function (name) { parts.push(name + ' = ' + step.params[name]); });
+  if (step.focus) parts.push('focus: ' + step.focus);
+  return parts.join(' · ');
+}
+
+/**
+ * The "Storyboard" dialog: the steps of a guided tour (title, narration, what each applies), each
+ * reorderable and removable, and "+ Step from the current view" to snapshot the live filters and
+ * parameters. Edits apply to a working copy.
+ * @param {Document} doc - The owning document.
+ * @param {object} spec - The current spec (not modified).
+ * @param {{filters: object[], params: object}} live - The live view to snapshot.
+ * @returns {Promise<?{title: string, steps: object[]}>} The new storyboard, or null when cancelled.
+ * @private
+ */
+function openStoryboardDialog(doc, spec, live) {
+  var board = spec.storyboard || {};
+  var steps = JSON.parse(JSON.stringify(board.steps || []));
+  var changed = null;
+  return new Promise(function (resolve) {
+    var overlay = modalOverlay();
+    var modal = el('div', 'cxb-modal');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Storyboard';
+    var intro = el('p', 'cxb-links-intro');
+    intro.textContent = 'A guided tour of this dashboard. Set the filters and parameters you want to show, then ' +
+      'add a step from the current view and write what it shows. Every step is the whole view, so going back works.';
+    var titleInput = el('input');
+    titleInput.type = 'text';
+    titleInput.value = board.title || '';
+    titleInput.setAttribute('placeholder', 'Tour title (optional)');
+    var list = el('div', 'cxb-links-list');
+    var focusSel = selectField([''].concat(Object.keys(spec.panels || {})), '', function () {});
+    var errEl = el('div', 'cxb-modal-err');
+
+    /**
+     * Redraw the steps.
+     * @returns {void}
+     */
+    function renderList() {
+      list.innerHTML = '';
+      if (!steps.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = 'No steps yet.';
+        list.appendChild(none);
+      }
+      steps.forEach(function (step, i) {
+        var row = el('div', 'cxb-links-row cxb-story-row');
+        var body = el('span');
+        var title = el('input');
+        title.type = 'text';
+        title.value = step.title || '';
+        title.setAttribute('placeholder', 'Step ' + (i + 1) + ' title');
+        on(title, 'input', function () { if (title.value) step.title = title.value; else delete step.title; });
+        var text = el('textarea');
+        text.value = step.narration || '';
+        text.setAttribute('rows', '2');
+        text.setAttribute('placeholder', 'What this step shows');
+        on(text, 'input', function () { if (text.value) step.narration = text.value; else delete step.narration; });
+        var what = el('span', 'cxb-links-none');
+        what.textContent = describeStoryStep(step);
+        append(body, [title, text, what]);
+        var up = button('↑', function () { if (i > 0) { steps.splice(i - 1, 0, steps.splice(i, 1)[0]); renderList(); } });
+        var down = button('↓', function () { if (i < steps.length - 1) { steps.splice(i + 1, 0, steps.splice(i, 1)[0]); renderList(); } });
+        var remove = button('×', function () { steps.splice(i, 1); renderList(); });
+        up.setAttribute('title', 'Move up');
+        down.setAttribute('title', 'Move down');
+        remove.setAttribute('title', 'Remove this step');
+        remove.setAttribute('aria-label', 'Remove step ' + (i + 1));
+        append(row, [body, up, down, remove]);
+        list.appendChild(row);
+      });
+    }
+    renderList();
+
+    var addBtn = button('+ Step from the current view', function () {
+      var step = { title: 'Step ' + (steps.length + 1) };
+      var given = {};
+      Object.keys(live.params || {}).forEach(function (name) {
+        var def = (spec.params || {})[name];
+        var dflt = def && typeof def === 'object' ? def.value : def;
+        if (live.params[name] !== dflt) given[name] = live.params[name];
+      });
+      if (Object.keys(given).length) step.params = given;
+      if (live.filters && live.filters.length) step.filters = JSON.parse(JSON.stringify(live.filters));
+      if (focusSel.value) step.focus = focusSel.value;
+      steps.push(step);
+      renderList();
+    });
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var applyBtn = button('Apply', function () {
+      changed = { title: titleInput.value.trim(), steps: steps };
+      close(changed);
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, applyBtn]);
+    append(modal, [heading, intro, field('Title', titleInput), field('Steps', list),
+      field('Bring this panel into view (for the next step)', focusSel), addBtn, errEl, footer]);
     overlay.appendChild(modal);
     on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
     (doc.body || doc.documentElement).appendChild(overlay);
@@ -21956,6 +23251,13 @@ var CanvasXpressDashboards = {
   WIZARD_SCIENCE_TYPES: WIZARD_SCIENCE_TYPES,
   scientificFieldsFor: scientificFieldsFor,
   buildScientificConfig: buildScientificConfig,
+  suggestDashboard: suggestDashboard,
+  dashboardSpec: dashboardSpec,
+  mountInsights: mountInsights,
+  insightsDrill: insightsDrill,
+  mountStoryboard: mountStoryboard,
+  storyboardSteps: storyboardSteps,
+  renderPayload: renderPayload,
   transposeCxData: transposeCxData,
   hypergeometricPValue: hypergeometricPValue,
   benjaminiHochberg: benjaminiHochberg,
