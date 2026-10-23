@@ -34,7 +34,8 @@
 #' @examples
 #' spec <- list(
 #'   id = "demo", title = "Demo",
-#'   layout = list(cols = 12, rowHeight = 30, items = list(list(panel = "bars", x = 0, y = 0, w = 12, h = 10))),
+#'   layout = list(cols = 12, rowHeight = 30,
+#'     items = list(list(panel = "bars", x = 0, y = 0, w = 12, h = 10))),
 #'   data = list(d = list(kind = "inline", value = cxd_data(
 #'     data.frame(region = c("N", "S", "E"), revenue = c(10, 20, 15)), id = NULL))),
 #'   panels = list(bars = list(dataRef = "d", config = list(graphType = "Bar", xAxis = I("revenue"))))
