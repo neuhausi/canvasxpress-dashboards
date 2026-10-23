@@ -3,7 +3,7 @@
 Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 (`cxd_server`). Versions follow the package version.
 
-## Unreleased
+## 0.15.0 — 2026-10-23
 
 ### Fix: the ESM bundle did not load, and the UMD bundle silently swapped four helpers
 Every module is inlined into one scope and four top-level names were declared in two modules:
