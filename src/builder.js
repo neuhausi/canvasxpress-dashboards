@@ -5759,7 +5759,7 @@ function openStoryboardDialog(doc, spec, live) {
     titleInput.type = 'text';
     titleInput.value = board.title || '';
     titleInput.setAttribute('placeholder', 'Tour title (optional)');
-    var list = el('div', 'cxb-links-list');
+    var list = el('div', 'cxb-links-list cxb-story-list');
     var focusSel = selectField([''].concat(Object.keys(spec.panels || {})), '', function () {});
     var errEl = el('div', 'cxb-modal-err');
 

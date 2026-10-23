@@ -728,6 +728,8 @@ var dashboardCss = [
   '  background: var(--cx-ui-surface-sunken); font-size: 14px; }',
   '.cxb-links-row span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }',
   '.cxb-links-none { font-size: 13px; color: var(--cxd-muted); }',
+  // Only the steps scroll, so the title and Apply stay on screen however many steps a tour has.
+  '.cxb-story-list { max-height: 38vh; overflow-y: auto; }',
   '.cxb-story-row { align-items: flex-start; }',
   '.cxb-story-row > span { display: flex; flex-direction: column; gap: 4px; }',
   '.cxb-story-row input, .cxb-story-row textarea { width: 100%; box-sizing: border-box; font: inherit; }',
@@ -21742,7 +21744,7 @@ function openStoryboardDialog(doc, spec, live) {
     titleInput.type = 'text';
     titleInput.value = board.title || '';
     titleInput.setAttribute('placeholder', 'Tour title (optional)');
-    var list = el('div', 'cxb-links-list');
+    var list = el('div', 'cxb-links-list cxb-story-list');
     var focusSel = selectField([''].concat(Object.keys(spec.panels || {})), '', function () {});
     var errEl = el('div', 'cxb-modal-err');
 

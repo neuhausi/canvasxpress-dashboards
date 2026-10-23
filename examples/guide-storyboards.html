@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en" data-cx-ui-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — How to build a storyboard</title>
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <style>
+    .guide { max-width: 920px; margin: 0 auto; padding: 8px 24px 56px; line-height: 1.6; }
+    .guide h1 { font-size: 26px; margin: 8px 0 6px; }
+    .guide .lead { color: var(--cx-ui-text-muted); font-size: 15.5px; margin: 0 0 22px; }
+    .guide h2 { font-size: 19px; margin: 34px 0 8px; }
+    .guide .step { background: var(--cx-ui-surface); border: 1px solid var(--cx-ui-border-subtle);
+      border-radius: var(--cx-radius-lg); padding: 16px 18px 18px; margin: 16px 0; }
+    .guide .step h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font-size: 16.5px; }
+    .guide .n { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px;
+      border-radius: var(--cx-radius-pill); background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent);
+      font-size: 13px; font-weight: 600; }
+    .guide p { margin: 6px 0; }
+    .guide img { display: block; width: 100%; height: auto; margin: 10px 0 4px; border: 1px solid var(--cx-ui-border);
+      border-radius: var(--cx-radius-md); }
+    .guide .cap { color: var(--cx-ui-text-muted); font-size: 13px; margin: 0 0 6px; }
+    .guide .tip { background: var(--cx-ui-accent-tint-subtle); border-left: 3px solid var(--cx-ui-accent-strong);
+      border-radius: var(--cx-radius-md); padding: 8px 12px; margin: 10px 0; font-size: 14px; }
+    .guide code, .guide pre { font-family: var(--cx-font-mono); font-size: 13px; }
+    .guide pre { background: var(--cx-ui-surface-sunken); border: 1px solid var(--cx-ui-border-subtle);
+      border-radius: var(--cx-radius-md); padding: 10px 12px; overflow: auto; }
+    .guide table { border-collapse: collapse; width: 100%; font-size: 14px; margin: 8px 0; }
+    .guide th, .guide td { border: 1px solid var(--cx-ui-border-subtle); padding: 6px 10px; text-align: left; vertical-align: top; }
+    .guide th { background: var(--cx-ui-surface-sunken); }
+    .guide kbd { font-family: var(--cx-font-mono); font-size: 12.5px; border: 1px solid var(--cx-ui-border);
+      border-radius: var(--cx-radius-sm); padding: 1px 6px; background: var(--cx-ui-surface); }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <a href="cohort-tour.html">🎬 See a finished tour</a>
+    <span class="cxd-here">📖 How to build a storyboard</span>
+  </nav>
+
+  <main class="guide">
+    <h1>How to build a storyboard</h1>
+    <p class="lead">A storyboard is a guided tour of a dashboard. Each step is a saved view (the filters you set,
+      the parameters you chose, the panel to bring into view) with a title and a line of narration. Viewers press
+      <b>play</b> or the arrows and the dashboard itself changes, so they can stop at any step and explore. This page
+      builds one from scratch in the Builder, then shows how to edit it, delete it and add insights.</p>
+
+    <div class="tip"><b>What you need:</b> a dashboard you can edit. A shipped example is locked, so
+      <b>Open in Builder</b> works on a copy: you will name it when you save. The pictures use the
+      <i>Cohort Tour</i> example, a 60-patient trial.</div>
+
+    <div class="step">
+      <h3><span class="n">1</span>Open the dashboard in the Builder</h3>
+      <p>Go to <b>Dashboards</b> in the left menu and find your dashboard (the search box narrows the list). Click
+        <b>Open in Builder</b>.</p>
+      <img src="assets/storyboard-guide/1-open-in-builder.png" alt="The Dashboards page with Open in Builder outlined" />
+      <p class="cap">Dashboards → search → <b>Open in Builder</b> (outlined).</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">2</span>Put the dashboard in the first view you want to show</h3>
+      <p>A step stores what you see right now, so set it up first. Use anything that changes the view: a Filters
+        panel (tick values, move a slider), a saved filter scheme from the scheme list, a control, or click a point to
+        load a case. Here the saved scheme list is outlined; choosing <b>Drug arm</b> filters the whole dashboard to
+        the drug arm.</p>
+      <img src="assets/storyboard-guide/2-choose-a-view.png" alt="The Filters panel scheme list outlined, before choosing a view" />
+      <p class="cap">The Filters panel's scheme list (outlined) holds saved views.</p>
+      <img src="assets/storyboard-guide/3-the-view-is-set.png" alt="The dashboard after choosing the Drug arm scheme: only drug patients remain" />
+      <p class="cap">After choosing <b>Drug arm</b>: every chart now shows only the drug arm (30 of 60 patients).</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">3</span>Open the Storyboard dialog</h3>
+      <p>In the toolbar open the <b>Data</b> menu and click <b>Storyboard</b>.</p>
+      <img src="assets/storyboard-guide/4-data-menu-storyboard.png" alt="The Data menu open with Storyboard outlined" />
+      <p class="cap"><b>Data → Storyboard</b> (outlined).</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">4</span>Add a step from the current view</h3>
+      <p>The dialog lists the steps so far (a new tour starts with none). Give the tour a title if you like, then click
+        <b>+ Step from the current view</b>. The dashboard behind the dialog is the view that gets stored.</p>
+      <img src="assets/storyboard-guide/5-empty-storyboard.png" alt="An empty Storyboard dialog with the add-step button outlined" />
+      <p class="cap">An empty tour: <b>+ Step from the current view</b> (outlined) stores the view behind the dialog.</p>
+      <p>Type a short <b>title</b> and what the step <b>shows</b>. The line under the boxes says what was captured:
+        here <code>filters: 1</code> is the Drug-arm filter.</p>
+      <img src="assets/storyboard-guide/6-first-step-added.png" alt="The Storyboard dialog with one step, titled The drug arm" />
+      <p class="cap">One step, with its title and narration. The small line shows what it applies.</p>
+      <div class="tip"><b>Every step is the whole view.</b> A step that names no filters clears them, and a step that
+        does not name a parameter puts it back to its default. So stepping back always shows exactly that step.
+        To keep a filter across steps, set it again before adding the next one.</div>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">5</span>Add the other steps</h3>
+      <p>Close the dialog with <b>Apply</b>, change the dashboard to the next view you want to show (a different
+        filter, another case, a different scheme), reopen <b>Data → Storyboard</b> and click <b>+ Step from the current
+        view</b> again. Repeat until the tour is done. To bring a panel into view for a step, pick it in the
+        <b>Bring this panel into view</b> list <i>before</i> clicking the button.</p>
+      <p>Use the <b>↑</b> and <b>↓</b> buttons to reorder and <b>×</b> to remove a step.</p>
+      <img src="assets/storyboard-guide/7-reorder-and-remove.png" alt="The Storyboard dialog with two steps and the move-up button outlined" />
+      <p class="cap">Reorder with the arrows (outlined), remove with <b>×</b>.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">6</span>Apply, then Save the dashboard</h3>
+      <p>Click <b>Apply</b> in the dialog, then <b>Save</b> at the top right of the Builder. Applying alone changes the
+        dashboard you are editing; saving is what stores it.</p>
+      <img src="assets/storyboard-guide/8-apply.png" alt="The Storyboard dialog with Apply outlined" />
+      <p class="cap"><b>Apply</b> (outlined) closes the dialog.</p>
+      <img src="assets/storyboard-guide/9-save.png" alt="The Builder with the Save button outlined" />
+      <p class="cap"><b>Save</b> (outlined) stores the dashboard with its storyboard.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">7</span>Play it</h3>
+      <p>On the <b>Dashboards</b> page click <b>Preview</b> on your dashboard. It opens full page with a player bar
+        above the board: previous, play, next, one dot per step, and the title and narration of the current step.
+        Nothing is applied until the viewer presses play or a step button.</p>
+      <img src="assets/storyboard-guide/11-playing-a-step.png" alt="A storyboard playing step 3 of 4: the player bar above a filtered dashboard" />
+      <p class="cap">Step 3 of 4 playing: the bar shows the narration and the dashboard is filtered to that view.</p>
+    </div>
+
+    <h2>Edit or delete a storyboard</h2>
+    <ul>
+      <li><b>Edit:</b> open <b>Data → Storyboard</b> again. Change titles and narration by typing, reorder with
+        ↑ ↓, remove steps with ×, then <b>Apply</b> and <b>Save</b>. <b>Cancel</b> throws the edits away.</li>
+      <li><b>Change what a step applies</b> (its filters, parameters or panel): set the dashboard to the view you want,
+        remove that step and add it again with <b>+ Step from the current view</b>.</li>
+      <li><b>Delete the whole storyboard:</b> remove every step and <b>Apply</b>, then <b>Save</b>; the player disappears.
+        You can also open the pencil next to Save (<b>Edit dashboard JSON</b>), delete the <code>"storyboard"</code>
+        block and <b>Save</b>.</li>
+      <li><b>How long a step stays up</b> while playing (default 8 seconds) is set in the JSON, per step or for the whole tour.</li>
+    </ul>
+
+    <h2>What a storyboard looks like in the JSON</h2>
+<pre>"storyboard": {
+  "title": "Drug arm walkthrough",
+  "seconds": 8,
+  "steps": [
+    { "title": "The whole cohort", "narration": "Forty patients, two arms." },
+    { "title": "The drug arm", "narration": "Survival stays higher for longer.", "scheme": "Drug arm" },
+    { "title": "One patient", "narration": "P007 on the case card.",
+      "params": { "case": "P007" }, "focus": "case", "seconds": 12 }
+  ]
+}</pre>
+    <table>
+      <tr><th>Key</th><th>Meaning</th></tr>
+      <tr><td><code>title</code>, <code>narration</code></td><td>Plain text shown in the bar (never read as HTML).</td></tr>
+      <tr><td><code>scheme</code> or <code>filters</code></td><td>A saved filter scheme by name, or the filters themselves. Not both.</td></tr>
+      <tr><td><code>params</code></td><td>Parameter values for this step; each name must be declared in the dashboard's <code>params</code>.</td></tr>
+      <tr><td><code>focus</code></td><td>A panel id to scroll into view.</td></tr>
+      <tr><td><code>seconds</code></td><td>How long this step stays up while playing.</td></tr>
+    </table>
+
+    <h2>Optional: add insights</h2>
+    <p>A dashboard can also show an <b>Insights</b> strip above the board: findings computed from the data by fixed
+      checks (outliers, group differences corrected for multiple testing, and any thresholds you declare), each with
+      its figures. There is no button for it yet. Open the pencil next to <b>Save</b> (<b>Edit dashboard JSON</b>), add
+      an <code>insights</code> block, and <b>Save</b>:</p>
+<pre>"insights": {
+  "thresholds": [
+    { "field": "age", "op": "ge", "value": 75, "label": "Age 75 or older" }
+  ]
+}</pre>
+    <p>An empty <code>"insights": {}</code> turns on the data-derived checks only. When the dashboard has a case card,
+      the records an insight names appear as buttons (for example <b>P014</b>) that load that patient. Insights show
+      on the <b>Preview</b> page and on shared links.</p>
+    <img src="assets/storyboard-guide/10-player-and-insights.png" alt="The player bar above an Insights strip with the first insight's figures open" />
+    <p class="cap">The player bar above the Insights strip; <b>Figures</b> opens the numbers behind a finding.</p>
+
+    <h2>Tips</h2>
+    <ul>
+      <li>Keep narration to a sentence or two, and quote numbers you can see on screen.</li>
+      <li>Start the tour from the whole dashboard, so viewers see what the later steps narrow down.</li>
+      <li>Have the tour end on something the viewer can act on, such as a patient on the case card.</li>
+      <li>Press <b>Preview</b> and step through it yourself before you send it to anyone.</li>
+    </ul>
+    <p>The same tour can be written by hand or generated: see <code>docs/storyboards.md</code> in the repository for
+      the full field reference.</p>
+  </main>
+</body>
+</html>
