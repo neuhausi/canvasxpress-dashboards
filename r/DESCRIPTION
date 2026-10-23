@@ -5,7 +5,7 @@ Version: 0.1.0
 Authors@R: person("Isaac", "Neuhaus", email = "imnphd@gmail.com", role = c("aut", "cre"))
 Description: Renders 'canvasxpress-dashboards' specs - multi-panel, linked
     'CanvasXpress' dashboards described by one JSON document - as an
-    'htmlwidgets' widget for R Markdown, Quarto, the RStudio viewer and 'shiny'.
+    'htmlwidgets' widget for R Markdown, Quarto, the 'RStudio' viewer and 'shiny'.
     A data frame can be turned into a whole dashboard in one call: a patient
     cohort with survival columns, or a per-sample sequencing run-QC table, gets
     filters, linked charts and a click-to-load case card. See
