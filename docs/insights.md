@@ -27,6 +27,10 @@ checked against R (`kruskal.test`, `quantile`, `p.adjust`) in the server's tests
 
 ## Turn it on
 
+In the Builder, open **Data → Insights**, tick **Show insights above this dashboard**, add any limits in
+plain words (a measure, *is below / is at most / is above / is at least*, a number, an optional name),
+then **Apply** and **Save**. The same thing, written by hand:
+
 Add an `insights` block to the dashboard spec. An empty block turns on the data-derived checks:
 
 ```json

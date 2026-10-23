@@ -725,6 +725,28 @@ var dashboardCss = [
   // Only the steps scroll, so the title and Apply stay on screen however many steps a tour has.
   // The dialog never outgrows the window: the steps take the space that is left and scroll inside it,
   // so the heading above and Apply / Cancel below stay on screen.
+  // Insights dialog: a switch, then sections that scroll inside the window (heading and Apply stay on screen).
+  '.cxb-ins-modal { max-width: 700px; max-height: 92vh; overflow: hidden; }',
+  '.cxb-ins-switch { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }',
+  '.cxb-ins-switch input { width: 18px; height: 18px; }',
+  '.cxb-ins-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin;',
+  '  display: flex; flex-direction: column; gap: 14px; padding-right: 4px; }',
+  '.cxb-ins-off { opacity: 0.45; pointer-events: none; }',
+  '.cxb-ins-section { background: var(--cx-ui-surface-sunken); border-radius: var(--cx-radius-md); padding: 10px 12px; }',
+  '.cxb-ins-section h4 { margin: 0 0 6px; font-size: 14px; }',
+  '.cxb-ins-section ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.5; }',
+  '.cxb-ins-limits { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }',
+  '.cxb-ins-limit { display: flex; flex-direction: column; gap: 6px; background: var(--cx-ui-surface); border: 1px solid var(--cx-ui-border-subtle);',
+  '  border-radius: var(--cx-radius-md); padding: 8px; }',
+  '.cxb-ins-limit-top { display: flex; gap: 8px; align-items: center; }',
+  '.cxb-ins-limit select, .cxb-ins-limit input { font-size: 15px; padding: 8px 10px; box-sizing: border-box; min-width: 0; }',
+  '.cxb-ins-limit-top select:first-child { flex: 1 1 0; width: auto; }',
+  '.cxb-ins-limit-top select:nth-child(2) { flex: 0 0 130px; width: 130px; }',
+  '.cxb-ins-limit-top input[type=number] { flex: 0 0 110px; width: 110px; }',
+  '.cxb-ins-limit > input[type=text] { width: 100%; }',
+  '.cxb-ins-max { display: flex; align-items: center; gap: 8px; font-size: 15px; }',
+  '.cxb-ins-max input { width: 80px; font-size: 15px; padding: 8px 10px; }',
+  '.cxb-ins-source { display: flex; align-items: center; gap: 8px; font-size: 15px; padding: 2px 0; }',
   '.cxb-story-modal { max-width: 720px; max-height: 92vh; overflow: hidden; }',
   '.cxb-story-steps { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }',
   '.cxb-story-list { flex: 1 1 auto; min-height: 120px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: 4px; }',
@@ -16224,6 +16246,7 @@ function createBuilder(target, options) {
   var addFiltersBtn = null; // same rule as addControlBtn
   var linksBtn = null;      // disabled until there are two data sources to link
   var storyboardBtn = null; // the guided tour editor (spec.storyboard)
+  var insightsBtn = null;   // the findings-above-the-dashboard editor (spec.insights)
   var fieldsBtn = null;     // disabled until there is a (non-live) data source
   var shapeBtn = null;      // same rule as fieldsBtn
   var addTransformBtn = null;     // disabled until a graph panel (one bound to data) exists to transform
@@ -16355,6 +16378,8 @@ function createBuilder(target, options) {
     // "Storyboard": a guided tour of saved views, each step a snapshot of the live filters and
     // parameters plus a line of narration (spec.storyboard).
     storyboardBtn = iconButton('storyboard', 'Storyboard', function () { doEditStoryboard(); }, 'cxb-bt-data');
+    // "Insights": switch on the findings strip and set the limits to watch (spec.insights), no JSON.
+    insightsBtn = iconButton('insights', 'Insights', function () { doEditInsights(); }, 'cxb-bt-data');
     // "ƒx Fields": calculated fields computed once on a source, so every panel,
     // filter, join and link on it can use them (data.<ref>.calculatedFields).
     fieldsBtn = iconButton('fields', 'Fields', function () { doEditFields(); }, 'cxb-bt-data');
@@ -16389,7 +16414,7 @@ function createBuilder(target, options) {
       [addControlBtn, addFiltersBtn, addFdrBtn, addSignificanceBtn], updateAddPanelState);
     // Data: prepare the data first (calculated fields, shaping, a transform), then
     // relate and compute across sources.
-    var dataItems = [fieldsBtn, shapeBtn, addTransformBtn, linksBtn, storyboardBtn, addFunctionBtn];
+    var dataItems = [fieldsBtn, shapeBtn, addTransformBtn, linksBtn, insightsBtn, storyboardBtn, addFunctionBtn];
     if (showAddData) dataItems.push(iconButton('database', 'Data source', function () { doAddDataSource(); }, 'cxb-bt-data'));
     var dataMenu = toolbarMenu('Data', 'cxb-bt-data', dataItems, updateAddPanelState);
     // Left: identity + history. Middle: the three menus. Right: utilities + Save
@@ -17319,6 +17344,47 @@ function createBuilder(target, options) {
       }
       commit(next, false);
       setMsg(edited.steps.length ? 'Storyboard: ' + edited.steps.length + (edited.steps.length === 1 ? ' step' : ' steps') : 'Storyboard removed');
+    });
+  }
+
+  /**
+   * "Insights": the no-code editor for `spec.insights`. It reads the columns of the dashboard's data
+   * sources (the checks skip narrowed copies, so does this), offers the numeric ones as the measures a
+   * limit can watch, and writes the block the server's checks read. A spec-only change: no rebuild.
+   * @returns {void}
+   * @private
+   */
+  function doEditInsights() {
+    var doc = container.ownerDocument || document;
+    var current = rawSpec();
+    var refs = Object.keys(current.data || {}).filter(function (ref) {
+      var source = current.data[ref];
+      return source && !source.pushdown;
+    });
+    Promise.all(refs.map(function (ref) { return sourceData(ref); })).then(function (datas) {
+      var measures = [];
+      refs.forEach(function (ref, i) {
+        if (!datas[i]) return;
+        var axis = sourceAxis(ref, current.data);
+        var fields;
+        try { fields = tableFields(datas[i], axis); } catch (e) { return; }
+        fields.columns.forEach(function (name) { measures.push({ source: ref, field: name }); });
+        fields.annotations.forEach(function (name) {
+          var column = tableColumn(datas[i], axis, name);
+          var numeric = column && column.values.some(function (v) { return v != null && v !== ''; }) &&
+            column.values.every(function (v) { return v == null || v === '' || isFinite(Number(v)); });
+          if (numeric) measures.push({ source: ref, field: name });
+        });
+      });
+      openInsightsDialog(doc, current, refs, measures).then(function (edited) {
+        if (!edited) return;
+        var next = rawSpec();
+        if (edited.insights) next.insights = edited.insights;
+        else delete next.insights;
+        commit(next, false);
+        var limits = edited.insights && edited.insights.thresholds ? edited.insights.thresholds.length : 0;
+        setMsg(edited.insights ? 'Insights on' + (limits ? ' with ' + limits + (limits === 1 ? ' limit' : ' limits') : '') : 'Insights off');
+      });
     });
   }
 
@@ -20801,6 +20867,7 @@ var TOOLBAR_ICONS = {
   percent: '<path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.2"/><circle cx="17" cy="17" r="2.2"/>',
   significance: '<path d="M12 4v10M7.5 6.5l9 5M16.5 6.5l-9 5"/><path d="M5 20v-3h14v3"/>',
   storyboard: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4.5-2.5z"/>',
+  insights: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
   links: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   fields: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',
   table: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/>',
@@ -21704,6 +21771,252 @@ function openLinksDialog(doc, spec, dataOf) {
   });
 }
 
+/** The plain-words names of a limit's comparison, in the order they are offered. */
+var INSIGHT_COMPARISONS = [
+  { op: 'lt', label: 'is below' },
+  { op: 'le', label: 'is at most' },
+  { op: 'gt', label: 'is above' },
+  { op: 'ge', label: 'is at least' }
+];
+
+/**
+ * The "Insights" dialog: a switch for the findings strip above the dashboard, the limits to watch in
+ * plain words ("IL6 is above 25"), how many findings to show and, with several data sets, which to
+ * check. Edits apply to a working copy; nothing is written until Apply.
+ * @param {Document} doc - The owning document.
+ * @param {object} spec - The current spec (not modified).
+ * @param {string[]} refs - The data sources the checks run on (narrowed copies left out).
+ * @param {{source: string, field: string}[]} measures - The numeric fields a limit can watch.
+ * @returns {Promise<?{insights: ?object}>} The new `insights` block (null to switch insights off),
+ *   or null when cancelled.
+ * @private
+ */
+function openInsightsDialog(doc, spec, refs, measures) {
+  var existing = spec.insights && typeof spec.insights === 'object' ? spec.insights : null;
+  var DEFAULT_MAX = 6;
+  var options = measures.slice();
+  // Limits already in the spec keep working even when their field is not (or no longer) in the data.
+  var limits = ((existing && existing.thresholds) || []).map(function (t) {
+    var index = -1;
+    options.forEach(function (m, i) {
+      if (index === -1 && m.field === t.field && (!t.source || m.source === t.source)) index = i;
+    });
+    if (index === -1) {
+      options.push({ source: t.source || refs[0] || '', field: t.field, missing: true });
+      index = options.length - 1;
+    }
+    return { measure: index, op: t.op || 'gt', value: t.value == null ? '' : String(t.value), label: t.label || '' };
+  });
+  var enabled = !!existing;
+  var checked = {};
+  refs.forEach(function (ref) { checked[ref] = !(existing && existing.sources) || existing.sources.indexOf(ref) !== -1; });
+  return new Promise(function (resolve) {
+    var overlay = modalOverlay();
+    var modal = el('div', 'cxb-modal cxb-ins-modal');
+    var heading = el('h3', 'cxb-modal-title');
+    heading.textContent = 'Insights';
+    var intro = el('p', 'cxb-links-intro');
+    intro.textContent = 'Show a short list of findings above the dashboard: what stands out in your data. They come ' +
+      'from fixed checks on your numbers (no AI), and every finding shows the figures behind it.';
+
+    var switchRow = el('label', 'cxb-ins-switch');
+    var switchBox = el('input');
+    switchBox.type = 'checkbox';
+    switchBox.checked = enabled;
+    var switchText = el('span');
+    switchText.textContent = 'Show insights above this dashboard';
+    append(switchRow, [switchBox, switchText]);
+
+    var scroller = el('div', 'cxb-ins-scroll');
+
+    var looks = el('div', 'cxb-ins-section');
+    var looksTitle = el('h4');
+    looksTitle.textContent = 'What it looks for';
+    var looksList = el('ul');
+    ['Groups that differ: a measure that is clearly different between the groups of a category, such as between treatment arms.',
+     'Unusual values: values far outside the rest of the data.',
+     'Your limits: records that break a limit you set below.'].forEach(function (text) {
+      var li = el('li');
+      li.textContent = text;
+      looksList.appendChild(li);
+    });
+    append(looks, [looksTitle, looksList]);
+
+    var limitsSection = el('div', 'cxb-ins-section');
+    var limitsTitle = el('h4');
+    limitsTitle.textContent = 'Your limits (optional)';
+    var limitsHelp = el('p', 'cxb-links-none');
+    limitsHelp.textContent = 'Flag the records that break a limit, such as a quality score that is too low.';
+    var limitsList = el('div', 'cxb-ins-limits');
+    var addLimit = button('+ Add a limit', function () {
+      limits.push({ measure: 0, op: 'gt', value: '', label: '' });
+      renderLimits();
+    });
+    var errEl = el('div', 'cxb-modal-err');
+    append(limitsSection, [limitsTitle, limitsHelp, limitsList, addLimit]);
+
+    var optionsSection = el('div', 'cxb-ins-section');
+    var optionsTitle = el('h4');
+    optionsTitle.textContent = 'How many findings to show';
+    var maxRow = el('label', 'cxb-ins-max');
+    var maxText = el('span');
+    maxText.textContent = 'Show at most';
+    var maxInput = el('input');
+    maxInput.type = 'number';
+    maxInput.min = '1';
+    maxInput.max = '50';
+    maxInput.value = String(existing && existing.max ? existing.max : DEFAULT_MAX);
+    var maxTail = el('span');
+    maxTail.textContent = 'findings';
+    append(maxRow, [maxText, maxInput, maxTail]);
+    append(optionsSection, [optionsTitle, maxRow]);
+
+    var sourceBoxes = {};
+    var sourcesSection = null;
+    if (refs.length > 1) {
+      sourcesSection = el('div', 'cxb-ins-section');
+      var sourcesTitle = el('h4');
+      sourcesTitle.textContent = 'Which data to check';
+      sourcesSection.appendChild(sourcesTitle);
+      refs.forEach(function (ref) {
+        var row = el('label', 'cxb-ins-source');
+        var box = el('input');
+        box.type = 'checkbox';
+        box.checked = checked[ref];
+        on(box, 'change', function () { checked[ref] = box.checked; });
+        var text = el('span');
+        text.textContent = ref;
+        append(row, [box, text]);
+        sourcesSection.appendChild(row);
+        sourceBoxes[ref] = box;
+      });
+    }
+
+    /**
+     * Redraw the rows of limits.
+     * @returns {void}
+     */
+    function renderLimits() {
+      limitsList.innerHTML = '';
+      if (!limits.length) {
+        var none = el('div', 'cxb-links-none');
+        none.textContent = 'No limits yet.';
+        limitsList.appendChild(none);
+      }
+      limits.forEach(function (limit, i) {
+        var row = el('div', 'cxb-ins-limit');
+        var measure = el('select');
+        measure.setAttribute('aria-label', 'Measure to watch');
+        options.forEach(function (m, k) {
+          var o = doc.createElement('option');
+          o.value = String(k);
+          o.textContent = m.field + (refs.length > 1 ? ' — ' + m.source : '') + (m.missing ? ' (not in the data)' : '');
+          measure.appendChild(o);
+        });
+        measure.value = String(limit.measure);
+        on(measure, 'change', function () { limit.measure = Number(measure.value); });
+        var comparison = el('select');
+        comparison.setAttribute('aria-label', 'Comparison');
+        INSIGHT_COMPARISONS.forEach(function (c) {
+          var o = doc.createElement('option');
+          o.value = c.op;
+          o.textContent = c.label;
+          comparison.appendChild(o);
+        });
+        comparison.value = limit.op;
+        on(comparison, 'change', function () { limit.op = comparison.value; });
+        var value = el('input');
+        value.type = 'number';
+        value.step = 'any';
+        value.placeholder = 'a number';
+        value.setAttribute('aria-label', 'The limit');
+        value.value = limit.value;
+        on(value, 'input', function () { limit.value = value.value; });
+        var label = el('input');
+        label.type = 'text';
+        label.placeholder = 'Name it (optional), e.g. Quality too low';
+        label.setAttribute('aria-label', 'Name');
+        label.value = limit.label;
+        on(label, 'input', function () { limit.label = label.value; });
+        var remove = button('×', function () { limits.splice(i, 1); renderLimits(); });
+        remove.setAttribute('title', 'Remove this limit');
+        remove.setAttribute('aria-label', 'Remove limit ' + (i + 1));
+        var first = el('div', 'cxb-ins-limit-top');
+        append(first, [measure, comparison, value, remove]);
+        append(row, [first, label]);
+        limitsList.appendChild(row);
+      });
+      addLimit.disabled = !options.length;
+      addLimit.title = options.length ? '' : 'This dashboard has no numeric data to set a limit on.';
+    }
+    renderLimits();
+
+    function syncEnabled() {
+      enabled = switchBox.checked;
+      scroller.className = 'cxb-ins-scroll' + (enabled ? '' : ' cxb-ins-off');
+    }
+    on(switchBox, 'change', syncEnabled);
+    syncEnabled();
+
+    var cancelBtn = button('Cancel', function () { close(null); });
+    var applyBtn = button('Apply', function () {
+      if (!enabled) { close({ insights: null }); return; }
+      var thresholds = [];
+      for (var i = 0; i < limits.length; i++) {
+        var number = parseFloat(limits[i].value);
+        if (limits[i].value === '' || !isFinite(number)) {
+          errEl.textContent = 'Type a number for each limit, or remove the ones you don’t need.';
+          return;
+        }
+        var m = options[limits[i].measure];
+        var threshold = { field: m.field, op: limits[i].op, value: number, source: m.source };
+        if (limits[i].label.trim()) threshold.label = limits[i].label.trim();
+        thresholds.push(threshold);
+      }
+      var insights = {};
+      if (thresholds.length) insights.thresholds = thresholds;
+      var picked = refs.filter(function (ref) { return checked[ref]; });
+      if (refs.length > 1 && picked.length && picked.length < refs.length) insights.sources = picked;
+      var max = parseInt(maxInput.value, 10);
+      if (isFinite(max) && max >= 1 && max !== DEFAULT_MAX) insights.max = Math.min(max, 50);
+      close({ insights: insights });
+    }, 'cxb-btn-primary');
+    var footer = el('div', 'cxb-modal-footer');
+    append(footer, [cancelBtn, applyBtn]);
+
+    append(scroller, [looks, limitsSection, optionsSection].concat(sourcesSection ? [sourcesSection] : []));
+    append(modal, [heading, intro, switchRow, scroller, errEl, footer]);
+    overlay.appendChild(modal);
+    on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
+    (doc.body || doc.documentElement).appendChild(overlay);
+    var unfreeze = freezePageScroll(doc);
+
+    /**
+     * Close the dialog with a result.
+     * @param {*} result - Resolution value.
+     * @returns {void}
+     */
+    function close(result) {
+      unfreeze();
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result || null);
+    }
+  });
+}
+
+/**
+ * Stop the page behind a dialog from scrolling while the dialog is open.
+ * @param {Document} doc - The owning document.
+ * @returns {function(): void} Restores the page's scrolling.
+ * @private
+ */
+function freezePageScroll(doc) {
+  var scrollers = [doc.documentElement, doc.body].filter(function (node) { return node && node.style; });
+  var frozen = scrollers.map(function (node) { return node.style.overflow; });
+  scrollers.forEach(function (node) { node.style.overflow = 'hidden'; });
+  return function () { scrollers.forEach(function (node, i) { node.style.overflow = frozen[i]; }); };
+}
+
 /**
  * What a storyboard step applies, as one line ("filters: 2 · case = P007 · focus: case").
  * @param {object} step - A storyboard step.
@@ -21820,9 +22133,7 @@ function openStoryboardDialog(doc, spec, live) {
     on(overlay, 'click', function (ev) { if (ev.target === overlay) close(null); });
     (doc.body || doc.documentElement).appendChild(overlay);
     // The page behind must not scroll while the steps do: freeze it for as long as the dialog is open.
-    var scrollers = [doc.documentElement, doc.body].filter(function (node) { return node && node.style; });
-    var frozen = scrollers.map(function (node) { return node.style.overflow; });
-    scrollers.forEach(function (node) { node.style.overflow = 'hidden'; });
+    var unfreeze = freezePageScroll(doc);
 
     /**
      * Close the dialog with a result.
@@ -21830,7 +22141,7 @@ function openStoryboardDialog(doc, spec, live) {
      * @returns {void}
      */
     function close(result) {
-      scrollers.forEach(function (node, i) { node.style.overflow = frozen[i]; });
+      unfreeze();
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
       resolve(result || null);
     }

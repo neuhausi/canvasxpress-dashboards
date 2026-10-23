@@ -43,23 +43,22 @@
 
   <main class="guide">
     <h1>How to add insights to a dashboard</h1>
-    <p class="lead">Insights are a strip of plain-language findings above a dashboard: a group that differs, values far
-      from the rest, records that fail a limit you set. Every finding comes from a <b>fixed check</b> computed from the
-      numbers, and carries the figures behind it. No language model is involved, nothing needs an API key or credits,
-      and the same data always gives the same insights. This page adds them to a real dashboard, step by step.</p>
+    <p class="lead">Insights are a short list of findings above a dashboard: a group that differs, values far from the
+      rest, records that break a limit you set. Every finding comes from a <b>fixed check</b> on your numbers and shows
+      the figures behind it. No AI is involved, nothing needs an account or credits, and the same data always gives the
+      same insights. You switch them on from the Builder in a few clicks.</p>
 
-    <h2>The three checks</h2>
+    <h2>What it looks for</h2>
     <table>
-      <tr><th>Check</th><th>What it flags</th><th>How</th></tr>
-      <tr><td><b>Threshold</b></td><td>Records that fail a limit <b>you declare</b></td>
-        <td><code>field</code> <code>op</code> <code>value</code> on a numeric column. Never inferred: if you don't write a limit down, nothing is flagged.</td></tr>
-      <tr><td><b>Group difference</b></td><td>A measure that differs between the groups of a category</td>
-        <td>Kruskal–Wallis rank test for every measure × category, corrected for <i>all</i> the tests run (Benjamini–Hochberg). Only clear, large differences are shown.</td></tr>
-      <tr><td><b>Outliers</b></td><td>Values outside Tukey's fences</td>
-        <td>Below Q1 − 1.5·IQR or above Q3 + 1.5·IQR (&ldquo;far out&rdquo; beyond 3·IQR).</td></tr>
+      <tr><th>Finding</th><th>What it means</th></tr>
+      <tr><td><b>Your limits</b></td>
+        <td>Records that break a limit <b>you</b> set, such as “IL-6 is above 25”. Nothing is flagged unless you write the limit down.</td></tr>
+      <tr><td><b>Groups that differ</b></td>
+        <td>A measure that is clearly different between the groups of a category, such as between treatment arms. The
+          comparison allows for the many comparisons being made, so a chance difference is not flagged.</td></tr>
+      <tr><td><b>Unusual values</b></td>
+        <td>Values far outside the rest of the data.</td></tr>
     </table>
-    <p>A measure with only two distinct values (a 0/1 event), a constant, or a category with more than six levels (an
-      identifier, not a grouping) is not tested.</p>
 
     <div class="tip"><b>What you need:</b> a dashboard you can edit. A shipped example is locked, so saving makes a copy
       under a name you choose. The pictures use the <i>Immuno-Oncology Biomarker Cohort</i> example.</div>
@@ -73,95 +72,119 @@
     </div>
 
     <div class="step">
-      <h3><span class="n">2</span>Open the JSON editor</h3>
-      <p>There is no button for insights yet: they are one block in the dashboard's JSON. Click the pencil next to
-        <b>Save</b> (<b>Edit dashboard JSON</b>).</p>
-      <img src="assets/insights-guide/2-the-pencil.png" alt="The Builder toolbar with the pencil outlined" />
-      <p class="cap">The pencil (outlined) opens <b>Edit dashboard JSON</b>.</p>
+      <h3><span class="n">2</span>Open <b>Data → Insights</b></h3>
+      <p>In the Builder's toolbar open the <b>Data</b> menu and click <b>Insights</b>.</p>
+      <img src="assets/insights-guide/2-data-menu-insights.png" alt="The Data menu open with Insights outlined" />
+      <p class="cap"><b>Data → Insights</b> (outlined).</p>
     </div>
 
     <div class="step">
-      <h3><span class="n">3</span>Add an <code>insights</code> block</h3>
-      <p>Add the block at the top level of the JSON (anywhere is fine; near the top is easy to find). This one
-        turns on the data-derived checks <i>and</i> declares a limit: IL-6 above 25.</p>
-<pre>"insights": {
-  "thresholds": [
-    { "field": "IL6", "op": "gt", "value": 25,
-      "label": "IL-6 above 25 pg/mL", "source": "assayIL6" }
-  ]
-}</pre>
-      <img src="assets/insights-guide/3-add-the-insights-block.png" alt="The JSON editor with an insights block added near the top and Save outlined" />
-      <p class="cap">The block sits at line 4; <b>Save</b> (outlined) applies it.</p>
-      <p>The simplest version is <code>"insights": {}</code>, which turns on the group-difference and outlier checks
-        with no limits.</p>
-      <table>
-        <tr><th>Key</th><th>Meaning</th></tr>
-        <tr><td><code>thresholds[].field</code>, <code>op</code>, <code>value</code></td>
-          <td>The <i>failing</i> condition: <code>lt</code> below, <code>le</code> at or below, <code>gt</code> above, <code>ge</code> at or above.</td></tr>
-        <tr><td><code>thresholds[].label</code></td><td>Text shown before the caption.</td></tr>
-        <tr><td><code>thresholds[].source</code></td><td>Limit the check to one data source (default: any source that has the field).</td></tr>
-        <tr><td><code>sources</code></td><td>Which data sources to check (default: every source that is not a narrowed copy).</td></tr>
-        <tr><td><code>max</code></td><td>The most insights to show (default 6).</td></tr>
-      </table>
+      <h3><span class="n">3</span>Switch insights on</h3>
+      <p>Tick <b>Show insights above this dashboard</b>. The rest of the window comes alive. With just this ticked, the
+        dashboard looks for groups that differ and unusual values.</p>
+      <img src="assets/insights-guide/3-switch-on.png" alt="The Insights dialog with the switch ticked, showing what it looks for, limits, how many findings and which data" />
+      <p class="cap">The switch (outlined). Below it: what it looks for, your limits, how many findings, and which data to check.</p>
     </div>
 
     <div class="step">
-      <h3><span class="n">4</span>Save it</h3>
-      <p>Click <b>Save</b> in the JSON dialog. For a locked example the Builder then asks you to <b>Save a copy</b>:
-        give it a name and click <b>Save</b>.</p>
-      <img src="assets/insights-guide/4-save-a-copy.png" alt="The Save a copy dialog with a new name and Save outlined" />
+      <h3><span class="n">4</span>Add a limit (optional)</h3>
+      <p>Click <b>+ Add a limit</b> and fill the row in plain words: pick the <b>measure</b> from your data, say whether it
+        <b>is below</b>, <b>is at most</b>, <b>is above</b> or <b>is at least</b> a number, type the number, and name the
+        limit if you like. Here: IL6 is above 25, named “IL-6 above 25 pg/mL”. Add as many limits as you need, and remove
+        one with its <b>×</b>.</p>
+      <img src="assets/insights-guide/4-add-a-limit.png" alt="The Insights dialog with one limit: IL6 is above 25, named IL-6 above 25 pg per mL, and Apply outlined" />
+      <p class="cap">One limit: <b>IL6</b> <b>is above</b> <b>25</b>. Click <b>Apply</b> (outlined).</p>
+      <ul>
+        <li><b>How many findings to show:</b> the list shows the six most notable by default and says how many more were
+          left out. Change the number if you want more or fewer.</li>
+        <li><b>Which data to check:</b> shown when the dashboard uses more than one data set. Untick the ones to leave out.</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <h3><span class="n">5</span>Save the dashboard</h3>
+      <p>Click <b>Apply</b>, then <b>Save</b> at the top right of the Builder. Applying changes the dashboard you are
+        editing; saving is what stores it.</p>
+      <img src="assets/insights-guide/5-save.png" alt="The Builder toolbar with the Save button outlined" />
+      <p class="cap"><b>Save</b> (outlined).</p>
+      <p>For a locked example the Builder asks you to <b>Save a copy</b>: give it a name and click <b>Save</b>.</p>
+      <img src="assets/insights-guide/6-save-a-copy.png" alt="The Save a copy dialog with a new name and Save outlined" />
       <p class="cap">Name the copy and click <b>Save</b> (outlined).</p>
     </div>
 
     <div class="step">
-      <h3><span class="n">5</span>Preview it</h3>
+      <h3><span class="n">6</span>Preview it</h3>
       <p>On the <b>Dashboards</b> page find your dashboard and click <b>Preview</b>. It opens full page in a new tab.</p>
-      <img src="assets/insights-guide/5-preview.png" alt="The Dashboards page with Preview outlined on the new copy" />
+      <img src="assets/insights-guide/7-preview.png" alt="The Dashboards page with Preview outlined on the new copy" />
       <p class="cap"><b>Preview</b> (outlined) on the saved copy.</p>
     </div>
 
     <div class="step">
-      <h3><span class="n">6</span>Read the strip</h3>
-      <p>The <b>Insights</b> strip sits above the dashboard. Your threshold comes first (the red dot), then the
-        group differences and outliers, up to the six most notable; the strip says how many more were left out.</p>
-      <img src="assets/insights-guide/6-insights-strip.png" alt="The Insights strip above the dashboard with a threshold finding first" />
-      <p class="cap">The threshold finding first, then group differences. The header says how many comparisons were run.</p>
-      <p>Click <b>Figures</b> under any caption to see every number it used: the counts, the fences, each group's n and
-        median, the raw and the adjusted p-value.</p>
-      <img src="assets/insights-guide/7-figures-open.png" alt="The first insight with its Figures expanded, listing each failing record and its value" />
-      <p class="cap">Figures for the threshold: the limit, how many of how many records failed, and each failing record's value.</p>
-      <div class="tip"><b>Why a corrected p-value?</b> The strip runs many comparisons (104 here), so a plain
-        &ldquo;p &lt; 0.05&rdquo; would flag chance differences. Group differences are corrected for the number of
-        comparisons, and the header states that number.</div>
+      <h3><span class="n">7</span>Read the findings</h3>
+      <p>The <b>Insights</b> list sits above the dashboard. Your limit comes first (the red dot), then groups that differ
+        and unusual values, up to the number you chose; the list says how many more were left out.</p>
+      <img src="assets/insights-guide/8-insights-strip.png" alt="The Insights list above the dashboard with the limit finding first" />
+      <p class="cap">Your limit first, then groups that differ. The header says how many comparisons were made.</p>
+      <p>Click <b>Figures</b> under any finding to see every number behind it: the counts, each group's size and
+        median, and the adjusted p-value.</p>
+      <img src="assets/insights-guide/9-figures-open.png" alt="The first finding with its Figures expanded, listing each record over the limit and its value" />
+      <p class="cap">Figures for the limit: how many of how many records broke it, and each one's value.</p>
+      <div class="tip"><b>Why a corrected p-value?</b> The list makes many comparisons (104 here), so a plain
+        “p &lt; 0.05” would flag chance differences. Group differences are corrected for the number of comparisons,
+        and the header states that number.</div>
     </div>
 
     <h2>Make the records clickable</h2>
-    <p>When a dashboard has a <b>case card</b> (a one-row table that shows one patient or sample), the records an
-      insight names appear as buttons, such as <b>P014</b>. Clicking one loads that record into the card and scrolls to
-      it. The dashboards built from one table already have a case card (see
+    <p>When a dashboard has a <b>case card</b> (a one-row table that shows one patient or sample), the records a finding
+      names appear as buttons, such as <b>P014</b>. Clicking one loads that record into the card and scrolls to it. The
+      dashboards built from one table already have a case card (see
       <a href="guide-dashboard-from-table.html">How to build a dashboard from one table</a>), and
       <a href="cohort-tour.html">Cohort Tour</a> shows it working. The Biomarker dashboard above has no case card, so
-      its strip shows no buttons.</p>
+      its list shows no buttons.</p>
+
+    <h2>Change or remove insights</h2>
+    <p>Open <b>Data → Insights</b> again. Edit the limits, the number of findings or the data to check, then <b>Apply</b>
+      and <b>Save</b>. To remove insights, untick <b>Show insights above this dashboard</b>, then <b>Apply</b> and
+      <b>Save</b>. <b>Cancel</b> throws away your edits.</p>
 
     <h2>Where insights show, and who sees what</h2>
     <ul>
       <li>They show on the <b>Preview</b> page and on <b>shared links</b>. They do not show in the Builder or in the
         <b>View</b> pane of the Dashboards page.</li>
       <li>The checks run on the server over the rows <b>the viewer is allowed to see</b>. Row- and column-level
-        security applies as it does for the dashboard itself, so nobody sees an insight computed from data they
+        security applies as it does for the dashboard itself, so nobody sees a finding computed from data they
         cannot see.</li>
-      <li>To remove insights, delete the <code>"insights"</code> block in the JSON editor and save.</li>
+      <li>A measure with only two distinct values (a 0/1 event), a constant, or a category with more than six levels
+        (an identifier, not a grouping) is not compared.</li>
     </ul>
 
     <h2>Tips</h2>
     <ul>
-      <li>Declare limits for the things that matter to you (a failed quality score, a lab value out of range); the
-        statistical checks find the surprises you did not think to look for.</li>
-      <li>Use <code>sources</code> to keep the checks to the main table, and <code>max</code> to keep the strip short.</li>
-      <li>Every caption can be checked: <b>Figures</b> shows the numbers, and the statistics are tested against R in the
+      <li>Set limits for the things that matter to you (a failed quality score, a lab value out of range); the automatic
+        checks find the surprises you did not think to look for.</li>
+      <li>Every finding can be checked: <b>Figures</b> shows the numbers, and the statistics are tested against R in the
         server's test suite.</li>
     </ul>
-    <p>The full reference is <code>docs/insights.md</code> in the repository.</p>
+
+    <h2>For developers: the same thing as JSON</h2>
+    <p>The dialog writes an <code>insights</code> block into the dashboard's JSON, so you can also write it by hand. This is
+      the block the picture above produced:</p>
+<pre>"insights": {
+  "thresholds": [
+    { "field": "IL6", "op": "gt", "value": 25, "label": "IL-6 above 25 pg/mL", "source": "assayIL6" }
+  ]
+}</pre>
+    <table>
+      <tr><th>Key</th><th>Meaning</th></tr>
+      <tr><td><code>thresholds[].field</code>, <code>op</code>, <code>value</code></td>
+        <td>The failing condition. <code>op</code> is <code>lt</code> (is below), <code>le</code> (is at most), <code>gt</code> (is above) or <code>ge</code> (is at least).</td></tr>
+      <tr><td><code>thresholds[].label</code></td><td>The name shown before the finding.</td></tr>
+      <tr><td><code>thresholds[].source</code></td><td>Limit the check to one data source.</td></tr>
+      <tr><td><code>sources</code></td><td>Which data sources to check (default: every source that is not a narrowed copy).</td></tr>
+      <tr><td><code>max</code></td><td>The most findings to show (default 6).</td></tr>
+    </table>
+    <p>An empty <code>"insights": {}</code> turns on the automatic checks only. The full reference is
+      <code>docs/insights.md</code> in the repository.</p>
   </main>
 </body>
 </html>

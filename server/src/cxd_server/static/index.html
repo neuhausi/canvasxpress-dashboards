@@ -327,6 +327,10 @@
     .cxd-wizard-field select { padding-right: 32px; }
     .cxd-wizard-field input[type=text], .cxd-wizard-field input[type=url], .cxd-wizard-field select { height: 38px; }
     .cxd-wizard-field br { display: none; }
+    /* The file box sits on its own line under its label, with room between the button and its text. */
+    .cxd-wizard-field input[type=file] { display: block; margin-top: 8px; font: 14px/1.4 var(--cx-font-sans); }
+    .cxd-wizard-field input[type=file]::file-selector-button { margin-right: 14px; padding: 7px 14px; font: 600 14px var(--cx-font-sans); cursor: pointer;
+      color: inherit; background: var(--cx-ui-surface); border: 1px solid var(--rail-border); border-radius: var(--cx-radius-md); }
     .cxd-wizard-field textarea { font: 13px var(--cx-font-mono); }
     .cxd-wizard-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
     .cxd-wizard-msg { min-height: 18px; font-size: 13px; color: var(--cx-ui-danger); }
@@ -680,7 +684,7 @@
         '<div class="notices">' +
           notice('🎨', 'Edit every panel', 'Every panel opens the native CanvasXpress customizer — click the ⚙ to change chart type, colors, grouping and axes. Drag panels to reorder or resize them, and every change is saved with the dashboard. Prefer to describe it? Ask the chat assistant and it applies the tweak for you. Swap a panel’s dataset on the fly and the chart updates in place — no reload.', 'n-md cxb-o10') +
           notice('🎬', 'Storyboards: guided tours', 'Turn a dashboard into a guided tour. Set the filters and parameters you want to show, then <b>Data → Storyboard → + Step from the current view</b> and add a line of narration. Viewers press play and the dashboard itself changes, so they can stop at any step and explore. <a href="' + API_BASE + '/examples/guide-storyboards.html">Step-by-step guide with pictures</a> · <a href="' + API_BASE + '/examples/cohort-tour.html">See a finished tour</a>.', 'cxb-n-40 cxb-o70') +
-          notice('💡', 'Proactive insights', 'Add an <code>insights</code> block and a strip above the dashboard lists what fixed, deterministic checks found in the data: failures of limits you declare, group differences (Kruskal–Wallis, corrected for multiple testing) and outliers. Every caption carries its figures, and the records it names load into the case card with one click. No model is involved. <a href="' + API_BASE + '/examples/guide-insights.html">Step-by-step guide with pictures</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/insights.md" target="_blank" rel="noopener">How it works</a>.', 'cxb-n-60 cxb-o80') +
+          notice('💡', 'Proactive insights', 'Switch on <b>Data → Insights</b> in the Builder and a list above the dashboard shows what stands out in your data: records that break limits you set (such as “IL-6 is above 25”), groups that differ, and unusual values. Every finding shows the figures behind it, and the records it names load into the case card with one click. No AI is involved. <a href="' + API_BASE + '/examples/guide-insights.html">Step-by-step guide with pictures</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/insights.md" target="_blank" rel="noopener">How it works</a>.', 'cxb-n-60 cxb-o80') +
           notice('🧬', 'A whole dashboard from one table', 'On <b>Dashboards → ＋ Chart from data</b>, paste or upload a patient cohort (time, event, group) or a sequencing run-QC table and the Visualize step offers a linked dashboard: filters, charts and a click-to-load case card, published in one click. <a href="' + API_BASE + '/examples/guide-dashboard-from-table.html">Step-by-step guide with pictures</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/dashboard-from-data.md" target="_blank" rel="noopener">How it works</a>.', 'n-md cxb-o20') +
           notice('🐍', 'R and Python', 'Render a dashboard spec, or turn a data frame into a whole dashboard, from Python (<code>pip install canvasxpress-dashboards</code>: Jupyter, Dash, Flask, Streamlit) or R (an htmlwidget with Shiny inputs). <a href="' + API_BASE + '/examples/guide-r-python.html">Step-by-step guide</a> · <a href="https://pypi.org/project/canvasxpress-dashboards/" target="_blank" rel="noopener">Python package</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/tree/main/r" target="_blank" rel="noopener">R package</a>.', 'n-sm cxb-o30') +
           notice('🔌', 'Connect your data', 'Bind panels to your own sources through <b>canvasxpress-connectors</b> — SQL warehouses, spreadsheets, business apps and finance feeds:' + connChips, 'n-lg cxb-o40') +
@@ -3097,7 +3101,7 @@
         client.listDatasets().then(function (list) {
           picker.innerHTML = '';
           known = list || [];
-          pickerOption('', known.length ? '(none: use a file, paste or a URL)' : 'No datasets yet');
+          pickerOption('', known.length ? 'Select a dataset…' : 'No datasets yet');
           known.forEach(function (d, i) {
             var size = d.rows != null && d.cols != null ? ' — ' + Math.max(d.rows, d.cols) + '×' + Math.min(d.rows, d.cols) : '';
             pickerOption(String(i), (d.title || d.id) + size + (d.shared ? ' (from ' + d.owner + ')' : ''));
@@ -3109,12 +3113,12 @@
         });
         body.appendChild(labeled('Chart title', title));
         body.appendChild(labeled('Upload a file', file));
-        body.appendChild(labeled('…or choose a dataset you already have', picker));
+        body.appendChild(labeled('…or select a dataset', picker));
         body.appendChild(labeled('…or paste data', paste));
         body.appendChild(labeled('…or load from a URL', url));
         var note = document.createElement('div');
         note.className = 'cxd-wizard-note';
-        note.textContent = 'Databases and Google Sheets: add them with “+ Database” in Data, then choose the dataset here.';
+        note.textContent = 'Databases and Google Sheets: add them with “+ Database” in Data, then select the dataset here.';
         body.appendChild(note);
         var next = smallButton('Next: check data', function () {
           msg.textContent = '';

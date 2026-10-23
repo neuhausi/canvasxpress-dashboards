@@ -3,6 +3,20 @@
 Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 (`cxd_server`). Versions follow the package version.
 
+## Unreleased
+
+### Builder: Data → Insights, and a few wizard fixes
+- **Data → Insights** switches the findings strip on without touching JSON: a switch, limits written in plain
+  words (a measure from the dashboard's own data, *is below / is at most / is above / is at least*, a number, an
+  optional name), how many findings to show, and which data to check. It reads and writes the same
+  `insights` block, so existing dashboards load into it.
+- **Storyboard dialog:** bigger title and narration boxes, the steps scroll inside the dialog (heading and Apply
+  stay on screen) and the page behind no longer scrolls.
+- **Chart from data:** a **select a dataset** drop-down on the first step charts one of your existing datasets;
+  the file box no longer sits against its label.
+- Guides with pictures for storyboards, insights, a dashboard from one table, and the R and Python packages,
+  and a card for each on Home.
+
 ## 0.15.0 — 2026-10-23
 
 ### Fix: the ESM bundle did not load, and the UMD bundle silently swapped four helpers

@@ -1007,3 +1007,95 @@ test('Storyboard dialog: steps are snapshotted, edited, reordered and written to
   await builder.whenReady();
   assert.equal(Object.prototype.hasOwnProperty.call(builder.getSpec(), 'storyboard'), false, 'no steps removes the block');
 });
+
+test('Insights dialog: switch on, set a limit in plain words, Apply writes spec.insights; it reloads, validates and switches off', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var builder = createBuilder(container, { spec: twoSourceSpec(), CanvasXpress: makeCX([]) });
+  await builder.whenReady();
+  assert.equal(builder.getSpec().insights, undefined, 'a new dashboard has no insights');
+
+  buttonNamed(container, 'Insights').dispatchEvent('click');
+  await settle(); await settle();
+  var modal = document.body.querySelector('.cxb-ins-modal');
+  assert.ok(modal, 'the Insights dialog opened');
+  var box = modal.querySelector('.cxb-ins-switch').querySelector('input');
+  assert.equal(box.checked, false, 'off until switched on');
+
+  box.checked = true;
+  box.dispatchEvent('change');
+  buttonNamed(modal, '+ Add a limit').dispatchEvent('click');
+  var selects = modal.querySelector('.cxb-ins-limit').querySelectorAll('select');
+  var measures = [].map.call(selects[0].options, function (o) { return o.textContent; });
+  assert.deepEqual(measures.slice(0, 2), ['Age — clinical', 'ALT — labs'], 'the measures of both sources, named by source');
+  assert.equal(measures.indexOf('Arm — clinical'), -1, 'a text annotation is not offered as a measure');
+  assert.deepEqual([].map.call(selects[1].options, function (o) { return o.textContent; }),
+    ['is below', 'is at most', 'is above', 'is at least'], 'the comparison is in plain words');
+
+  // Applying with no number asks for one and stays open.
+  buttonNamed(modal, 'Apply').dispatchEvent('click');
+  assert.match(modal.querySelector('.cxb-modal-err').textContent, /Type a number/);
+  assert.ok(document.body.querySelector('.cxb-ins-modal'), 'still open');
+
+  pick(selects[0], '1');                         // ALT — labs
+  pick(selects[1], 'gt');                        // is above
+  var inputs = modal.querySelector('.cxb-ins-limit').querySelectorAll('input');
+  inputs[0].value = '30'; inputs[0].dispatchEvent('input');
+  inputs[1].value = 'ALT too high'; inputs[1].dispatchEvent('input');
+  buttonNamed(modal, 'Apply').dispatchEvent('click');
+  await builder.whenReady();
+  assert.deepEqual(builder.getSpec().insights, { thresholds: [{ field: 'ALT', op: 'gt', value: 30, source: 'labs', label: 'ALT too high' }] });
+  assert.deepEqual(validateSpec(builder.getSpec()).errors, []);
+  assert.equal(document.body.querySelector('.cxb-ins-modal'), null, 'dialog closed');
+
+  // Reopened, it shows what was saved.
+  buttonNamed(container, 'Insights').dispatchEvent('click');
+  await settle(); await settle();
+  modal = document.body.querySelector('.cxb-ins-modal');
+  assert.equal(modal.querySelector('.cxb-ins-switch').querySelector('input').checked, true);
+  assert.equal(modal.querySelectorAll('.cxb-ins-limit').length, 1);
+  var again = modal.querySelector('.cxb-ins-limit').querySelectorAll('select');
+  assert.equal(again[0].value, '1');
+  assert.equal(again[1].value, 'gt');
+  assert.equal(modal.querySelector('.cxb-ins-limit').querySelectorAll('input')[0].value, '30');
+
+  // Cancel changes nothing; switching off and applying removes the block.
+  buttonNamed(modal, 'Cancel').dispatchEvent('click');
+  assert.equal(builder.getSpec().insights.thresholds.length, 1, 'Cancel discards');
+  buttonNamed(container, 'Insights').dispatchEvent('click');
+  await settle(); await settle();
+  modal = document.body.querySelector('.cxb-ins-modal');
+  var off = modal.querySelector('.cxb-ins-switch').querySelector('input');
+  off.checked = false; off.dispatchEvent('change');
+  buttonNamed(modal, 'Apply').dispatchEvent('click');
+  await builder.whenReady();
+  assert.equal(Object.prototype.hasOwnProperty.call(builder.getSpec(), 'insights'), false, 'off removes insights');
+});
+
+test('Insights dialog: "how many" and "which data" are written only when they differ from the defaults', async function () {
+  installDom();
+  var container = document.createElement('div');
+  var builder = createBuilder(container, { spec: twoSourceSpec(), CanvasXpress: makeCX([]) });
+  await builder.whenReady();
+  buttonNamed(container, 'Insights').dispatchEvent('click');
+  await settle(); await settle();
+  var modal = document.body.querySelector('.cxb-ins-modal');
+  var box = modal.querySelector('.cxb-ins-switch').querySelector('input');
+  box.checked = true; box.dispatchEvent('change');
+  buttonNamed(modal, 'Apply').dispatchEvent('click');
+  await builder.whenReady();
+  assert.deepEqual(builder.getSpec().insights, {}, 'just on: the automatic checks, nothing else');
+
+  buttonNamed(container, 'Insights').dispatchEvent('click');
+  await settle(); await settle();
+  modal = document.body.querySelector('.cxb-ins-modal');
+  var count = modal.querySelector('.cxb-ins-max').querySelector('input');
+  count.value = '3'; count.dispatchEvent('input');
+  var sources = modal.querySelectorAll('.cxb-ins-source').map(function (row) { return row.querySelector('input'); });
+  assert.equal(sources.length, 2, 'two data sets to choose from');
+  sources[1].checked = false; sources[1].dispatchEvent('change');
+  buttonNamed(modal, 'Apply').dispatchEvent('click');
+  await builder.whenReady();
+  assert.deepEqual(builder.getSpec().insights, { sources: ['clinical'], max: 3 });
+  assert.deepEqual(validateSpec(builder.getSpec()).errors, []);
+});
