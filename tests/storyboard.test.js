@@ -152,3 +152,23 @@ test('pausing cancels the pending advance; pressing next while playing pauses', 
   player.destroy();
   assert.ok(!player.element.parentNode, 'destroy removes the bar');
 });
+
+test('the shipped Cohort Tour example is valid, in both validators, and its narration quotes its own data', async function () {
+  var fs = await import('node:fs');
+  var spec = JSON.parse(fs.readFileSync(new URL('../examples/cohort-tour.spec.json', import.meta.url), 'utf8'));
+  assert.deepEqual(validateSpec(spec).errors, []);
+  assert.equal(spec.storyboard.steps.length, 4);
+  var data = spec.data.data.value;
+  var arm = data.x.arm, months = data.y.data[0];
+  var drug = months.filter(function (m, i) { return arm[i] === 'Drug'; }).sort(function (a, b) { return a - b; });
+  var mid = drug.length >> 1;
+  var median = drug.length % 2 ? drug[mid] : (drug[mid - 1] + drug[mid]) / 2;
+  assert.ok(spec.storyboard.steps[1].narration.indexOf('median follow-up is ' + median + ' months') !== -1,
+    'the drug-arm step quotes the data: ' + spec.storyboard.steps[1].narration);
+  // The engine's log-rank test throws when the two earliest distinct follow-up times are both censored.
+  var event = data.y.data[1];
+  var first = {};
+  months.forEach(function (m, i) { first[m] = (first[m] || 0) + event[i]; });
+  var leading = Object.keys(first).map(Number).sort(function (a, b) { return a - b; }).slice(0, 2);
+  assert.ok(leading.some(function (t) { return first[t] > 0; }), 'a leading event keeps the Kaplan-Meier panel from throwing');
+});

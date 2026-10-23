@@ -723,6 +723,28 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.set_locked(EXAMPLES_OWNER, quality["id"], True)
         print("  [seed] shipped dashboard: %s" % quality["id"])
 
+    # Cohort Tour: the cohort template over a 60-patient trial, with a storyboard and an insights
+    # threshold. Its two sources (the cohort, and the same cohort narrowed to the case card's
+    # patient by a browser-side pushdown) share ONE stored dataset; the pushdown rides along.
+    tour = load_spec("cohort-tour.spec.json")
+    if tour and tour["id"] not in saved:
+        tour = copy.deepcopy(tour)
+        tour_dataset = "cohort-tour-data"
+        for ref, source in tour.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            if tour_dataset not in have:
+                datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                title="Cohort Tour: patients", dataset_id=tour_dataset, locked=True)
+                have_ids.add(tour_dataset)
+            moved = {"kind": "dataset", "id": tour_dataset, "store": "local"}
+            if source.get("pushdown"):
+                moved["pushdown"] = source["pushdown"]
+            tour["data"][ref] = moved
+        dashboards.save_dashboard(EXAMPLES_OWNER, tour, now)
+        dashboards.set_locked(EXAMPLES_OWNER, tour["id"], True)
+        print("  [seed] shipped dashboard: %s" % tour["id"])
+
     # Sales Overview: small inline spec, shipped as-is.
     sales = load_spec("sales-overview.spec.json")
     if sales and sales["id"] not in saved:
