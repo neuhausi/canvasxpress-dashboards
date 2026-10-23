@@ -29,11 +29,12 @@ says so rather than guessing — pass a spec instead.
 | a file | `Dashboard(...).save("dashboard.html")` (standalone: the renderer is inlined) or `.show()` |
 | Flask / FastAPI / Django | return `Dashboard(...).to_html()` from a view |
 | Dash | `html.Iframe(srcDoc=Dashboard(...).to_html(frame=True), style={"width": "100%", "height": "1400px", "border": "0"})` |
-| Streamlit | `streamlit.components.v1.html(Dashboard(...).to_html(), height=1400, scrolling=True)` |
+| Streamlit | `st.iframe(Dashboard(...).to_html(), height=1400)` (on Streamlit before `st.iframe`: `streamlit.components.v1.html(..., height=1400, scrolling=True)`) |
 | Shiny for Python | `ui.HTML(Dashboard(...).iframe_html(1400))` |
 
-Flask and Dash are covered by the package's browser tests; Streamlit and Shiny for Python go through
-the same page but are not run in them.
+Flask and Dash are covered by the package's browser tests. Streamlit (1.66) and Shiny for Python (1.8)
+were run by hand: each draws the whole dashboard, with every chart, inside the frame. The page is
+embedded as-is in a frame that runs JavaScript, so pass it only dashboards you trust.
 
 ## Data
 
