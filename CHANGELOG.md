@@ -5,6 +5,14 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Server: service-token auth for headless publishing
+- The server now accepts a **service token** for non-browser callers: a request with header
+  `X-Cxd-Api-Key: <CXD_API_KEY>` is authenticated as `CXD_API_USER` (default: first admin, else the
+  examples owner) with no session. Disabled unless `CXD_API_KEY` is set; the configured user's role still
+  governs every permission. Lets the `canvasxpress-mcp` `publish_canvasxpress_dashboard` tool save a
+  composed dashboard straight into the install — it then opens in the Builder via `?open=<id>` and can be
+  shared with the existing `POST /api/dashboards/{id}/share`.
+
 ### Builder: Data → Insights, and a few wizard fixes
 - **Data → Insights** switches the findings strip on without touching JSON: a switch, limits written in plain
   words (a measure from the dashboard's own data, *is below / is at most / is above / is at least*, a number, an

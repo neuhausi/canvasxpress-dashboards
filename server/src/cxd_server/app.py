@@ -555,6 +555,18 @@ def create_dashboards_app(
     # edit or delete them. Config-only; falls back to CXD_EXAMPLES_OWNER ("app").
     if examples_owner is None:
         examples_owner = (os.getenv("CXD_EXAMPLES_OWNER", "app") or "").strip() or None
+    # Service-token auth for headless, server-to-server callers (e.g. the
+    # canvasxpress-mcp "publish" tool): a request carrying the header
+    # ``X-Cxd-Api-Key: <CXD_API_KEY>`` is authenticated as ``CXD_API_USER`` with
+    # no browser session. Disabled (normal 401) unless CXD_API_KEY is set; mirrors
+    # the CXD_METER_KEY shared-secret pattern. CXD_API_USER defaults to the first
+    # admin, else the examples owner. The configured user's ROLE still governs
+    # every permission (saving needs dashboard.create; a public share needs
+    # share.public), so point CXD_API_USER at an admin for publish + public share.
+    api_key = (os.getenv("CXD_API_KEY") or "").strip() or None
+    api_user = ((os.getenv("CXD_API_USER", "") or "").strip()
+                or (sorted(admins)[0] if admins else None)
+                or examples_owner)
     if disposable_dashboards is None:
         disposable_dashboards = [tuple(pair.strip().split("/", 1))
                                  for pair in os.getenv("CXD_DISPOSABLE_DASHBOARDS", "").split(",")
@@ -818,6 +830,10 @@ def create_dashboards_app(
 
     def require_user(request: Request) -> str:
         user = request.session.get("user")
+        if not user and api_key and api_user \
+                and request.headers.get("X-Cxd-Api-Key") == api_key:
+            # Service-token caller (CXD_API_KEY): no session, act as CXD_API_USER.
+            return api_user
         if not user:
             raise HTTPException(status_code=401, detail="Not logged in")
         return user
