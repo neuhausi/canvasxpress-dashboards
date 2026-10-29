@@ -46,6 +46,7 @@ export { tableFromData, profileColumns, applyDecimalComma, wizardSpec,
 export { suggestDashboard, dashboardSpec } from './suggestDashboard.js';
 export { mountInsights, insightsDrill } from './insights.js';
 export { mountStoryboard, storyboardSteps } from './storyboard.js';
+export { playDemo, demoToStoryboard, demoDefineVerb } from './demo.js';
 export { renderPayload } from './renderPayload.js';
 export { transposeCxData } from './join.js';
 export { hypergeometricPValue, benjaminiHochberg, enrich, enrichmentToData } from './enrichment.js';

@@ -36,6 +36,7 @@
     "test:wizard-dashboard": "node tests/browser/wizard-dashboard.cjs",
     "test:r": "node tests/browser/r-wrapper.cjs",
     "test:storyboard": "node tests/browser/storyboard.cjs",
+    "test:demo": "node tests/browser/demo.cjs",
     "test:python": "node tests/browser/python-wrapper.cjs",
     "tokens": "node scripts/gen-ui-tokens.mjs",
     "tokens:check": "node scripts/gen-ui-tokens.mjs --check"
@@ -54,7 +55,7 @@
     "url": "git+https://github.com/neuhausi/canvasxpress-dashboards.git"
   },
   "peerDependencies": {
-    "canvasxpress": ">=66.2.0"
+    "canvasxpress": ">=72.8.0"
   },
   "peerDependenciesMeta": {
     "canvasxpress": { "optional": true }

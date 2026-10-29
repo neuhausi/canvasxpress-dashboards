@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en" data-cx-ui-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — Automated Demo</title>
+
+  <!-- CanvasXpress (peer dependency): rendering + broadcast coordination + the engine demo driver
+       (cx.playDemo, >= 72.8). The dashboard driver borrows its ghost cursor + event dispatch. -->
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+
+  <!-- canvasxpress-dashboards renderer (UMD drop-in): renderDashboard, mountStoryboard,
+       and the new playDemo / demoToStoryboard. -->
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    header { padding: 16px 24px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: var(--cx-ui-text-muted); font-size: 13px; }
+    .demo-bar { display: flex; gap: 8px; align-items: center; padding: 0 24px 8px; }
+    .demo-bar button { font: inherit; padding: 6px 12px; border-radius: 6px; cursor: pointer;
+      border: 1px solid var(--cx-ui-border, #ccc); background: var(--cx-ui-surface, #fff); }
+    .demo-bar button[disabled] { opacity: .5; cursor: default; }
+    .demo-bar .hint { color: var(--cx-ui-text-muted); font-size: 12px; }
+    #dashboard { padding: 8px 24px 32px; }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <a class="cxd-open" href="../?open=cohort-tour">✏️ Open in Builder</a>
+    <span class="cxd-here">🤖 Automated Demo</span>
+  </nav>
+  <header>
+    <h1>Automated Demo</h1>
+    <p>One authored storyboard, two ways to play it. Press <b>Play demo</b> and a synthetic human
+       drives the <i>real</i> UI — a ghost cursor glides across the dashboard and dispatches genuine
+       clicks, filter selections and per-panel chart actions (ideal for a screen recording). The same
+       script is also compiled into the state-based <b>Storyboard</b> bar below, which replays each
+       step as live dashboard state. Nothing here is a video or a mock — stop anywhere and explore.</p>
+  </header>
+
+  <div class="demo-bar">
+    <button id="play" disabled>▶ Play demo (drive the UI)</button>
+    <label class="hint">speed
+      <input id="speed" type="range" min="0.5" max="3" step="0.5" value="1" style="vertical-align:middle" />
+      <span id="speedval">1×</span>
+    </label>
+    <span class="hint">— or use the Storyboard bar (same script, replayed as state)</span>
+  </div>
+
+  <div id="dashboard"></div>
+
+  <script>
+    // ── One authored storyboard ─────────────────────────────────────────────────────────────
+    // Verbs resolve against the cohort-tour spec's real names: filter fields arm/stage/age/CD274,
+    // the "Drug arm" scheme, the `case` param, and panels filters/km/compare/vs-time/case.
+    // A `panel.chart` list is delegated verbatim to that panel's engine driver (cx.playDemo),
+    // whose verbs are the standard engine demo catalog (caption, wait, hover, toolbar, menu, …).
+    var DEMO = [
+      { caption: { text: 'Start with the whole 60-patient cohort', seconds: 2 } },
+      { caption: 'Switch to the drug arm — a saved filter scheme' },
+      { scheme: 'Drug arm' },
+      { wait: 900 },
+
+      { caption: 'Narrow to a high-risk subgroup' },
+      { filter: { dataRef: 'data', field: 'stage', values: ['III', 'IV'] } },
+      { wait: 900 },
+
+      { caption: 'Read the survival curve for this subgroup' },
+      { panel: { id: 'km', chart: ['caption:Kaplan–Meier by arm', 'wait:1200'] } },
+
+      { caption: 'Drill into one patient on the case card' },
+      { param: { name: 'case', value: 'P014' } },
+      { panel: 'case' },
+      { wait: 1000 },
+
+      { caption: 'Every step was the live dashboard — explore from here' }
+    ];
+
+    fetch('./cohort-tour.spec.json')
+      .then(function (res) { return res.json(); })
+      .then(function (spec) {
+        // Bridge: compile the SAME script into storyboard steps so the in-page Storyboard bar
+        // replays it as state. (demoToStoryboard keeps the pure-state verbs — caption/scheme/
+        // filter/param/panel-focus — and drops chart-internal `panel.chart` steps.)
+        spec.storyboard = {
+          title: 'Cohort walk-through',
+          seconds: 6,
+          steps: CanvasXpressDashboards.demoToStoryboard(DEMO)
+        };
+        window.__spec = spec;
+        return CanvasXpressDashboards.renderDashboard(spec, 'dashboard');
+      })
+      .then(function (handle) {
+        window.__handle = handle;
+        console.log('Dashboard rendered:', handle.instances.length, 'instances in group', handle.broadcastGroup);
+
+        // State-based tour (reuses the committed storyboard player).
+        CanvasXpressDashboards.mountStoryboard({
+          spec: window.__spec, handle: handle, before: document.getElementById('dashboard')
+        });
+
+        // Driven video path.
+        var playBtn = document.getElementById('play');
+        var speed = document.getElementById('speed');
+        var speedVal = document.getElementById('speedval');
+        speed.addEventListener('input', function () { speedVal.textContent = speed.value + '×'; });
+        playBtn.disabled = false;
+        playBtn.addEventListener('click', function () {
+          playBtn.disabled = true;
+          CanvasXpressDashboards.playDemo(handle, DEMO, {
+            speed: parseFloat(speed.value) || 1,
+            onDone: function () { playBtn.disabled = false; }
+          });
+        });
+      })
+      .catch(function (err) {
+        document.getElementById('dashboard').textContent = 'Failed to render: ' + err.message;
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

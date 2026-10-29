@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en" data-cx-ui-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="/favicon.png" />
+  <title>CanvasXpress Dashboards — File-Drop Demo</title>
+
+  <link href="https://www.canvasxpress.org/dist/canvasXpress.css" rel="stylesheet" />
+  <script src="https://www.canvasxpress.org/dist/canvasXpress.min.js"></script>
+  <script src="../dist/canvasxpress-dashboards.umd.js"></script>
+
+  <style>
+    header { padding: 16px 24px; }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; color: var(--cx-ui-text-muted); font-size: 13px; max-width: 70ch; }
+    .demo-bar { display: flex; gap: 8px; align-items: center; padding: 8px 24px; }
+    .demo-bar button { font: inherit; padding: 6px 12px; border-radius: 6px; cursor: pointer;
+      border: 1px solid var(--cx-ui-border, #ccc); background: var(--cx-ui-surface, #fff); }
+    .demo-bar button[disabled] { opacity: .5; cursor: default; }
+    #builder { height: 640px; margin: 0 24px 32px; border: 1px solid var(--cx-ui-border, #ddd); border-radius: 10px; }
+  </style>
+  <link rel="stylesheet" href="example-header.css" />
+</head>
+<body>
+  <nav class="cxd-topnav">
+    <span class="cxd-brand">CanvasXpress <b>Dashboards</b></span>
+    <a href="../">🏠 Home</a>
+    <a href="index.html">🧭 All examples</a>
+    <span class="cxd-here">📄 File-Drop Demo</span>
+  </nav>
+  <header>
+    <h1>File-Drop Demo</h1>
+    <p>You can drop a data file in two places: on the <b>Data page</b> (the app’s import pane) or on
+       <b>any visualization</b> — dropping on a panel rebinds it to the dropped dataset. This standalone
+       Builder shows the second: the driver drops a CSV onto the panel below. A real desktop→browser
+       file drag can’t be synthesized (it starts outside the page) — so the driver does what the drop
+       handler actually reads: it builds the <code>File</code> in JavaScript, puts it on a
+       <code>DataTransfer</code>, and dispatches <code>dragenter → dragover → drop</code>. For the video
+       it glides a labelled <b>file-ghost</b> from the page edge onto the target (no fake OS window —
+       that would read as fake). This is a genuine import, not a mock. In the full app, pass
+       <code>{ dropFile: { …, onto: 'data' } }</code> to target the Data page instead.</p>
+  </header>
+
+  <div class="demo-bar">
+    <button id="play" disabled>📄 Play file-drop demo</button>
+    <span class="hint" style="color:var(--cx-ui-text-muted);font-size:12px">drops <code>updated-cohort.csv</code> onto the first panel</span>
+  </div>
+
+  <div id="builder"></div>
+
+  <script>
+    var CXD = CanvasXpressDashboards;
+
+    // The replacement dataset the demo "drags in" (what a user would drop from disk).
+    var NEW_CSV =
+      'id,before,after\n' +
+      'gene-A,2.1,6.8\n' + 'gene-B,3.4,1.2\n' + 'gene-C,5.0,5.3\n' +
+      'gene-D,1.1,4.7\n' + 'gene-E,4.2,2.0\n' + 'gene-F,0.8,3.9\n';
+
+    // A starter dashboard with ONE graph panel bound to inline data — so there is a panel cell to
+    // drop onto (an empty canvas has no file target; file drop rebinds an existing panel).
+    var STARTER = {
+      id: 'drop-demo', title: 'Expression',
+      data: { expr: { kind: 'inline', value: {
+        y: { vars: ['v1', 'v2'], smps: ['s1', 's2', 's3'], data: [[1, 2, 3], [3, 2, 1]] }
+      } } },
+      layout: [{ panel: 'p1', x: 0, y: 0, w: 8, h: 7 }],
+      panels: { p1: { type: 'graph', title: 'Expression', dataRef: 'expr', config: { graphType: 'Bar' } } }
+    };
+
+    // Mount the Builder (client-side; no server needed for the file-drop gesture).
+    var builder = CXD.createBuilder('builder', { spec: STARTER });
+
+    // The demo driver needs a handle with a container + (optional) live instances. The Builder is
+    // not a renderDashboard handle, so pass a thin shim: the driver resolves its chrome from
+    // `container` and borrows a hidden host CanvasXpress for the cursor when `instances` is empty.
+    var shim = { container: document.getElementById('builder'), instances: [] };
+
+    var playBtn = document.getElementById('play');
+    playBtn.disabled = false;
+    playBtn.addEventListener('click', function () {
+      playBtn.disabled = true;
+      CXD.playDemo(shim, [
+        { caption: { text: 'Drag a new CSV onto the panel to rebind its data', seconds: 2 } },
+        { dropFile: { name: 'updated-cohort.csv', content: NEW_CSV, type: 'text/csv', onto: 0 } },
+        { caption: 'The panel reloaded from the dropped file' }
+      ], { speed: 1, onDone: function () { playBtn.disabled = false; } });
+    });
+  </script>
+</body>
+</html>
