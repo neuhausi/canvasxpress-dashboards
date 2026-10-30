@@ -5,6 +5,10 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Docs: Dashboards in Claude (MCP App)
+- New README section and a Builder Home card describing the MCP App: make a dashboard in chat, Save (JSON download),
+  Open in Builder, drop the spec on the Data page to reopen it, quiet failed attempts, restart-the-client note.
+
 ### Builder: drop a dashboard spec to open it
 - Dropping a dashboard spec (`.json` with `layout` + `panels`) on the Data view's drop zone, or choosing it in
   Add data → File, now opens it in the Builder instead of storing it as a dataset. The spec is migrated to the

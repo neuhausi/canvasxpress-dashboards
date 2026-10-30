@@ -598,6 +598,23 @@ API: `POST /api/wizard/suggest {rows, intent?}` →
 helpers `tableFromData`, `profileColumns`, `applyDecimalComma`, `wizardSpec`,
 `suggestDashboard` and `dashboardSpec` (and the existing `transposeCxData`).
 
+## Dashboards in Claude (MCP App)
+
+The [canvasxpress-mcp](https://github.com/neuhausi/canvasxpress-mcp) connector renders a dashboard **inside the chat** as an MCP App (`ui://canvasxpress/dashboard`). It loads this package's UMD bundle and calls `renderDashboard(spec, element)`, so the panels are live and linked (filters, hover, selection) with no server or sign-in.
+
+**Make one.** Ask Claude, e.g. "use the penguins data set to create a canvasxpress dashboard" (bundled datasets: penguins, iris, mtcars), or give it your own table. One call to `suggest_canvasxpress_dashboard` (or `compose_canvasxpress_dashboard` for hand-picked charts) is enough. The theme follows the chat's light/dark mode.
+
+**Buttons above the dashboard.**
+
+- **Save** downloads the spec as `<id>.spec.json`. Where the host blocks downloads, a box shows the JSON with a **Copy JSON** button. The file is a normal dashboard spec, so you can put it on any install.
+- **Open in Builder** opens the dashboard in the no-code Builder at canvasxpress.org (or your own install when the connector has `CXD_DASHBOARDS_URL` set). With `CXD_DASHBOARDS_API_KEY` configured it first saves the dashboard to that install; the key's account owns saves, so use it for a private or single-user server.
+
+**Bring a saved spec back.** In the Builder, drag the JSON file onto the Builder's **Data** page drop zone (or choose it in **Add data → File**). The file is parsed, migrated to the current schema, validated and opened in the Builder at once. An invalid spec shows the reason and nothing opens. Dropping anywhere else on the page does not open specs.
+
+**Failed attempts are quiet.** If a call produces no dashboard (unknown dataset, no matching template), the view shows nothing and logs the reason to the browser console; the assistant retries. Only a library-load failure or a draw failure shows a red banner.
+
+**Troubleshooting.** Clients cache the tool list and the view. After the connector is updated, quit all chats and restart the client. The small stamp in the view's corner (`canvasxpress-mcp view <commit>/<hash>`) tells you which build you are on. Full tool reference: the connector's README, "MCP Apps support".
+
 ## Storyboards
 
 Add a `storyboard` to a spec for a guided tour: steps that each set the filters, parameters and panel in
