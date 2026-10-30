@@ -5,6 +5,11 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Filters: large numbers on range sliders
+- Range-slider tick labels abbreviate values of five or more digits (20000000 shows as 20M, 2.5M, ...), and the min/max
+  boxes shrink their text to fit, so measures like read counts no longer overlap or clip. The boxes still hold and
+  accept the exact number.
+
 ### Docs: Dashboards in Claude (MCP App)
 - New README section and a Builder Home card describing the MCP App: make a dashboard in chat, Save (JSON download),
   Open in Builder, drop the spec on the Data page to reopen it, quiet failed attempts, restart-the-client note.

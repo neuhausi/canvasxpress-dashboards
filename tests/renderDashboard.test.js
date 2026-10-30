@@ -1220,6 +1220,23 @@ test('filters range slider: drag a thumb to filter, back to its end to clear', a
   handle.destroy();
 });
 
+test('filters range slider: large values get short tick labels and a fitted number box', async function () {
+  var live = [];
+  var CX = markingCX(live);
+  var spec = filtersSpec();
+  spec.data.clin.value.y.data = [[61e6, 55e6, 70e6, 48e6]];
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+  var handle = await renderDashboard(spec, container, { CanvasXpress: CX });
+  await handle.ready;
+  var ticks = container.querySelectorAll('.cxd-range-tick-label').map(function (t) { return t.textContent; });
+  assert.deepEqual(ticks, ['45M', '50M', '55M', '60M', '65M', '70M']);
+  var min = container.querySelector('.cxd-filters-min');
+  assert.equal(min.value, '45000000', 'the editable box keeps the exact number');
+  assert.equal(min.style.fontSize, '13px', 'an 8-character value shrinks to fit the box');
+  handle.destroy();
+});
+
 // --- kind:"function" sources ---
 
 test('a function panel re-runs when its $param arg or an input changes', async function () {

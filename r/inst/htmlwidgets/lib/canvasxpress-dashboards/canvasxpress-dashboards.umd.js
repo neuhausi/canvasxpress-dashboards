@@ -9324,6 +9324,7 @@ function renderDashboard(spec, target, options) {
           s[0].className = 'cxd-filters-' + s[1];
           s[0].step = 'any';
           s[0].value = formatBound(s[2]);
+          s[0].style.fontSize = fitBoxFont(s[0].value);
           s[0].setAttribute('aria-label', f.label + ' ' + s[1]);
         });
         [minRange, maxRange].forEach(function (r, i) {
@@ -9366,11 +9367,13 @@ function renderDashboard(spec, target, options) {
         minRange.addEventListener('input', function () {
           if (Number(minRange.value) > Number(maxRange.value)) minRange.value = maxRange.value;
           minBox.value = formatBound(minRange.value);
+          minBox.style.fontSize = fitBoxFont(minBox.value);
           paint();
         });
         maxRange.addEventListener('input', function () {
           if (Number(maxRange.value) < Number(minRange.value)) maxRange.value = minRange.value;
           maxBox.value = formatBound(maxRange.value);
+          maxBox.style.fontSize = fitBoxFont(maxBox.value);
           paint();
         });
         minRange.addEventListener('change', apply);
@@ -9379,6 +9382,7 @@ function renderDashboard(spec, target, options) {
           s[0].addEventListener('change', function () {
             if (parseBound(s[0].value) === null) s[0].value = formatBound(s[2]);   // blank = unbounded
             s[1].value = s[0].value;
+            s[0].style.fontSize = fitBoxFont(s[0].value);
             paint();
             apply();
           });
@@ -9400,7 +9404,7 @@ function renderDashboard(spec, target, options) {
           major.style.left = pct(v) + '%';
           var text = document.createElement('span');
           text.className = 'cxd-range-tick-label';
-          text.textContent = String(v);
+          text.textContent = formatTickLabel(v);
           major.appendChild(text);
           ruler.appendChild(major);
           if (i === ticks.values.length - 1) return;
@@ -10571,6 +10575,35 @@ function parseBound(text) {
   if (text == null || String(text).trim() === '') return null;
   var n = Number(text);
   return isFinite(n) ? n : null;
+}
+
+/**
+ * A short label for a range-slider tick: values of five or more digits are abbreviated
+ * (20000000 -> "20M", 2500000 -> "2.5M") so large measures do not run into each other.
+ * Smaller values, and runtimes without Intl compact notation, keep the plain number.
+ * @param {number} value - The tick value.
+ * @returns {string} The label.
+ * @private
+ */
+function formatTickLabel(value) {
+  if (Math.abs(value) >= 10000 && typeof Intl !== 'undefined' && Intl.NumberFormat) {
+    try {
+      return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 2 }).format(value);
+    } catch (e) { /* older engines without compact notation */ }
+  }
+  return String(value);
+}
+
+/**
+ * Font size (px) that keeps a number box's text inside its box: full size up to
+ * seven characters, then smaller down to a legible floor.
+ * @param {string} text - The box's text.
+ * @returns {string} A CSS font-size, or '' for the stylesheet default.
+ * @private
+ */
+function fitBoxFont(text) {
+  var len = String(text).length;
+  return len <= 7 ? '' : Math.max(10, Math.floor(15 * 7 / len)) + 'px';
 }
 
 /**
