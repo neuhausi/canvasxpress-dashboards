@@ -1064,7 +1064,11 @@
         if (type === 'file') {
           var f = modal.querySelector('#ad-file').files[0];
           if (!f) return fail('Choose a file');
-          client.uploadDataset(f, { title: name || f.name.replace(/\.[^.]+$/, '') }).then(done, function (e) { fail('Upload failed: ' + (e && e.message || e)); });
+          // A dashboard spec opens in the Builder instead of being stored as a dataset.
+          openDroppedSpec(f).then(function (opened) {
+            if (opened) { close(); return null; }
+            return client.uploadDataset(f, { title: name || f.name.replace(/\.[^.]+$/, '') }).then(done, function (e) { fail('Upload failed: ' + (e && e.message || e)); });
+          });
         } else if (type === 'csv' || type === 'json') {
           var text = modal.querySelector('#ad-text').value;
           if (!text.trim()) return fail('Paste some data');
@@ -1085,6 +1089,40 @@
       if (typeof nameEl.focus === 'function') nameEl.focus();
     }
 
+    // A dropped .json that is a dashboard SPEC (layout + panels) is not a dataset: it opens
+    // straight in the Builder. Resolves true when it was handled (opened, or reported as unusable)
+    // and false when it is something else (a CanvasXpress data/config JSON, CSV, ...), so the
+    // caller imports it as data as before. The spec is migrated to the current format and
+    // validated first; nothing is saved until the user saves.
+    function looksLikeDashboardSpec(obj) {
+      return !!obj && typeof obj === 'object' && !Array.isArray(obj) &&
+        !!obj.panels && typeof obj.panels === 'object' && !Array.isArray(obj.panels) &&
+        !!obj.layout && typeof obj.layout === 'object' && Array.isArray(obj.layout.items);
+    }
+    function openDroppedSpec(file) {
+      var name = (file.name || '').toLowerCase();
+      var looksJson = /\.(json|cx)$/.test(name) || (file.type || '').indexOf('json') >= 0;
+      if (!looksJson || typeof file.text !== 'function') return Promise.resolve(false);
+      return file.text().then(function (text) {
+        var obj;
+        try { obj = JSON.parse(text); } catch (e) { return false; }
+        if (!looksLikeDashboardSpec(obj)) return false;
+        var spec;
+        try { spec = CXD.migrateSpec(obj).spec; } catch (e) {
+          window.alert('This dashboard spec can’t be opened: ' + (e && e.message || e));
+          return true;
+        }
+        var check = CXD.validateSpec(spec);
+        if (!check.valid) {
+          window.alert('This file looks like a dashboard spec but is not valid:\n - ' + check.errors.slice(0, 8).join('\n - '));
+          return true;
+        }
+        currentSpec = spec; currentOwner = null;
+        activate('Builder');
+        return true;
+      }, function () { return false; });
+    }
+
     // Make a container a drop target: dropping a valid CanvasXpress input
     // (CSV / TSV / CanvasXpress JSON) imports it into the store and previews it.
     function setupDropZone(pane) {
@@ -1102,27 +1140,34 @@
         stop(e); pane.classList.remove('drop-active');
         var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
         if (!f) return;
-        // Delimited text (CSV/TSV) ALWAYS uploads directly: the server stores it
-        // as a raw 2D array, so CanvasXpress's own ingest (arrayToCX) runs on
-        // every render and content auto-detection — e.g. an oncoprint gene ×
-        // sample alteration matrix — keeps working. Routing it through the live
-        // preview instance's loadFile instead made the engine interpret the file
-        // RELATIVE to the currently previewed dataset (metadata merge / "not a
-        // valid file" alerts) and stored a flattened {y} object that bypasses
-        // auto-detection. Only PNGs (engine-encoded) and CanvasXpress JSON
-        // ({data, config} exports) still need the engine to decode them.
-        if (/\.(csv|tsv|tab|txt)$/i.test(f.name || '')) {
-          importDataFile(f);
-        } else if (dataPreviewInstance && typeof dataPreviewInstance.loadFile === 'function') {
-          loadDroppedFileViaCanvasXpress(e.dataTransfer, f);
-        } else if (/\.png$/i.test(f.name || '')) {
-          bootstrapPreviewInstance(function () {
-            loadDroppedFileViaCanvasXpress(e.dataTransfer, f);
-          });
-        } else {
-          importDataFile(f);
-        }
+        var dropped = e.dataTransfer;
+        // A dashboard spec opens in the Builder; anything else is imported as data below.
+        openDroppedSpec(f).then(function (opened) { if (!opened) importDropped(dropped, f); });
       }, true);
+    }
+
+    // Route a dropped data file (the File stays valid across the async spec check above).
+    function importDropped(dataTransfer, f) {
+      // Delimited text (CSV/TSV) ALWAYS uploads directly: the server stores it
+      // as a raw 2D array, so CanvasXpress's own ingest (arrayToCX) runs on
+      // every render and content auto-detection — e.g. an oncoprint gene ×
+      // sample alteration matrix — keeps working. Routing it through the live
+      // preview instance's loadFile instead made the engine interpret the file
+      // RELATIVE to the currently previewed dataset (metadata merge / "not a
+      // valid file" alerts) and stored a flattened {y} object that bypasses
+      // auto-detection. Only PNGs (engine-encoded) and CanvasXpress JSON
+      // ({data, config} exports) still need the engine to decode them.
+      if (/\.(csv|tsv|tab|txt)$/i.test(f.name || '')) {
+        importDataFile(f);
+      } else if (dataPreviewInstance && typeof dataPreviewInstance.loadFile === 'function') {
+        loadDroppedFileViaCanvasXpress(dataTransfer, f);
+      } else if (/\.png$/i.test(f.name || '')) {
+        bootstrapPreviewInstance(function () {
+          loadDroppedFileViaCanvasXpress(dataTransfer, f);
+        });
+      } else {
+        importDataFile(f);
+      }
     }
 
     // Create a minimal hidden table instance so CanvasXpress's loadFile can

@@ -5,6 +5,11 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Builder: drop a dashboard spec to open it
+- Dropping a dashboard spec (`.json` with `layout` + `panels`) on the Data view's drop zone, or choosing it in
+  Add data → File, now opens it in the Builder instead of storing it as a dataset. The spec is migrated to the
+  current format and validated first (an invalid one reports why); nothing is saved until you save. Any other
+  file (CSV, TSV, CanvasXpress data JSON, PNG) imports as data exactly as before.
 ### Server: service-token auth for headless publishing
 - The server now accepts a **service token** for non-browser callers: a request with header
   `X-Cxd-Api-Key: <CXD_API_KEY>` is authenticated as `CXD_API_USER` (default: first admin, else the
