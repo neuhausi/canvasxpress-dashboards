@@ -1965,7 +1965,7 @@ export function renderDashboard(spec, target, options) {
           s[0].className = 'cxd-filters-' + s[1];
           s[0].step = 'any';
           s[0].value = formatBound(s[2]);
-          s[0].style.fontSize = fitBoxFont(s[0].value);
+          showBox(s[0]);
           s[0].setAttribute('aria-label', f.label + ' ' + s[1]);
         });
         [minRange, maxRange].forEach(function (r, i) {
@@ -1980,6 +1980,12 @@ export function renderDashboard(spec, target, options) {
 
         function formatBound(v) {
           return String(Number(Number(v).toFixed(decimals)));
+        }
+        // The box keeps the exact number (so it can be edited); while it is not being edited a
+        // short label (10M) is shown over it, and the exact text is fitted to the box for editing.
+        function showBox(box) {
+          box.style.fontSize = fitBoxFont(box.value);
+          if (box._shown) box._shown.textContent = formatTickLabel(Number(box.value));
         }
         function pct(v) {
           return hi === lo ? 0 : (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * 100;
@@ -2008,13 +2014,13 @@ export function renderDashboard(spec, target, options) {
         minRange.addEventListener('input', function () {
           if (Number(minRange.value) > Number(maxRange.value)) minRange.value = maxRange.value;
           minBox.value = formatBound(minRange.value);
-          minBox.style.fontSize = fitBoxFont(minBox.value);
+          showBox(minBox);
           paint();
         });
         maxRange.addEventListener('input', function () {
           if (Number(maxRange.value) < Number(minRange.value)) maxRange.value = minRange.value;
           maxBox.value = formatBound(maxRange.value);
-          maxBox.style.fontSize = fitBoxFont(maxBox.value);
+          showBox(maxBox);
           paint();
         });
         minRange.addEventListener('change', apply);
@@ -2023,14 +2029,24 @@ export function renderDashboard(spec, target, options) {
           s[0].addEventListener('change', function () {
             if (parseBound(s[0].value) === null) s[0].value = formatBound(s[2]);   // blank = unbounded
             s[1].value = s[0].value;
-            s[0].style.fontSize = fitBoxFont(s[0].value);
+            showBox(s[0]);
             paint();
             apply();
           });
         });
 
-        values.appendChild(minBox);
-        values.appendChild(maxBox);
+        [minBox, maxBox].forEach(function (box, i) {
+          var holder = document.createElement('span');
+          holder.className = 'cxd-range-box cxd-range-box-' + (i === 0 ? 'min' : 'max');
+          var shown = document.createElement('span');
+          shown.className = 'cxd-range-shown';
+          shown.setAttribute('aria-hidden', 'true');
+          box._shown = shown;
+          holder.appendChild(box);
+          holder.appendChild(shown);
+          values.appendChild(holder);
+          showBox(box);
+        });
         slider.appendChild(track);
         slider.appendChild(fill);
         slider.appendChild(thumbLo);
@@ -2060,6 +2076,7 @@ export function renderDashboard(spec, target, options) {
         wrap.appendChild(slider);
         wrap.appendChild(ruler);
         paint();
+        thinTickLabels(ruler);
         return wrap;
       }
 
@@ -3233,6 +3250,35 @@ function formatTickLabel(value) {
     } catch (e) { /* older engines without compact notation */ }
   }
   return String(value);
+}
+
+/**
+ * Hide tick labels that would overlap their left neighbour (a narrow panel with many
+ * abbreviated labels, 10M20M30M...). Runs once the ruler is laid out and again when it
+ * resizes; a runtime without layout (no getBoundingClientRect) is left alone.
+ * @param {HTMLElement} ruler - The `.cxd-range-ticks` element.
+ * @returns {void}
+ * @private
+ */
+function thinTickLabels(ruler) {
+  if (typeof requestAnimationFrame !== 'function') return;
+  var thin = function () {
+    var labels = ruler.querySelectorAll ? ruler.querySelectorAll('.cxd-range-tick-label') : [];
+    var lastRight = -Infinity;
+    for (var i = 0; i < labels.length; i++) {
+      labels[i].style.visibility = '';
+      if (typeof labels[i].getBoundingClientRect !== 'function') return;
+      var box = labels[i].getBoundingClientRect();
+      if (!box.width) return;                       // not laid out (hidden or detached)
+      if (box.left < lastRight + 4) {
+        labels[i].style.visibility = 'hidden';
+      } else {
+        lastRight = box.right;
+      }
+    }
+  };
+  requestAnimationFrame(thin);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(thin).observe(ruler);
 }
 
 /**

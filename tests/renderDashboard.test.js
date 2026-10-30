@@ -1234,6 +1234,8 @@ test('filters range slider: large values get short tick labels and a fitted numb
   var min = container.querySelector('.cxd-filters-min');
   assert.equal(min.value, '45000000', 'the editable box keeps the exact number');
   assert.equal(min.style.fontSize, '13px', 'an 8-character value shrinks to fit the box');
+  var shown = container.querySelectorAll('.cxd-range-shown').map(function (n) { return n.textContent; });
+  assert.deepEqual(shown, ['45M', '70M'], 'a short label is shown over the boxes while they are not edited');
   handle.destroy();
 });
 
