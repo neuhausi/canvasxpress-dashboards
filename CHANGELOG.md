@@ -5,6 +5,19 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Wizard: the engine's own chart advisor (U2)
+- The data-first wizard's **Visualize** step now shows an instant, offline first guess from the engine's advisor
+  (`CanvasXpress.recommend(table, intent)`): a ranked set of chart cards, each with a one-line plain-English
+  rationale, drawn immediately as live previews you click to choose. The deep canvasxpress-mcp selector still
+  refines the list when that service is reachable — and when it is off, the wizard keeps the engine's suggestions
+  instead of dead-ending on "suggestions unavailable". Needs engine 73.6+ (the static `recommend` API).
+
+### Publish: self-contained single-chart embed (U3)
+- Publishing a single chart now offers, alongside the hosted iframe / `<cxd-embed>` / PNG codes, a **Standalone HTML**
+  embed: one pasteable block (a `<canvas>`, the CanvasXpress css/js from the versioned jsDelivr CDN, and
+  `new CanvasXpress(spec)` with the data inline) that renders anywhere with no backend. It prefers the engine's own
+  `instance.getEmbedSnippet()` (engine 73.7+) and falls back to an identical client-side build on older engines.
+
 ### Filters: large numbers on range sliders
 - Range-slider tick labels abbreviate values of five or more digits (20000000 shows as 20M, 2.5M, ...), and the min/max
   boxes show the same short form (10M) until you click in to edit the exact number, and tick labels that would

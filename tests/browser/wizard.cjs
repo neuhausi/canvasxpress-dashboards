@@ -79,6 +79,18 @@ process.on('exit', function () { if (serverProc) { try { serverProc.kill(); } ca
     });
     await page.goto(BASE + '/');
     await page.waitForFunction('typeof window.showWizard === "function" && !!window.CanvasXpress', null, { timeout: 30000 });
+    // U2: the engine's own advisor (static CanvasXpress.recommend) must be callable
+    // in the served build and return a ranked pick with a plain-English rationale.
+    const rec = await page.evaluate(function () {
+      try {
+        var r = window.CanvasXpress.recommend(
+          [['Country', 'Region', 'GDP', 'LifeExp'], ['USA', 'Americas', 65000, 79], ['Japan', 'Asia', 42000, 84]],
+          'compare wealth and health');
+        return { gt: r && r.recommendation && r.recommendation.graphType, why: r && r.recommendation && r.recommendation.why,
+          alts: r && r.alternatives ? r.alternatives.length : -1 };
+      } catch (e) { return { error: String(e) }; }
+    });
+    check('core advisor callable (CanvasXpress.recommend)', !!rec.gt && !!rec.why, JSON.stringify(rec));
     const signup = await page.evaluate(function () {
       return fetch('/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: 'wiz', password: 'secret1' }) }).then(function (r) { return r.status; });
@@ -101,6 +113,14 @@ process.on('exit', function () { if (serverProc) { try { serverProc.kill(); } ca
     await page.click('.cX-Modal button:has-text("Next: pick a chart")');
     // 3 Visualize: suggestions rendered as live previews
     await page.waitForSelector('.cxd-wizard-card canvas', { timeout: 20000 });
+    // The engine advisor draws instantly; the stubbed MCP selector then refines to
+    // its two cards. Wait for that refined state before asserting the count.
+    // Each CanvasXpress preview renders two canvases (main + overlay), so wait on
+    // the refined card COUNT (2, from the MCP stub), not the canvas count.
+    await page.waitForFunction(function () {
+      return document.querySelectorAll('.cxd-wizard-card').length === 2 &&
+        document.querySelectorAll('.cxd-wizard-card canvas').length >= 2;
+    }, null, { timeout: 20000 });
     const cards = await page.$$eval('.cxd-wizard-card', function (els) {
       return els.map(function (e) { return { text: e.textContent, chosen: e.className.indexOf('--chosen') > -1, canvases: e.querySelectorAll('canvas').length }; });
     });
@@ -119,7 +139,17 @@ process.on('exit', function () { if (serverProc) { try { serverProc.kill(); } ca
     const token = (/token=([^&]+)/.exec(shareUrl) || [])[1];
     check('share link shown', !!token, shareUrl);
     await page.waitForSelector('.cxd-embed-codes textarea', { timeout: 20000 });
-    check('embed codes shown', (await page.$$('.cxd-embed-codes textarea')).length === 3);
+    // U3: hosted iframe/script/image rows PLUS the self-contained no-server row.
+    await page.waitForFunction(function () {
+      return document.querySelectorAll('.cxd-embed-codes textarea').length === 4;
+    }, null, { timeout: 20000 });
+    const embedCodes = await page.$$eval('.cxd-embed-codes textarea', function (els) {
+      return els.map(function (e) { return e.value; });
+    });
+    check('embed codes shown (hosted + standalone)', embedCodes.length === 4);
+    const standalone = embedCodes.filter(function (v) { return /new CanvasXpress\(/.test(v) && /<canvas id=/.test(v); })[0];
+    check('U3 standalone embed is self-contained HTML', !!standalone && /cdn\.jsdelivr\.net\/npm\/canvasxpress@/.test(standalone),
+      standalone ? standalone.slice(0, 80) : 'missing');
     // Verify what was published, through the public API
     const shared = await (await fetch(BASE + '/api/shared/' + token)).json();
     const spec = shared.spec || {};
