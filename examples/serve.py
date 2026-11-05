@@ -705,6 +705,26 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         dashboards.set_locked(EXAMPLES_OWNER, biomarker["id"], True)
         print("  [seed] shipped dashboard: %s" % biomarker["id"])
 
+    # Clinical Trial: two-arm oncology board (180 subjects) — six reactive KPI
+    # ring-meters, Kaplan-Meier survival, a grouped biomarker boxplot, an
+    # age/biomarker scatter, a US enrollment choropleth, and response /
+    # adverse-event / enrollment panels; Arm + Sex filter controls. Its inline
+    # datasets move into the dataset store.
+    clinical = load_spec("clinical-trial-dashboard.spec.json")
+    if clinical and clinical["id"] not in saved:
+        clinical = copy.deepcopy(clinical)
+        for ref, source in clinical.get("data", {}).items():
+            if source.get("kind") != "inline":
+                continue
+            dataset_id = "clinical-" + ref
+            if dataset_id not in have:
+                datasets.create(EXAMPLES_OWNER, source["value"], now,
+                                title="Clinical Trial: " + ref, dataset_id=dataset_id, locked=True)
+            clinical["data"][ref] = {"kind": "dataset", "id": dataset_id, "store": "local"}
+        dashboards.save_dashboard(EXAMPLES_OWNER, clinical, now)
+        dashboards.set_locked(EXAMPLES_OWNER, clinical["id"], True)
+        print("  [seed] shipped dashboard: %s" % clinical["id"])
+
     # Quality Metrics: manufacturing board (three ring meters, a per-line yield
     # trend, a stacked defects bar; Line/Shift controls). Its five inline
     # datasets move into the dataset store.
@@ -858,9 +878,13 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     # order — only when the stored order differs, so restarts don't churn.
     # A shipped example missing from the list keeps its own stamp.
     shipped_order = [
-        "biomarker-cohort", "genomics-oncology", "ggplot-gallery", "code-panels-gallery", "pins-overview", "pins-live", "heor-overview", "kpi-overview",
+        "biomarker-cohort", "clinical-trial-dashboard", "genomics-oncology", "ggplot-gallery", "code-panels-gallery", "pins-overview", "pins-live", "heor-overview", "kpi-overview",
         "gtex-explorer", "gencode-explorer", "wp-explorer", "tcga-explorer", "ccle-explorer",
         "live-ops", "quality-metrics", "reproducible-bench", "sales-model", "sales-overview",
+        # Secondary cross-filter / linked-marking demos: pinned to the end so the
+        # curated gallery order above is authoritative (otherwise they keep the
+        # base seed timestamp and float to the top of the list, ahead of it).
+        "cohort-tour", "cross-filter-demo", "cross-filter-genomics", "linked-ghost", "linked-highlight",
     ]
     listed = [d["id"] for d in dashboards.list_dashboards(EXAMPLES_OWNER)]
     wanted = [i for i in shipped_order if i in listed]
