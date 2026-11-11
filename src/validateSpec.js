@@ -176,6 +176,12 @@ export function validateSpec(spec) {
             ['auto', 'dropdown', 'radio', 'buttons', 'search', 'slider', 'range'].indexOf(panel.style) === -1) {
           errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", "search", "slider", or "range"');
         }
+        if (panel.icon != null && panel.icon !== false && typeof panel.icon !== 'string') {
+          errors.push(at + '.icon must be an icon name, a short glyph, or false');
+        }
+        if (panel.swatches != null && typeof panel.swatches !== 'boolean') {
+          errors.push(at + '.swatches must be true or false');
+        }
         if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param' && panel.mode !== 'config' && panel.mode !== 'transform') {
           errors.push(at + '.mode must be "filter", "param", "config", or "transform"');
         }

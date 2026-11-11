@@ -593,6 +593,15 @@
           "default": "auto",
           "description": "Control panels: widget rendering. 'auto' picks buttons for ≤4 values, a dropdown above that. 'search' (param controls) is a debounced free-text box whose value becomes the parameter. 'slider' (config controls) is an ordered range over the options."
         },
+        "icon": {
+          "description": "Control panels: the leading icon. Omit to infer one from the control's role (filter, search, x/y axis, colour, transform ...); a name from the built-in set (filter, search, axis-x, axis-y, color, shape, size, transform, slider, time, place, sex, group, tag, calendar, sort, layers) or a 1-2 character glyph overrides it; false removes it.",
+          "oneOf": [{ "type": "string" }, { "type": "boolean", "enum": [false] }]
+        },
+        "swatches": {
+          "type": "boolean",
+          "default": true,
+          "description": "Control panels (mode:'filter'): show each choice's drawn colour/shape, read back from the legend of a panel keyed on the same annotation. False hides them."
+        },
         "placeholder": {
           "type": "string",
           "description": "Control panels (style:'search'): placeholder text for the search box."

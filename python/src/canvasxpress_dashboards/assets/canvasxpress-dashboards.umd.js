@@ -47,10 +47,11 @@ var dashboardCss = [
   '  --cxd-error: var(--cx-ui-danger); --cxd-font: var(--cx-font-sans); }',
   // Every dropdown in a dashboard, the builder and its dialogs draws the engine's chevron (two
   // currentColor diagonals: it follows the text colour in light and dark), inset from the right
-  // border instead of on it, with room so the text never runs under it. Scoped to our roots (a
+  // border instead of on it, with room so the text never runs under it. `.cxd-annctl-select` opts out:
+  // a control chip draws its own chevron (and would otherwise show two). Scoped to our roots (a
   // host page keeps its own selects); the engine's own selects (customizer, data filter,
   // its classed dropdowns) keep their styling.
-  ':is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay, .cxd-code-backdrop) select:not([multiple]):not([size]):not([class*="cX-"]):not([class*="CanvasXpress"]):not(:where([class*="cX-Customizer"], [class*="cX-DataFilter"]) select) {',
+  ':is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay, .cxd-code-backdrop) select:not([multiple]):not([size]):not(.cxd-annctl-select):not([class*="cX-"]):not([class*="CanvasXpress"]):not(:where([class*="cX-Customizer"], [class*="cX-DataFilter"]) select) {',
   '  -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 30px; cursor: pointer;',
   '  background-image: linear-gradient(45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%), linear-gradient(-45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%);',
   '  background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }',
@@ -386,26 +387,70 @@ var dashboardCss = [
   '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
   '  padding: 5px 0; background: transparent;',
   '  font: 14px/1.3 var(--cxd-font); color: var(--cxd-title); }',
-  '.cxd-annctl-label { font-weight: 600; white-space: nowrap; }',
+  '.cxd-annctl-label { font-weight: 500; white-space: nowrap; color: var(--cxd-muted); }',
   '.cxd-annctl-hint { color: var(--cxd-muted); }',
+  // Role icon: inherits the muted label colour, so icon + label read as one unit.
+  '.cxd-annctl-ic { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;',
+  '  width: 15px; height: 15px; color: var(--cxd-muted); }',
+  '.cxd-annctl-ic svg { width: 15px; height: 15px; display: block; }',
+  '.cxd-annctl-ic-glyph { font-size: 13px; line-height: 1; }',
+  // Legend swatch: the colour/shape the charts drew for that level.
+  '.cxd-annctl-sw { display: inline-block; flex: 0 0 auto; width: 9px; height: 9px; margin-right: 6px;',
+  '  border-radius: var(--cx-radius-pill); vertical-align: middle; }',
+  '.cxd-annctl-segbtn .cxd-annctl-sw, .cxd-annctl-radio .cxd-annctl-sw { margin-right: 6px; }',
+  '.cxd-annctl-sw-slot { display: inline-flex; align-items: center; }',
+  '.cxd-annctl-sw-slot .cxd-annctl-sw { margin-right: 0; }',
   '.cxd-annctl-disabled { opacity: 0.65; }',
   // Controls use --cxd-ctrl-border (a colour the renderer computes to contrast
   // with whatever the control sits on) so the box stays visible even when the
   // panel chrome is coordinated to the background. Falls back to the theme border.
   // The search box (a text <input>) shares the SAME box as the select dropdowns so
   // the explorer controls read as one consistent set.
+  // A control that holds a dropdown/search reads as ONE rounded chip: the wrapper
+  // draws the box (border + soft shadow) and the <select>/<input> inside is chrome-less,
+  // so the muted label and the bold value sit side by side in the same pill.
+  '.cxd-annctl:has(> .cxd-annctl-select, > .cxd-annctl-search) { gap: 6px; padding: 7px 5px 7px 12px;',
+  '  border: 1px solid var(--cxd-ctrl-border, var(--cxd-border)); border-radius: var(--cx-radius-lg);',
+  '  background: var(--cxd-panel-bg); box-shadow: var(--cx-shadow-1); }',
+  '.cxd-annctl:has(> .cxd-annctl-select:focus-visible, > .cxd-annctl-search:focus-visible) {',
+  '  border-color: var(--cx-ui-accent); box-shadow: 0 0 0 3px var(--cx-ui-accent-tint); }',
   '.cxd-annctl-select, .cxd-annctl-search { padding: 4px 7px; border: 1px solid var(--cxd-ctrl-border, var(--cxd-border)); border-radius: var(--cx-radius-md);',
   '  font: inherit; background: var(--cxd-panel-bg); color: inherit; }',
+  // Inside a chip the control loses its own box; a drawn chevron replaces the native one.
+  '.cxd-annctl:has(> .cxd-annctl-select, > .cxd-annctl-search) > .cxd-annctl-select,',
+  '.cxd-annctl:has(> .cxd-annctl-select, > .cxd-annctl-search) > .cxd-annctl-search {',
+  '  padding: 0; border: none; border-radius: 0; background: transparent; font-weight: 600; flex: 1 1 auto; min-width: 0;',
+  '  color: var(--cxd-title); outline: none; }',
+  // The chevron is painted INSIDE the <select>'s own padding (the repo's gradient-V
+  // idiom), never as a sibling pseudo-element: a sibling is not part of the control,
+  // so clicking it would not open the menu. Muted so it reads as chrome next to the
+  // strong value text.
+  '.cxd-annctl:has(> .cxd-annctl-select) > .cxd-annctl-select { -webkit-appearance: none; -moz-appearance: none;',
+  // Stretch to the chip's right edge so the whole right side of the chip — chevron
+  // included — is the control's own hit area, not dead padding.
+  '  appearance: none; flex: 1 1 auto; min-width: 0; padding-right: 17px; cursor: pointer;',
+  '  background-image: linear-gradient(45deg, transparent 40%, var(--cxd-muted) 40%, var(--cxd-muted) 60%, transparent 60%),',
+  '    linear-gradient(-45deg, transparent 40%, var(--cxd-muted) 40%, var(--cxd-muted) 60%, transparent 60%);',
+  '  background-position: calc(100% - 9px) 50%, calc(100% - 5px) 50%; background-size: 5px 5px, 5px 5px;',
+  '  background-repeat: no-repeat; }',
+  // Forced-colours mode drops background images: fall back to the native arrow.
+  '@media (forced-colors: active) { .cxd-annctl:has(> .cxd-annctl-select) > .cxd-annctl-select {',
+  '  -webkit-appearance: auto; appearance: auto; background-image: none; padding-right: 2px; } }',
   // Strip the native search-input chrome so its box matches the select; keep a sensible width.
   '.cxd-annctl-search { min-width: 140px; -webkit-appearance: none; appearance: none; }',
   '.cxd-annctl-radios { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }',
   '.cxd-annctl-radio { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }',
-  '.cxd-annctl-seg { display: inline-flex; border: 1px solid var(--cxd-ctrl-border, var(--cxd-border)); border-radius: var(--cx-radius-md); overflow: hidden; }',
-  '.cxd-annctl-segbtn { padding: 4px 11px; border: none; border-right: 1px solid var(--cxd-ctrl-border, var(--cxd-border));',
-  '  background: transparent; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }',
-  '.cxd-annctl-segbtn:last-child { border-right: none; }',
+  // Segmented control: a rounded track holding pill items; the selected one is a
+  // raised chip (surface + border + soft shadow) rather than an accent-filled block.
+  '.cxd-annctl-seg { display: inline-flex; align-items: center; gap: 2px; padding: 3px;',
+  '  border: 1px solid var(--cxd-ctrl-border, var(--cxd-border)); border-radius: var(--cx-radius-pill);',
+  '  background: var(--cx-ui-surface-sunken); overflow: visible; }',
+  '.cxd-annctl-segbtn { display: inline-flex; align-items: center; padding: 5px 14px; border: 1px solid transparent; border-radius: var(--cx-radius-pill);',
+  '  background: transparent; color: var(--cxd-title); font: inherit; cursor: pointer; white-space: nowrap;',
+  '  transition: background-color .12s ease, box-shadow .12s ease; }',
   '.cxd-annctl-segbtn:hover { background: var(--cx-ui-accent-tint); }',
-  '.cxd-annctl-segbtn.cxd-annctl-on { background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent); }',
+  '.cxd-annctl-segbtn.cxd-annctl-on { background: var(--cxd-panel-bg); color: var(--cxd-title); font-weight: 600;',
+  '  border-color: var(--cxd-ctrl-border, var(--cxd-border)); box-shadow: var(--cx-shadow-1); }',
   /* config-control slider. canvasXpress.css (15-range-slider.css) styles EVERY
      input[type=range] absolute/invisible with a red-square thumb for its
      dual-thumb widget — and its `input[type=range]::...` selectors outrank a bare
@@ -5782,6 +5827,12 @@ function validateSpec(spec) {
             ['auto', 'dropdown', 'radio', 'buttons', 'search', 'slider', 'range'].indexOf(panel.style) === -1) {
           errors.push(at + '.style must be "auto", "dropdown", "radio", "buttons", "search", "slider", or "range"');
         }
+        if (panel.icon != null && panel.icon !== false && typeof panel.icon !== 'string') {
+          errors.push(at + '.icon must be an icon name, a short glyph, or false');
+        }
+        if (panel.swatches != null && typeof panel.swatches !== 'boolean') {
+          errors.push(at + '.swatches must be true or false');
+        }
         if (panel.mode != null && panel.mode !== 'filter' && panel.mode !== 'param' && panel.mode !== 'config' && panel.mode !== 'transform') {
           errors.push(at + '.mode must be "filter", "param", "config", or "transform"');
         }
@@ -7365,6 +7416,206 @@ function describeAnalysisControls(spec) {
   return clauses;
 }
 
+/* ==== src/controlAdornments.js ==== */
+/**
+ * Adornments for dashboard control widgets: the leading role icon and the
+ * colour/shape swatches that tie a control's choices to the way the data is
+ * drawn in the panels it drives.
+ *
+ * Two deliberate rules:
+ *  - An icon is chosen from what the control DOES (its role: filter, search,
+ *    x-axis, colour, transform ...), never guessed from the column's name —
+ *    a spec may override it with `icon: "<name>"` (or suppress it with
+ *    `icon: false`).
+ *  - A swatch is read back from a live CanvasXpress instance's legend render
+ *    objects, so the dot in the control is the exact colour/shape the chart
+ *    drew for that level — it is never recomputed from a palette.
+ */
+
+/* Icon set. 16x16 viewBox, stroked with currentColor so the icon inherits the
+   control's (muted) text colour and both themes work without extra rules. */
+var CONTROL_ICONS = {
+  'filter': '<path d="M2.5 3.5h11l-4.3 5v4.2l-2.4 1.3V8.5z"/>',
+  'search': '<circle cx="7" cy="7" r="4"/><path d="M10 10l3.5 3.5"/>',
+  'axis-x': '<path d="M2 8h12M4.5 5.5 2 8l2.5 2.5M11.5 5.5 14 8l-2.5 2.5"/>',
+  'axis-y': '<path d="M8 2v12M5.5 4.5 8 2l2.5 2.5M5.5 11.5 8 14l2.5-2.5"/>',
+  'color': '<circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11"/>',
+  'shape': '<path d="M8 2.5 13.5 13H2.5z"/>',
+  'size': '<circle cx="5" cy="11" r="2.2"/><circle cx="10.5" cy="6.5" r="4"/>',
+  'transform': '<path d="M3 5h10M3 11h10"/><circle cx="6" cy="5" r="1.6"/><circle cx="10.5" cy="11" r="1.6"/>',
+  'slider': '<path d="M2.5 8h11"/><circle cx="9.5" cy="8" r="2.4"/>',
+  'time': '<circle cx="8" cy="8" r="5.5"/><path d="M8 4.8V8l2.3 1.6"/>',
+  'place': '<path d="M8 14s4.5-4.2 4.5-7.4A4.5 4.5 0 0 0 3.5 6.6C3.5 9.8 8 14 8 14z"/><circle cx="8" cy="6.5" r="1.7"/>',
+  'sex': '<circle cx="8" cy="6" r="3.3"/><path d="M8 9.3v4.4M6.2 12h3.6"/>',
+  'group': '<circle cx="5.5" cy="6" r="2.2"/><circle cx="10.5" cy="6" r="2.2"/><path d="M2.5 13c.6-2 1.7-3 3-3M13.5 13c-.6-2-1.7-3-3-3"/>',
+  'tag': '<path d="M8.3 2.5H13.5V7.7L8 13.2 2.8 8z"/><circle cx="10.8" cy="5.2" r="1"/>',
+  'calendar': '<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/>',
+  'sort': '<path d="M4.5 3v10M2.5 10.5 4.5 13l2-2.5M11.5 13V3M9.5 5.5 11.5 3l2 2.5"/>',
+  'layers': '<path d="M8 2.5 14 6 8 9.5 2 6z"/><path d="M2 9.5 8 13l6-3.5"/>'
+};
+
+/* Config-control inference: the first matching pattern over the config keys the
+   control's options set decides the icon. Ordered — most specific first. */
+var CONFIG_KEY_ICONS = [
+  [/^(xaxis|x|xaxistitle)$/i, 'axis-x'],
+  [/^(yaxis|y|yaxistitle)$/i, 'axis-y'],
+  [/color/i, 'color'],
+  [/shape/i, 'shape'],
+  [/size/i, 'size'],
+  [/^(sortby|sortdir|order)/i, 'sort'],
+  [/^(graphtype|layout|stack)/i, 'layers']
+];
+
+/**
+ * The icon name for a control, from its ROLE (what it drives), with the spec's
+ * `icon` as an override. Returns null when the control should carry no icon.
+ * @param {object} panel - The control panel.
+ * @returns {?string} An icon name, a literal glyph (1-2 chars), or null.
+ * @public
+ */
+function controlIconName(panel) {
+  if (!panel) return null;
+  // Explicit override: false/'' suppresses; a known name wins; a short string
+  // is taken as a literal glyph (an emoji or a symbol the author wants).
+  if (panel.icon === false || panel.icon === '') return null;
+  if (typeof panel.icon === 'string') {
+    if (Object.prototype.hasOwnProperty.call(CONTROL_ICONS, panel.icon)) return panel.icon;
+    return panel.icon.length <= 2 ? panel.icon : null;
+  }
+  var style = panel.style || '';
+  if (panel.mode === 'transform') return 'transform';
+  if (style === 'search') return 'search';
+  if (style === 'range' || style === 'slider') return 'slider';
+  if (panel.mode === 'config') return configControlIcon(panel);
+  // Filter and param controls both narrow the data to a chosen value.
+  return 'filter';
+}
+
+/**
+ * The icon for a config control, inferred from the config keys its options set
+ * (an x-axis switcher gets ↔, a colour switcher a colour wheel, ...).
+ * @param {object} panel - A `mode:"config"` control panel.
+ * @returns {string} An icon name (falls back to 'layers').
+ * @private
+ */
+function configControlIcon(panel) {
+  var keys = {};
+  var options = panel.options || [];
+  for (var i = 0; i < options.length; i++) {
+    var config = options[i] && options[i].config;
+    if (!config || typeof config !== 'object') continue;
+    for (var k in config) { if (Object.prototype.hasOwnProperty.call(config, k)) keys[k] = true; }
+  }
+  var names = Object.keys(keys);
+  for (var r = 0; r < CONFIG_KEY_ICONS.length; r++) {
+    for (var n = 0; n < names.length; n++) {
+      if (CONFIG_KEY_ICONS[r][0].test(names[n])) return CONFIG_KEY_ICONS[r][1];
+    }
+  }
+  return 'layers';
+}
+
+/**
+ * Build the leading icon element for a control, or null when it has none.
+ * @param {object} panel - The control panel.
+ * @param {Document} [doc] - Document to create in (defaults to the global one).
+ * @returns {?HTMLElement} A `.cxd-annctl-ic` span, or null.
+ * @public
+ */
+function controlIconNode(panel, doc) {
+  var name = controlIconName(panel);
+  if (!name) return null;
+  var d = doc || (typeof document !== 'undefined' ? document : null);
+  if (!d) return null;
+  var span = d.createElement('span');
+  span.className = 'cxd-annctl-ic';
+  span.setAttribute('aria-hidden', 'true');
+  if (Object.prototype.hasOwnProperty.call(CONTROL_ICONS, name)) {
+    span.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' + CONTROL_ICONS[name] + '</svg>';
+  } else {
+    span.className += ' cxd-annctl-ic-glyph';
+    span.textContent = name;   // a literal glyph from the spec
+  }
+  return span;
+}
+
+/* Legend render-object ids look like PropertyKey:<annotation>:<level>:<compartment>;
+   the key's drawShape carries the shape name and the fill the chart actually used. */
+var TRANSPARENT = /^(transparent$|rgba?\([^)]*,\s*0(\.0+)?\s*\)$)/i;
+
+/**
+ * Read a live instance's legend back into a level → {color, shape} map for one
+ * annotation. Uses the legend's own render objects, so the swatch matches what
+ * was drawn (scheme, overrides, custom colours and all) rather than a guess.
+ * @param {object} instance - A rendered CanvasXpress instance.
+ * @param {string} annotation - The annotation the control is bound to.
+ * @returns {?object} level → {color, shape}, or null when the chart does not key on it.
+ * @public
+ */
+function legendKeyMap(instance, annotation) {
+  if (!instance || !annotation) return null;
+  var objects = instance.meta && instance.meta.render && instance.meta.render.objects;
+  if (!Array.isArray(objects)) return null;
+  var prefix = 'PropertyKey:' + annotation + ':';
+  var map = {};
+  var found = false;
+  for (var i = 0; i < objects.length; i++) {
+    var obj = objects[i];
+    var id = obj && obj.id;
+    if (typeof id !== 'string' || id.indexOf(prefix) !== 0) continue;
+    if (obj.func !== 'drawShape' || !Array.isArray(obj.params)) continue;
+    var rest = id.slice(prefix.length);
+    var cut = rest.lastIndexOf(':');            // trailing :x / :z compartment
+    var level = cut > 0 ? rest.slice(0, cut) : rest;
+    var shape = String(obj.params[0] || '');
+    var fill = obj.params[5];
+    // The key draws a transparent backing rectangle first; the coloured mark
+    // that follows is the one worth showing.
+    if (typeof fill !== 'string' || TRANSPARENT.test(fill)) continue;
+    if (shape === 'rectangle' && map[level]) continue;
+    map[level] = { color: fill, shape: shape };
+    found = true;
+  }
+  return found ? map : null;
+}
+
+/* CanvasXpress shape names → a CSS rendering of the same silhouette. */
+var SHAPE_CSS = {
+  sphere: { radius: '50%' },
+  circle: { radius: '50%' },
+  square: { radius: '2px' },
+  rectangle: { radius: '2px' },
+  triangle: { clip: 'polygon(50% 0%, 100% 100%, 0% 100%)' },
+  'triangle-down': { clip: 'polygon(0% 0%, 100% 0%, 50% 100%)' },
+  diamond: { clip: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' },
+  star: { clip: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' },
+  mdavid: { clip: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' },
+  octagon: { radius: '30%' },
+  hexagon: { clip: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)' }
+};
+
+/**
+ * Build a swatch element for one level's drawn colour/shape.
+ * @param {object} key - `{color, shape}` from {@link legendKeyMap}.
+ * @param {Document} [doc] - Document to create in.
+ * @returns {?HTMLElement} A `.cxd-annctl-sw` span, or null without a colour.
+ * @public
+ */
+function swatchNode(key, doc) {
+  if (!key || !key.color) return null;
+  var d = doc || (typeof document !== 'undefined' ? document : null);
+  if (!d) return null;
+  var span = d.createElement('span');
+  span.className = 'cxd-annctl-sw';
+  span.setAttribute('aria-hidden', 'true');
+  span.style.backgroundColor = key.color;
+  var css = SHAPE_CSS[String(key.shape || '').toLowerCase()];
+  if (css && css.clip) { span.style.clipPath = css.clip; span.style.borderRadius = '0'; }
+  else if (css && css.radius) span.style.borderRadius = css.radius;
+  return span;
+}
+
 /* ==== src/renderDashboard.js ==== */
 /**
  * Client renderer: turn a dashboard spec into a responsive CSS-grid of
@@ -7378,6 +7629,7 @@ function describeAnalysisControls(spec) {
  *
  * @module renderDashboard
  */
+
 
 
 
@@ -8532,6 +8784,22 @@ function renderDashboard(spec, target, options) {
   // --- panels laid out in the grid ---
   var renderedItems = items.slice();   // the live set of laid-out items
   var cellByPanel = {};                // panelId -> { cell, item, instance }
+
+  /**
+   * Every live CanvasXpress instance on the dashboard, used to read a legend's
+   * colour/shape keys back onto a control.
+   * @returns {Array<object>} Rendered instances (empty before any panel draws).
+   * @private
+   */
+  function liveInstances() {
+    var out = [];
+    for (var id in cellByPanel) {
+      if (!Object.prototype.hasOwnProperty.call(cellByPanel, id)) continue;
+      var inst = cellByPanel[id] && cellByPanel[id].instance;
+      if (inst) out.push(inst);
+    }
+    return out;
+  }
   var panelIdCounter = { n: 0 };       // monotonic id counter (survives add/remove)
 
   /**
@@ -9579,12 +9847,7 @@ function renderDashboard(spec, target, options) {
       var widget = document.createElement('div');
       widget.className = 'cxd-annctl';
       applyAlignment(cell.body, panel);
-      if (panel.title && !panel.hideTitle) {
-        var label = document.createElement('span');
-        label.className = 'cxd-annctl-label';
-        label.textContent = panel.title;
-        widget.appendChild(label);
-      }
+      appendControlHeader(widget, panel);
       var configured = isParam ? !!panel.param : !!panel.annotation;
       if (!configured || !values.length) {
         var hint = document.createElement('span');
@@ -9622,6 +9885,7 @@ function renderDashboard(spec, target, options) {
         });
         entry.resetUI = input._cxdResetToAll;
         widget.appendChild(input);
+        decorateControlSwatches(widget, input, panel, values, liveInstances);
       }
       cell.body.appendChild(widget);
       cell.setState('ready');
@@ -9644,12 +9908,7 @@ function renderDashboard(spec, target, options) {
       var widget = document.createElement('div');
       widget.className = 'cxd-annctl';
       applyAlignment(cell.body, panel);
-      if (panel.title && !panel.hideTitle) {
-        var label = document.createElement('span');
-        label.className = 'cxd-annctl-label';
-        label.textContent = panel.title;
-        widget.appendChild(label);
-      }
+      appendControlHeader(widget, panel);
       if (!panel.param) {
         var hint = document.createElement('span');
         hint.className = 'cxd-annctl-hint';
@@ -9816,12 +10075,7 @@ function renderDashboard(spec, target, options) {
     var widget = document.createElement('div');
     widget.className = 'cxd-annctl';
     applyAlignment(cell.body, panel);
-    if (panel.title && !panel.hideTitle) {
-      var label = document.createElement('span');
-      label.className = 'cxd-annctl-label';
-      label.textContent = panel.title;
-      widget.appendChild(label);
-    }
+    appendControlHeader(widget, panel);
 
     var style = panel.style || 'buttons';
     if (style === 'slider') {
@@ -9906,12 +10160,7 @@ function renderDashboard(spec, target, options) {
     var widget = document.createElement('div');
     widget.className = 'cxd-annctl';
     applyAlignment(cell.body, panel);
-    if (panel.title && !panel.hideTitle) {
-      var label = document.createElement('span');
-      label.className = 'cxd-annctl-label';
-      label.textContent = panel.title;
-      widget.appendChild(label);
-    }
+    appendControlHeader(widget, panel);
     widget.appendChild(buildTransformInput(panel, options, apply));
     cell.body.appendChild(widget);
     cell.setState('ready');
@@ -10036,12 +10285,7 @@ function renderDashboard(spec, target, options) {
     var widget = document.createElement('div');
     widget.className = 'cxd-annctl';
     applyAlignment(cell.body, panel);
-    if (panel.title && !panel.hideTitle) {
-      var label = document.createElement('span');
-      label.className = 'cxd-annctl-label';
-      label.textContent = panel.title;
-      widget.appendChild(label);
-    }
+    appendControlHeader(widget, panel);
     var slider = document.createElement('input');
     slider.type = 'range';
     slider.className = 'cxd-slider';
@@ -10994,6 +11238,7 @@ function buildAnnotationInput(panel, values, apply) {
     [null].concat(values).forEach(function (value) {
       var label = document.createElement('label');
       label.className = 'cxd-annctl-radio';
+      if (value !== null) label.setAttribute('data-cxd-level', String(value));
       var input = document.createElement('input');
       input.type = 'radio';
       input.name = name;
@@ -11020,6 +11265,7 @@ function buildAnnotationInput(panel, values, apply) {
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'cxd-annctl-segbtn' + (value === null ? ' cxd-annctl-on' : '');
+    if (value !== null) btn.setAttribute('data-cxd-level', String(value));
     btn.textContent = value === null ? 'All' : String(value);
     listen(btn, 'click', function () {
       buttons.forEach(function (b) { b.classList.remove('cxd-annctl-on'); });
@@ -11034,6 +11280,106 @@ function buildAnnotationInput(panel, values, apply) {
     if (buttons[0]) buttons[0].classList.add('cxd-annctl-on');   // "All" is first
   };
   return seg;
+}
+
+/**
+ * Append a control's leading role icon and its title to the widget. The icon
+ * comes from what the control drives (see controlAdornments.controlIconName) and
+ * shows even when the title is hidden, since it is the control's only label then.
+ * @param {HTMLElement} widget - The `.cxd-annctl` wrapper.
+ * @param {object} panel - The control panel (reads `icon`, `title`, `hideTitle`).
+ * @returns {void}
+ * @private
+ */
+function appendControlHeader(widget, panel) {
+  var icon = controlIconNode(panel);
+  if (icon) widget.appendChild(icon);
+  if (panel.title && !panel.hideTitle) {
+    var label = document.createElement('span');
+    label.className = 'cxd-annctl-label';
+    label.textContent = panel.title;
+    widget.appendChild(label);
+  }
+}
+
+/**
+ * Put the drawn colour/shape of each choice onto a control, so a control bound
+ * to the annotation a panel is coloured (or shaped) by reads like that panel's
+ * legend. The mapping is read back from a live instance's legend render objects,
+ * which only exist AFTER that panel has drawn — so this retries on a short,
+ * bounded schedule and gives up silently when no panel keys on the annotation.
+ *
+ * @param {HTMLElement} widget - The `.cxd-annctl` wrapper.
+ * @param {HTMLElement} input - The built input (buttons / radios / select).
+ * @param {object} panel - The control panel (reads `annotation`, `swatches`).
+ * @param {Array} values - The control's choices, in option order.
+ * @param {function(): Array} liveInstances - Returns the instances to read from.
+ * @returns {void}
+ * @private
+ */
+function decorateControlSwatches(widget, input, panel, values, liveInstances) {
+  if (panel.swatches === false || !panel.annotation || !input) return;
+  var delays = [0, 150, 400, 900, 1800];
+  var attempt = 0;
+
+  function paint() {
+    var map = null;
+    var instances = liveInstances() || [];
+    for (var i = 0; i < instances.length && !map; i++) map = legendKeyMap(instances[i], panel.annotation);
+    if (!map) {
+      if (++attempt < delays.length) setTimeout(paint, delays[attempt]);
+      return;
+    }
+    if (input.tagName === 'SELECT') paintSelectSwatch(widget, input, values, map);
+    else paintOptionSwatches(input, map);
+  }
+
+  setTimeout(paint, delays[0]);
+}
+
+/**
+ * Prepend a swatch to every option node that carries a `data-cxd-level` the
+ * legend knows (segmented buttons and radios). "All" has no level, so it stays bare.
+ * @param {HTMLElement} input - The buttons/radios container.
+ * @param {object} map - level → {color, shape} from legendKeyMap.
+ * @returns {void}
+ * @private
+ */
+function paintOptionSwatches(input, map) {
+  var nodes = input.querySelectorAll('[data-cxd-level]');
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    if (node.querySelector('.cxd-annctl-sw')) continue;   // already painted
+    var key = map[node.getAttribute('data-cxd-level')];
+    var swatch = swatchNode(key);
+    if (swatch) node.insertBefore(swatch, node.firstChild);
+  }
+}
+
+/**
+ * A `<select>` cannot hold markup in its options, so the chip carries ONE swatch
+ * showing the current pick; it clears on "All" and follows every change.
+ * @param {HTMLElement} widget - The `.cxd-annctl` wrapper.
+ * @param {HTMLSelectElement} select - The dropdown.
+ * @param {Array} values - The choices (option 0 is "All", so index-1 into this).
+ * @param {object} map - level → {color, shape} from legendKeyMap.
+ * @returns {void}
+ * @private
+ */
+function paintSelectSwatch(widget, select, values, map) {
+  if (widget.querySelector('.cxd-annctl-sw')) return;
+  var holder = document.createElement('span');
+  holder.className = 'cxd-annctl-sw-slot';
+  widget.insertBefore(holder, select);
+  function sync() {
+    var idx = parseInt(select.value, 10);
+    var value = idx > 0 ? values[idx - 1] : null;
+    var swatch = value === null ? null : swatchNode(map[String(value)]);
+    holder.innerHTML = '';
+    if (swatch) holder.appendChild(swatch);
+  }
+  listen(select, 'change', sync);
+  sync();
 }
 
 /**

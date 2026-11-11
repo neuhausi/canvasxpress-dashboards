@@ -27,10 +27,11 @@ export var dashboardCss = [
   '  --cxd-error: var(--cx-ui-danger); --cxd-font: var(--cx-font-sans); }',
   // Every dropdown in a dashboard, the builder and its dialogs draws the engine's chevron (two
   // currentColor diagonals: it follows the text colour in light and dark), inset from the right
-  // border instead of on it, with room so the text never runs under it. Scoped to our roots (a
+  // border instead of on it, with room so the text never runs under it. `.cxd-annctl-select` opts out:
+  // a control chip draws its own chevron (and would otherwise show two). Scoped to our roots (a
   // host page keeps its own selects); the engine's own selects (customizer, data filter,
   // its classed dropdowns) keep their styling.
-  ':is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay, .cxd-code-backdrop) select:not([multiple]):not([size]):not([class*="cX-"]):not([class*="CanvasXpress"]):not(:where([class*="cX-Customizer"], [class*="cX-DataFilter"]) select) {',
+  ':is(.cxd-dashboard, .cxb, .cxb-topbar, .cxb-modal-overlay, .cxd-code-backdrop) select:not([multiple]):not([size]):not(.cxd-annctl-select):not([class*="cX-"]):not([class*="CanvasXpress"]):not(:where([class*="cX-Customizer"], [class*="cX-DataFilter"]) select) {',
   '  -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 30px; cursor: pointer;',
   '  background-image: linear-gradient(45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%), linear-gradient(-45deg, transparent 40%, currentColor 40%, currentColor 60%, transparent 60%);',
   '  background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }',
@@ -366,26 +367,70 @@ export var dashboardCss = [
   '.cxd-annctl { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: 100%;',
   '  padding: 5px 0; background: transparent;',
   '  font: 14px/1.3 var(--cxd-font); color: var(--cxd-title); }',
-  '.cxd-annctl-label { font-weight: 600; white-space: nowrap; }',
+  '.cxd-annctl-label { font-weight: 500; white-space: nowrap; color: var(--cxd-muted); }',
   '.cxd-annctl-hint { color: var(--cxd-muted); }',
+  // Role icon: inherits the muted label colour, so icon + label read as one unit.
+  '.cxd-annctl-ic { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;',
+  '  width: 15px; height: 15px; color: var(--cxd-muted); }',
+  '.cxd-annctl-ic svg { width: 15px; height: 15px; display: block; }',
+  '.cxd-annctl-ic-glyph { font-size: 13px; line-height: 1; }',
+  // Legend swatch: the colour/shape the charts drew for that level.
+  '.cxd-annctl-sw { display: inline-block; flex: 0 0 auto; width: 9px; height: 9px; margin-right: 6px;',
+  '  border-radius: var(--cx-radius-pill); vertical-align: middle; }',
+  '.cxd-annctl-segbtn .cxd-annctl-sw, .cxd-annctl-radio .cxd-annctl-sw { margin-right: 6px; }',
+  '.cxd-annctl-sw-slot { display: inline-flex; align-items: center; }',
+  '.cxd-annctl-sw-slot .cxd-annctl-sw { margin-right: 0; }',
   '.cxd-annctl-disabled { opacity: 0.65; }',
   // Controls use --cxd-ctrl-border (a colour the renderer computes to contrast
   // with whatever the control sits on) so the box stays visible even when the
   // panel chrome is coordinated to the background. Falls back to the theme border.
   // The search box (a text <input>) shares the SAME box as the select dropdowns so
   // the explorer controls read as one consistent set.
+  // A control that holds a dropdown/search reads as ONE rounded chip: the wrapper
+  // draws the box (border + soft shadow) and the <select>/<input> inside is chrome-less,
+  // so the muted label and the bold value sit side by side in the same pill.
+  '.cxd-annctl:has(> .cxd-annctl-select, > .cxd-annctl-search) { gap: 6px; padding: 7px 5px 7px 12px;',
+  '  border: 1px solid var(--cxd-ctrl-border, var(--cxd-border)); border-radius: var(--cx-radius-lg);',
+  '  background: var(--cxd-panel-bg); box-shadow: var(--cx-shadow-1); }',
+  '.cxd-annctl:has(> .cxd-annctl-select:focus-visible, > .cxd-annctl-search:focus-visible) {',
+  '  border-color: var(--cx-ui-accent); box-shadow: 0 0 0 3px var(--cx-ui-accent-tint); }',
   '.cxd-annctl-select, .cxd-annctl-search { padding: 4px 7px; border: 1px solid var(--cxd-ctrl-border, var(--cxd-border)); border-radius: var(--cx-radius-md);',
   '  font: inherit; background: var(--cxd-panel-bg); color: inherit; }',
+  // Inside a chip the control loses its own box; a drawn chevron replaces the native one.
+  '.cxd-annctl:has(> .cxd-annctl-select, > .cxd-annctl-search) > .cxd-annctl-select,',
+  '.cxd-annctl:has(> .cxd-annctl-select, > .cxd-annctl-search) > .cxd-annctl-search {',
+  '  padding: 0; border: none; border-radius: 0; background: transparent; font-weight: 600; flex: 1 1 auto; min-width: 0;',
+  '  color: var(--cxd-title); outline: none; }',
+  // The chevron is painted INSIDE the <select>'s own padding (the repo's gradient-V
+  // idiom), never as a sibling pseudo-element: a sibling is not part of the control,
+  // so clicking it would not open the menu. Muted so it reads as chrome next to the
+  // strong value text.
+  '.cxd-annctl:has(> .cxd-annctl-select) > .cxd-annctl-select { -webkit-appearance: none; -moz-appearance: none;',
+  // Stretch to the chip's right edge so the whole right side of the chip — chevron
+  // included — is the control's own hit area, not dead padding.
+  '  appearance: none; flex: 1 1 auto; min-width: 0; padding-right: 17px; cursor: pointer;',
+  '  background-image: linear-gradient(45deg, transparent 40%, var(--cxd-muted) 40%, var(--cxd-muted) 60%, transparent 60%),',
+  '    linear-gradient(-45deg, transparent 40%, var(--cxd-muted) 40%, var(--cxd-muted) 60%, transparent 60%);',
+  '  background-position: calc(100% - 9px) 50%, calc(100% - 5px) 50%; background-size: 5px 5px, 5px 5px;',
+  '  background-repeat: no-repeat; }',
+  // Forced-colours mode drops background images: fall back to the native arrow.
+  '@media (forced-colors: active) { .cxd-annctl:has(> .cxd-annctl-select) > .cxd-annctl-select {',
+  '  -webkit-appearance: auto; appearance: auto; background-image: none; padding-right: 2px; } }',
   // Strip the native search-input chrome so its box matches the select; keep a sensible width.
   '.cxd-annctl-search { min-width: 140px; -webkit-appearance: none; appearance: none; }',
   '.cxd-annctl-radios { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }',
   '.cxd-annctl-radio { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }',
-  '.cxd-annctl-seg { display: inline-flex; border: 1px solid var(--cxd-ctrl-border, var(--cxd-border)); border-radius: var(--cx-radius-md); overflow: hidden; }',
-  '.cxd-annctl-segbtn { padding: 4px 11px; border: none; border-right: 1px solid var(--cxd-ctrl-border, var(--cxd-border));',
-  '  background: transparent; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }',
-  '.cxd-annctl-segbtn:last-child { border-right: none; }',
+  // Segmented control: a rounded track holding pill items; the selected one is a
+  // raised chip (surface + border + soft shadow) rather than an accent-filled block.
+  '.cxd-annctl-seg { display: inline-flex; align-items: center; gap: 2px; padding: 3px;',
+  '  border: 1px solid var(--cxd-ctrl-border, var(--cxd-border)); border-radius: var(--cx-radius-pill);',
+  '  background: var(--cx-ui-surface-sunken); overflow: visible; }',
+  '.cxd-annctl-segbtn { display: inline-flex; align-items: center; padding: 5px 14px; border: 1px solid transparent; border-radius: var(--cx-radius-pill);',
+  '  background: transparent; color: var(--cxd-title); font: inherit; cursor: pointer; white-space: nowrap;',
+  '  transition: background-color .12s ease, box-shadow .12s ease; }',
   '.cxd-annctl-segbtn:hover { background: var(--cx-ui-accent-tint); }',
-  '.cxd-annctl-segbtn.cxd-annctl-on { background: var(--cx-ui-accent-strong); color: var(--cx-ui-on-accent); }',
+  '.cxd-annctl-segbtn.cxd-annctl-on { background: var(--cxd-panel-bg); color: var(--cxd-title); font-weight: 600;',
+  '  border-color: var(--cxd-ctrl-border, var(--cxd-border)); box-shadow: var(--cx-shadow-1); }',
   /* config-control slider. canvasXpress.css (15-range-slider.css) styles EVERY
      input[type=range] absolute/invisible with a red-square thumb for its
      dual-thumb widget — and its `input[type=range]::...` selectors outrank a bare

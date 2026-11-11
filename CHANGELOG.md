@@ -5,6 +5,17 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### Controls: pill styling, role icons, legend swatches
+- Control widgets were restyled to the segmented-pill look: a rounded track whose selected item is a raised
+  chip, and dropdown/search controls that render as one rounded chip holding a muted label plus the value.
+- A control now carries a leading **icon chosen from its role** — filter, search, x/y axis, colour, shape,
+  size, transform, slider — never guessed from the column's name. A spec can override it with
+  `icon: "<name>"` (built-in set) or a 1–2 character glyph, and remove it with `icon: false`.
+- A filter control bound to the annotation a panel is coloured or shaped by now shows each choice's
+  **colour and shape swatch**, read back from that panel's legend render objects — so the dot in the control
+  is exactly what the chart drew. `<select>` controls carry one swatch for the current pick. `swatches: false`
+  turns them off.
+
 ### Wizard: the engine's own chart advisor (U2)
 - The data-first wizard's **Visualize** step now shows an instant, offline first guess from the engine's advisor
   (`CanvasXpress.recommend(table, intent)`): a ranked set of chart cards, each with a one-line plain-English

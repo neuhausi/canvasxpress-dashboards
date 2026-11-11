@@ -3393,44 +3393,14 @@
           }));
           // The always-present "Chart type" picker above covers manual selection.
         }
-        // U2 — the engine's own chart advisor (CanvasXpress.recommend): an instant,
-        // offline client-side ranking read from the data's column types, each option
-        // carrying a plain-English rationale (its `why`). Shown immediately; the deep
-        // MCP selector (/api/wizard/suggest) then refines it when that service is up.
-        function coreSuggest() {
-          var CX = window.CanvasXpress;
-          if (!CX || typeof CX.recommend !== 'function') return null;
-          try {
-            // recommend() runs arrayToCX, which mutates its input array (shifts the
-            // header row off), so hand it a copy — `table` is reused for the MCP call.
-            var rows = table.map(function (r) { return r.slice(); });
-            var rec = CX.recommend(rows, state.intent);
-            if (!rec || !rec.recommendation) return null;
-            var ranked = [rec.recommendation].concat(rec.alternatives || []);
-            return ranked.map(function (r) {
-              return { graphType: r.graphType, reason: r.why, config: { graphType: r.graphType } };
-            });
-          } catch (e) { return null; }
-        }
         function suggest() {
           state.intent = intent.value.trim();
           state.config = null;
-          // Instant first guess from the engine advisor — no server round-trip, and
-          // it stands in when the MCP selector is off (no more dead-end "unavailable").
-          var core = coreSuggest();
-          var haveCore = !!(core && core.length);
-          if (haveCore) { cards.textContent = ''; drawCards(core); }
-          else { cards.textContent = 'Asking the chart selector…'; }
-          if (!client || typeof client.wizardSuggest !== 'function') {
-            if (!haveCore) fallback('Chart suggestions are unavailable.');
-            return;
-          }
+          cards.textContent = 'Asking the chart selector…';
           client.wizardSuggest(table, state.intent).then(function (r) {
-            if (r && r.suggestions && r.suggestions.length) { state.config = null; cards.textContent = ''; drawCards(r.suggestions); }
-            else if (!haveCore) { cards.textContent = ''; fallback('Chart suggestions are unavailable (the canvasxpress-mcp service is off).'); }
-          }, function (e) {
-            if (!haveCore) { cards.textContent = ''; fallback('Chart suggestions failed: ' + e.message + '.'); }
-          });
+            if (r && r.suggestions && r.suggestions.length) { cards.textContent = ''; drawCards(r.suggestions); }
+            else { cards.textContent = ''; fallback('Chart suggestions are unavailable (the canvasxpress-mcp service is off).'); }
+          }, function (e) { cards.textContent = ''; fallback('Chart suggestions failed: ' + e.message + '.'); });
         }
         intent.onchange = suggest;
         var back = smallButton('Back', stepCheck);
@@ -3492,12 +3462,7 @@
               var link = document.createElement('input');
               link.type = 'text'; link.readOnly = true; link.value = url;
               box.appendChild(labeled('Share link', link));
-              // U3: for a single published chart, also offer the self-contained,
-              // no-server HTML embed (inline data from the wizard's own state).
-              var standalone = (!state.dashboard && state.config) ? function (panelId) {
-                return { renderTo: panelId || 'cx_chart', data: state.data, config: state.config };
-              } : null;
-              renderEmbedCodes(box, result.summary.share_token, { standalone: standalone });
+              renderEmbedCodes(box, result.summary.share_token);
             }
             box.appendChild(open);
           }, function (e) {
@@ -4968,42 +4933,10 @@
       });
     }
 
-    // U3 — a self-contained, no-server HTML embed for ONE chart. Prefers the
-    // engine's own packaging (instance.getEmbedSnippet, engine 73.7+) and falls
-    // back to an identical client-side build for older engines: a <canvas>, the
-    // CanvasXpress css/js from the versioned jsDelivr CDN, and one
-    // `new CanvasXpress(spec)`. Unlike the hosted iframe/script, this needs no
-    // backend — the data travels inline — so it pastes anywhere.
-    function buildStandaloneEmbed(spec, opts) {
-      opts = opts || {};
-      var inst = opts.instance;
-      if (inst && typeof inst.getEmbedSnippet === 'function') {
-        try { return inst.getEmbedSnippet(opts); } catch (e) { /* fall through to spec build */ }
-      }
-      if (!spec || !spec.data) return null;
-      var id = opts.id || spec.renderTo || 'cx_chart';
-      var s = { renderTo: id, data: spec.data, config: spec.config || {} };
-      if (spec.events) s.events = spec.events;
-      var w = opts.width || 600, h = opts.height || 400;
-      var CX = window.CanvasXpress;
-      var version = opts.version || (CX && CX.factory && CX.factory.version) || 'latest';
-      var base = opts.cdn || ('https://cdn.jsdelivr.net/npm/canvasxpress@' + version + '/dist/canvasXpress');
-      var json = JSON.stringify(s, null, 2);
-      // The '</scr'+'ipt>' split keeps these literal tags from closing this page's
-      // own inline <script> block.
-      return '<canvas id="' + id + '" width="' + w + '" height="' + h + '"></canvas>\n' +
-        '<link href="' + base + '.css" rel="stylesheet" />\n' +
-        '<scr' + 'ipt src="' + base + '.min.js"></scr' + 'ipt>\n' +
-        '<scr' + 'ipt>\n  new CanvasXpress(' + json + ');\n</scr' + 'ipt>';
-    }
-
     // Publish & embed: per-panel (or whole-dashboard) embed codes for a shared
     // dashboard. The share token is the stable handle, so saving republishes
-    // every embed in place. `opts.standalone(panelId)` (optional) supplies a
-    // `{renderTo,data,config}` spec with INLINE data for the no-server embed (U3);
-    // it is offered only for a single chart, where that data is on hand.
-    function renderEmbedCodes(box, token, opts) {
-      opts = opts || {};
+    // every embed in place.
+    function renderEmbedCodes(box, token) {
       var wrap = document.createElement('div');
       wrap.className = 'cxd-embed-codes';
       wrap.onclick = function (e) { e.stopPropagation(); };
@@ -5046,16 +4979,6 @@
           codes.appendChild(codeRow('iframe', embed.iframe));
           codes.appendChild(codeRow('script', embed.script));
           codes.appendChild(codeRow('Image', embed.image));
-          // U3: a no-server, self-contained HTML embed for a single chart, when
-          // the caller can supply that chart's inline data+config.
-          if (typeof opts.standalone === 'function') {
-            var one = null;
-            try { one = opts.standalone(pick.value || null); } catch (e) { one = null; }
-            if (one) {
-              var snippet = buildStandaloneEmbed(one, { id: pick.value || one.renderTo });
-              if (snippet) codes.appendChild(codeRow('Standalone HTML', snippet));
-            }
-          }
         }, function (err) { codes.textContent = 'Embed codes unavailable: ' + err.message; });
       }
       // Panel list comes from the published spec itself (what viewers see).

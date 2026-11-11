@@ -22,6 +22,7 @@ import { transformData } from './transforms.js';
 import { applyFdrThreshold } from './analysisControls.js';
 import { resolveFields, rowsPassing, normalizeState, isActive, fieldKey } from './filters.js';
 import { panelProvenanceText } from './provenance.js';
+import { controlIconNode, legendKeyMap, swatchNode } from './controlAdornments.js';
 
 /**
  * A row name no data object carries: marking a related panel with only this
@@ -1166,6 +1167,22 @@ export function renderDashboard(spec, target, options) {
   // --- panels laid out in the grid ---
   var renderedItems = items.slice();   // the live set of laid-out items
   var cellByPanel = {};                // panelId -> { cell, item, instance }
+
+  /**
+   * Every live CanvasXpress instance on the dashboard, used to read a legend's
+   * colour/shape keys back onto a control.
+   * @returns {Array<object>} Rendered instances (empty before any panel draws).
+   * @private
+   */
+  function liveInstances() {
+    var out = [];
+    for (var id in cellByPanel) {
+      if (!Object.prototype.hasOwnProperty.call(cellByPanel, id)) continue;
+      var inst = cellByPanel[id] && cellByPanel[id].instance;
+      if (inst) out.push(inst);
+    }
+    return out;
+  }
   var panelIdCounter = { n: 0 };       // monotonic id counter (survives add/remove)
 
   /**
@@ -2213,12 +2230,7 @@ export function renderDashboard(spec, target, options) {
       var widget = document.createElement('div');
       widget.className = 'cxd-annctl';
       applyAlignment(cell.body, panel);
-      if (panel.title && !panel.hideTitle) {
-        var label = document.createElement('span');
-        label.className = 'cxd-annctl-label';
-        label.textContent = panel.title;
-        widget.appendChild(label);
-      }
+      appendControlHeader(widget, panel);
       var configured = isParam ? !!panel.param : !!panel.annotation;
       if (!configured || !values.length) {
         var hint = document.createElement('span');
@@ -2256,6 +2268,7 @@ export function renderDashboard(spec, target, options) {
         });
         entry.resetUI = input._cxdResetToAll;
         widget.appendChild(input);
+        decorateControlSwatches(widget, input, panel, values, liveInstances);
       }
       cell.body.appendChild(widget);
       cell.setState('ready');
@@ -2278,12 +2291,7 @@ export function renderDashboard(spec, target, options) {
       var widget = document.createElement('div');
       widget.className = 'cxd-annctl';
       applyAlignment(cell.body, panel);
-      if (panel.title && !panel.hideTitle) {
-        var label = document.createElement('span');
-        label.className = 'cxd-annctl-label';
-        label.textContent = panel.title;
-        widget.appendChild(label);
-      }
+      appendControlHeader(widget, panel);
       if (!panel.param) {
         var hint = document.createElement('span');
         hint.className = 'cxd-annctl-hint';
@@ -2450,12 +2458,7 @@ export function renderDashboard(spec, target, options) {
     var widget = document.createElement('div');
     widget.className = 'cxd-annctl';
     applyAlignment(cell.body, panel);
-    if (panel.title && !panel.hideTitle) {
-      var label = document.createElement('span');
-      label.className = 'cxd-annctl-label';
-      label.textContent = panel.title;
-      widget.appendChild(label);
-    }
+    appendControlHeader(widget, panel);
 
     var style = panel.style || 'buttons';
     if (style === 'slider') {
@@ -2540,12 +2543,7 @@ export function renderDashboard(spec, target, options) {
     var widget = document.createElement('div');
     widget.className = 'cxd-annctl';
     applyAlignment(cell.body, panel);
-    if (panel.title && !panel.hideTitle) {
-      var label = document.createElement('span');
-      label.className = 'cxd-annctl-label';
-      label.textContent = panel.title;
-      widget.appendChild(label);
-    }
+    appendControlHeader(widget, panel);
     widget.appendChild(buildTransformInput(panel, options, apply));
     cell.body.appendChild(widget);
     cell.setState('ready');
@@ -2670,12 +2668,7 @@ export function renderDashboard(spec, target, options) {
     var widget = document.createElement('div');
     widget.className = 'cxd-annctl';
     applyAlignment(cell.body, panel);
-    if (panel.title && !panel.hideTitle) {
-      var label = document.createElement('span');
-      label.className = 'cxd-annctl-label';
-      label.textContent = panel.title;
-      widget.appendChild(label);
-    }
+    appendControlHeader(widget, panel);
     var slider = document.createElement('input');
     slider.type = 'range';
     slider.className = 'cxd-slider';
@@ -3628,6 +3621,7 @@ function buildAnnotationInput(panel, values, apply) {
     [null].concat(values).forEach(function (value) {
       var label = document.createElement('label');
       label.className = 'cxd-annctl-radio';
+      if (value !== null) label.setAttribute('data-cxd-level', String(value));
       var input = document.createElement('input');
       input.type = 'radio';
       input.name = name;
@@ -3654,6 +3648,7 @@ function buildAnnotationInput(panel, values, apply) {
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'cxd-annctl-segbtn' + (value === null ? ' cxd-annctl-on' : '');
+    if (value !== null) btn.setAttribute('data-cxd-level', String(value));
     btn.textContent = value === null ? 'All' : String(value);
     listen(btn, 'click', function () {
       buttons.forEach(function (b) { b.classList.remove('cxd-annctl-on'); });
@@ -3668,6 +3663,106 @@ function buildAnnotationInput(panel, values, apply) {
     if (buttons[0]) buttons[0].classList.add('cxd-annctl-on');   // "All" is first
   };
   return seg;
+}
+
+/**
+ * Append a control's leading role icon and its title to the widget. The icon
+ * comes from what the control drives (see controlAdornments.controlIconName) and
+ * shows even when the title is hidden, since it is the control's only label then.
+ * @param {HTMLElement} widget - The `.cxd-annctl` wrapper.
+ * @param {object} panel - The control panel (reads `icon`, `title`, `hideTitle`).
+ * @returns {void}
+ * @private
+ */
+function appendControlHeader(widget, panel) {
+  var icon = controlIconNode(panel);
+  if (icon) widget.appendChild(icon);
+  if (panel.title && !panel.hideTitle) {
+    var label = document.createElement('span');
+    label.className = 'cxd-annctl-label';
+    label.textContent = panel.title;
+    widget.appendChild(label);
+  }
+}
+
+/**
+ * Put the drawn colour/shape of each choice onto a control, so a control bound
+ * to the annotation a panel is coloured (or shaped) by reads like that panel's
+ * legend. The mapping is read back from a live instance's legend render objects,
+ * which only exist AFTER that panel has drawn — so this retries on a short,
+ * bounded schedule and gives up silently when no panel keys on the annotation.
+ *
+ * @param {HTMLElement} widget - The `.cxd-annctl` wrapper.
+ * @param {HTMLElement} input - The built input (buttons / radios / select).
+ * @param {object} panel - The control panel (reads `annotation`, `swatches`).
+ * @param {Array} values - The control's choices, in option order.
+ * @param {function(): Array} liveInstances - Returns the instances to read from.
+ * @returns {void}
+ * @private
+ */
+function decorateControlSwatches(widget, input, panel, values, liveInstances) {
+  if (panel.swatches === false || !panel.annotation || !input) return;
+  var delays = [0, 150, 400, 900, 1800];
+  var attempt = 0;
+
+  function paint() {
+    var map = null;
+    var instances = liveInstances() || [];
+    for (var i = 0; i < instances.length && !map; i++) map = legendKeyMap(instances[i], panel.annotation);
+    if (!map) {
+      if (++attempt < delays.length) setTimeout(paint, delays[attempt]);
+      return;
+    }
+    if (input.tagName === 'SELECT') paintSelectSwatch(widget, input, values, map);
+    else paintOptionSwatches(input, map);
+  }
+
+  setTimeout(paint, delays[0]);
+}
+
+/**
+ * Prepend a swatch to every option node that carries a `data-cxd-level` the
+ * legend knows (segmented buttons and radios). "All" has no level, so it stays bare.
+ * @param {HTMLElement} input - The buttons/radios container.
+ * @param {object} map - level → {color, shape} from legendKeyMap.
+ * @returns {void}
+ * @private
+ */
+function paintOptionSwatches(input, map) {
+  var nodes = input.querySelectorAll('[data-cxd-level]');
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    if (node.querySelector('.cxd-annctl-sw')) continue;   // already painted
+    var key = map[node.getAttribute('data-cxd-level')];
+    var swatch = swatchNode(key);
+    if (swatch) node.insertBefore(swatch, node.firstChild);
+  }
+}
+
+/**
+ * A `<select>` cannot hold markup in its options, so the chip carries ONE swatch
+ * showing the current pick; it clears on "All" and follows every change.
+ * @param {HTMLElement} widget - The `.cxd-annctl` wrapper.
+ * @param {HTMLSelectElement} select - The dropdown.
+ * @param {Array} values - The choices (option 0 is "All", so index-1 into this).
+ * @param {object} map - level → {color, shape} from legendKeyMap.
+ * @returns {void}
+ * @private
+ */
+function paintSelectSwatch(widget, select, values, map) {
+  if (widget.querySelector('.cxd-annctl-sw')) return;
+  var holder = document.createElement('span');
+  holder.className = 'cxd-annctl-sw-slot';
+  widget.insertBefore(holder, select);
+  function sync() {
+    var idx = parseInt(select.value, 10);
+    var value = idx > 0 ? values[idx - 1] : null;
+    var swatch = value === null ? null : swatchNode(map[String(value)]);
+    holder.innerHTML = '';
+    if (swatch) holder.appendChild(swatch);
+  }
+  listen(select, 'change', sync);
+  sync();
 }
 
 /**
