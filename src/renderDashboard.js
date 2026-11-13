@@ -4521,6 +4521,39 @@ function applyDashboardChartStyle(config, spec) {
   if (spec.colorScheme) {
     config.colorScheme = spec.colorScheme;
   }
+  // chartBackground paints every chart's canvas one colour, dashboard-wide like theme:
+  // 'transparent' lets the dashboard (or the host page, when the dashboard has no background)
+  // show through, so charts blend into whatever surface embeds them; 'dashboard' uses the
+  // dashboard's own effective background; any other value is a CSS colour.
+  var chartBg = resolveChartBackground(spec);
+  if (chartBg) {
+    CHART_BACKGROUND_PARAMS.forEach(function (param) {
+      config[param] = chartBg;
+    });
+    config.backgroundType = 'solid';
+  }
+}
+
+/** CanvasXpress params a dashboard `chartBackground` sets on every chart. @private */
+var CHART_BACKGROUND_PARAMS = ['background', 'plotBackgroundColor', 'panelBackgroundColor',
+  'plotBackgroundBorderColor', 'panelBackgroundBorderColor', 'legendBackgroundColor',
+  'legendKeyBackgroundColor', 'legendKeyBackgroundBorderColor'];
+
+/**
+ * Resolve the dashboard's `chartBackground` to a colour for the charts' canvases:
+ * 'transparent' (the engine reads the CSS keyword as fully transparent), 'dashboard' the
+ * dashboard's effective background (transparent when it has none), anything else is used
+ * as given. '' when unset.
+ * @param {object} spec - The dashboard spec (`chartBackground`, `background`, `coordinateBackground`, `theme`).
+ * @returns {string} A CSS colour, or '' when charts keep their theme background.
+ * @private
+ */
+export function resolveChartBackground(spec) {
+  var value = spec && spec.chartBackground;
+  if (!value) return '';
+  value = String(value).trim();
+  if (value.toLowerCase() === 'dashboard') value = effectiveBackground(spec) || 'transparent';
+  return value.toLowerCase() === 'transparent' ? 'transparent' : value;
 }
 
 /**

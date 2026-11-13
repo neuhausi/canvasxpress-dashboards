@@ -37,6 +37,10 @@
       "type": "string",
       "description": "CSS color applied to the dashboard container background."
     },
+    "chartBackground": {
+      "type": "string",
+      "description": "Background for every chart's canvas, dashboard-wide: \"transparent\" (charts show the dashboard or host page through), \"dashboard\" (the dashboard's effective background), or a CSS color. Unset keeps each theme's own background."
+    },
     "backgroundImage": {
       "type": "string",
       "description": "Background image URL or data URI (rendered cover/centered behind the panels)."
