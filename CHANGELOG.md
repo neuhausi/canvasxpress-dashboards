@@ -5,6 +5,27 @@ Notable changes to `canvasxpress-dashboards` (the npm package) and its server
 
 ## Unreleased
 
+### GENCODE Explorer: a regional association (LocusZoom) view
+- `GET /api/gencode?gene=<g>&view=locus` returns the **same window** as a regional association
+  plot: the GWAS Catalog rows the browser view draws as 1 bp boxes become a `dataframe` track of
+  `-log10(p)` over position, above the transcript models. It is one more query shape on the
+  tables already shipped in `gencode.sqlite` — no new data source, no new dependency, and the
+  existing `view`-less browser payload is byte-for-byte unchanged (asserted by a test).
+- Points are coloured by whether they clear 5e-8, and the strongest association is drawn as a
+  diamond on top; the catalog carries no LD or recombination columns, so this is the no-LD
+  scheme `locuszoomr` falls back to as well. The SNP label is taken from
+  `strongestSNPRiskAllele` with the risk-allele suffix stripped (`rs1042522-C` → `rs1042522`).
+- The `gencode-explorer` dashboard gains a **Regional association** panel under the browser,
+  reading the same connector with `view: "locus"`.
+- Note on the data contract: `renderDashboard` builds a panel with
+  `mergeConfig(panel.config, ...)`, so a `config` returned beside the data is **dropped**. The
+  view therefore returns tracks only, and everything view-specific lives either in the tracks
+  (the lead-SNP diamond, the highlighted gene) or in the panel's own config (the 5e-8 threshold
+  line, `genomeTicksUnit: "auto"`, `featurePriority`). The one casualty is the lead SNP's text
+  label, which needs a chart decoration a data source cannot supply.
+- Needs CanvasXpress 74.5 for the Genome axis lines, `genomeTicksUnit`, `genomeTrackPadding`
+  and `featurePriority` the panel config uses.
+
 ### Controls: pill styling, role icons, legend swatches
 - Control widgets were restyled to the segmented-pill look: a rounded track whose selected item is a raised
   chip, and dropdown/search controls that render as one rounded chip holding a muted label plus the value.

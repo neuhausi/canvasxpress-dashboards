@@ -35,6 +35,13 @@
         "y": 3,
         "w": 12,
         "h": 13
+      },
+      {
+        "panel": "locus",
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 13
       }
     ]
   },
@@ -54,6 +61,15 @@
         "gene": "$gene"
       },
       "ttl": 0
+    },
+    "locus": {
+      "kind": "connector",
+      "url": "../api/gencode",
+      "query": {
+        "gene": "$gene",
+        "view": "locus"
+      },
+      "ttl": 0
     }
   },
   "panels": {
@@ -70,7 +86,7 @@
       }
     },
     "browser": {
-      "title": "Genome browser — transcript exon models + GWAS Catalog SNPs in the region",
+      "title": "Genome browser \u2014 transcript exon models + GWAS Catalog SNPs in the region",
       "dataRef": "browser",
       "config": {
         "graphType": "Genome",
@@ -84,7 +100,38 @@
     },
     "intro": {
       "type": "text",
-      "html": "<div style=\"font-weight: 700; font-size: 25px\">GENCODE Genome Browser (live)</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">GENCODE genome browser — search a gene to view its transcript/exon models and nearby GWAS Catalog variants along the chromosome. Data: GENCODE annotation.</div>"
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">GENCODE Genome Browser (live)</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">GENCODE genome browser \u2014 search a gene to view its transcript/exon models and nearby GWAS Catalog variants along the chromosome. Below the browser, the same window is drawn as a regional association (LocusZoom) plot: GENCODE transcript models under the GWAS Catalog associations as -log10(p). Data: GENCODE annotation + GWAS Catalog.</div>"
+    },
+    "locus": {
+      "title": "Regional association (LocusZoom) \u2014 GWAS Catalog -log10(p) over the same window",
+      "dataRef": "locus",
+      "config": {
+        "graphType": "Genome",
+        "featureStaggered": true,
+        "featurePriority": [
+          "protein_coding"
+        ],
+        "subtracksMaxDefault": 10,
+        "genomeTicks": 8,
+        "genomeTicksUnit": "auto",
+        "genomeTrackPadding": 0.04,
+        "xAxisLineBottomShow": true,
+        "yAxisLineLeftShow": true,
+        "decorations": {
+          "line": [
+            {
+              "y": 7.30103,
+              "color": "rgb(169,169,169)",
+              "width": 1,
+              "type": "dashed"
+            }
+          ]
+        },
+        "dataPointSize": 6,
+        "theme": "GGPlot",
+        "colorScheme": "Favorite",
+        "title": false
+      }
     }
   }
 }

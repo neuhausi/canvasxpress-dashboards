@@ -18,6 +18,7 @@ dialect-neutral path through ``cx_connectors`` ``PackedMatrixSource``.
 """
 import os
 import json
+import math
 import sqlite3
 
 SQLITE_DIR = os.path.expanduser(os.environ.get("CXD_SQLITE_DIR", "~/Downloads/sqlite"))
@@ -348,8 +349,14 @@ def _gencode_explore(qs):
     """Genome browser, reproducing gencodeServices.pl: search a gene -> a Genome
     graph with a Genes track (each transcript's exon model) plus a GWAS Catalog
     track (SNPs in the window). Panning/zooming re-queries with chrom+start+window
-    (the `chromStart` path), so the browser navigates live."""
+    (the `chromStart` path), so the browser navigates live.
+
+    ``view=locus`` returns the same window as a regional association (LocusZoom) plot
+    instead: the GWAS Catalog rows become a dataframe track of -log10(p) over position,
+    above the gene models, rather than a second row of 1 bp boxes. It is one more query
+    shape on the same tables, not a second data source."""
     c = _cur("gencode"); g = _get(qs)
+    locus = str(g("view") or "").lower() == "locus"
     if g("list") == "genes":
         return _entity_list([r[0] for r in c.execute(
             "SELECT DISTINCT geneName FROM genome ORDER BY geneName")], "gene")
@@ -360,12 +367,12 @@ def _gencode_explore(qs):
         window = int(float(g("window"))) if g("window") else 1000000
         rows = c.execute(_GENCODE_COLS + "WHERE chrom=? AND cdsEnd>=? AND cdsStart<=?",
                          (chrom0, start, start + window)).fetchall()
-        return _gencode_tracks(c, rows)
+        return _gencode_locus(c, rows) if locus else _gencode_tracks(c, rows)
     gene = g("gene")
     if not gene:
         return None
     rows = c.execute(_GENCODE_COLS + "WHERE geneName=?", (gene,)).fetchall()
-    return _gencode_tracks(c, rows)
+    return _gencode_locus(c, rows, gene) if locus else _gencode_tracks(c, rows)
 
 
 def _gencode_tracks(c, rows):
@@ -405,6 +412,96 @@ def _gencode_tracks(c, rows):
             "data": [[st, st + 1]]})
     gwas["chrom"], gwas["min"], gwas["max"] = chrom, gmin, gmax
     return {"tracks": [genes, gwas]}
+
+
+def _gencode_gene_features(rows, chrom, highlight=None):
+    """The transcript box features for one chromosome, shared by both gencode views."""
+    features, gmin, gmax = [], 10 ** 12, 0
+    for r in rows:
+        if r[4] != chrom:
+            continue
+        strs = [int(x) for x in str(r[6]).split(",") if x != ""]
+        ends = [int(x) for x in str(r[7]).split(",") if x != ""]
+        if not strs or not ends:
+            continue
+        st, en = strs[0], ends[-1]
+        gmin, gmax = min(gmin, st), max(gmax, en)
+        hit = bool(highlight) and r[0] == highlight
+        fill = "rgb(220,20,60)" if hit else "rgb(0,0,139)"
+        features.append({
+            "id": r[2], "geneId": r[1], "geneName": r[0], "geneType": r[3],
+            "fill": fill, "outline": fill,
+            "dir": "right" if r[5] == "+" else "left",
+            "start": st, "end": en, "chrom": chrom,
+            "data": [[strs[i], ends[i]] for i in range(min(len(strs), len(ends)))]})
+    return features, gmin, gmax
+
+
+def _gencode_locus(c, rows, gene=None):
+    """Regional association (LocusZoom) view of the same window.
+
+    The GWAS Catalog rows the browser view draws as 1 bp boxes become a dataframe track
+    of -log10(p) over position, with the strongest association marked and labelled, the
+    genome-wide significance threshold drawn, and the transcript models below. The
+    catalog carries no LD or recombination columns, so points are coloured by whether
+    they clear the threshold rather than by r2 - the no-LD scheme locuszoomr falls back
+    to as well.
+    """
+    if not rows:
+        return None
+    chrom = rows[0][4]
+    features, gmin, gmax = _gencode_gene_features(rows, chrom, highlight=gene)
+    if not features:
+        return None
+
+    grows = c.execute("SELECT start,strongestSNPRiskAllele,pValue,diseaseTrait,pubmedid "
+                      "FROM gwas WHERE chrom=? AND start>=? AND start<=? AND pValue>0",
+                      (chrom, gmin, gmax + 1)).fetchall()
+    pos, logp, rsid, trait = [], [], [], []
+    for r in grows:
+        try:
+            pv = float(r[2])
+        except (TypeError, ValueError):
+            continue
+        if pv <= 0:
+            continue
+        pos.append(int(r[0]))
+        logp.append(round(-math.log10(max(pv, 5e-324)), 4))
+        # the catalog stores "rs123-A"; the label is the SNP, not the risk allele
+        rsid.append(str(r[1] or "").split("-")[0] or "SNP")
+        trait.append(str(r[3] or ""))
+
+    cutoff = -math.log10(5e-08)
+    gwas_lead_label = None
+    dataframe = {"pos": pos, "logp": logp, "rsid": rsid, "trait": trait,
+                 "sig": ["p < 5e-8" if v >= cutoff else "Not significant" for v in logp]}
+    subplots = [{"type": "scatter", "xAxis": "pos", "yAxis": "logp", "side": "left",
+                 "title": "-log10(P)", "shape": "circle", "colorBy": "sig",
+                 "meta": {"color": {"p < 5e-8": "rgb(30,144,255)",
+                                    "Not significant": "rgb(128,128,128)"}}}]
+    if pos:
+        lead = max(range(len(logp)), key=lambda i: logp[i])
+        dataframe["leadpos"] = [pos[lead]]
+        dataframe["leadlogp"] = [logp[lead]]
+        subplots.append({"type": "scatter", "xAxis": "leadpos", "yAxis": "leadlogp",
+                         "side": "left", "shape": "diamond", "fill": "rgb(160,32,240)",
+                         "size": 14, "hideLegend": True})
+        gwas_lead_label = rsid[lead]  # kept in the payload below for tooltips/debugging
+
+    gwas = {"name": "GWAS Catalog", "type": "dataframe", "height": 200,
+            "dataframe": dataframe,
+            "data": [{"id": "locus", "offset": 0, "data": subplots}],
+            "chrom": chrom, "min": gmin, "max": gmax, "leadSNP": gwas_lead_label}
+    genes = {"name": "Genes", "type": "box", "height": 16, "connect": "true",
+             "data": features, "chrom": chrom, "min": gmin, "max": gmax}
+
+    # A dashboard panel takes its config from the spec alone -- renderDashboard builds
+    # the chart with mergeConfig(panel.config, ...), so a config returned beside the data
+    # would be silently dropped. Everything view-specific therefore lives either in the
+    # tracks (the lead-SNP diamond, the highlighted gene) or in the panel's own config
+    # (the 5e-8 threshold line, genomeTicksUnit "auto", featurePriority). The only thing
+    # lost to that contract is the lead SNP's text label, which needs a chart decoration.
+    return {"tracks": [gwas, genes]}
 
 
 def _wp_explore(qs):

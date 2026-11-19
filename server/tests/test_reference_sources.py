@@ -27,6 +27,11 @@ def _make_gencode(path):
                  "7668402,7675994", "7669690,7676272", 7668402, 7676272))
     con.execute("CREATE TABLE gwas (pubmedid TEXT, diseaseTrait TEXT, chrom TEXT, start INTEGER, "
                 "strongestSNPRiskAllele TEXT, pValue TEXT, ORorBeta TEXT)")
+    # two associations inside the gene window: one genome-wide significant, one not
+    con.executemany("INSERT INTO gwas VALUES (?,?,?,?,?,?,?)", [
+        ("1", "Cancer", "chr17", 7670000, "rs1042522-C", 2e-20, 0.4),
+        ("2", "Height", "chr17", 7673000, "rs9999-T", 3e-03, 0.1),
+    ])
     con.commit()
     con.close()
 
@@ -61,6 +66,53 @@ def test_api_db_route_serves_gencode(monkeypatch, tmp_path):
     r = client.get("/api/gencode", params={"source": "biotypes"})
     assert r.status_code == 200 and r.json()["y"]["vars"] == ["Genes"]
 
+
+def test_gencode_locus_view_is_a_regional_association_plot(monkeypatch, tmp_path):
+    """view=locus re-emits the SAME window as a LocusZoom plot: the GWAS Catalog rows
+    become a dataframe track of -log10(p) above the gene models, instead of a second row
+    of 1 bp boxes. It is one more query shape on the same tables, not a new data source."""
+    monkeypatch.setattr(rs, "SQLITE_DIR", str(tmp_path))
+    _make_gencode(str(tmp_path / "gencode.sqlite"))
+    app = FastAPI()
+    rsrc.install_reference_services(app)
+    client = TestClient(app)
+
+    r = client.get("/api/gencode", params={"gene": "TP53", "view": "locus"})
+    assert r.status_code == 200
+    body = r.json()
+    # A dashboard panel takes its config from the spec, so the payload is tracks only.
+    assert list(body) == ["tracks"]
+    gwas, genes = body["tracks"]
+    assert (gwas["name"], gwas["type"]) == ("GWAS Catalog", "dataframe")
+    assert (genes["name"], genes["type"]) == ("Genes", "box")
+
+    frame = gwas["dataframe"]
+    assert len(frame["pos"]) == 2
+    assert frame["rsid"] == ["rs1042522", "rs9999"]          # allele suffix stripped
+    assert frame["sig"] == ["p < 5e-8", "Not significant"]
+    assert round(frame["logp"][0]) == 20
+
+    subplots = gwas["data"][0]["data"]
+    assert subplots[0]["colorBy"] == "sig"
+    # the lead SNP is its own one-row series, listed last so it draws on top
+    assert subplots[-1]["shape"] == "diamond"
+    assert frame["leadpos"] == [7670000]
+    assert gwas["leadSNP"] == "rs1042522"
+
+    # the searched gene is highlighted and the exon model is intact
+    assert genes["data"][0]["fill"] == "rgb(220,20,60)"
+    assert genes["data"][0]["data"] == [[7668402, 7669690], [7675994, 7676272]]
+
+
+def test_gencode_browser_view_is_unchanged_by_the_locus_view(monkeypatch, tmp_path):
+    """Without view=locus the original browser payload is returned exactly as before."""
+    monkeypatch.setattr(rs, "SQLITE_DIR", str(tmp_path))
+    _make_gencode(str(tmp_path / "gencode.sqlite"))
+    app = FastAPI()
+    rsrc.install_reference_services(app)
+    body = TestClient(app).get("/api/gencode", params={"gene": "TP53"}).json()
+    assert [t["name"] for t in body["tracks"]] == ["Genes", "GWAS Catalog"]
+    assert body["tracks"][1]["type"] == "box"   # still 1 bp boxes, not a dataframe
 
 def test_unknown_db_is_404(monkeypatch, tmp_path):
     monkeypatch.setattr(rs, "SQLITE_DIR", str(tmp_path))
