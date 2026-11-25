@@ -104,6 +104,7 @@
     .notice.cxb-o40 { order: 40; }
     .notice.cxb-o45 { order: 45; }
     .notice.cxb-o50 { order: 50; }
+    .notice.cxb-o55 { order: 55; }
     .notice.cxb-o60 { order: 60; }
     .notice.cxb-o70 { order: 70; }
     .notice.cxb-o80 { order: 80; }
@@ -663,7 +664,8 @@
         ['🛎️', 'ServiceNow'],
         ['📈', 'Google Analytics'],
         ['💹', 'Finance feeds'],
-        ['📌', 'Pins']
+        ['📌', 'Pins'],
+        ['🦆', 'Parquet (DuckDB)']
       ];
       var connChips = '<div class="conn-chips">' + connectors.map(function (c) {
         return '<span class="conn-chip"><span class="ci">' + c[0] + '</span>' + c[1] + '</span>';
@@ -697,7 +699,8 @@
           notice('🐍', 'R and Python', 'Render a dashboard spec, or turn a data frame into a whole dashboard, from Python (<code>pip install canvasxpress-dashboards</code>: Jupyter, Dash, Flask, Streamlit) or R (an htmlwidget with Shiny inputs). <a href="' + API_BASE + '/examples/guide-r-python.html">Step-by-step guide</a> · <a href="https://pypi.org/project/canvasxpress-dashboards/" target="_blank" rel="noopener">Python package</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/tree/main/r" target="_blank" rel="noopener">R package</a>.', 'n-sm cxb-o30') +
           notice('💬', 'Dashboards in Claude (MCP App)', 'Ask Claude for a dashboard (“use the penguins data set to create a canvasxpress dashboard”) and it appears live in the chat through the <b>canvasxpress-mcp</b> connector: linked panels, filters, hover and selection. <b>Save</b> downloads the spec as JSON; <b>Open in Builder</b> opens it here. To bring a saved spec in, <b>drag the JSON file onto the Data page</b> and it opens in the Builder at once. <a href="https://github.com/neuhausi/canvasxpress-dashboards#dashboards-in-claude-mcp-app" target="_blank" rel="noopener">How it works</a>.', 'n-feature cxb-o45') +
           notice('🔌', 'Connect your data', 'Bind panels to your own sources through <b>canvasxpress-connectors</b> — SQL warehouses, spreadsheets, business apps and finance feeds:' + connChips, 'n-lg cxb-o40') +
-          notice('🗄', 'Dashboard from database', 'Turn a database into an explorer like <b>GTEx Gene Explorer</b>: pick a connection, name the column whose values a Control lists, write the query that runs for the picked value (<code>WHERE gene = :gene</code>, always a bound parameter) and choose a chart from a live sample. Both queries are saved as your database sources, so they stay editable in <b>Data</b>; in the Builder, selecting the Control shows how it is wired, SQL included. <a href="#" class="home-dbwizard">Start the wizard</a>.', 'n-feature cxb-o50') +
+          notice('🗄', 'Dashboard from database', 'Turn a database into an explorer like <b>GTEx Gene Explorer</b>: pick a connection, name the column whose values a Control lists, write the query that runs for the picked value (<code>WHERE gene = :gene</code>, always a bound parameter) and choose a chart from a live sample. Both queries are saved as your database sources, so they stay editable in <b>Data</b>; in the Builder, selecting the Control shows how it is wired, SQL included. The wizard walks you through its four tools in order — the values query, the detail query, the Control and the chart — and each one stays usable on its own afterward, so nothing here is wizard-only. <a href="#" class="home-dbwizard">Start the wizard</a>.', 'cxb-n-60 cxb-o50') +
+          notice('🦆', 'Query a Parquet file with SQL', 'Point DuckDB at a <b>Parquet file</b> — a local path, or an <code>s3://</code> / <code>https://</code> URL — and query it with plain SQL (<code>SELECT … FROM read_parquet(…)</code>): no database server, and filtering and aggregation <b>push down</b> into the file scan, so a multi-million-row file powers a dashboard while only the result rows reach the browser. The source is saved like any database source, so it stays editable in <b>Data</b>. <a href="#" class="home-pqwizard">Start the wizard</a> · <a href="' + API_BASE + '/examples/parquet-explorer.html">See the Parquet Explorer</a> · <a href="https://github.com/neuhausi/canvasxpress-dashboards/blob/main/docs/connect-parquet.md" target="_blank" rel="noopener">How it works</a>.', 'cxb-n-40 cxb-o55') +
           '<div id="home-dbx-notice" style="display:none;order:60;flex:1 1 100%">' +
             notice('🧱', 'Browse Databricks', 'Explore Unity Catalog from <b>Data → Databricks</b>: pick a SQL warehouse, open catalogs, schemas and tables, and preview a table’s columns and first 50 rows. <b>Save as source</b> or start a <b>Dashboard from this table</b>. On Posit Connect it reads Databricks as you, with your own grants; elsewhere it uses the server’s shared token. <a href="#" class="home-dbx">Open Data</a>.', 'n-feature cxb-o80') +
           '</div>' +
@@ -726,6 +729,14 @@
           // The wizard reads the user's database sources: sign in first when needed.
           if (!currentUser) { pendingView = 'Dashboards'; showLogin('Dashboards'); return; }
           showDbWizard();
+        };
+      });
+      [].slice.call(viewEl.querySelectorAll('.home-pqwizard')).forEach(function (link) {
+        link.onclick = function (ev) {
+          ev.preventDefault();
+          // The wizard registers DuckDB sources: sign in first when needed.
+          if (!currentUser) { pendingView = 'Dashboards'; showLogin('Dashboards'); return; }
+          showParquetWizard();
         };
       });
       [].slice.call(viewEl.querySelectorAll('.home-dbx')).forEach(function (link) {
@@ -4586,6 +4597,163 @@
       }
     }
 
+    // ---- "Dashboard from a Parquet file": the Parquet counterpart of the
+    // database wizard. A Parquet file has no table catalog to browse, so instead
+    // of a Database + Table pick the user gives a path or URL; DuckDB reads it in
+    // place (duckdb:///:memory: + read_parquet('…')). The two queries it builds
+    // are saved as ordinary DuckDB SQL sources — so they stay editable in Data,
+    // and pushdown runs over them — exactly like the database wizard's output.
+    function showParquetWizard() {
+      var created = [];
+      function dropCreated() {
+        created.forEach(function (n) {
+          connectorsApi('/api/sources/' + encodeURIComponent(n), { method: 'DELETE' }).catch(function () {});
+        });
+      }
+      var CONN = 'duckdb:///:memory:';
+      var chosenCol = '', instances = [];
+      function destroyAll() {
+        instances.forEach(function (inst) { try { inst.destroy(); } catch (e) { /* gone */ } });
+        instances = [];
+      }
+      function parquetFrom(path) {
+        // A DuckDB single-quoted literal; reject an embedded quote (defense in depth,
+        // same as cx_connectors.ParquetSource). The path is owner/server-side config.
+        if (path.indexOf("'") !== -1) throw new Error('The Parquet path may not contain a single quote.');
+        return "read_parquet('" + path + "')";
+      }
+      function postJson(path, payload) {
+        return ensureConnectorsSession().then(function () {
+          return fetch(API_BASE + path, { method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        }).then(function (r) {
+          return r.json().then(function (b) { if (!r.ok) throw new Error(b.detail || ('HTTP ' + r.status)); return b; });
+        });
+      }
+
+      var body = openModal('New dashboard from a Parquet file', function () { destroyAll(); }, { wide: true });
+      var intro = document.createElement('div');
+      intro.className = 'cxd-wizard-note';
+      intro.style.marginBottom = '12px';
+      intro.innerHTML = 'A dashboard like the <b>Parquet Explorer</b>, from one Parquet file — DuckDB reads it in place, no database server:' +
+        '<ol style="margin:8px 0 0;padding-left:20px;line-height:1.6">' +
+        '<li><b>The file</b> — a local path, or an <code>https://</code> / <code>s3://</code> URL.</li>' +
+        '<li><b>The column to pick from</b> — its values fill a Control (click a column in the preview).</li>' +
+        '<li><b>The Control + chart</b> — the Builder’s own dialogs, over a query that re-runs for the pick.</li></ol>' +
+        'Both queries are saved as ordinary DuckDB SQL sources (<code>SELECT … FROM read_parquet(…)</code>), so they stay editable in <b>Data</b>.';
+      body.appendChild(intro);
+
+      function field(labelText, control) {
+        var l = document.createElement('label'); l.className = 'cxd-wizard-field';
+        l.appendChild(document.createTextNode(labelText)); l.appendChild(control); return l;
+      }
+      function input(ph) { var i = document.createElement('input'); i.type = 'text'; i.placeholder = ph || ''; return i; }
+
+      var title = input('e.g. Orders by region');
+      body.appendChild(field('Dashboard title', title));
+      var path = input("orders.parquet  ·  https://host/data.parquet  ·  s3://bucket/key.parquet");
+      body.appendChild(field('Parquet file (path or URL)', path));
+
+      var msg = document.createElement('div'); msg.className = 'cxd-wizard-msg'; body.appendChild(msg);
+
+      var loadRow = document.createElement('div'); loadRow.className = 'cxd-wizard-actions';
+      loadRow.style.justifyContent = 'flex-start'; loadRow.style.marginTop = '0';
+      var loadNote = document.createElement('span'); loadNote.className = 'cxd-wizard-note';
+      var loadBtn = smallButton('▶ Load preview', function () { loadPreview(); });
+      loadRow.appendChild(loadBtn); loadRow.appendChild(loadNote);
+      body.appendChild(loadRow);
+
+      var colsLabel = document.createElement('div'); colsLabel.className = 'cxd-wizard-note';
+      colsLabel.style.margin = '10px 0 4px'; colsLabel.textContent = 'Column to list in the Control (click one):';
+      colsLabel.style.display = 'none';
+      body.appendChild(colsLabel);
+      var colList = document.createElement('div'); colList.className = 'cxd-dbsrc-cols'; body.appendChild(colList);
+      var host = document.createElement('div'); host.className = 'cxd-dbsrc-host'; host.style.marginTop = '8px';
+      body.appendChild(host);
+
+      function loadPreview() {
+        msg.textContent = ''; chosenCol = ''; colList.innerHTML = ''; colsLabel.style.display = 'none';
+        destroyAll(); host.innerHTML = ''; startBtn.disabled = true;
+        var p = path.value.trim();
+        if (!p) { msg.textContent = 'Enter a Parquet path or URL first.'; return; }
+        var from;
+        try { from = parquetFrom(p); } catch (e) { msg.textContent = e.message; return; }
+        loadNote.textContent = 'Reading…';
+        postJson('/api/connectors/test', { conn_url: CONN, sql: 'SELECT * FROM ' + from + ' LIMIT ' + DB_TEST_ROWS,
+          params: {}, limit: DB_TEST_ROWS }).then(function (res) {
+          var columns = res.columns || [];
+          loadNote.textContent = res.rows ? (res.rows + (res.truncated ? '+' : '') + ' row(s) · ' + columns.length + ' column(s)') : 'No rows.';
+          colsLabel.style.display = columns.length ? '' : 'none';
+          columns.forEach(function (c) {
+            var chip = document.createElement('button'); chip.type = 'button'; chip.className = 'cxd-dbsrc-col'; chip.textContent = c;
+            chip.onclick = function () {
+              [].forEach.call(colList.children, function (x) { x.classList.remove('cxd-dbsrc-col--on'); });
+              chip.classList.add('cxd-dbsrc-col--on'); chosenCol = c; startBtn.disabled = false;
+            };
+            colList.appendChild(chip);
+          });
+          if (res.data) {
+            var canvas = document.createElement('canvas'); canvas.id = 'cxd-pqwiz-' + Date.now();
+            canvas.setAttribute('width', Math.max(320, host.clientWidth || 600)); canvas.setAttribute('height', 240);
+            host.appendChild(canvas);
+            try { instances.push(new window.CanvasXpress(canvas.id, res.data, { view: 'table', resizable: false }, {})); }
+            catch (e) { host.textContent = 'Preview unavailable.'; }
+          }
+        }, function (e) { loadNote.textContent = ''; msg.textContent = e.message; });
+      }
+      path.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); loadPreview(); } };
+
+      function slugOf(text) {
+        return String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32) || 'parquet-explorer';
+      }
+      function saveSource(name, sql) {
+        return connectorsApi('/api/sources', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name, conn_url: CONN, sql: sql }) }).then(function () { created.push(name); });
+      }
+
+      function runChain() {
+        var t = title.value.trim();
+        if (!t) { msg.textContent = 'Give the dashboard a title.'; return; }
+        if (!chosenCol) { msg.textContent = 'Load the preview and click a column to pick from.'; return; }
+        var from;
+        try { from = parquetFrom(path.value.trim()); } catch (e) { msg.textContent = e.message; return; }
+        var slug = slugOf(t), param = CXD.paramNameFor(chosenCol);
+        var choicesName = slug + '-choices', detailName = slug + '-detail';
+        body.close();
+        saveSource(choicesName, CXD.choicesSql(from, chosenCol, param)).then(function () {
+          return saveSource(detailName, CXD.detailSql(from, chosenCol, param));
+        }).then(function () {
+          var spec = CXD.blankSpec(slug + '-' + Date.now().toString(36), t);
+          spec = CXD.setDataSource(spec, choicesName, { kind: 'connector', url: CXD.connectorSourceUrl(choicesName), ttl: 600000 });
+          spec = CXD.setDataSource(spec, detailName, { kind: 'connector', url: CXD.connectorSourceUrl(detailName), ttl: 0 });
+          currentSpec = spec; currentOwner = null;
+          activate('Builder');
+          var builder = currentBuilder;
+          return builder.openControlDialog({ choices: 'ref:' + choicesName, target: 'ref:' + detailName,
+            annotation: param, param: param }).then(function (control) {
+            if (!control) return null;
+            return builder.whenReady().then(function () {
+              return builder.openPanelDialog({ source: 'ref:' + detailName, title: t });
+            });
+          }).then(function (panel) {
+            var finalSpec = builder.getSpec();
+            currentSpec = finalSpec;
+            return client.save(finalSpec).then(function () {
+              if (!panel) window.alert('Saved “' + t + '”. Add its chart with + Add → Panel.');
+            });
+          });
+        }).catch(function (e) { dropCreated(); window.alert('Dashboard from Parquet: ' + (e && e.message || e)); });
+      }
+
+      var footer = document.createElement('div'); footer.className = 'cxd-wizard-actions';
+      var startBtn = smallButton('Create dashboard', runChain);
+      startBtn.className = 'cX-Button cX-Button--primary'; startBtn.disabled = true;
+      footer.appendChild(smallButton('Cancel', function () { body.close(); }));
+      footer.appendChild(startBtn);
+      body.appendChild(footer);
+      setTimeout(function () { title.focus(); }, 0);
+    }
+
     // --- Dashboards view: the user's saved dashboards (the shipped examples
     // are seeded here by examples/serve.py) — open in Builder, preview, delete.
     function showDashboards() {
@@ -4597,6 +4765,7 @@
           '<button class="cta" id="dash-refresh" style="margin-left:auto;padding:6px 14px;font-size:16px;background:transparent;border:1px solid var(--rail-border);color:inherit">Refresh</button>' +
           '<button class="cta" id="dash-wizard">＋ Chart from data</button>' +
           '<button class="cta" id="dash-dbwizard" title="A Control that lists values from your database, over a chart that re-queries it for the picked value">＋ Dashboard from database</button>' +
+          '<button class="cta" id="dash-pqwizard" title="A Control that lists values from a Parquet file (DuckDB), over a chart that re-queries it for the picked value">＋ Dashboard from Parquet</button>' +
         '</div>';
       viewEl.innerHTML =
         '<div class="data-view cxd-dash-view">' +
@@ -4623,6 +4792,7 @@
       document.getElementById('dash-refresh').onclick = loadDashList;
       document.getElementById('dash-wizard').onclick = showWizard;
       document.getElementById('dash-dbwizard').onclick = showDbWizard;
+      document.getElementById('dash-pqwizard').onclick = showParquetWizard;
       loadDashList();
     }
 

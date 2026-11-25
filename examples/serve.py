@@ -840,10 +840,13 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     # board that can only error when opened.
     explorer_requires = {"gtex-explorer": ("db", "gtex"), "gencode-explorer": ("db", "gencode"),
                          "wp-explorer": ("db", "wp"), "tcga-explorer": ("db", "tcga"),
-                         "ccle-explorer": ("db", "ccle"), "pins-live": ("pins", None)}
+                         "ccle-explorer": ("db", "ccle"), "pins-live": ("pins", None),
+                         "parquet-explorer": ("parquet", None)}
+    _demo_parquet = os.environ.get("CXD_PARQUET", os.path.join(HERE, "data", "demo.parquet"))
     for db_spec in ("gtex-explorer.spec.json", "gencode-explorer.spec.json",
                     "wp-explorer.spec.json", "tcga-explorer.spec.json",
-                    "ccle-explorer.spec.json", "pins-live.spec.json"):
+                    "ccle-explorer.spec.json", "pins-live.spec.json",
+                    "parquet-explorer.spec.json"):
         explorer = load_spec(db_spec)
         if not explorer:
             continue
@@ -854,6 +857,9 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
         if kind == "pins" and not _pins_feature_available():
             _unseed(explorer["id"], "pins package not installed")
             continue
+        if kind == "parquet" and not os.path.exists(_demo_parquet):
+            _unseed(explorer["id"], "demo.parquet not present (run examples/gen-parquet.py)")
+            continue
         # Shipped explorers are locked, canonical examples: always re-save from the
         # spec file (not skip-if-present) so edits to the spec — e.g. the intro
         # description — are picked up on restart instead of a stale stored copy.
@@ -862,6 +868,11 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
             url = source.get("url")
             if ref in connector_sources.get(explorer["id"], {}):
                 explorer["data"][ref] = connector_sources[explorer["id"]][ref]
+            elif source.get("kind") == "connector" and url == "../api/parquet":
+                # Point the Builder copy at the registered DuckDB SQL source
+                # (editable in Data), keeping the pushdown block. The standalone
+                # page keeps ../api/parquet (its own adapter route).
+                source["url"] = "/connectors/api/data?source=parquet-orders"
             elif source.get("kind") == "connector" and isinstance(url, str) and url.startswith("../api/"):
                 source["url"] = url[2:]
         dashboards.save_dashboard(EXAMPLES_OWNER, explorer, now)
@@ -880,6 +891,7 @@ def _seed_shipped_dashboards(dashboards, datasets, have, now):
     shipped_order = [
         "biomarker-cohort", "clinical-trial-dashboard", "genomics-oncology", "ggplot-gallery", "code-panels-gallery", "pins-overview", "pins-live", "heor-overview", "kpi-overview",
         "gtex-explorer", "gencode-explorer", "wp-explorer", "tcga-explorer", "ccle-explorer",
+        "parquet-explorer",
         "live-ops", "quality-metrics", "reproducible-bench", "sales-model", "sales-overview",
         # Secondary cross-filter / linked-marking demos: pinned to the end so the
         # curated gallery order above is authoritative (otherwise they keep the
@@ -989,10 +1001,12 @@ def _seed_demo_sources(store, user):
     server-only deploy seed identically); GTEx is a dev-only extra layered on top,
     present only on machines that have gtex.sqlite; the pins board is a local
     board_folder published once so the Pins Board (live) example reads it through
-    the real connector."""
+    the real connector; the Parquet orders source is a DuckDB SQL source over the
+    demo .parquet so the Builder lists it as an editable 🗄 source."""
     _demo.seed_demo_sources(store, user)
     _seed_gtex_sources(store, user)
     _seed_pins_board_source(store, user)
+    _seed_parquet_sources(store, user)
 
 
 _PINS_BOARD_DIR = os.path.join(DATA_DIR, "pins-board")
@@ -1093,6 +1107,32 @@ def _seed_gtex_sources(store, user):
             store.save_source(user, name, url, sql)
 
 
+def _seed_parquet_sources(store, user):
+    """Register the demo Parquet file as a DuckDB SQL source (``parquet-orders``),
+    so the **Parquet Explorer** reads it the SQL-like way: a plain
+    ``SELECT … FROM read_parquet('…')`` the Builder lists as an editable 🗄 source
+    with a live preview, and over which pushdown (groupBy / where / aggregate) runs
+    in DuckDB. Skipped when the ``[duckdb]`` extra isn't installed or the demo
+    .parquet isn't present on this machine (the standalone page still works via the
+    /api/parquet adapter route)."""
+    path = os.environ.get("CXD_PARQUET", os.path.join(HERE, "data", "demo.parquet"))
+    if not os.path.exists(path):
+        return
+    try:
+        from cx_connectors.sources import ParquetSource
+    except Exception:
+        return
+    try:
+        src = ParquetSource(path, columns=["region", "product", "amount"])
+    except Exception:
+        return
+    url, sql = src.conn_url, src.sql
+    have_sources = store.list_sources(user)
+    current = store.get_source(user, "parquet-orders") if "parquet-orders" in have_sources else None
+    if not current or current.get("sql") != sql or current.get("conn_url") != url:
+        store.save_source(user, "parquet-orders", url, sql)
+
+
 try:
     from cx_connectors.store import generate_key as _cxc_generate_key
     from cxd_server.connectors import install_connectors
@@ -1136,6 +1176,48 @@ def _connector_data(source: str = "", region: str = "", q: str = ""):
     if source == "salesProducts":
         return JSONResponse(_query_sales_products(region, q))
     return JSONResponse({"detail": "unknown source '%s'" % source}, status_code=404)
+
+
+@app.get("/api/parquet", include_in_schema=False)
+def _parquet_service(request: Request):
+    """Live data service for the parquet-explorer example: read a seed Parquet file
+    through a canvasxpress-connectors ``ParquetSource`` (DuckDB), forwarding the
+    dashboard's pushdown ``_q`` so DuckDB aggregates/filters and only the result
+    rows reach the browser. Declared before ``/api/{db}`` so it wins the match."""
+    from fastapi.responses import JSONResponse
+    from cx_connectors.pushdown import parse_query, run_pushdown
+    from cx_connectors.sources import ParquetSource, to_cx
+
+    parquet = os.environ.get(
+        "CXD_PARQUET", os.path.join(HERE, "data", "demo.parquet"))
+    if not os.path.exists(parquet):
+        return JSONResponse(
+            {"detail": "demo.parquet missing — run examples/gen-parquet.py"},
+            status_code=503)
+    row_cap = int(os.environ.get("CX_MAX_ROWS", "100000"))
+    src = ParquetSource(parquet)
+    raw_q = request.query_params.get("_q")
+    try:
+        if raw_q:
+            query = parse_query(raw_q)
+            header, rows, truncated = run_pushdown(src.conn_url, src.sql, {}, query, row_cap)
+            groups = query.get("groupBy") or []
+            if groups:
+                header = ["id"] + list(header)
+                rows = [[" · ".join(str(v) for v in r[:len(groups)])] + list(r) for r in rows]
+            if not rows:
+                from cx_connectors.reshape import rows_to_cx
+                measures = [h for h in header[1:] if h not in groups]
+                payload = {"y": {"vars": measures, "smps": [], "data": [[] for _ in measures]}}
+            else:
+                from cx_connectors.reshape import rows_to_cx
+                payload = rows_to_cx(header, rows)
+            return JSONResponse(payload,
+                                headers={"X-Cx-Rows": str(len(rows)),
+                                         "X-Cx-Truncated": "1" if truncated else "0"})
+        return JSONResponse(to_cx(src))
+    except Exception as exc:  # noqa: BLE001 - surface query errors to the client
+        return JSONResponse({"detail": str(exc)}, status_code=500)
 
 
 @app.get("/api/{db}", include_in_schema=False)

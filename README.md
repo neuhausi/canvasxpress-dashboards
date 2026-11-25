@@ -30,7 +30,7 @@ database) · [live-data controls](docs/live-data-controls.md) ·
 [publication figures](docs/figure-composer.md) (compose panels into one multi-panel vector SVG/PDF with A/B/C labels, sized to a journal column at print DPI) ·
 **[Connecting your data](docs/connecting-your-data.md)** (how to connect
 [Salesforce](docs/connect-salesforce.md), [Databricks](docs/connect-databricks.md) and
-[pins](docs/connect-pins.md) with your own credentials, and how those credentials are protected) ·
+[pins](docs/connect-pins.md) and [Parquet files](docs/connect-parquet.md) with your own credentials, and how those credentials are protected) ·
 [Databricks as the viewer + Unity Catalog browser](docs/databricks-viewer-oauth.md) (Posit Connect OAuth or a shared token) ·
 [Pins boards as a live source](docs/pins-connector.md) (read a Posit **pins** board live via the connector — Connect / folder / S3 / URL) ·
 [server](server/README.md) · [changelog](CHANGELOG.md)

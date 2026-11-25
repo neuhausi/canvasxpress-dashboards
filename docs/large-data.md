@@ -120,6 +120,31 @@ Otherwise the join runs in the browser, exactly as before. The same fallback
 applies when the connector refuses, for example because the sources are in
 different databases.
 
+## Parquet files
+
+A Parquet file is a pushdown source with no database server: DuckDB reads it in-process.
+Register it by **path or URL** (a `kind:"parquet"` source — a local path,
+`s3://bucket/orders/*.parquet`, or `https://host/data.parquet`), and it is stored as a plain SQL
+source, so everything above — `groupBy`/`measures`/`where`, Filters-panel selections, joins and
+`/api/columns` — applies unchanged. See [Connect a dashboard to a Parquet file](connect-parquet.md)
+for registration, and the **Parquet Explorer** example (`examples/parquet-explorer.html`) for a
+runnable dashboard over a 300,000-row file where every panel is a pushdown query:
+
+```jsonc
+"orders": {
+  "kind": "connector",
+  "url": "/connectors/api/data?source=orders",     // a kind:"parquet" source, stored as sql
+  "pushdown": {
+    "groupBy": ["region", "product"],
+    "measures": [{ "fn": "sum", "column": "amount", "as": "total_amount" }, { "fn": "count" }]
+  }
+}
+```
+
+Remote reads need no setup: DuckDB auto-loads `httpfs` on the first `s3://`/`https://` read, and
+S3 credentials entered at registration ride inside the stored connection URL, so the pushdown and
+join paths inherit them.
+
 ## Client scale
 
 Pushdown is the main answer to large data: move the work to the database. For

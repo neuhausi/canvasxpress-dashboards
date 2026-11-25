@@ -9,6 +9,7 @@ its own step-by-step guide:
 | **Salesforce** | An **OAuth app** set up on the server: no password and no token | Only the app's name | [Salesforce](connect-salesforce.md) |
 | **Databricks** | **Sign in as the viewer** (Posit Connect), or a personal access token | Nothing (viewer), or the token, encrypted | [Databricks](connect-databricks.md) |
 | **Posit pins** | **Add the pin's address** with your own Connect login, or a live source with the board's key | Nothing (address), or the key, encrypted | [Pins](connect-pins.md) |
+| **Parquet file** | Register by **path or URL** (local, or `s3://` / `https://`) — DuckDB, with pushdown | Nothing (local/public), or the S3 key, encrypted | [Parquet](connect-parquet.md) |
 
 Other databases (PostgreSQL, MySQL, Snowflake, BigQuery and the rest) connect like a Databricks
 token source: **Data → + Database** with a connection URL.

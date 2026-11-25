@@ -71,7 +71,7 @@
 
     <h2>The app</h2>
     <div class="cards">
-      <a class="card" href="./builder.html">
+      <a class="card" href="../">
         <div class="ic">🧩</div>
         <h3>Builder <span>→</span></h3>
         <p>The full application shell: Home, no-code Builder (drag panels, native
@@ -142,6 +142,16 @@
            responders in the tumor-response scatter and the <b>heatmap</b> and PD-L1
            boxplot filter to just those patients' samples — and the reverse.</p>
         <div class="tags"><span class="tag">cross-filter</span><span class="tag">genomics</span><span class="tag">heatmap</span><span class="tag">clinical</span></div>
+      </a>
+      <a class="card" href="./parquet-explorer.html">
+        <div class="ic">🦆</div>
+        <h3>Parquet Explorer <span>→</span></h3>
+        <p><b>Large data, pushed down.</b> A <b>300,000-row Parquet file</b> read through a
+           <code>ParquetSource</code> (DuckDB). Every panel is a grouped / filtered
+           <b>pushdown</b> query, so DuckDB aggregates and only a dozen rows reach the
+           browser. Pick a region to re-query the per-product breakdown in the database.
+           Run <code>examples/parquet-adapter.py</code> for live data.</p>
+        <div class="tags"><span class="tag">parquet</span><span class="tag">duckdb</span><span class="tag">pushdown</span><span class="tag">large-data</span><span class="tag">connector</span></div>
       </a>
       <a class="card" href="./linked-highlight.html">
         <div class="ic">🔆</div>
