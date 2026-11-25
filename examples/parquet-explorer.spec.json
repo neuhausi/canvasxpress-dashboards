@@ -1,0 +1,94 @@
+{
+  "id": "parquet-explorer",
+  "title": "Parquet Explorer (DuckDB pushdown)",
+  "version": 1,
+  "broadcastGroup": "parquet-explorer",
+  "theme": "auto",
+  "params": {
+    "region": {
+      "value": null,
+      "type": "string"
+    }
+  },
+  "layout": {
+    "cols": 12,
+    "rowHeight": 40,
+    "gap": 12,
+    "items": [
+      { "panel": "intro", "x": 0, "y": 0, "w": 12, "h": 2 },
+      { "panel": "region-control", "x": 0, "y": 2, "w": 6, "h": 1 },
+      { "panel": "byProduct", "x": 0, "y": 3, "w": 6, "h": 8 },
+      { "panel": "byRegion", "x": 6, "y": 3, "w": 6, "h": 8 }
+    ]
+  },
+  "data": {
+    "regions": {
+      "kind": "connector",
+      "url": "../api/parquet",
+      "pushdown": {
+        "groupBy": ["region"],
+        "measures": [
+          { "fn": "sum", "column": "amount", "as": "total_amount" },
+          { "fn": "count" }
+        ],
+        "orderBy": [{ "column": "total_amount", "desc": true }]
+      },
+      "ttl": 600000
+    },
+    "products": {
+      "kind": "connector",
+      "url": "../api/parquet",
+      "pushdown": {
+        "groupBy": ["product"],
+        "measures": [
+          { "fn": "sum", "column": "amount", "as": "total_amount" },
+          { "fn": "count" }
+        ],
+        "where": [{ "column": "region", "op": "in", "value": "$region" }],
+        "orderBy": [{ "column": "total_amount", "desc": true }]
+      },
+      "ttl": 0
+    }
+  },
+  "panels": {
+    "region-control": {
+      "type": "control",
+      "mode": "param",
+      "param": "region",
+      "title": "Region",
+      "style": "dropdown",
+      "optionsFrom": {
+        "dataRef": "regions",
+        "annotation": "region"
+      }
+    },
+    "byRegion": {
+      "title": "Total revenue by region (all 300k rows, aggregated in DuckDB)",
+      "dataRef": "regions",
+      "config": {
+        "graphType": "Bar",
+        "graphOrientation": "horizontal",
+        "xAxis": ["total_amount"],
+        "colorBy": "region",
+        "showLegend": false,
+        "title": false
+      }
+    },
+    "byProduct": {
+      "title": "Revenue by product (filtered to the selected region)",
+      "dataRef": "products",
+      "config": {
+        "graphType": "Bar",
+        "graphOrientation": "horizontal",
+        "xAxis": ["total_amount"],
+        "colorBy": "product",
+        "showLegend": false,
+        "title": false
+      }
+    },
+    "intro": {
+      "type": "text",
+      "html": "<div style=\"font-weight: 700; font-size: 25px\">Parquet Explorer (DuckDB pushdown)</div><div style=\"font-size: 18px; color: var(--cxd-muted)\">A 300,000-row Parquet file read through a <code>ParquetSource</code> (DuckDB). Every panel is a grouped/filtered <b>pushdown</b> query — DuckDB does the aggregation and only a handful of rows reach the browser. Pick a region to re-query the per-product breakdown in the database.</div>"
+    }
+  }
+}
