@@ -1231,6 +1231,9 @@ export function renderDashboard(spec, target, options) {
     var narrow = width > 0 && width < stackBelow;
     if (narrow === stackedNow) return;
     stackedNow = narrow;
+    // Expose the stacked (narrow) state to CSS so mobile rules (min panel height,
+    // collapsed chrome) can target it (mobile-experience-plan P3).
+    if (container && container.classList) container.classList.toggle('cxd-stacked', narrow);
     refreshTemplate();
   }
 

@@ -61,4 +61,4 @@ export {
 } from './figureComposer.js';
 
 /** @type {string} Package version. */
-export var version = '0.15.5';
+export var version = '0.15.6';

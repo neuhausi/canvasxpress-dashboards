@@ -802,7 +802,22 @@ export var dashboardCss = [
   // A checkbox inside a field reads as an option, not as another field label.
   '.cxb-modal-field label.cxb-check, .cxb-modal .cxb-links-pick label.cxb-check { text-transform: none; font-weight: 400;',
   '  letter-spacing: normal; font-size: 14px; color: inherit; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }',
-  '.cxb-modal .cxb-modal-fn-inputs { display: flex; flex-wrap: wrap; gap: 4px 14px; }'
+  '.cxb-modal .cxb-modal-fn-inputs { display: flex; flex-wrap: wrap; gap: 4px 14px; }',
+  /* Mobile / narrow-screen touch ergonomics (mobile-experience-plan P3). Chart
+     canvases inside a panel own pinch/pan (the engine's touch recognizer), so
+     touch-action:none keeps a gesture on a chart from scrolling the dashboard —
+     the grid container itself keeps its vertical scroll. */
+  '.cxd-panel canvas { touch-action: none; }',
+  /* At a narrow canvas width the grid stacks (stackBelow + .cxd-stacked) and the
+     filters-bar controls / toolbar buttons grow to a >=44px touch target (panel
+     titles and .cxb-props are already 44px). The bar wraps instead of
+     overflowing, and each stacked panel keeps a usable min-height. */
+  '@media (max-width: 640px) {',
+  '  .cxd-filters-bar select, .cxd-filters-bar button,',
+  '  .cxd-filters-bar input:not(:where([type=checkbox], [type=radio])) { min-height: 44px; }',
+  '  .cxd-filters-bar { flex-wrap: wrap; max-width: 100%; }',
+  '  .cxd-dashboard.cxd-stacked .cxd-panel { min-height: 260px; }',
+  '}'
 ].join('\n');
 
 /**
